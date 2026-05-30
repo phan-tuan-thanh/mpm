@@ -1,0 +1,338 @@
+
+<style>
+*{box-sizing:border-box}
+.r{padding:1rem 0;font-family:var(--font-sans)}
+.tabs{display:flex;gap:2px;border-bottom:0.5px solid var(--color-border-tertiary);margin-bottom:1.25rem}
+.t{padding:8px 14px;font-size:12px;font-weight:500;color:var(--color-text-secondary);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap}
+.t.on{color:var(--color-text-primary);border-bottom-color:var(--color-text-primary)}
+.pn{display:none}.pn.on{display:block}
+.sl{font-size:10px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;color:var(--color-text-tertiary);margin:0 0 10px}
+.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:9px;margin-bottom:1.25rem}
+.g3{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:9px;margin-bottom:1.25rem}
+.fc{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:13px 14px;cursor:pointer;transition:border-color .12s}
+.fc:hover{border-color:var(--color-border-secondary)}
+.fc.on{border:2px solid var(--color-border-info)}
+.fi{font-size:18px;margin-bottom:6px}
+.fn{font-size:13px;font-weight:500;color:var(--color-text-primary);margin:0 0 3px}
+.fd{font-size:11px;color:var(--color-text-secondary);margin:0;line-height:1.4}
+.bx{display:inline-block;font-size:10px;font-weight:500;padding:2px 7px;border-radius:var(--border-radius-md);margin-top:6px}
+.bc{background:#E6F1FB;color:#0C447C}
+.bp{background:#EAF3DE;color:#27500A}
+.ba{background:#EEEDFE;color:#3C3489}
+.bk{background:#FAEEDA;color:#633806}
+.dp{background:var(--color-background-secondary);border-radius:var(--border-radius-lg);padding:1rem 1.25rem;margin-top:4px}
+.dn{font-size:14px;font-weight:500;color:var(--color-text-primary);margin:0 0 5px;display:flex;align-items:center;gap:7px}
+.dd{font-size:12px;color:var(--color-text-secondary);margin:0 0 10px;line-height:1.55}
+.cl{display:flex;flex-wrap:wrap;gap:6px;list-style:none;margin:0;padding:0}
+.ci{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:3px 10px;font-size:11px;color:var(--color-text-primary)}
+.ab{background:none;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:4px 11px;font-size:11px;color:var(--color-text-info);cursor:pointer;margin-top:10px;display:inline-block}
+
+.mock-shell{background:var(--color-background-secondary);border-radius:var(--border-radius-lg);padding:12px;margin-bottom:1.25rem}
+.mock-bar{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.mock-title{font-size:12px;font-weight:500;color:var(--color-text-secondary)}
+.mock-views{display:flex;gap:4px;margin-left:auto}
+.mv{font-size:11px;padding:3px 10px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);cursor:pointer;color:var(--color-text-secondary);background:var(--color-background-primary)}
+.mv.on{background:var(--color-background-primary);color:var(--color-text-primary);border-color:var(--color-border-primary)}
+.view-pn{display:none}.view-pn.on{display:block}
+
+.list-row{display:grid;grid-template-columns:20px 1fr 80px 70px 80px 60px;gap:8px;align-items:center;padding:7px 8px;border-radius:var(--border-radius-md);font-size:12px;color:var(--color-text-primary)}
+.list-row:hover{background:var(--color-background-secondary)}
+.list-head{font-size:10px;color:var(--color-text-tertiary);font-weight:500;padding:4px 8px}
+.list-sep{border:none;border-top:0.5px solid var(--color-border-tertiary);margin:2px 0}
+.sub-row{display:grid;grid-template-columns:20px 1fr 80px 70px 80px 60px;gap:8px;align-items:center;padding:5px 8px 5px 24px;border-radius:var(--border-radius-md);font-size:11px;color:var(--color-text-secondary)}
+.sub-row:hover{background:var(--color-background-secondary)}
+.st{display:inline-block;padding:2px 7px;border-radius:999px;font-size:10px;font-weight:500}
+.st.todo{background:#F1EFE8;color:#444441}
+.st.prog{background:#E6F1FB;color:#0C447C}
+.st.rev{background:#FAEEDA;color:#633806}
+.st.done{background:#EAF3DE;color:#27500A}
+.st.block{background:#FCEBEB;color:#791F1F}
+.pri{width:8px;height:8px;border-radius:50%;display:inline-block}
+.hi{background:#E24B4A}.me{background:#EF9F27}.lo{background:#97C459}.no{background:#B4B2A9}
+.tag{display:inline-block;padding:1px 6px;border-radius:999px;font-size:10px;margin-right:3px}
+.tg1{background:#EEEDFE;color:#3C3489}.tg2{background:#E1F5EE;color:#085041}.tg3{background:#FAEEDA;color:#633806}
+.av{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500}
+.a1{background:#B5D4F4;color:#0C447C}.a2{background:#9FE1CB;color:#085041}.a3{background:#FAC775;color:#633806}
+
+.kb-wrap{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.kb-col{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:8px}
+.kb-head{font-size:10px;font-weight:500;color:var(--color-text-secondary);margin:0 0 6px;display:flex;align-items:center;justify-content:space-between}
+.kb-cnt{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:var(--color-background-primary);font-size:9px;color:var(--color-text-tertiary)}
+.kb-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:8px 9px;margin-bottom:5px;font-size:11px}
+.kb-card:last-child{margin-bottom:0}
+.kb-id{font-size:9px;color:var(--color-text-tertiary);margin:0 0 3px}
+.kb-name{color:var(--color-text-primary);margin:0 0 5px;font-size:11px;font-weight:500;line-height:1.3}
+.kb-foot{display:flex;align-items:center;justify-content:space-between}
+.bl{border-left:2px solid #E24B4A}
+.pr-bar{height:3px;border-radius:2px;background:var(--color-border-tertiary);margin:4px 0;overflow:hidden}
+.pr-fill{height:3px;border-radius:2px}
+.pf1{background:#1D9E75;width:75%}.pf2{background:#378ADD;width:40%}.pf3{background:#EF9F27;width:60%}.pf4{background:#1D9E75;width:100%}.pf5{background:#378ADD;width:20%}
+
+.gantt-wrap{overflow-x:auto}
+.gantt-table{width:100%;border-collapse:collapse;font-size:11px;min-width:560px}
+.gantt-table th{padding:5px 8px;text-align:left;font-size:10px;font-weight:500;color:var(--color-text-tertiary);border-bottom:0.5px solid var(--color-border-tertiary)}
+.gantt-table td{padding:5px 8px;border-bottom:0.5px solid var(--color-border-tertiary);color:var(--color-text-primary);vertical-align:middle}
+.gantt-table tr:last-child td{border-bottom:none}
+.gbar-wrap{position:relative;height:18px;background:var(--color-background-secondary);border-radius:3px;overflow:hidden}
+.gbar{height:100%;border-radius:3px;position:absolute}
+.g-purple{background:#AFA9EC}.g-teal{background:#5DCAA5}.g-amber{background:#EF9F27}.g-coral{background:#F0997B}.g-blue{background:#85B7EB}.g-gray{background:#B4B2A9}
+.week-label{display:grid;grid-template-columns:repeat(6,1fr);font-size:9px;color:var(--color-text-tertiary);margin-bottom:2px;padding:0 2px}
+</style>
+
+<div class="r">
+<h2 class="sr-only">Blueprint ứng dụng quản lý dự án Agile — chức năng, giao diện và tài liệu</h2>
+
+<div class="tabs" id="main-tabs">
+  <div class="t on" data-tab="views">Dạng xem task</div>
+  <div class="t" data-tab="task">Task & custom fields</div>
+  <div class="t" data-tab="agile">Agile & sprint</div>
+  <div class="t" data-tab="doc">Tài liệu & version</div>
+  <div class="t" data-tab="collab">Cộng tác & AI</div>
+</div>
+
+<div class="pn on" id="tab-views">
+  <p class="sl">Demo các dạng xem — nhấn để chuyển đổi</p>
+  <div class="mock-shell">
+    <div class="mock-bar">
+      <span style="font-size:11px;font-weight:500;color:var(--color-text-primary)"><i class="ti ti-layout-kanban" aria-hidden="true" style="margin-right:4px"></i>Sprint 12 — EBiz Payment v2.3</span>
+      <div class="mock-views">
+        <span class="mv on" data-view="list"><i class="ti ti-list" aria-hidden="true"></i> List</span>
+        <span class="mv" data-view="kanban"><i class="ti ti-layout-columns" aria-hidden="true"></i> Kanban</span>
+        <span class="mv" data-view="gantt"><i class="ti ti-timeline" aria-hidden="true"></i> Gantt</span>
+      </div>
+    </div>
+
+    <div class="view-pn on" id="view-list">
+      <div class="list-row list-head" style="grid-template-columns:20px 1fr 80px 70px 80px 60px">
+        <span></span><span>Tên task</span><span>Trạng thái</span><span>Priority</span><span>Assignee</span><span>SP</span>
+      </div>
+      <hr class="list-sep">
+      <div class="list-row">
+        <span style="font-size:11px;color:var(--color-text-tertiary);cursor:pointer" id="expand1" onclick="toggleSub('sub1','expand1')">▶</span>
+        <span style="font-weight:500">Tích hợp API QR Payment <span class="tag tg1">backend</span><span class="tag tg2">payment</span></span>
+        <span><span class="st prog">In progress</span></span>
+        <span style="display:flex;align-items:center;gap:4px"><span class="pri hi"></span> High</span>
+        <span style="display:flex;align-items:center;gap:4px"><div class="av a1">TT</div></span>
+        <span style="color:var(--color-text-secondary)">8</span>
+      </div>
+      <div id="sub1" style="display:none">
+        <div class="sub-row"><span style="color:var(--color-text-tertiary)">↳</span><span>Kết nối NAPAS gateway</span><span><span class="st done">Done</span></span><span style="display:flex;align-items:center;gap:4px"><span class="pri hi"></span></span><span><div class="av a1">TT</div></span><span style="color:var(--color-text-secondary)">3</span></div>
+        <div class="sub-row"><span style="color:var(--color-text-tertiary)">↳</span><span>Xử lý callback & webhook</span><span><span class="st prog">In progress</span></span><span style="display:flex;align-items:center;gap:4px"><span class="pri me"></span></span><span><div class="av a2">LM</div></span><span style="color:var(--color-text-secondary)">3</span></div>
+        <div class="sub-row bl"><span style="color:var(--color-text-tertiary)">↳</span><span>Unit test coverage 80%</span><span><span class="st todo">To do</span></span><span style="display:flex;align-items:center;gap:4px"><span class="pri me"></span></span><span><div class="av a1">TT</div></span><span style="color:var(--color-text-secondary)">2</span></div>
+      </div>
+      <div class="list-row">
+        <span style="font-size:11px;color:var(--color-text-tertiary);cursor:pointer" id="expand2" onclick="toggleSub('sub2','expand2')">▶</span>
+        <span style="font-weight:500">UI màn hình xác nhận thanh toán <span class="tag tg3">frontend</span></span>
+        <span><span class="st rev">Review</span></span>
+        <span style="display:flex;align-items:center;gap:4px"><span class="pri me"></span> Med</span>
+        <span style="display:flex;align-items:center;gap:4px"><div class="av a2">LM</div></span>
+        <span style="color:var(--color-text-secondary)">5</span>
+      </div>
+      <div id="sub2" style="display:none">
+        <div class="sub-row"><span style="color:var(--color-text-tertiary)">↳</span><span>Thiết kế Figma screen</span><span><span class="st done">Done</span></span><span></span><span><div class="av a3">NH</div></span><span style="color:var(--color-text-secondary)">2</span></div>
+        <div class="sub-row"><span style="color:var(--color-text-tertiary)">↳</span><span>Implement React component</span><span><span class="st rev">Review</span></span><span></span><span><div class="av a2">LM</div></span><span style="color:var(--color-text-secondary)">3</span></div>
+      </div>
+      <div class="list-row">
+        <span></span>
+        <span>Viết test plan UAT module QR <span class="tag tg1">qa</span></span>
+        <span><span class="st todo">To do</span></span>
+        <span style="display:flex;align-items:center;gap:4px"><span class="pri lo"></span> Low</span>
+        <span style="display:flex;align-items:center;gap:4px"><div class="av a3">NH</div></span>
+        <span style="color:var(--color-text-secondary)">3</span>
+      </div>
+      <div class="list-row">
+        <span></span>
+        <span style="color:var(--color-text-danger)">Fix lỗi timeout OTP xác thực <span class="tag" style="background:#FCEBEB;color:#791F1F">bug</span></span>
+        <span><span class="st block">Blocked</span></span>
+        <span style="display:flex;align-items:center;gap:4px"><span class="pri hi"></span> High</span>
+        <span style="display:flex;align-items:center;gap:4px"><div class="av a1">TT</div></span>
+        <span style="color:var(--color-text-secondary)">2</span>
+      </div>
+    </div>
+
+    <div class="view-pn" id="view-kanban">
+      <div class="kb-wrap">
+        <div class="kb-col">
+          <div class="kb-head">Backlog <span class="kb-cnt">3</span></div>
+          <div class="kb-card"><div class="kb-id">#EBZ-041</div><div class="kb-name">Báo cáo lịch sử giao dịch export PDF</div><div class="pr-bar"><div class="pr-fill" style="width:0;background:#B4B2A9"></div></div><div class="kb-foot"><span class="tag tg1">backend</span><div class="av a2">LM</div></div></div>
+          <div class="kb-card"><div class="kb-id">#EBZ-042</div><div class="kb-name">Cấu hình rate limit API</div><div class="kb-foot"><span class="tag tg1">devops</span><div class="av a3">NH</div></div></div>
+        </div>
+        <div class="kb-col">
+          <div class="kb-head">To do <span class="kb-cnt">2</span></div>
+          <div class="kb-card"><div class="kb-id">#EBZ-038</div><div class="kb-name">Viết test plan UAT module QR</div><div class="pr-bar"><div class="pr-fill pf3"></div></div><div class="kb-foot"><span class="tag tg3">qa</span><div class="av a3">NH</div></div></div>
+        </div>
+        <div class="kb-col">
+          <div class="kb-head" style="color:var(--color-text-info)">In progress <span class="kb-cnt">2</span></div>
+          <div class="kb-card"><div class="kb-id">#EBZ-035</div><div class="kb-name">Tích hợp API QR Payment</div><div class="pr-bar"><div class="pr-fill pf1"></div></div><div class="kb-foot"><span class="tag tg1">backend</span><div class="av a1">TT</div></div></div>
+          <div class="kb-card bl"><div class="kb-id">#EBZ-039</div><div class="kb-name">Fix lỗi timeout OTP</div><div class="kb-foot"><span class="tag" style="background:#FCEBEB;color:#791F1F">bug</span><div class="av a1">TT</div></div></div>
+        </div>
+        <div class="kb-col">
+          <div class="kb-head" style="color:var(--color-text-warning)">Review <span class="kb-cnt">2</span></div>
+          <div class="kb-card"><div class="kb-id">#EBZ-036</div><div class="kb-name">UI màn hình xác nhận thanh toán</div><div class="pr-bar"><div class="pr-fill pf2"></div></div><div class="kb-foot"><span class="tag tg3">frontend</span><div class="av a2">LM</div></div></div>
+        </div>
+        <div class="kb-col">
+          <div class="kb-head" style="color:var(--color-text-success)">Done <span class="kb-cnt">5</span></div>
+          <div class="kb-card"><div class="kb-id">#EBZ-031</div><div class="kb-name">Thiết kế database schema</div><div class="pr-bar"><div class="pr-fill pf4"></div></div><div class="kb-foot"><span class="tag tg1">backend</span><div class="av a1">TT</div></div></div>
+          <div class="kb-card"><div class="kb-id">#EBZ-032</div><div class="kb-name">Setup môi trường SIT</div><div class="kb-foot"><span class="tag tg1">devops</span><div class="av a3">NH</div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="view-pn" id="view-gantt">
+      <div class="gantt-wrap">
+        <div class="week-label" style="padding-left:200px">
+          <span>T5/W1</span><span>T5/W2</span><span>T5/W3</span><span>T5/W4</span><span>T6/W1</span><span>T6/W2</span>
+        </div>
+        <table class="gantt-table">
+          <thead><tr><th style="width:200px">Task</th><th>Timeline</th></tr></thead>
+          <tbody>
+            <tr><td style="font-weight:500;font-size:11px">Thiết kế DB schema</td><td><div class="gbar-wrap"><div class="gbar g-teal" style="left:0;width:20%"></div></div></td></tr>
+            <tr><td style="font-size:11px;color:var(--color-text-secondary);padding-left:20px">↳ ER diagram</td><td><div class="gbar-wrap"><div class="gbar g-gray" style="left:0;width:12%"></div></div></td></tr>
+            <tr><td style="font-size:11px;color:var(--color-text-secondary);padding-left:20px">↳ Migration scripts</td><td><div class="gbar-wrap"><div class="gbar g-gray" style="left:12%;width:10%"></div></div></td></tr>
+            <tr><td style="font-weight:500;font-size:11px">Tích hợp API QR Payment</td><td><div class="gbar-wrap"><div class="gbar g-purple" style="left:15%;width:40%"></div></div></td></tr>
+            <tr><td style="font-size:11px;color:var(--color-text-secondary);padding-left:20px">↳ Kết nối NAPAS</td><td><div class="gbar-wrap"><div class="gbar g-gray" style="left:15%;width:20%"></div></div></td></tr>
+            <tr><td style="font-size:11px;color:var(--color-text-secondary);padding-left:20px">↳ Webhook handler</td><td><div class="gbar-wrap"><div class="gbar g-gray" style="left:30%;width:25%"></div></div></td></tr>
+            <tr><td style="font-weight:500;font-size:11px">UI xác nhận thanh toán</td><td><div class="gbar-wrap"><div class="gbar g-amber" style="left:25%;width:30%"></div></div></td></tr>
+            <tr><td style="font-weight:500;font-size:11px">Test plan UAT</td><td><div class="gbar-wrap"><div class="gbar g-coral" style="left:50%;width:25%"></div></div></td></tr>
+            <tr><td style="font-weight:500;font-size:11px">Deploy SIT → UAT</td><td><div class="gbar-wrap"><div class="gbar g-blue" style="left:70%;width:20%"></div></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <p class="sl">Tính năng hiển thị</p>
+  <div class="g3" id="views-feat">
+    <div class="fc" data-name="Multi-view switching" data-icon="ti-layout-2" data-desc="Chuyển đổi tức thì giữa List, Kanban, Gantt, Calendar, Table, Mind map — cùng một dataset, nhiều góc nhìn, không cần reload trang." data-subs="List + subtask expand,Kanban drag-and-drop,Gantt với dependencies,Calendar view,Table view (spreadsheet-like),Mind map view"><div class="fi" style="color:#7F77DD"><i class="ti ti-layout-2" aria-hidden="true"></i></div><p class="fn">Multi-view switching</p><p class="fd">6 dạng xem, chuyển tức thì</p><span class="bx bc">Cốt lõi</span></div>
+    <div class="fc" data-name="Subtask & hierarchy" data-icon="ti-git-branch" data-desc="Phân cấp task không giới hạn: Epic → Story → Task → Subtask. Expand/collapse inline, kéo thả sắp xếp lại thứ bậc. Progress parent tự tính từ con." data-subs="Epic → Story → Task → Subtask,Progress rollup tự động,Collapse/expand inline,Kéo thả reorder,Breadcrumb navigation,Indent / outdent"><div class="fi" style="color:#7F77DD"><i class="ti ti-git-branch" aria-hidden="true"></i></div><p class="fn">Subtask & hierarchy</p><p class="fd">Epic → Story → Task → Subtask</p><span class="bx bc">Cốt lõi</span></div>
+    <div class="fc" data-name="Trạng thái tùy chỉnh" data-icon="ti-arrows-right-left" data-desc="Tạo workflow trạng thái riêng theo từng project type: Agile (Backlog→Todo→In Progress→Review→Done) hay custom (Chờ duyệt → Đang xử lý → Nghiệm thu). Màu sắc, icon, thứ tự đều tùy chỉnh." data-subs="Workflow status tùy chỉnh,Màu và icon per status,Transition rules,Auto-assign on status change,Status history log,Bulk status update"><div class="fi" style="color:#1D9E75"><i class="ti ti-arrows-right-left" aria-hidden="true"></i></div><p class="fn">Status tùy chỉnh</p><p class="fd">Workflow riêng cho từng project</p><span class="bx bc">Cốt lõi</span></div>
+    <div class="fc" data-name="Grouping & sorting" data-icon="ti-adjustments-horizontal" data-desc="Group task theo bất kỳ field nào: assignee, status, sprint, label, priority, custom field. Multi-level sort. Save view config để tái sử dụng." data-subs="Group by any field,Multi-level sort,Filter builder,Save & share view,Pin view favorite,Column resize & hide"><div class="fi" style="color:#BA7517"><i class="ti ti-adjustments-horizontal" aria-hidden="true"></i></div><p class="fn">Grouping & filter</p><p class="fd">Group, sort, filter đa chiều</p><span class="bx bc">Cốt lõi</span></div>
+    <div class="fc" data-name="Gantt dependencies" data-icon="ti-timeline" data-desc="Vẽ dependency FS/SS/FF/SF giữa các task trực tiếp trên Gantt. Khi kéo task cha, con tự dịch chuyển. Critical path highlight." data-subs="Finish-to-Start dependency,Lag & lead time,Critical path highlight,Baseline vs actual,Milestone markers,Export SVG/PDF"><div class="fi" style="color:#D85A30"><i class="ti ti-timeline" aria-hidden="true"></i></div><p class="fn">Gantt dependencies</p><p class="fd">Critical path & drag-to-reschedule</p><span class="bx bp">Nâng cao</span></div>
+    <div class="fc" data-name="WIP limits & swimlane" data-icon="ti-columns" data-desc="Đặt giới hạn WIP per column trên Kanban. Swimlane theo assignee, epic hoặc priority. Visual warning khi vượt WIP limit." data-subs="WIP limit per column,Swimlane theo assignee,Swimlane theo epic,Overload visual alert,Card aging,Blocked card highlight"><div class="fi" style="color:#D4537E"><i class="ti ti-columns" aria-hidden="true"></i></div><p class="fn">WIP limits & swimlane</p><p class="fd">Kanban nâng cao chống overload</p><span class="bx bp">Nâng cao</span></div>
+  </div>
+  <div class="dp" id="views-detail"><p style="font-size:12px;color:var(--color-text-tertiary);margin:0">Nhấn card để xem chi tiết →</p></div>
+</div>
+
+<div class="pn" id="tab-task">
+  <p class="sl">Task anatomy & custom fields</p>
+  <div class="mock-shell" style="padding:14px">
+    <div style="display:grid;grid-template-columns:1fr 160px;gap:12px">
+      <div>
+        <div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:4px">#EBZ-035 · EBiz Payment v2.3</div>
+        <div style="font-size:14px;font-weight:500;color:var(--color-text-primary);margin-bottom:8px">Tích hợp API QR Payment (NAPAS)</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+          <span class="st prog">In progress</span>
+          <span class="tag tg1">backend</span><span class="tag tg2">payment</span>
+          <span style="font-size:10px;background:#FCEBEB;color:#791F1F;padding:2px 7px;border-radius:999px">critical</span>
+        </div>
+        <div style="font-size:11px;color:var(--color-text-secondary);line-height:1.6">Tích hợp NAPAS QR gateway vào module thanh toán, xử lý callback async và đảm bảo idempotency cho retry logic...</div>
+        <div style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:6px">
+          <div style="font-size:10px;color:var(--color-text-tertiary)">Checklist (2/3)</div>
+          <div style="font-size:10px;color:var(--color-text-tertiary)">Story points: 8</div>
+          <div><div class="pr-bar"><div class="pr-fill pf1"></div></div></div>
+          <div style="font-size:11px;color:var(--color-text-secondary)">Due: 28/05/2025</div>
+        </div>
+      </div>
+      <div style="border-left:0.5px solid var(--color-border-tertiary);padding-left:12px;font-size:11px">
+        <div style="margin-bottom:8px"><div style="color:var(--color-text-tertiary);font-size:10px;margin-bottom:3px">Assignee</div><div style="display:flex;align-items:center;gap:5px"><div class="av a1">TT</div> Tuan Thanh</div></div>
+        <div style="margin-bottom:8px"><div style="color:var(--color-text-tertiary);font-size:10px;margin-bottom:3px">Sprint</div><div style="color:var(--color-text-primary)">Sprint 12</div></div>
+        <div style="margin-bottom:8px"><div style="color:var(--color-text-tertiary);font-size:10px;margin-bottom:3px">Epic</div><div style="color:var(--color-text-primary)">QR Payment</div></div>
+        <div style="margin-bottom:8px"><div style="color:var(--color-text-tertiary);font-size:10px;margin-bottom:3px">Version</div><div style="background:#E6F1FB;color:#0C447C;padding:1px 7px;border-radius:999px;font-size:10px;display:inline-block">v2.3</div></div>
+        <div style="margin-bottom:8px"><div style="color:var(--color-text-tertiary);font-size:10px;margin-bottom:3px">Custom: Môi trường</div><div style="color:var(--color-text-primary)">SIT → UAT</div></div>
+        <div><div style="color:var(--color-text-tertiary);font-size:10px;margin-bottom:3px">Custom: Test evidence</div><div style="color:var(--color-text-info);font-size:10px">📎 TestPlan_QR.xlsx</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="g" id="task-feat">
+    <div class="fc" data-name="Custom fields" data-icon="ti-forms" data-desc="Thêm field riêng theo nhu cầu project: Text, Number, Date, Dropdown, Multi-select, URL, File, Formula, Checkbox. Field hiển thị trên list/card/form đồng bộ." data-subs="Text / Number / Date,Dropdown & multi-select,URL & file attachment,Formula field tự tính,Checkbox,Person field,Hiển thị trên mọi view"><div class="fi" style="color:#7F77DD"><i class="ti ti-forms" aria-hidden="true"></i></div><p class="fn">Custom fields</p><p class="fd">10+ loại field tùy định nghĩa</p><span class="bx bc">Cốt lõi</span></div>
+    <div class="fc" data-name="Labels & tags" data-icon="ti-tags" data-desc="Label màu tự do (frontend, backend, qa, bug…) và tag có namespace (team:, domain:, version:). Dùng để filter, group và báo cáo đa chiều." data-subs="Color labels tự định nghĩa,Tag với namespace,Multi-label per task,Filter & group theo label,Label report,Bulk label update"><div class="fi" style="color:#1D9E75"><i class="ti ti-tags" aria-hidden="true"></i></div><p class="fn">Labels & tags</p><p class="fd">Label màu + tag có namespace</p><span class="bx bc">Cốt lõi</span></div>
+    <div class="fc" data-name="Priority & severity" data-icon="ti-flame" data-desc="Priority 4 cấp (Critical/High/Medium/Low) với màu trực quan. Severity riêng cho bug. Hỗ trợ MoSCoW cho backlog refinement." data-subs="4-level priority,Severity cho bug,MoSCoW flag,Priority filter nhanh,SLA deadline theo priority,Visual alert overdue"><div class="fi" style="color:#D85A30"><i class="ti ti-flame" aria-hidden="true"></i></div><p class="fn">Priority & severity</p><p class="fd">4 cấp ưu tiên + MoSCoW</p><span class="bx bc">Cốt lõi</span></div>
+    <div class="fc" data-name="Dependency & blocking" data-icon="ti-link" data-desc="Gắn quan hệ blocks/blocked-by giữa task. Task bị block hiển thị badge đỏ ngay trên list và kanban card. Dependency chain view." data-subs="Blocks / blocked-by,Related / duplicate,Dependency chain view,Auto-notify khi unblock,Block badge visual,Export dependency graph"><div class="fi" style="color:#BA7517"><i class="ti ti-link" aria-hidden="true"></i></div><p class="fn">Dependencies</p><p class="fd">Blocks/blocked-by với visual alert</p><span class="bx bc">Cốt lõi</span></div>
+    <div class="fc" data-name="Time tracking" data-icon="ti-clock" data-desc="Ghi nhận thời gian làm việc per task (timer hoặc nhập tay). Báo cáo actual vs estimate theo member và sprint. Xuất timesheet." data-subs="Timer start/stop,Nhập tay time log,Estimate vs actual,Member timesheet,Sprint time report,Export CSV/Excel"><div class="fi" style="color:#D4537E"><i class="ti ti-clock" aria-hidden="true"></i></div><p class="fn">Time tracking</p><p class="fd">Timer + timesheet per member</p><span class="bx bp">Nâng cao</span></div>
+    <div class="fc" data-name="Automation rules" data-icon="ti-bolt" data-desc="Quy tắc tự động: khi status → Done thì notify reviewer; khi overdue thì assign lại; khi priority = Critical thì tạo Slack alert tự động." data-subs="Trigger → Action rules,When / If / Then builder,Status change automation,Overdue auto-alert,Webhook integration,Template automation"><div class="fi" style="color:#7F77DD"><i class="ti ti-bolt" aria-hidden="true"></i></div><p class="fn">Automation</p><p class="fd">When/If/Then rules builder</p><span class="bx bp">Nâng cao</span></div>
+  </div>
+  <div class="dp" id="task-detail"><p style="font-size:12px;color:var(--color-text-tertiary);margin:0">Nhấn card để xem chi tiết →</p></div>
+</div>
+
+<div class="pn" id="tab-agile">
+  <div class="g" id="agile-feat">
+    <div class="fc" data-name="Backlog management" data-icon="ti-list" data-desc="Backlog phân tầng Epic → Story với drag-and-drop sắp xếp priority. Refinement session: estimate story point ngay trên backlog, split story lớn thành task nhỏ hơn." data-subs="Drag-drop priority ordering,Story point estimation,Backlog refinement session,MoSCoW prioritization,Bulk operations,Import từ Excel/CSV"><div class="fi" style="color:#7F77DD"><i class="ti ti-list" aria-hidden="true"></i></div><p class="fn">Backlog management</p><p class="fd">Phân tầng, refinement, drag-drop</p><span class="bx bc">Cốt lõi</span></div>
+    <div class="fc" data-name="Sprint planning" data-icon="ti-calendar-stats" data-desc="Kéo task từ backlog vào sprint, hệ thống tính tổng SP và so với capacity team. Sprint goal, start/end date, velocity từ sprint trước hiển thị để tham chiếu." data-subs="Drag task vào sprint,Capacity vs SP tracker,Sprint goal & scope,Velocity reference,Sprint scope lock,Sprint copy template"><div class="fi" style="color:#1D9E75"><i class="ti ti-calendar-stats" aria-hidden="true"></i></div><p class="fn">Sprint planning</p><p class="fd">Capacity-aware sprint builder</p><span class="bx bc">Cốt lõi</span></div>
+    <div class="fc" data-name="Burndown & velocity" data-icon="ti-chart-line" data-desc="Burndown chart real-time (ideal vs actual). Velocity chart qua nhiều sprint. Cumulative flow diagram. Team health score. SM thấy rủi ro ngay giữa sprint." data-subs="Burndown real-time,Burnup chart,Velocity history,Cumulative flow,Sprint progress %,Team health score"><div class="fi" style="color:#BA7517"><i class="ti ti-chart-line" aria-hidden="true"></i></div><p class="fn">Burndown & velocity</p><p class="fd">Real-time charts, team health</p><span class="bx bc">Cốt lõi</span></div>
+    <div class="fc" data-name="Daily standup async" data-icon="ti-users" data-desc="Form standup nhanh (Did/Will/Blocked) có thể submit từ mobile. Impediment log tự động. SM xem tổng hợp toàn team mỗi sáng — không cần meeting dài." data-subs="Did / Will / Blocked form,Impediment auto-log,Team summary view,Mobile-friendly,Async — không cần cùng lúc,Weekly digest"><div class="fi" style="color:#D85A30"><i class="ti ti-users" aria-hidden="true"></i></div><p class="fn">Daily standup async</p><p class="fd">Async check-in từ mobile</p><span class="bx bp">Nâng cao</span></div>
+    <div class="fc" data-name="Retrospective board" data-icon="ti-refresh" data-desc="Template retro (Start/Stop/Continue, 4Ls, Mad/Sad/Glad…). Dot voting ẩn danh, timer, action items gắn vào sprint tiếp theo tự động." data-subs="5+ retro templates,Dot voting ẩn danh,Timer built-in,Action item tracking,Trend qua sprint,Export report"><div class="fi" style="color:#D4537E"><i class="ti ti-refresh" aria-hidden="true"></i></div><p class="fn">Retrospective board</p><p class="fd">Templates + voting + action items</p><span class="bx bp">Nâng cao</span></div>
+    <div class="fc" data-name="Release management" data-icon="ti-rocket" data-desc="Quản lý version release: gắn task/story vào version, theo dõi readiness, tạo release note tự động từ task đã done, go-live checklist và approval." data-subs="Version gắn với task/story,Release readiness %,Auto release notes,Go-live checklist,Approval workflow,Deploy log history"><div class="fi" style="color:#7F77DD"><i class="ti ti-rocket" aria-hidden="true"></i></div><p class="fn">Release management</p><p class="fd">Version → release note → deploy log</p><span class="bx bk">Version key</span></div>
+  </div>
+  <div class="dp" id="agile-detail"><p style="font-size:12px;color:var(--color-text-tertiary);margin:0">Nhấn card để xem chi tiết →</p></div>
+</div>
+
+<div class="pn" id="tab-doc">
+  <div class="g" id="doc-feat">
+    <div class="fc" data-name="Document wiki" data-icon="ti-book" data-desc="Wiki tích hợp ngay trong project — viết tài liệu với rich text editor (Notion-style blocks). Nhúng task, diagram, code block. Auto TOC và breadcrumb." data-subs="Rich text / block editor,Heading & auto TOC,Embed task inline,Code block syntax highlight,Table & image,Mermaid/PlantUML diagram"><div class="fi" style="color:#378ADD"><i class="ti ti-book" aria-hidden="true"></i></div><p class="fn">Document wiki</p><p class="fd">Notion-style, nhúng task & diagram</p><span class="bx bc">Cốt lõi</span></div>
+    <div class="fc" data-name="Version control tài liệu" data-icon="ti-git-commit" data-desc="Mỗi lần lưu = một version mới. Diff viewer side-by-side so sánh nội dung. Rollback về bất kỳ phiên bản trước. Gắn version doc với version phần mềm." data-subs="Auto-version on save,Diff viewer side-by-side,Rollback 1-click,Gắn doc với SW version,Milestone snapshot,Lock version approved"><div class="fi" style="color:#378ADD"><i class="ti ti-git-commit" aria-hidden="true"></i></div><p class="fn">Document versioning</p><p class="fd">Diff, rollback, gắn SW version</p><span class="bx bk">Version key</span></div>
+    <div class="fc" data-name="Approval workflow tài liệu" data-icon="ti-checkup-list" data-desc="Draft → Review → Approved → Published. Ký duyệt điện tử với timestamp. Comment inline trên từng đoạn văn. Immutable sau khi approved." data-subs="Multi-step review,E-signature & timestamp,Inline paragraph comment,Reject & revision cycle,Audit trail đầy đủ,Email notify reviewer"><div class="fi" style="color:#1D9E75"><i class="ti ti-checkup-list" aria-hidden="true"></i></div><p class="fn">Approval workflow</p><p class="fd">Draft → Review → Approved</p><span class="bx bc">Cốt lõi</span></div>
+    <div class="fc" data-name="Smart search & tra cứu" data-icon="ti-search" data-desc="Full-text search trong nội dung tài liệu, filter theo version phần mềm, loại doc, trạng thái, tác giả, ngày. Tra cứu tài liệu tại version cụ thể trong quá khứ." data-subs="Full-text search nội dung,Filter theo SW version,Filter theo doc type,Saved search,Bookmark & pin,Highlight keyword in result"><div class="fi" style="color:#7F77DD"><i class="ti ti-search" aria-hidden="true"></i></div><p class="fn">Smart search</p><p class="fd">Tra cứu theo version, nội dung</p><span class="bx bk">Version key</span></div>
+    <div class="fc" data-name="Template library" data-icon="ti-template" data-desc="Thư viện template chuẩn: SRS, SAD, SDD, Test Plan, Release Note, Meeting Minutes, Retrospective. Tạo và chia sẻ template nội bộ." data-subs="SRS / SAD / SDD template,Release note template,Test plan template,Meeting minutes,Custom org template,Template versioning"><div class="fi" style="color:#BA7517"><i class="ti ti-template" aria-hidden="true"></i></div><p class="fn">Template library</p><p class="fd">SRS, SAD, Test Plan, Release Note</p><span class="bx bp">Nâng cao</span></div>
+    <div class="fc" data-name="Traceability req ↔ doc ↔ task" data-icon="ti-topology-star" data-desc="Ma trận liên kết: một yêu cầu → hiển thị đủ tài liệu liên quan, task đã làm, test case, bug và version release. Tra cứu impact khi yêu cầu thay đổi." data-subs="Req ↔ Task link,Req ↔ Doc link,Req ↔ Test case link,Impact analysis,Coverage matrix,Version snapshot đầy đủ"><div class="fi" style="color:#D85A30"><i class="ti ti-topology-star" aria-hidden="true"></i></div><p class="fn">Traceability matrix</p><p class="fd">Req → doc → task → test → version</p><span class="bx bk">Version key</span></div>
+  </div>
+  <div class="dp" id="doc-detail"><p style="font-size:12px;color:var(--color-text-tertiary);margin:0">Nhấn card để xem chi tiết →</p></div>
+</div>
+
+<div class="pn" id="tab-collab">
+  <div class="g" id="collab-feat">
+    <div class="fc" data-name="In-task comments & mentions" data-icon="ti-message-circle" data-desc="Comment trực tiếp trên task với @mention, thread reply, reaction. Attach file, link, ảnh. Toàn bộ thảo luận nằm trong task — không cần switch sang chat app." data-subs="@mention notify,Thread reply,Reaction (emoji),File & image attach,Rich text comment,Resolve thread"><div class="fi" style="color:#7F77DD"><i class="ti ti-message-circle" aria-hidden="true"></i></div><p class="fn">In-task comments</p><p class="fd">@mention, thread, file attach</p><span class="bx bc">Cốt lõi</span></div>
+    <div class="fc" data-name="Notification center" data-icon="ti-bell" data-desc="Hub thông báo tập trung: assigned, mentioned, overdue, status changed, blocked, approved. Tích hợp email digest, Slack/Teams webhook, push mobile." data-subs="Notification hub tập trung,Email digest (daily/weekly),Slack / Teams webhook,Push notification mobile,Granular subscribe per task,Mute & DND settings"><div class="fi" style="color:#1D9E75"><i class="ti ti-bell" aria-hidden="true"></i></div><p class="fn">Notification center</p><p class="fd">Hub + email + Slack/Teams</p><span class="bx bc">Cốt lõi</span></div>
+    <div class="fc" data-name="Workload & capacity" data-icon="ti-chart-dots" data-desc="Heatmap khối lượng per member. Khi assign task mới, hiện alert nếu member đã overload. SM thấy ai còn capacity để điều phối tốt hơn." data-subs="Heatmap workload visual,Overload alert khi assign,Capacity planning view,Leave / OOO integration,Skill-based assignment hint,Weekly workload summary"><div class="fi" style="color:#BA7517"><i class="ti ti-chart-dots" aria-hidden="true"></i></div><p class="fn">Workload dashboard</p><p class="fd">Heatmap + overload alert</p><span class="bx bc">Cốt lõi</span></div>
+    <div class="fc" data-name="AI task assistant" data-icon="ti-brain" data-desc="AI gợi ý story point từ lịch sử team, tự viết acceptance criteria Given/When/Then, phân rã task lớn thành subtask, detect duplicate requirement." data-subs="Story point suggestion,Acceptance criteria draft,Task breakdown AI,Duplicate detection,Risk flag,Natural language → task"><div class="fi" style="color:#7F77DD"><i class="ti ti-brain" aria-hidden="true"></i></div><p class="fn">AI task assistant</p><p class="fd">Story point, AC, task breakdown</p><span class="bx ba">AI-powered</span></div>
+    <div class="fc" data-name="AI document Q&A" data-icon="ti-sparkles" data-desc="Hỏi đáp tự nhiên với toàn bộ kho tài liệu: 'Luồng xử lý giao dịch trong v2.1 là gì?' → AI tìm và trích xuất câu trả lời kèm link nguồn chính xác." data-subs="Q&A toàn bộ tài liệu,Tìm kiếm ngôn ngữ tự nhiên,Summary tài liệu,Cross-doc insights,Detect outdated doc,Source link citation"><div class="fi" style="color:#7F77DD"><i class="ti ti-sparkles" aria-hidden="true"></i></div><p class="fn">AI doc Q&A</p><p class="fd">Hỏi đáp tự nhiên với kho tài liệu</p><span class="bx ba">AI-powered</span></div>
+    <div class="fc" data-name="Analytics & reporting" data-icon="ti-file-analytics" data-desc="Dashboard tổng hợp: sprint progress, team velocity, defect rate, doc coverage, lead/cycle time. Báo cáo tự động PDF gửi stakeholder theo lịch." data-subs="Sprint progress dashboard,Velocity & burndown,Lead time / cycle time,Defect rate chart,Auto PDF report,Executive summary"><div class="fi" style="color:#D4537E"><i class="ti ti-file-analytics" aria-hidden="true"></i></div><p class="fn">Analytics & reporting</p><p class="fd">Dashboard + auto report PDF</p><span class="bx bp">Nâng cao</span></div>
+  </div>
+  <div class="dp" id="collab-detail"><p style="font-size:12px;color:var(--color-text-tertiary);margin:0">Nhấn card để xem chi tiết →</p></div>
+</div>
+
+</div>
+
+<script>
+document.querySelectorAll('#main-tabs .t').forEach(t=>{
+  t.addEventListener('click',()=>{
+    document.querySelectorAll('#main-tabs .t').forEach(x=>x.classList.remove('on'));
+    document.querySelectorAll('.pn').forEach(x=>x.classList.remove('on'));
+    t.classList.add('on');
+    document.getElementById('tab-'+t.dataset.tab).classList.add('on');
+  });
+});
+
+document.querySelectorAll('.mv').forEach(mv=>{
+  mv.addEventListener('click',()=>{
+    document.querySelectorAll('.mv').forEach(x=>x.classList.remove('on'));
+    document.querySelectorAll('.view-pn').forEach(x=>x.classList.remove('on'));
+    mv.classList.add('on');
+    document.getElementById('view-'+mv.dataset.view).classList.add('on');
+  });
+});
+
+function toggleSub(id,expId){
+  const el=document.getElementById(id);
+  const exp=document.getElementById(expId);
+  const vis=el.style.display==='none';
+  el.style.display=vis?'block':'none';
+  exp.textContent=vis?'▼':'▶';
+}
+
+const groups=['views','task','agile','doc','collab'];
+groups.forEach(g=>{
+  const container=document.getElementById('tab-'+g);
+  if(!container)return;
+  const cards=container.querySelectorAll('.fc');
+  const detailEl=document.getElementById(g+'-detail');
+  cards.forEach(card=>{
+    card.addEventListener('click',()=>{
+      cards.forEach(c=>c.classList.remove('on'));
+      card.classList.add('on');
+      const nm=card.dataset.name,desc=card.dataset.desc,subs=card.dataset.subs.split(','),ic=card.dataset.icon;
+      detailEl.innerHTML=`<p class="dn"><i class="ti ${ic}" style="font-size:16px;color:var(--color-text-secondary)" aria-hidden="true"></i>${nm}</p><p class="dd">${desc}</p><ul class="cl">${subs.map(s=>`<li class="ci">${s}</li>`).join('')}</ul><button class="ab" onclick="sendPrompt('Phân tích kỹ hơn tính năng ${nm} — cách thiết kế và tech stack phù hợp cho ứng dụng Agile tại Eximbank')">Hỏi Claude phân tích sâu hơn ↗</button>`;
+    });
+  });
+});
+</script>

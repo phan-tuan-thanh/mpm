@@ -1,0 +1,12 @@
+{
+  "name": "Post-task summary",
+  "description": "Summarize completed work and update shared context after spec task finishes",
+  "version": "1",
+  "when": {
+    "type": "postTaskExecution"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A spec task just completed. Do the following:\n1. List all files that were created or modified\n2. Summarize what was implemented in 3-5 bullet points\n3. Note any deviations from the spec design.md\n4. Update .kiro/memory/context.json:\n   - lastTask: description and status\n   - lastModifiedFiles: list of changed files\n   - openIssues: anything incomplete or needing follow-up\n5. Check if steering/coding-standards.md or api-standards.md need updating\n\nEnd with: 'What would you like to work on next?'"
+  }
+}

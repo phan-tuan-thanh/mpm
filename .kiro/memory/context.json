@@ -1,0 +1,15 @@
+{
+  "_note": "Tự động cập nhật sau mỗi task — KHÔNG sửa thủ công thường xuyên",
+  "lastUpdated": "",
+  "lastTask": {
+    "description": "",
+    "status": "",
+    "planFile": ""
+  },
+  "currentFocus": "",
+  "lastModifiedFiles": [],
+  "openIssues": [],
+  "activeSpec": "",
+  "environment": "dev",
+  "notes": ""
+}

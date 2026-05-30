@@ -1,0 +1,12 @@
+{
+  "name": "Update agent config",
+  "description": "Cập nhật nhanh một phần cấu hình steering khi dự án thay đổi. Chạy thủ công từ Kiro panel hoặc gõ / trong chat.",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "User wants to update agent configuration. Ask them:\n1. What changed? (stack / infra / security / glossary / donottouch / api / testing)\n2. Describe the change in detail\n\nThen:\n- Read the relevant steering file(s)\n- Show a summary of what will change\n- Wait for confirmation\n- Update the file(s)\n- Update memory/context.json with timestamp and changed files\n\nTarget files by change type:\n- stack → steering/tech.md + steering/coding-standards.md\n- infra → steering/tech.md + settings/mcp.json\n- security → steering/product.md + steering/coding-standards.md\n- glossary → steering/product.md (Glossary section)\n- donottouch → steering/structure.md\n- api → steering/api-standards.md\n- testing → steering/testing-standards.md"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "Doc sync check",
+  "description": "Check if API documentation needs updating when route or controller files change",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/**/routes/**",
+      "src/**/controllers/**",
+      "src/**/api/**",
+      "src/**/handlers/**",
+      "src/**/*Controller*",
+      "src/**/*Router*",
+      "src/**/*Service*"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A route/controller/service file was saved. Quickly check:\n1. Were any public API signatures changed (parameters, return types, endpoint paths)?\n2. Were any new endpoints added or existing ones removed?\n3. Does the OpenAPI/Swagger spec (if present) need updating?\n\nIf yes: list what changed and suggest specific doc updates.\nIf no API changes: respond 'Doc check: no API changes detected'.\nDo NOT modify any files automatically."
+  }
+}

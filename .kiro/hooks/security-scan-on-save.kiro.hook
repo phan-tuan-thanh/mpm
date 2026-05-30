@@ -1,0 +1,21 @@
+{
+  "name": "Security scan on save",
+  "description": "Scan for hardcoded secrets and security issues when saving source files",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/**/*.ts",
+      "src/**/*.js",
+      "src/**/*.py",
+      "src/**/*.java",
+      "src/**/*.go",
+      "config/**/*",
+      "**/*.env*"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A source file was just saved. Scan it for security issues:\n1. Hardcoded secrets, API keys, passwords, or tokens\n2. Sensitive data (PII, credentials) in log statements\n3. SQL injection vulnerabilities (string concatenation in queries)\n4. Hardcoded URLs or IPs that should be environment config\n\nIf issues found: list them with line numbers and suggest fixes. Do NOT auto-fix — report only.\nIf clean: one line response 'Security scan: clean'."
+  }
+}

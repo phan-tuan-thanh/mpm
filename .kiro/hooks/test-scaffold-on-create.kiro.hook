@@ -1,0 +1,19 @@
+{
+  "name": "Test scaffold on file create",
+  "description": "Suggest test file skeleton when a new source file is created",
+  "version": "1",
+  "when": {
+    "type": "fileCreated",
+    "patterns": [
+      "src/**/*.ts",
+      "src/**/*.js",
+      "src/**/*.py",
+      "src/**/*.java",
+      "src/**/*.go"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A new source file was just created. Analyze it and:\n1. Identify public functions/methods/classes that need tests\n2. Suggest the test file path following project convention\n3. Generate a test skeleton with:\n   - Describe/suite blocks per class or module\n   - Empty test stubs for each public method (happy path + error case)\n   - Import statements and mock setup for external dependencies\n\nDo NOT write full implementations — skeleton only. Ask user to confirm before creating the file."
+  }
+}

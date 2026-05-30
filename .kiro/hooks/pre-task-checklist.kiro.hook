@@ -1,0 +1,12 @@
+{
+  "name": "Pre-task checklist",
+  "description": "Clarify context and ambiguities before any spec task begins execution",
+  "version": "1",
+  "when": {
+    "type": "preTaskExecution"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A spec task is about to begin. Before proceeding:\n1. Read .kiro/steering/product.md and tech.md for project context\n2. Read the spec requirements.md and design.md for this task\n3. Check .kiro/memory/context.json for recent changes that might affect this task\n4. Identify ambiguities:\n   - Are acceptance criteria clear and complete?\n   - Are file paths and names specified?\n   - Are there dependencies on other incomplete tasks?\n\nIf ambiguities exist: list them and ask user to clarify BEFORE starting.\nIf everything is clear: summarize in 3-5 bullet points what you will do, then proceed."
+  }
+}

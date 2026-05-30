@@ -1,0 +1,12 @@
+{
+  "name": "Code review",
+  "description": "Structured code review of the current file against project steering standards. Run manually from Kiro panel.",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Perform a thorough code review of the currently open file against .kiro/steering/ standards:\n\n**Correctness**\n- Logic matches spec in .kiro/specs/ (if exists)\n- Edge cases handled (null, empty, boundary)\n- Error handling is meaningful\n\n**Code Quality** (steering/coding-standards.md)\n- Naming conventions followed\n- No obvious code duplication\n- Functions under 50 lines\n\n**Security** (steering/api-standards.md)\n- Input validated, authorization checked\n- No sensitive data exposed\n\n**Testing** (steering/testing-standards.md)\n- Tests exist for new logic\n- Tests cover happy path and error cases\n\n### ✅ Looks good\n### 🔴 Must fix (blocking)\n- [Line N] Issue → Fix suggestion\n### 🟡 Suggestions (non-blocking)\n### ❓ Questions\n**Verdict:** Approved / Request Changes"
+  }
+}

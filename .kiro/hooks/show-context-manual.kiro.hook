@@ -1,0 +1,12 @@
+{
+  "name": "Show project context",
+  "description": "Hiển thị tóm tắt ngữ cảnh dự án hiện tại. Gõ / trong chat để chạy.",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Read and summarize the current project context from:\n1. .kiro/steering/product.md — project name, type, compliance\n2. .kiro/steering/tech.md — full tech stack\n3. .kiro/memory/context.json — last task, modified files, open issues\n\nFormat output as:\n\n📋 PROJECT CONTEXT\n├── 🏷️  Project  : <name>\n├── 🔧 Backend   : <language + framework>\n├── 🖥️  Frontend  : <framework or N/A>\n├── 🗄️  Database  : <db>\n├── ☁️  Platform  : <cloud>\n├── 🔐 Auth      : <auth mechanism>\n├── 📋 Compliance: <requirements>\n│\n├── 📌 Last task : <description + status>\n├── 📁 Modified  : <files>\n├── ⚠️  Open issues: <list>\n└── 🎯 Focus     : <currentFocus>\n\nThen ask: 'What would you like to work on?'"
+  }
+}
