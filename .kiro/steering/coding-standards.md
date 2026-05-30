@@ -1,10 +1,4 @@
----
-inclusion: always
----
-
 # Coding Standards
-
-<!-- /init-project bổ sung phần stack-specific tự động -->
 
 ## Nguyên tắc chung
 
@@ -40,19 +34,50 @@ Ví dụ:
 - Không trả về stack trace trong response production
 - Dùng parameterized query — không ghép chuỗi SQL
 - Rate limiting cho các endpoint public
+- OWASP Top 10 compliance
 
 ## Stack-Specific Standards
 
-<!-- /init-project hoặc /update-agent stack sẽ điền phần này -->
+### TypeScript / NestJS (Backend)
 
-> _Chưa cấu hình — chạy `/init-project` để thiết lập theo stack thực tế_
+| Hạng mục | Quy tắc |
+|----------|---------|
+| Formatter | Prettier |
+| Linter | ESLint (strict) |
+| Style | NestJS conventions + Airbnb base |
+| Test | Jest — unit + e2e |
+| ORM | TypeORM với migration-based schema |
 
-### Template (sẽ được thay thế):
+**Quy tắc NestJS:**
+- Mỗi module chứa: controller, service, entity, DTO, spec file
+- Dùng class-validator + class-transformer cho DTO validation
+- Guard cho authorization, Interceptor cho logging/transform
+- Exception filter tập trung xử lý lỗi
+- Repository pattern cho data access
 
-| Stack | Formatter | Linter | Style Guide |
-|-------|-----------|--------|-------------|
-| Java | — | Checkstyle | Google Java Style |
-| TypeScript | Prettier | ESLint strict | Airbnb / project |
-| Python | Black | Ruff / flake8 | PEP8 + type hints |
-| Go | gofmt | golangci-lint | Effective Go |
-| C# | — | StyleCop | Microsoft conventions |
+### Angular 19 (Frontend)
+
+| Hạng mục | Quy tắc |
+|----------|---------|
+| Formatter | Prettier |
+| Linter | ESLint (angular-eslint) |
+| Style | Angular style guide official |
+| Test | Jest (unit) + Cypress/Playwright (e2e) |
+| CSS | Tailwind CSS utility-first |
+
+**Quy tắc Angular:**
+- Standalone components (Angular 19 default)
+- Signals cho reactive state management
+- Lazy loading cho feature modules
+- Smart/Dumb component pattern
+- Service cho business logic, component chỉ orchestrate
+- RxJS cho async streams, Signals cho synchronous state
+
+### Chung
+
+- Strict TypeScript (`strict: true` trong tsconfig)
+- Không dùng `any` — dùng `unknown` nếu cần
+- Interface cho contract, Type cho union/intersection
+- Enum dùng `const enum` hoặc string literal union
+- Async/await thay vì callback
+- Error handling: custom exception classes

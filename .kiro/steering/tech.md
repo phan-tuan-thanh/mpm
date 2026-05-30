@@ -1,57 +1,56 @@
----
-inclusion: always
----
-
 # Tech Stack
-
-<!-- /init-project sẽ điền tự động. Có thể chỉnh thủ công. -->
 
 ## Backend
 | Hạng mục   | Công nghệ | Phiên bản |
 |------------|-----------|-----------|
-| Ngôn ngữ   | _chưa cấu hình_ | |
-| Framework  | | |
-| Runtime    | | |
+| Ngôn ngữ   | TypeScript | 5.x |
+| Framework  | NestJS | 11 |
+| Runtime    | Node.js | 21+ |
 
 ## Frontend
 | Hạng mục   | Công nghệ | Phiên bản |
 |------------|-----------|-----------|
-| Framework  | _chưa cấu hình / không có_ | |
-| Build tool | | |
-| UI library | | |
+| Framework  | Angular | 19 |
+| Build tool | Angular CLI | 19 |
+| UI library | Tailwind CSS | 4.x |
+| State management | NgRx / Signals | — |
 
 ## Mobile
-> _React Native / Flutter / Native / Không có_
+> Chưa có — nằm trong roadmap Phase 3
 
 ## Data
 | Hạng mục       | Công nghệ | Phiên bản |
 |----------------|-----------|-----------|
-| Database chính | _chưa cấu hình_ | |
-| Cache          | | |
-| Search         | | |
-| Message Queue  | | |
+| Database chính | PostgreSQL | 17 |
+| Cache          | Redis | 7.x |
+| Search         | Chưa cần (roadmap: Elasticsearch) | — |
+| Message Queue  | RabbitMQ | latest |
+| File storage   | Local filesystem (roadmap: S3) | — |
 
 ## Infrastructure
 | Hạng mục       | Công nghệ |
 |----------------|-----------|
-| Cloud platform | _chưa cấu hình_ |
-| Container      | |
-| Orchestration  | |
-| CI/CD          | |
-| Monitoring     | |
+| Cloud platform | Chưa cần (roadmap) |
+| Container      | Docker + Docker Compose |
+| Orchestration  | Chưa cần |
+| CI/CD          | Roadmap (GitHub Actions) |
+| Monitoring     | Log file (roadmap: Prometheus + Grafana) |
 
 ## Authentication & Security
-> _JWT / OAuth2 / LDAP / Azure AD / Keycloak / Khác_
+> Authentik (Identity Provider) — OAuth2/OIDC flow
 
 ## External Integrations
-> _Liệt kê các hệ thống bên ngoài kết nối vào_
+> Chưa có — sẽ bổ sung theo roadmap (OpenAI API, Slack/Teams webhook)
 
 ## API Protocol
-> _REST / GraphQL / gRPC / SOAP / WebSocket_
+> REST
+
+## Real-time
+> WebSocket (Socket.io) — collaboration, notifications
 
 ## Môi trường
 | Tên | URL / Host | Ghi chú |
 |-----|-----------|---------|
-| dev | | |
-| staging | | |
-| prod | | |
+| dev | localhost | Docker Compose local |
+| staging | — | Roadmap |
+| prod | — | Roadmap |

@@ -1,15 +1,74 @@
 {
-  "_note": "Tự động cập nhật sau mỗi task — KHÔNG sửa thủ công thường xuyên",
-  "lastUpdated": "",
-  "lastTask": {
-    "description": "",
-    "status": "",
-    "planFile": ""
+  "project": {
+    "name": "Agile PM",
+    "description": "Nền tảng quản lý dự án Agile toàn diện — task, sprint, tài liệu, cộng tác, AI",
+    "type": ["customer-facing-web-app", "api-microservice"],
+    "language": "vi"
   },
-  "currentFocus": "",
-  "lastModifiedFiles": [],
-  "openIssues": [],
-  "activeSpec": "",
-  "environment": "dev",
-  "notes": ""
+  "team": {
+    "developers": "Kiro agent",
+    "gitWorkflow": "GitHub Flow",
+    "testFramework": "Jest"
+  },
+  "environments": {
+    "dev": {
+      "host": "localhost",
+      "notes": "Docker Compose local"
+    },
+    "staging": {
+      "host": null,
+      "notes": "Roadmap"
+    },
+    "prod": {
+      "host": null,
+      "notes": "Roadmap"
+    }
+  },
+  "roadmap": {
+    "phase1_mvp": {
+      "duration": "3-4 tháng",
+      "features": [
+        "Multi-view (List + Kanban)",
+        "Task CRUD + hierarchy",
+        "Custom fields & labels",
+        "Sprint planning + burndown",
+        "Comments & notifications",
+        "Authentication (Authentik)"
+      ]
+    },
+    "phase2_enhanced": {
+      "duration": "2-3 tháng",
+      "features": [
+        "Gantt view",
+        "Time tracking",
+        "Automation rules",
+        "Document wiki & versioning",
+        "Approval workflow",
+        "Analytics & reporting"
+      ]
+    },
+    "phase3_ai": {
+      "duration": "2-3 tháng",
+      "features": [
+        "AI task assistant",
+        "AI document Q&A",
+        "Traceability matrix",
+        "Release management",
+        "Mobile app"
+      ]
+    }
+  },
+  "decisions": [
+    {
+      "date": "2026-05-30",
+      "topic": "Init project",
+      "decision": "Chọn NestJS 11 + Angular 19 + PostgreSQL 17 + Redis + RabbitMQ + Docker Compose",
+      "reason": "Phù hợp với quy mô dự án, ecosystem TypeScript thống nhất FE/BE"
+    }
+  ],
+  "notes": [
+    "Elasticsearch, S3, CI/CD, Prometheus+Grafana nằm trong roadmap — chưa triển khai ngay",
+    "Authentication qua Authentik (external Identity Provider)",
+    "Developer hiện tại là Kiro agent — cấu trúc code cần rõ ràng, self-documenting"
+  ]
 }

@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Enforce /start-task workflow",
+  "description": "Khi bắt đầu thực hiện một task từ spec, nhắc agent phải tuân thủ quy trình /start-task: tạo plan file, implement theo plan, chạy test, và báo cáo kết quả.",
+  "version": "1",
+  "when": {
+    "type": "preTaskExecution"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Bạn PHẢI tuân thủ workflow /start-task khi thực hiện task này:\n\n1. **Tạo plan file** tại `.kiro/plans/YYYY-MM-DD_<slug-task>.md` mô tả:\n   - Task đang thực hiện (tên + mô tả)\n   - Các file sẽ tạo/sửa\n   - Approach kỹ thuật\n   - Acceptance criteria cần đạt\n\n2. **Implement** theo plan — tạo/sửa code theo đúng thứ tự trong plan\n\n3. **Chạy test** — chạy unit test và/hoặc property test liên quan\n\n4. **Báo cáo kết quả** — tóm tắt những gì đã làm, test pass/fail, và cập nhật trạng thái task\n\nKhông được bỏ qua bước tạo plan file. Nếu task phụ thuộc task khác chưa hoàn thành, hãy thông báo cho user."
+  }
+}

@@ -1,39 +1,46 @@
----
-inclusion: always
----
-
 # Product Context
 
-<!-- /init-project sẽ điền tự động. Có thể chỉnh thủ công. -->
-
 ## Tên dự án
-> _Chưa cấu hình — chạy `/init-project` để thiết lập_
+> Agile PM — Ứng dụng Quản lý Dự án Agile
 
 ## Mô tả
-> _Mục đích và giá trị cốt lõi của sản phẩm_
+> Nền tảng quản lý dự án Agile toàn diện, tích hợp quản lý task, sprint, tài liệu, cộng tác nhóm và trí tuệ nhân tạo — phục vụ các đội phát triển phần mềm vận hành theo Scrum/Kanban.
 
 ## Loại hình
+- [x] Customer-facing web app
+- [x] API / Microservice
 - [ ] Internal tool / back-office
-- [ ] Customer-facing web app
-- [ ] API / Microservice
 - [ ] Mobile app
 - [ ] Data pipeline / ETL
-- [ ] Khác: ___
 
 ## Người dùng mục tiêu
-> _Ai sẽ dùng sản phẩm này?_
+> Scrum Master, Product Owner, Developer, QA Engineer, Stakeholder — các đội phát triển phần mềm theo Agile.
 
 ## Tính năng cốt lõi
-> _Liệt kê 3–5 tính năng chính_
+1. Multi-view task management (List, Kanban, Gantt, Calendar, Table, Mind map)
+2. Sprint planning & tracking (capacity, burndown, velocity)
+3. Document wiki với version control & approval workflow
+4. Cộng tác nhóm real-time (comments, notifications, workload)
+5. AI assistant (story point estimation, task breakdown, document Q&A)
 
 ## Thuật ngữ nghiệp vụ (Glossary)
 
 | Thuật ngữ | Định nghĩa | Ghi chú |
 |-----------|-----------|---------|
-| _ví dụ: BPM_ | _IBM Business Process Manager_ | _v8.6_ |
+| Epic | Nhóm lớn các Story liên quan đến một mục tiêu kinh doanh | Cấp cao nhất trong hierarchy |
+| Story | User story — đơn vị yêu cầu từ góc nhìn người dùng | Thuộc Epic |
+| Task | Công việc cụ thể cần thực hiện | Thuộc Story |
+| Subtask | Phân rã nhỏ hơn của Task | Thuộc Task |
+| Sprint | Chu kỳ phát triển cố định (thường 2 tuần) | |
+| Backlog | Danh sách công việc chưa được lên kế hoạch | |
+| Velocity | Số story point hoàn thành trung bình mỗi sprint | |
+| Burndown | Biểu đồ theo dõi tiến độ sprint | |
+| WIP | Work In Progress — công việc đang thực hiện | |
+| SP | Story Point — đơn vị ước lượng độ phức tạp | |
+| Authentik | Hệ thống Identity Provider dùng cho authentication | |
 
 ## Quy định & Compliance
-> _PCI-DSS / SBV / HIPAA / ISO 27001 / Không có_
+> OWASP Top 10 compliance, data encryption at rest & in transit
 
 ## Ngôn ngữ giao tiếp với agent
-> _Tiếng Việt / English / Song ngữ_
+> Tiếng Việt
