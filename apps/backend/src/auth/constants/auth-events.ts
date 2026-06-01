@@ -47,6 +47,20 @@ export const AuthEvent = {
   ACCESS_DENIED: 'access_denied',
   /** Profile được cập nhật */
   PROFILE_UPDATED: 'profile_updated',
+  /** Tạo project mới */
+  PROJECT_CREATED: 'project_created',
+  /** Cập nhật project */
+  PROJECT_UPDATED: 'project_updated',
+  /** Lưu trữ project */
+  PROJECT_ARCHIVED: 'project_archived',
+  /** Xóa project */
+  PROJECT_DELETED: 'project_deleted',
+  /** Thêm thành viên vào project */
+  MEMBER_ADDED: 'member_added',
+  /** Xóa thành viên khỏi project */
+  MEMBER_REMOVED: 'member_removed',
+  /** Thay đổi vai trò thành viên */
+  MEMBER_ROLE_CHANGED: 'member_role_changed',
 } as const;
 
 /** Type cho giá trị của AuthEvent */

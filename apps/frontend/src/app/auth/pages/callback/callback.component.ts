@@ -160,8 +160,8 @@ export class CallbackComponent implements OnInit {
           this.authService.handleAuthSuccess(response.accessToken);
           this.isLoading.set(false);
 
-          // Redirect to dashboard
-          void this.router.navigate(['/dashboard']);
+          // Redirect to projects
+          void this.router.navigate(['/projects']);
         },
         error: (error: HttpErrorResponse) => {
           this.isLoading.set(false);

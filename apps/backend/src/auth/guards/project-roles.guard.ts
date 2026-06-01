@@ -8,6 +8,9 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Request } from 'express';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { ProjectMember } from '../entities/project-member.entity';
 import type { ProjectRole } from '@mpm/shared-types';
 import { PROJECT_ROLES_KEY } from '../decorators/project-roles.decorator';
 import type { RequestUser } from '../decorators/current-user.decorator';
@@ -32,9 +35,13 @@ import { AuthEvent } from '../constants/auth-events';
 export class ProjectRolesGuard implements CanActivate {
   private readonly logger = new Logger(ProjectRolesGuard.name);
 
-  constructor(private readonly reflector: Reflector) {}
+  constructor(
+    private readonly reflector: Reflector,
+    @InjectRepository(ProjectMember)
+    private readonly projectMemberRepository: Repository<ProjectMember>,
+  ) {}
 
-  canActivate(context: ExecutionContext): boolean {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     // Bước 1: Đọc required project roles từ metadata
     const requiredRoles = this.reflector.getAllAndOverride<ProjectRole[] | undefined>(
       PROJECT_ROLES_KEY,
@@ -67,9 +74,22 @@ export class ProjectRolesGuard implements CanActivate {
     }
 
     // Bước 5: Tìm role của user trong project
-    const userProjectRole = user.projectRoles.find(
+    let userProjectRole = user.projectRoles?.find(
       (entry) => entry.projectId === projectId,
     );
+
+    // Nếu không tìm thấy trong token -> fallback query database (đề phòng token stale khi vừa được thêm vào project)
+    if (!userProjectRole) {
+      const dbMember = await this.projectMemberRepository.findOne({
+        where: { projectId, userId: user.id },
+      });
+      if (dbMember) {
+        userProjectRole = {
+          projectId: dbMember.projectId,
+          role: dbMember.projectRole,
+        };
+      }
+    }
 
     // Bước 6: Kiểm tra user có role phù hợp
     if (!userProjectRole || !requiredRoles.includes(userProjectRole.role)) {

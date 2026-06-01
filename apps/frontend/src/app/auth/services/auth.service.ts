@@ -52,19 +52,33 @@ export class AuthService {
     private readonly router: Router
   ) {}
 
-  /**
-   * Khởi tạo auth state từ token hiện có (nếu có)
-   * Gọi khi app khởi động để restore state
-   */
-  initialize(): void {
+  initialize(): Promise<void> {
     const token = this.tokenService.getAccessToken();
     if (token && !this.tokenService.isTokenExpired()) {
       this.updateUserFromToken(token);
-    } else if (token && this.tokenService.isTokenExpiringSoon()) {
-      // Token sắp hết hạn → thử refresh
-      this.attemptRefresh();
+      return Promise.resolve();
+    } else if (localStorage.getItem('mpm_logged_in') === 'true') {
+      // Chỉ thử refresh từ cookie nếu trước đó đã logged in thành công
+      return new Promise<void>((resolve) => {
+        this.isLoadingSignal.set(true);
+        this.tokenService.refreshToken().subscribe({
+          next: (newToken) => {
+            this.updateUserFromToken(newToken);
+            this.isLoadingSignal.set(false);
+            resolve();
+          },
+          error: () => {
+            this.clearAuthState();
+            this.tokenService.clearTokens();
+            localStorage.removeItem('mpm_logged_in'); // Xóa flag khi refresh thất bại
+            this.isLoadingSignal.set(false);
+            resolve(); // Vẫn resolve để app chạy tiếp, sẽ bị redirect sang trang login bởi guard
+          },
+        });
+      });
     } else {
       this.clearAuthState();
+      return Promise.resolve();
     }
   }
 
@@ -75,6 +89,7 @@ export class AuthService {
   handleAuthSuccess(accessToken: string): void {
     this.tokenService.setAccessToken(accessToken);
     this.updateUserFromToken(accessToken);
+    localStorage.setItem('mpm_logged_in', 'true');
   }
 
   /**
@@ -100,6 +115,7 @@ export class AuthService {
     } finally {
       this.clearAuthState();
       this.tokenService.clearTokens();
+      localStorage.removeItem('mpm_logged_in');
       this.isLoadingSignal.set(false);
       await this.router.navigate(['/auth/login']);
     }
@@ -131,6 +147,7 @@ export class AuthService {
   handleAuthFailure(): void {
     this.clearAuthState();
     this.tokenService.clearTokens();
+    localStorage.removeItem('mpm_logged_in');
     this.isLoadingSignal.set(false);
 
     // Redirect to login ngay lập tức
@@ -196,22 +213,5 @@ export class AuthService {
     this.currentUserSignal.set(null);
   }
 
-  /**
-   * Thử refresh token khi app khởi động
-   */
-  private attemptRefresh(): void {
-    this.isLoadingSignal.set(true);
 
-    this.tokenService.refreshToken().subscribe({
-      next: (newToken) => {
-        this.updateUserFromToken(newToken);
-        this.isLoadingSignal.set(false);
-      },
-      error: () => {
-        this.clearAuthState();
-        this.tokenService.clearTokens();
-        this.isLoadingSignal.set(false);
-      },
-    });
-  }
 }

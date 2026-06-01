@@ -184,7 +184,7 @@ function handleAuthFailure(
   error: unknown,
 ): Observable<never> {
   authService.clearAuthState();
-  router.navigate(['/login']);
+  router.navigate(['/auth/login']);
   return throwError(() => error);
 }
 

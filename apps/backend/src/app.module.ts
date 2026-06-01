@@ -4,7 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { RedisModule } from '@nestjs-modules/ioredis';
 import { AuthModule } from './auth/auth.module';
 import { ProfileModule } from './profile/profile.module';
-import { InvitationModule } from './invitation/invitation.module';
+import { ProjectModule } from './project/project.module';
 import { AuditModule } from './audit/audit.module';
 import { AdminModule } from './admin/admin.module';
 
@@ -45,7 +45,7 @@ import { AdminModule } from './admin/admin.module';
     // Feature modules
     AuthModule,
     ProfileModule,
-    InvitationModule,
+    ProjectModule,
     AuditModule,
     AdminModule,
   ],

@@ -69,6 +69,32 @@
   "notes": [
     "Elasticsearch, S3, CI/CD, Prometheus+Grafana nằm trong roadmap — chưa triển khai ngay",
     "Authentication qua Authentik (external Identity Provider)",
-    "Developer hiện tại là Kiro agent — cấu trúc code cần rõ ràng, self-documenting"
-  ]
+  ],
+  "lastTask": "Epic A — Project Management",
+  "lastModifiedFiles": [
+    "migrations/1717286400000-CreateProjectTable.ts",
+    "apps/backend/src/auth/constants/auth-events.ts",
+    "libs/shared-types/src/index.ts",
+    "libs/shared-types/src/project.types.ts",
+    "apps/backend/src/project/entities/project.entity.ts",
+    "apps/backend/src/project/project.service.ts",
+    "apps/backend/src/project/project.controller.ts",
+    "apps/backend/src/project/members/project-member.service.ts",
+    "apps/backend/src/project/members/project-member.controller.ts",
+    "apps/backend/src/project/project.module.ts",
+    "apps/backend/src/app.module.ts",
+    "apps/frontend/src/main.ts",
+    "apps/frontend/src/app/app.component.ts",
+    "apps/frontend/src/app/layout/app-shell/app-shell.component.ts",
+    "apps/frontend/src/app/layout/app-shell/sidebar/sidebar.component.ts",
+    "apps/frontend/src/app/projects/services/project.service.ts",
+    "apps/frontend/src/app/projects/state/project.store.ts",
+    "apps/frontend/src/app/projects/pages/project-list/project-list.component.ts",
+    "apps/frontend/src/app/projects/pages/create-project/create-project.component.ts",
+    "apps/frontend/src/app/projects/pages/project-settings/project-settings.component.ts",
+    "apps/frontend/src/app/projects/pages/project-settings/general-tab/general-tab.component.ts",
+    "apps/frontend/src/app/projects/pages/project-settings/members-tab/members-tab.component.ts",
+    "apps/frontend/src/app/projects/pages/project-settings/danger-zone-tab/danger-zone-tab.component.ts"
+  ],
+  "openIssues": []
 }

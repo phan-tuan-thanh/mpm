@@ -58,7 +58,7 @@ export const roleGuard: CanActivateFn = (route, state): boolean | UrlTree => {
 
   // Kiểm tra authentication trước
   if (!authService.isAuthenticated()) {
-    return router.createUrlTree(['/login'], {
+    return router.createUrlTree(['/auth/login'], {
       queryParams: { returnUrl: state.url },
     });
   }
