@@ -10,10 +10,11 @@
 ## Frontend
 | Hạng mục   | Công nghệ | Phiên bản |
 |------------|-----------|-----------|
-| Framework  | Angular | 19 |
-| Build tool | Angular CLI | 19 |
-| UI library | PrimeNG + Tailwind CSS | 19.x + 4.x |
-| UI theme | @primeng/themes (Aura preset) | 19.x |
+| Framework  | Angular | 21 |
+| Build tool | Angular CLI | 21 |
+| Language   | TypeScript | 6.x |
+| UI library | PrimeNG + Tailwind CSS | 21.x + 4.x |
+| UI theme | @primeuix/themes (Aura preset) | 2.x |
 | Icons | PrimeIcons | 7.x |
 | State management | NgRx / Signals | — |
 

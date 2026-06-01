@@ -3,7 +3,7 @@ import { provideAnimationsAsync } from '@angular/platform-browser/animations/asy
 import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { providePrimeNG } from 'primeng/config';
-import Aura from '@primeng/themes/aura';
+import Aura from '@primeuix/themes/aura';
 import { AppComponent } from './app/app.component';
 import { authInterceptor } from './app/auth/interceptors/auth.interceptor';
 import { authGuard } from './app/auth/guards/auth.guard';
