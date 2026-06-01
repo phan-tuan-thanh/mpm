@@ -79,7 +79,7 @@ Ví dụ:
 - Table/List: `p-table` / `p-datatable`, Chart: `p-chart` (dựa trên Chart.js)
 - Toast/Alert: `p-toast` + `MessageService`, Loading: `p-skeleton` / `p-progressbar`
 - Layout: kết hợp Tailwind utility classes với PrimeNG components — không dùng PrimeFlex
-- Theme preset: Aura (cấu hình trong `providePrimeNG`), dark mode qua class `.dark` trên `<html>`
+- Theme preset: Aura từ `@primeuix/themes/aura` (cấu hình trong `providePrimeNG`), dark mode qua class `.dark` trên `<html>`
 - Icons: dùng PrimeIcons (`pi pi-*`) — không mix với icon lib khác
 
 ### Chung

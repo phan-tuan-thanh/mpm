@@ -13,7 +13,6 @@
     "useDefineForClassFields": false,
     "declaration": false,
     "sourceMap": true,
-    "baseUrl": ".",
     "paths": {
       "@mpm/shared-types": ["../../libs/shared-types/src"],
       "@mpm/shared-types/*": ["../../libs/shared-types/src/*"]
