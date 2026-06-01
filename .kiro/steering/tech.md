@@ -12,7 +12,7 @@
 |------------|-----------|-----------|
 | Framework  | Angular | 21 |
 | Build tool | Angular CLI | 21 |
-| Language   | TypeScript | 6.x |
+| Language   | TypeScript | 5.9.x |
 | UI library | PrimeNG + Tailwind CSS | 21.x + 4.x |
 | UI theme | @primeuix/themes (Aura preset) | 2.x |
 | Icons | PrimeIcons | 7.x |
