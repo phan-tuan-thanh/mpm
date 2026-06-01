@@ -73,6 +73,15 @@ Ví dụ:
 - Service cho business logic, component chỉ orchestrate
 - RxJS cho async streams, Signals cho synchronous state
 
+**UI Components (PrimeNG):**
+- LUÔN dùng PrimeNG components — không tự viết component thay thế khi PrimeNG đã có
+- Button: `p-button`, Form: `p-inputtext` / `p-select` / `p-checkbox`, Modal: `p-dialog`
+- Table/List: `p-table` / `p-datatable`, Chart: `p-chart` (dựa trên Chart.js)
+- Toast/Alert: `p-toast` + `MessageService`, Loading: `p-skeleton` / `p-progressbar`
+- Layout: kết hợp Tailwind utility classes với PrimeNG components — không dùng PrimeFlex
+- Theme preset: Aura (cấu hình trong `providePrimeNG`), dark mode qua class `.dark` trên `<html>`
+- Icons: dùng PrimeIcons (`pi pi-*`) — không mix với icon lib khác
+
 ### Chung
 
 - Strict TypeScript (`strict: true` trong tsconfig)
