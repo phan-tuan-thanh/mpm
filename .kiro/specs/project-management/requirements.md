@@ -4,6 +4,8 @@
 
 Tài liệu này mô tả các yêu cầu cho tính năng **Project Management** của ứng dụng Agile PM. Đây là Epic A trong Phase 1 MVP, cung cấp khả năng tạo và quản lý project, mời/quản lý thành viên theo vai trò, cấu hình project settings, và điều hướng qua app shell có sidebar collapsible. Module này tách hoàn toàn khỏi Auth module.
 
+> **Chuẩn hiển thị UI (format ngày/giờ/số, list page requirements, confirm dialog):** Xem [`/kiro/steering/ui-standards.md`](../../steering/ui-standards.md) — áp dụng toàn hệ thống, không đặc thù cho Epic A.
+
 ## Glossary
 
 - **Project**: Đơn vị làm việc cấp cao nhất trong hệ thống, chứa các tasks, sprints, và thành viên
@@ -113,14 +115,3 @@ Tài liệu này mô tả các yêu cầu cho tính năng **Project Management**
 4. Tab Danger Zone SHALL có hai hành động riêng biệt: (a) Archive Project — nút "Archive" với confirm dialog; (b) Delete Project — nút "Delete Project" màu đỏ với confirm dialog yêu cầu gõ Project Key để xác nhận
 5. IF người dùng không có quyền Scrum_Master hoặc Admin, THEN THE Project_Client SHALL vẫn cho phép xem trang settings nhưng ẩn các control chỉnh sửa (read-only mode)
 
-### Requirement 8: UI Standards và Định dạng hiển thị
-
-**User Story:** Là một người dùng, tôi muốn các thông tin ngày tháng, số liệu được hiển thị nhất quán và dễ đọc trên toàn ứng dụng.
-
-#### Acceptance Criteria
-
-1. THE Project_Client SHALL hiển thị tất cả ngày tháng theo định dạng `dd/MM/yyyy` (ví dụ: 02/06/2026)
-2. THE Project_Client SHALL hiển thị thời gian đầy đủ theo định dạng `HH:mm:ss` (ví dụ: 14:30:05) khi cần hiển thị thời gian kèm theo ngày
-3. THE Project_Client SHALL hiển thị các số nguyên lớn với dấu phân cách phần nghìn (ví dụ: 1,000 — 10,000 — 1,000,000)
-4. THE Project_Client SHALL hiển thị các tỷ lệ và phần trăm với tối đa 2 chữ số thập phân (ví dụ: 12.50% — không hiển thị 12.5000%)
-5. MỌI trang danh sách (list/table) trong ứng dụng SHALL cung cấp: (a) ít nhất một filter (tìm kiếm theo tên và/hoặc filter theo trạng thái); (b) multiple select để chọn nhiều rows; (c) confirm dialog trước khi thực hiện xóa hàng loạt

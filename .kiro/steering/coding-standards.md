@@ -82,6 +82,12 @@ Ví dụ:
 - Theme preset: Aura từ `@primeuix/themes/aura` (cấu hình trong `providePrimeNG`), dark mode qua class `.dark` trên `<html>`
 - Icons: dùng PrimeIcons (`pi pi-*`) — không mix với icon lib khác
 
+**Chuẩn hiển thị (bắt buộc áp dụng toàn bộ frontend):**
+> Xem chi tiết tại [`ui-standards.md`](ui-standards.md)
+- Ngày: `dd/MM/yyyy` — Giờ đầy đủ: `HH:mm:ss`
+- Số: phân cách phần nghìn — Tỷ lệ/phần trăm: tối đa 2 chữ số thập phân
+- Trang danh sách: bắt buộc có filter + multiple select + confirm dialog trước khi xóa
+
 ### Chung
 
 - Strict TypeScript (`strict: true` trong tsconfig)

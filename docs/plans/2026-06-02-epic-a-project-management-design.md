@@ -157,14 +157,9 @@ member_added, member_removed, member_role_changed
 
 ## 5. UI Standards (toàn dự án)
 
-| Item | Format |
-|------|--------|
-| Ngày | `dd/MM/yyyy` |
-| Thời gian | `HH:mm:ss` |
-| Số | Phân cách phần nghìn (1,000,000) |
-| Tỷ lệ/phần trăm | Tối đa 2 số lẻ (12.50%) |
-| List pages | Filter đầy đủ + multiple select + confirm trước delete |
-| Sidebar | Collapsible (icon-only khi collapsed) |
+> Xem chi tiết tại `.kiro/steering/ui-standards.md` — chuẩn áp dụng toàn hệ thống.
+
+Tóm tắt: `dd/MM/yyyy` · `HH:mm:ss` · số phân nghìn · tỷ lệ ≤ 2 số lẻ · list pages: filter + bulk select + confirm delete · sidebar collapsible.
 
 ---
 
