@@ -29,7 +29,7 @@ Tài liệu thiết kế kỹ thuật cho tính năng **Project Management** (Ep
 
 ```mermaid
 graph TB
-    subgraph Client["Frontend (Angular 19)"]
+    subgraph Client[Frontend Angular 19]
         AppShell[AppShell Component]
         Sidebar[Sidebar + Project Switcher]
         ProjectList[Project List Page]
@@ -38,21 +38,21 @@ graph TB
         ProjectStore[Project Signal Store]
     end
 
-    subgraph Gateway["API Layer (NestJS 11)"]
+    subgraph Gateway[API Layer NestJS 11]
         ProjectController[Project Controller]
         MemberController[Project Member Controller]
-        JwtGuard[JWT Auth Guard ← reuse]
-        ProjectRolesGuard[Project Roles Guard ← reuse]
+        JwtGuard[JWT Auth Guard]
+        ProjectRolesGuard[Project Roles Guard]
     end
 
-    subgraph Services["Service Layer"]
+    subgraph Services[Service Layer]
         ProjectService[Project Service]
         ProjectMemberService[Project Member Service]
-        AuditService[Audit Service ← reuse]
-        TokenService[Token Service ← reuse]
+        AuditService[Audit Service]
+        TokenService[Token Service]
     end
 
-    subgraph Data["Data Layer"]
+    subgraph Data[Data Layer]
         PostgreSQL[(PostgreSQL 17)]
     end
 
