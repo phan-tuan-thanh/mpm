@@ -4,7 +4,7 @@
 
 Triển khai Epic A — Project Management cho Agile PM. Bao gồm: database migration cho bảng `projects`, backend `ProjectModule` + `ProjectMemberModule`, frontend `AppShell` với collapsible sidebar, và các pages: Project List, Create Project, Project Settings (General/Members/Danger Zone). InvitationModule cũ sẽ bị xóa sau khi ProjectMemberModule hoạt động.
 
-Stack: NestJS 11 + TypeORM + PostgreSQL 17 (backend), Angular 19 + Signals + PrimeNG 21 + Tailwind CSS 4 (frontend).
+Stack: NestJS 11 + TypeORM + PostgreSQL 17 (backend), Angular 21 + Signals + PrimeNG 21 + Tailwind CSS 4 (frontend).
 
 ## Tasks
 

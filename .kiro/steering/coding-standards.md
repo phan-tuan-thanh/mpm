@@ -55,7 +55,7 @@ Ví dụ:
 - Exception filter tập trung xử lý lỗi
 - Repository pattern cho data access
 
-### Angular 19 (Frontend)
+### Angular 21 (Frontend)
 
 | Hạng mục | Quy tắc |
 |----------|---------|
@@ -66,7 +66,7 @@ Ví dụ:
 | CSS | Tailwind CSS utility-first |
 
 **Quy tắc Angular:**
-- Standalone components (Angular 19 default)
+- Standalone components (Angular 21 default)
 - Signals cho reactive state management
 - Lazy loading cho feature modules
 - Smart/Dumb component pattern

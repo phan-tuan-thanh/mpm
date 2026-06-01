@@ -29,7 +29,7 @@ Tài liệu thiết kế kỹ thuật cho tính năng **User Authentication & Au
 
 ```mermaid
 graph TB
-    subgraph Client["Frontend (Angular 19)"]
+    subgraph Client["Frontend (Angular 21)"]
         AuthClient[Auth Module]
         TokenInterceptor[HTTP Interceptor]
         AuthGuard_FE[Route Guard]

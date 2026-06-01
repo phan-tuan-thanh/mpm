@@ -12,7 +12,7 @@ project-root/
 │   └── plans/             ← File kế hoạch task (tự động tạo)
 ├── apps/
 │   ├── backend/           ← NestJS API (monorepo structure)
-│   └── frontend/          ← Angular 19 SPA
+│   └── frontend/          ← Angular 21 SPA
 ├── libs/                  ← Shared libraries (types, utils, DTOs)
 ├── docker/                ← Dockerfiles & docker-compose
 ├── docs/                  ← Tài liệu kỹ thuật & API docs

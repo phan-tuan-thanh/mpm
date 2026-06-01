@@ -29,7 +29,7 @@ Tài liệu thiết kế kỹ thuật cho tính năng **Project Management** (Ep
 
 ```mermaid
 graph TB
-    subgraph Client[Frontend Angular 19]
+    subgraph Client[Frontend Angular 21]
         AppShell[AppShell Component]
         Sidebar[Sidebar + Project Switcher]
         ProjectList[Project List Page]

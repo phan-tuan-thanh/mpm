@@ -2,7 +2,7 @@
 
 ## Overview
 
-Triển khai hệ thống xác thực và phân quyền cho Agile PM sử dụng Authentik (OAuth2/OIDC), JWT token management với RS256, RBAC hai cấp (System + Project), session management qua Redis, rate limiting, và audit logging. Backend NestJS 11, Frontend Angular 19, PostgreSQL 17, Redis 7.x.
+Triển khai hệ thống xác thực và phân quyền cho Agile PM sử dụng Authentik (OAuth2/OIDC), JWT token management với RS256, RBAC hai cấp (System + Project), session management qua Redis, rate limiting, và audit logging. Backend NestJS 11, Frontend Angular 21, PostgreSQL 17, Redis 7.x.
 
 ## Tasks
 
@@ -326,7 +326,7 @@ Triển khai hệ thống xác thực và phân quyền cho Agile PM sử dụng
 - Property tests validate universal correctness properties defined in the design document (23 properties total)
 - Unit tests validate specific examples and edge cases
 - Backend uses NestJS 11 + TypeScript 5.x + TypeORM + Redis (ioredis)
-- Frontend uses Angular 19 + Signals + Tailwind CSS 4.x
+- Frontend uses Angular 21 + Signals + Tailwind CSS 4.x
 - Testing: Jest + fast-check (property-based testing)
 - All tokens stored securely: Access Token in memory, Refresh Token in httpOnly cookie
 - Redis keys follow patterns defined in design: session:{userId}:{sessionId}, refresh_blacklist:{tokenHash}, forced_logout:{userId}, rate:login:{ip}, rate:refresh:{userId}
