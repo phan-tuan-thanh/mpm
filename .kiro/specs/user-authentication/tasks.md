@@ -6,14 +6,14 @@ Triển khai hệ thống xác thực và phân quyền cho Agile PM sử dụng
 
 ## Tasks
 
-- [ ] 1. Infrastructure setup và database migrations
-  - [ ] 1.1 Tạo Docker Compose services cho PostgreSQL, Redis, và Authentik
+- [x] 1. Infrastructure setup và database migrations
+  - [x] 1.1 Tạo Docker Compose services cho PostgreSQL, Redis, và Authentik
     - Thêm services `postgres`, `redis`, `authentik-server`, `authentik-worker` vào `docker/docker-compose.yml`
     - Cấu hình environment variables cho kết nối giữa các services
     - Tạo `.env.example` với tất cả biến môi trường cần thiết (DB credentials, Redis URL, Authentik client ID/secret, JWT keys path)
     - _Requirements: 1.1, 9.4, 12.3_
 
-  - [ ] 1.2 Tạo database migrations cho User, ProjectMember, Invitation, AuditLog entities
+  - [x] 1.2 Tạo database migrations cho User, ProjectMember, Invitation, AuditLog entities
     - Tạo migration file trong `migrations/` với TypeORM CLI
     - Tạo bảng `users` với columns: id (UUID PK), external_id (unique), email (unique), display_name, avatar_url, system_role (enum), is_active (boolean), created_at, updated_at
     - Tạo bảng `project_members` với columns: id (UUID PK), user_id (FK), project_id (UUID), project_role (enum), created_at; unique constraint trên (user_id, project_id)
@@ -22,18 +22,18 @@ Triển khai hệ thống xác thực và phân quyền cho Agile PM sử dụng
     - Tạo tất cả indexes theo design: idx_user_external_id, idx_user_email, idx_project_member_unique, idx_project_member_project, idx_invitation_token, idx_invitation_project_status, idx_invitation_email_project, idx_audit_log_user, idx_audit_log_event_type, idx_audit_log_timestamp, idx_audit_log_composite
     - _Requirements: 1.4, 5.1, 7.1, 10.3_
 
-  - [ ] 1.3 Tạo shared interfaces, types, và constants
+  - [x] 1.3 Tạo shared interfaces, types, và constants
     - Tạo `libs/shared-types/src/auth.types.ts` với interfaces: JwtPayload, ProjectRoleEntry, SessionData, ErrorResponse
     - Tạo type definitions: SystemRole, ProjectRole, Resource, Action, PermissionMatrix
     - Tạo `apps/backend/src/auth/constants/permission-matrix.ts` với permission matrix theo design
     - Tạo `apps/backend/src/auth/constants/auth-events.ts` với enum cho audit event types
     - _Requirements: 3.2, 4.1, 5.5_
 
-- [ ] 2. Checkpoint - Verify infrastructure
+- [x] 2. Checkpoint - Verify infrastructure
   - Ensure Docker Compose starts successfully, migrations run without errors, và shared types compile. Ask the user if questions arise.
 
-- [ ] 3. Auth module core — Token Service và Session Service
-  - [ ] 3.1 Implement Token Service (JWT sign/verify với RS256)
+- [x] 3. Auth module core — Token Service và Session Service
+  - [x] 3.1 Implement Token Service (JWT sign/verify với RS256)
     - Tạo `apps/backend/src/auth/token.service.ts`
     - Implement `signAccessToken(payload: JwtPayload): string` — ký JWT với RS256 private key, exp = 15 phút
     - Implement `verifyAccessToken(token: string): JwtPayload` — verify signature với public key, check exp
@@ -48,7 +48,7 @@ Triển khai hệ thống xác thực và phân quyền cho Agile PM sử dụng
     - **Property 3: Invalid Token Rejection** — Token bị tamper signature, expired, hoặc malformed phải bị reject
     - **Validates: Requirements 3.1, 3.2, 3.7, 1.8, 8.3**
 
-  - [ ] 3.3 Implement Session Service (Redis session management)
+  - [x] 3.3 Implement Session Service (Redis session management)
     - Tạo `apps/backend/src/auth/session.service.ts`
     - Implement `createSession(userId, deviceInfo, ipAddress, refreshTokenHash): SessionData` — lưu vào Redis với TTL 7 ngày
     - Implement `getSession(userId, sessionId): SessionData | null`
@@ -68,8 +68,8 @@ Triển khai hệ thống xác thực và phân quyền cho Agile PM sử dụng
     - **Property 12: Forced-Logout Flag Blocks All Requests** — User trong forced-logout list phải bị reject mọi request
     - **Validates: Requirements 2.1, 2.5, 11.1, 11.2, 11.3, 11.5**
 
-- [ ] 4. Auth module — Guards và Decorators
-  - [ ] 4.1 Implement JWT Auth Guard và decorators
+- [x] 4. Auth module — Guards và Decorators
+  - [x] 4.1 Implement JWT Auth Guard và decorators
     - Tạo `apps/backend/src/auth/guards/jwt-auth.guard.ts` — validate Access Token từ Authorization header (Bearer scheme)
     - Kiểm tra forced-logout list trước khi cho phép request
     - Gắn user info (id, email, systemRole, projectRoles) vào request context
@@ -78,7 +78,7 @@ Triển khai hệ thống xác thực và phân quyền cho Agile PM sử dụng
     - Trả về error codes phân biệt: TOKEN_MISSING, TOKEN_EXPIRED, TOKEN_INVALID, SESSION_REVOKED
     - _Requirements: 8.1, 8.2, 8.3, 8.7, 11.5_
 
-  - [ ] 4.2 Implement Roles Guard (System Role)
+  - [x] 4.2 Implement Roles Guard (System Role)
     - Tạo `apps/backend/src/auth/guards/roles.guard.ts`
     - Tạo `apps/backend/src/auth/decorators/roles.decorator.ts` — @Roles('Admin') decorator
     - Check user.systemRole against required roles
@@ -86,7 +86,7 @@ Triển khai hệ thống xác thực và phân quyền cho Agile PM sử dụng
     - Ghi Audit_Log khi access bị denied
     - _Requirements: 4.1, 4.5, 8.4, 8.8_
 
-  - [ ] 4.3 Implement Project Roles Guard
+  - [x] 4.3 Implement Project Roles Guard
     - Tạo `apps/backend/src/auth/guards/project-roles.guard.ts`
     - Tạo `apps/backend/src/auth/decorators/project-roles.decorator.ts` — @ProjectRoles('Scrum_Master', 'Product_Owner')
     - Extract projectId từ route params (`:projectId`) hoặc request body
@@ -102,11 +102,11 @@ Triển khai hệ thống xác thực và phân quyền cho Agile PM sử dụng
     - **Property 9: @Public Decorator Bypasses Authentication** — Public endpoint cho phép request không có token
     - **Validates: Requirements 4.1, 4.5, 5.4, 5.5, 5.6, 8.4, 8.7, 8.8**
 
-- [ ] 5. Checkpoint - Verify core auth services
+- [x] 5. Checkpoint - Verify core auth services
   - Ensure all tests pass cho Token Service, Session Service, và Guards. Ask the user if questions arise.
 
-- [ ] 6. Auth module — Controller và OAuth flow
-  - [ ] 6.1 Implement Auth Service (orchestrates auth flow)
+- [x] 6. Auth module — Controller và OAuth flow
+  - [x] 6.1 Implement Auth Service (orchestrates auth flow)
     - Tạo `apps/backend/src/auth/auth.service.ts`
     - Implement `handleCallback(code, state)` — exchange code với Authentik, validate ID token, upsert user, generate tokens, create session
     - Implement `refreshTokens(refreshToken, ipAddress, deviceInfo)` — validate refresh token, rotation, blacklist old token
@@ -116,7 +116,7 @@ Triển khai hệ thống xác thực và phân quyền cho Agile PM sử dụng
     - Timeout 10 giây cho Authentik calls, graceful degradation cho logout
     - _Requirements: 1.3, 1.4, 1.5, 1.7, 1.8, 1.10, 2.1, 2.7, 3.4, 3.5, 11.1, 11.2, 11.3_
 
-  - [ ] 6.2 Implement Auth Controller (REST endpoints)
+  - [x] 6.2 Implement Auth Controller (REST endpoints)
     - Tạo `apps/backend/src/auth/auth.controller.ts`
     - `GET /api/auth/login` — @Public(), redirect to Authentik authorize URL với state parameter
     - `POST /api/auth/callback` — @Public(), exchange code, return accessToken + set refreshToken cookie
@@ -127,7 +127,7 @@ Triển khai hệ thống xác thực và phân quyền cho Agile PM sử dụng
     - Set cookie flags: httpOnly, Secure, SameSite=Strict, Path=/api/auth/refresh, Max-Age=604800
     - _Requirements: 1.1, 1.2, 1.5, 1.6, 2.1, 2.4, 2.5, 12.2_
 
-  - [ ] 6.3 Implement DTOs và validation
+  - [x] 6.3 Implement DTOs và validation
     - Tạo `apps/backend/src/auth/dto/auth-callback.dto.ts` — validate code (string, required), state (string, required)
     - Tạo `apps/backend/src/auth/dto/login-response.dto.ts` — accessToken field
     - Tạo `apps/backend/src/auth/dto/session-list.dto.ts` — array of session info
@@ -142,8 +142,8 @@ Triển khai hệ thống xác thực và phân quyền cho Agile PM sử dụng
     - **Property 23: Email Sync from Authentik on Login** — Email trong DB phải sync với Authentik email claim
     - **Validates: Requirements 1.9, 3.4, 3.5, 4.2, 6.3**
 
-- [ ] 7. Rate Limiting module
-  - [ ] 7.1 Implement Rate Limit Service và Guard
+- [x] 7. Rate Limiting module
+  - [x] 7.1 Implement Rate Limit Service và Guard
     - Tạo `apps/backend/src/rate-limit/rate-limit.module.ts`
     - Tạo `apps/backend/src/rate-limit/rate-limit.service.ts` — Redis counter với sliding window
     - Implement `checkLoginRateLimit(ip): { allowed: boolean, retryAfter?: number }` — max 5 attempts / 15 min per IP
@@ -159,8 +159,8 @@ Triển khai hệ thống xác thực và phân quyền cho Agile PM sử dụng
     - **Property 13: Rate Limiter Enforces Configured Limits** — Sau 5 failed logins, attempt thứ 6 phải bị reject với 429 và Retry-After header chính xác
     - **Validates: Requirements 9.1, 9.2, 9.3**
 
-- [ ] 8. Profile module
-  - [ ] 8.1 Implement Profile Service và Controller
+- [x] 8. Profile module
+  - [x] 8.1 Implement Profile Service và Controller
     - Tạo `apps/backend/src/profile/profile.module.ts`, `profile.service.ts`, `profile.controller.ts`
     - `GET /api/profile` — trả về display_name, email, avatar_url, system_role, danh sách projects + roles
     - `PATCH /api/profile` — update display_name (1-100 chars) và/hoặc avatar_url (http/https, max 2048 chars)
@@ -173,8 +173,8 @@ Triển khai hệ thống xác thực và phân quyền cho Agile PM sử dụng
     - **Property 14: Profile Validation Accepts Valid and Rejects Invalid Input** — display_name 1-100 chars accepted, empty/over 100 rejected; avatar URL http/https ≤2048 accepted, otherwise rejected
     - **Validates: Requirements 6.2, 6.4**
 
-- [ ] 9. Invitation module
-  - [ ] 9.1 Implement Invitation Service và Controller
+- [x] 9. Invitation module
+  - [x] 9.1 Implement Invitation Service và Controller
     - Tạo `apps/backend/src/invitation/invitation.module.ts`, `invitation.service.ts`, `invitation.controller.ts`
     - `POST /api/projects/:projectId/invitations` — @ProjectRoles('Scrum_Master') hoặc @Roles('Admin'), tạo invitation với token random 32+ chars, expires 7 ngày
     - `GET /api/projects/:projectId/invitations` — list invitations với pagination (max 50/page)
@@ -192,8 +192,8 @@ Triển khai hệ thống xác thực và phân quyền cho Agile PM sử dụng
     - **Property 16: Duplicate Invitation Prevention** — Email đã là member hoặc có pending invite → reject với 409
     - **Validates: Requirements 7.3, 7.5, 7.6, 7.7, 7.9**
 
-- [ ] 10. Audit Log module
-  - [ ] 10.1 Implement Audit Service và Controller
+- [x] 10. Audit Log module
+  - [x] 10.1 Implement Audit Service và Controller
     - Tạo `apps/backend/src/audit/audit.module.ts`, `audit.service.ts`, `audit.controller.ts`
     - Implement `log(eventType, userId, ipAddress, userAgent, metadata): void` — non-blocking write to PostgreSQL
     - Implement error handling: nếu write thất bại, log to file system, không block operation gốc
@@ -208,8 +208,8 @@ Triển khai hệ thống xác thực và phân quyền cho Agile PM sử dụng
     - **Property 18: Audit Log Query Filtering and Pagination** — Query với filters trả về đúng records matching, ordered by timestamp desc, count ≤ page_size
     - **Validates: Requirements 10.1, 10.2, 10.4**
 
-- [ ] 11. Admin module — User management
-  - [ ] 11.1 Implement Admin Controller
+- [x] 11. Admin module — User management
+  - [x] 11.1 Implement Admin Controller
     - Tạo admin endpoints trong auth module hoặc separate admin module
     - `GET /api/admin/users` — @Roles('Admin'), list all users
     - `PATCH /api/admin/users/:id/role` — @Roles('Admin'), change system role, revoke all tokens, audit log
@@ -217,11 +217,11 @@ Triển khai hệ thống xác thực và phân quyền cho Agile PM sử dụng
     - Implement last-admin protection: không cho phép hạ role Admin cuối cùng
     - _Requirements: 4.1, 4.3, 4.4, 11.2_
 
-- [ ] 12. Checkpoint - Verify all backend modules
+- [x] 12. Checkpoint - Verify all backend modules
   - Ensure all tests pass cho tất cả backend modules. Ask the user if questions arise.
 
-- [ ] 13. Security middleware và global configuration
-  - [ ] 13.1 Implement Security Headers và CORS
+- [x] 13. Security middleware và global configuration
+  - [x] 13.1 Implement Security Headers và CORS
     - Tạo NestJS middleware hoặc interceptor cho security headers: X-Content-Type-Options: nosniff, X-Frame-Options: DENY, Strict-Transport-Security: max-age=31536000; includeSubDomains
     - Configure CORS policy: chỉ allow origins từ environment variable `ALLOWED_ORIGINS`
     - Reject requests từ origin không được phép với HTTP 403
@@ -233,15 +233,15 @@ Triển khai hệ thống xác thực và phân quyền cho Agile PM sử dụng
     - **Property 21: Security Headers Present in All Responses** — Mọi response phải có X-Content-Type-Options: nosniff, X-Frame-Options: DENY, HSTS header
     - **Validates: Requirements 12.4, 12.5, 12.6**
 
-  - [ ] 13.3 Implement Global Exception Filter
+  - [x] 13.3 Implement Global Exception Filter
     - Tạo `apps/backend/src/auth/filters/http-exception.filter.ts`
     - Format tất cả error responses theo ErrorResponse interface: statusCode, error, message, errorCode, timestamp
     - Trigger audit log cho 401/403 responses (non-blocking)
     - Không trả về stack trace trong production
     - _Requirements: 1.7, 8.3, 8.8_
 
-- [ ] 14. Auth Module wiring (NestJS module registration)
-  - [ ] 14.1 Wire tất cả components vào Auth Module
+- [x] 14. Auth Module wiring (NestJS module registration)
+  - [x] 14.1 Wire tất cả components vào Auth Module
     - Tạo `apps/backend/src/auth/auth.module.ts` — register providers, controllers, guards, imports
     - Register JwtAuthGuard as global guard (APP_GUARD)
     - Register RateLimitGuard trên auth endpoints
@@ -250,8 +250,8 @@ Triển khai hệ thống xác thực và phân quyền cho Agile PM sử dụng
     - Export services cho các module khác sử dụng (AuditService, RbacService)
     - _Requirements: 8.1, 8.9_
 
-- [ ] 15. Frontend — Auth module core
-  - [ ] 15.1 Implement Angular Auth Service và Token Service
+- [x] 15. Frontend — Auth module core
+  - [x] 15.1 Implement Angular Auth Service và Token Service
     - Tạo `apps/frontend/src/app/auth/services/auth.service.ts` — Signal-based auth state (isAuthenticated, currentUser, isLoading)
     - Tạo `apps/frontend/src/app/auth/services/token.service.ts` — lưu Access Token trong memory (private variable), không dùng localStorage/sessionStorage
     - Implement `getAccessToken(): string | null`
@@ -261,20 +261,20 @@ Triển khai hệ thống xác thực và phân quyền cho Agile PM sử dụng
     - Implement concurrent refresh protection: chỉ 1 refresh request tại một thời điểm, các request khác chờ kết quả
     - _Requirements: 1.6, 3.3, 3.8, 3.9, 12.1_
 
-  - [ ] 15.2 Implement Auth Interceptor
+  - [x] 15.2 Implement Auth Interceptor
     - Tạo `apps/frontend/src/app/auth/interceptors/auth.interceptor.ts`
     - Attach Bearer token vào mọi request (trừ auth endpoints)
     - Handle 401 response: nếu TOKEN_EXPIRED → trigger refresh; nếu khác → clear state, redirect to login
     - Handle 429 response: hiển thị countdown timer từ Retry-After header
     - _Requirements: 3.3, 3.8, 11.4_
 
-  - [ ] 15.3 Implement Auth Guard và Role Guard (Angular)
+  - [x] 15.3 Implement Auth Guard và Role Guard (Angular)
     - Tạo `apps/frontend/src/app/auth/guards/auth.guard.ts` — CanActivate, redirect to login nếu chưa authenticated
     - Tạo `apps/frontend/src/app/auth/guards/role.guard.ts` — check system role hoặc project role
     - _Requirements: 8.1, 8.4_
 
-- [ ] 16. Frontend — Login và Callback pages
-  - [ ] 16.1 Implement Login Page
+- [x] 16. Frontend — Login và Callback pages
+  - [x] 16.1 Implement Login Page
     - Tạo `apps/frontend/src/app/auth/pages/login/login.component.ts` — standalone component
     - Hiển thị nút "Đăng nhập với Authentik"
     - On click: generate state parameter (crypto.randomUUID), save to sessionStorage, redirect to Authentik authorize URL
@@ -282,7 +282,7 @@ Triển khai hệ thống xác thực và phân quyền cho Agile PM sử dụng
     - Tailwind CSS styling
     - _Requirements: 1.1, 1.2_
 
-  - [ ] 16.2 Implement Callback Page
+  - [x] 16.2 Implement Callback Page
     - Tạo `apps/frontend/src/app/auth/pages/callback/callback.component.ts` — standalone component
     - Extract code và state từ URL query params
     - Verify state matches sessionStorage value → nếu không khớp, redirect to login với error
@@ -291,16 +291,16 @@ Triển khai hệ thống xác thực và phân quyền cho Agile PM sử dụng
     - On error: hiển thị error message phân loại (invalid_code, provider_error, timeout)
     - _Requirements: 1.2, 1.6, 1.7, 1.9, 1.10_
 
-  - [ ] 16.3 Implement Auth Routes (lazy-loaded)
+  - [x] 16.3 Implement Auth Routes (lazy-loaded)
     - Tạo `apps/frontend/src/app/auth/auth.routes.ts` — lazy-loaded routes cho /login, /callback
     - Tạo `apps/frontend/src/app/auth/state/auth.store.ts` — Signal-based store cho auth state
     - _Requirements: 1.1, 1.6_
 
-- [ ] 17. Checkpoint - Verify frontend auth flow
+- [x] 17. Checkpoint - Verify frontend auth flow
   - Ensure frontend components compile, unit tests pass. Ask the user if questions arise.
 
-- [ ] 18. Integration wiring và E2E tests
-  - [ ] 18.1 Wire frontend và backend together
+- [x] 18. Integration wiring và E2E tests
+  - [x] 18.1 Wire frontend và backend together
     - Configure Angular proxy config cho development (proxy `/api` to NestJS backend)
     - Configure environment files với Authentik URLs, API base URL
     - Verify full OAuth flow: login → Authentik → callback → token → dashboard
@@ -315,7 +315,7 @@ Triển khai hệ thống xác thực và phân quyền cho Agile PM sử dụng
     - Test invitation flow (create, accept, expire)
     - _Requirements: 1.1-1.10, 2.1-2.7, 3.1-3.9, 4.1-4.5, 5.1-5.7, 7.1-7.9, 9.1-9.6_
 
-- [ ] 19. Final checkpoint - Ensure all tests pass
+- [x] 19. Final checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes
