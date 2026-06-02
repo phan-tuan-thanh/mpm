@@ -32,6 +32,7 @@ describe('ProjectService', () => {
 
     dataSource = {
       createQueryRunner: jest.fn().mockReturnValue(queryRunner),
+      query: jest.fn().mockResolvedValue([]),
     };
 
     const module: TestingModule = await Test.createTestingModule({

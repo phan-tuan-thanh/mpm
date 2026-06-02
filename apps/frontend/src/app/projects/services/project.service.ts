@@ -9,6 +9,15 @@ import {
   UpdateProjectDto,
   AddMemberDto,
   UpdateMemberRoleDto,
+  UpdateFeaturesDto,
+  ProjectFeatures,
+  ProjectStateGrouped,
+  ProjectState,
+  CreateStateDto,
+  UpdateStateDto,
+  ReorderStatesDto,
+  MigrateStateDto,
+  UpdateEstimateConfigDto,
 } from '@mpm/shared-types';
 
 @Injectable({
@@ -24,15 +33,13 @@ export class ProjectService {
   getProjects(filter?: {
     name?: string;
     status?: string;
-    startDate?: string;
-    endDate?: string;
+    network?: string;
   }): Observable<ProjectListItem[]> {
     let params = new HttpParams();
     if (filter) {
       if (filter.name) params = params.set('name', filter.name);
       if (filter.status) params = params.set('status', filter.status);
-      if (filter.startDate) params = params.set('startDate', filter.startDate);
-      if (filter.endDate) params = params.set('endDate', filter.endDate);
+      if (filter.network) params = params.set('network', filter.network);
     }
     return this.http.get<ProjectListItem[]>(this.baseUrl, { params });
   }
@@ -128,6 +135,131 @@ export class ProjectService {
   removeMember(projectId: string, userId: string): Observable<{ removed: boolean }> {
     return this.http.delete<{ removed: boolean }>(
       `${this.baseUrl}/${projectId}/members/${userId}`,
+    );
+  }
+
+  /**
+   * Tự tham gia public project
+   */
+  joinProject(projectId: string): Observable<{ role: string; projectId: string }> {
+    return this.http.post<{ role: string; projectId: string }>(
+      `${this.baseUrl}/${projectId}/join`,
+      {},
+    );
+  }
+
+  /**
+   * Cập nhật feature flags
+   */
+  updateFeatures(projectId: string, dto: UpdateFeaturesDto): Observable<ProjectFeatures> {
+    return this.http.patch<ProjectFeatures>(
+      `${this.baseUrl}/${projectId}/features`,
+      dto,
+    );
+  }
+
+  /**
+   * Upload ảnh bìa project
+   */
+  uploadCover(projectId: string, file: File): Observable<{ coverImageUrl: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<{ coverImageUrl: string }>(
+      `${this.baseUrl}/${projectId}/cover`,
+      formData,
+    );
+  }
+
+  /**
+   * Xóa ảnh bìa project
+   */
+  deleteCover(projectId: string): Observable<{ success: boolean }> {
+    return this.http.delete<{ success: boolean }>(
+      `${this.baseUrl}/${projectId}/cover`,
+    );
+  }
+
+  /**
+   * Lấy danh sách states của project
+   */
+  getStates(projectId: string): Observable<{ data: ProjectStateGrouped }> {
+    return this.http.get<{ data: ProjectStateGrouped }>(
+      `${this.baseUrl}/${projectId}/states`,
+    );
+  }
+
+  /**
+   * Tạo state mới
+   */
+  createState(projectId: string, dto: CreateStateDto): Observable<ProjectState> {
+    return this.http.post<ProjectState>(
+      `${this.baseUrl}/${projectId}/states`,
+      dto,
+    );
+  }
+
+  /**
+   * Cập nhật state
+   */
+  updateState(
+    projectId: string,
+    stateId: string,
+    dto: UpdateStateDto,
+  ): Observable<ProjectState> {
+    return this.http.patch<ProjectState>(
+      `${this.baseUrl}/${projectId}/states/${stateId}`,
+      dto,
+    );
+  }
+
+  /**
+   * Sắp xếp lại states
+   */
+  reorderStates(projectId: string, dto: ReorderStatesDto): Observable<{ updated: number }> {
+    return this.http.patch<{ updated: number }>(
+      `${this.baseUrl}/${projectId}/states/reorder`,
+      dto,
+    );
+  }
+
+  /**
+   * Xóa state
+   */
+  deleteState(projectId: string, stateId: string): Observable<{ success: boolean }> {
+    return this.http.delete<{ success: boolean }>(
+      `${this.baseUrl}/${projectId}/states/${stateId}`,
+    );
+  }
+
+  /**
+   * Migrate tasks và xóa state
+   */
+  migrateState(projectId: string, dto: MigrateStateDto): Observable<{ success: boolean }> {
+    return this.http.post<{ success: boolean }>(
+      `${this.baseUrl}/${projectId}/states/migrate`,
+      dto,
+    );
+  }
+
+  /**
+   * Lấy cấu hình estimate
+   */
+  getEstimateConfig(projectId: string): Observable<any> {
+    return this.http.get<any>(
+      `${this.baseUrl}/${projectId}/estimate-config`,
+    );
+  }
+
+  /**
+   * Cập nhật cấu hình estimate
+   */
+  updateEstimateConfig(
+    projectId: string,
+    dto: UpdateEstimateConfigDto,
+  ): Observable<any> {
+    return this.http.patch<any>(
+      `${this.baseUrl}/${projectId}/estimate-config`,
+      dto,
     );
   }
 }

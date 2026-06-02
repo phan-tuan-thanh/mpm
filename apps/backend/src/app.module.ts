@@ -7,6 +7,7 @@ import { ProfileModule } from './profile/profile.module';
 import { ProjectModule } from './project/project.module';
 import { AuditModule } from './audit/audit.module';
 import { AdminModule } from './admin/admin.module';
+import { TaskModule } from './task/task.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { AdminModule } from './admin/admin.module';
     ProjectModule,
     AuditModule,
     AdminModule,
+    TaskModule,
   ],
 })
 export class AppModule {}

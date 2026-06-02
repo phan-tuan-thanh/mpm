@@ -9,6 +9,6 @@ module.exports = {
   coverageDirectory: '../coverage',
   testEnvironment: 'node',
   moduleNameMapper: {
-    '^@mpm/shared-types$': '<rootDir>/../../../libs/shared-types/src',
+    '^@mpm/shared-types$': '<rootDir>/../../../libs/shared-types/src/index.ts',
   },
 };

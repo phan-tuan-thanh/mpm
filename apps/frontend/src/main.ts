@@ -9,6 +9,7 @@ import { authInterceptor } from './app/auth/interceptors/auth.interceptor';
 import { authGuard } from './app/auth/guards/auth.guard';
 import { APP_INITIALIZER } from '@angular/core';
 import { AuthService } from './app/auth/services/auth.service';
+import { projectFeatureGuard } from './app/core/guards/project-feature.guard';
 
 const routes = [
   {
@@ -60,6 +61,51 @@ const routes = [
             title: 'Backlog — Agile PM',
           },
           {
+            path: 'cycles',
+            canActivate: [projectFeatureGuard],
+            loadComponent: () =>
+              import('./app/projects/pages/feature-placeholder.component').then(
+                (m) => m.FeaturePlaceholderComponent
+              ),
+            data: { feature: 'cycles', title: 'Sprints/Cycles' },
+          },
+          {
+            path: 'modules',
+            canActivate: [projectFeatureGuard],
+            loadComponent: () =>
+              import('./app/projects/pages/feature-placeholder.component').then(
+                (m) => m.FeaturePlaceholderComponent
+              ),
+            data: { feature: 'modules', title: 'Modules' },
+          },
+          {
+            path: 'views',
+            canActivate: [projectFeatureGuard],
+            loadComponent: () =>
+              import('./app/projects/pages/feature-placeholder.component').then(
+                (m) => m.FeaturePlaceholderComponent
+              ),
+            data: { feature: 'views', title: 'Views tùy chỉnh' },
+          },
+          {
+            path: 'pages',
+            canActivate: [projectFeatureGuard],
+            loadComponent: () =>
+              import('./app/projects/pages/feature-placeholder.component').then(
+                (m) => m.FeaturePlaceholderComponent
+              ),
+            data: { feature: 'pages', title: 'Pages (Tài liệu)' },
+          },
+          {
+            path: 'intake',
+            canActivate: [projectFeatureGuard],
+            loadComponent: () =>
+              import('./app/projects/pages/feature-placeholder.component').then(
+                (m) => m.FeaturePlaceholderComponent
+              ),
+            data: { feature: 'intake', title: 'Intake (Yêu cầu)' },
+          },
+          {
             path: 'settings',
             loadComponent: () =>
               import('./app/projects/pages/project-settings/project-settings.component').then(
@@ -81,6 +127,30 @@ const routes = [
                     (m) => m.MembersTabComponent
                   ),
                 title: 'Thành viên — Agile PM',
+              },
+              {
+                path: 'states',
+                loadComponent: () =>
+                  import('./app/projects/pages/project-settings/states-tab/states-tab.component').then(
+                    (m) => m.StatesTabComponent
+                  ),
+                title: 'Trạng thái — Agile PM',
+              },
+              {
+                path: 'estimates',
+                loadComponent: () =>
+                  import('./app/projects/pages/project-settings/estimates-tab/estimates-tab.component').then(
+                    (m) => m.EstimatesTabComponent
+                  ),
+                title: 'Ước lượng — Agile PM',
+              },
+              {
+                path: 'features',
+                loadComponent: () =>
+                  import('./app/projects/pages/project-settings/features-tab/features-tab.component').then(
+                    (m) => m.FeaturesTabComponent
+                  ),
+                title: 'Tính năng — Agile PM',
               },
               {
                 path: 'danger',

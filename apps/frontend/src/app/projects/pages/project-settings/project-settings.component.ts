@@ -63,6 +63,27 @@ import { CommonModule } from '@angular/common';
           Thành viên
         </a>
         <a
+          [routerLink]="['/projects', projectKey(), 'settings', 'states']"
+          routerLinkActive="border-b-2 border-indigo-600 text-indigo-600"
+          class="pb-3 text-gray-500 hover:text-gray-900 transition"
+        >
+          Trạng thái
+        </a>
+        <a
+          [routerLink]="['/projects', projectKey(), 'settings', 'estimates']"
+          routerLinkActive="border-b-2 border-indigo-600 text-indigo-600"
+          class="pb-3 text-gray-500 hover:text-gray-900 transition"
+        >
+          Ước lượng
+        </a>
+        <a
+          [routerLink]="['/projects', projectKey(), 'settings', 'features']"
+          routerLinkActive="border-b-2 border-indigo-600 text-indigo-600"
+          class="pb-3 text-gray-500 hover:text-gray-900 transition"
+        >
+          Tính năng
+        </a>
+        <a
           [routerLink]="['/projects', projectKey(), 'settings', 'danger']"
           routerLinkActive="border-b-2 border-indigo-600 text-indigo-600"
           class="pb-3 text-gray-500 hover:text-gray-900 transition"

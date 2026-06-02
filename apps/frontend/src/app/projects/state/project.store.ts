@@ -1,6 +1,12 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { ProjectService } from '../services/project.service';
-import { Project, ProjectListItem, MemberResponse } from '@mpm/shared-types';
+import {
+  Project,
+  ProjectListItem,
+  MemberResponse,
+  ProjectStateGrouped,
+  UpdateFeaturesDto,
+} from '@mpm/shared-types';
 import { catchError, finalize } from 'rxjs/operators';
 import { of } from 'rxjs';
 
@@ -14,6 +20,8 @@ export class ProjectStore {
   readonly projects = signal<ProjectListItem[]>([]);
   readonly currentProject = signal<Project | null>(null);
   readonly members = signal<MemberResponse[]>([]);
+  readonly currentProjectStates = signal<ProjectStateGrouped | null>(null);
+  readonly currentEstimateConfig = signal<any | null>(null);
   readonly isLoading = signal<boolean>(false);
   readonly error = signal<string | null>(null);
 
@@ -23,8 +31,7 @@ export class ProjectStore {
   loadProjects(filter?: {
     name?: string;
     status?: string;
-    startDate?: string;
-    endDate?: string;
+    network?: string;
   }): void {
     this.isLoading.set(true);
     this.error.set(null);
@@ -63,8 +70,13 @@ export class ProjectStore {
       )
       .subscribe((data) => {
         this.currentProject.set(data);
-        if (data && onSuccess) {
-          onSuccess(data);
+        if (data) {
+          // Auto load states and estimate config when project is loaded
+          this.loadStates(data.id);
+          this.loadEstimateConfig(data.id);
+          if (onSuccess) {
+            onSuccess(data);
+          }
         }
       });
   }
@@ -75,6 +87,13 @@ export class ProjectStore {
   setCurrentProject(project: Project | null): void {
     this.currentProject.set(project);
     this.error.set(null);
+    if (project) {
+      this.loadStates(project.id);
+      this.loadEstimateConfig(project.id);
+    } else {
+      this.currentProjectStates.set(null);
+      this.currentEstimateConfig.set(null);
+    }
   }
 
   /**
@@ -95,6 +114,72 @@ export class ProjectStore {
       )
       .subscribe((data) => {
         this.members.set(data);
+      });
+  }
+
+  /**
+   * Load states của dự án hiện tại
+   */
+  loadStates(projectId: string): void {
+    this.projectService
+      .getStates(projectId)
+      .pipe(
+        catchError((err) => {
+          console.error('Không thể tải danh sách trạng thái', err);
+          return of({ data: null });
+        }),
+      )
+      .subscribe((res) => {
+        if (res && res.data) {
+          this.currentProjectStates.set(res.data);
+        }
+      });
+  }
+
+  /**
+   * Load estimate config của dự án hiện tại
+   */
+  loadEstimateConfig(projectId: string): void {
+    this.projectService
+      .getEstimateConfig(projectId)
+      .pipe(
+        catchError((err) => {
+          console.error('Không thể tải cấu hình estimate', err);
+          return of(null);
+        }),
+      )
+      .subscribe((config) => {
+        if (config) {
+          this.currentEstimateConfig.set(config);
+        }
+      });
+  }
+
+  /**
+   * Cập nhật feature flags
+   */
+  updateFeatures(dto: UpdateFeaturesDto): void {
+    const proj = this.currentProject();
+    if (!proj) return;
+
+    this.projectService
+      .updateFeatures(proj.id, dto)
+      .pipe(
+        catchError((err) => {
+          console.error('Không thể cập nhật feature flags', err);
+          return of(null);
+        }),
+      )
+      .subscribe((features) => {
+        if (features) {
+          this.currentProject.set({
+            ...proj,
+            features: {
+              ...proj.features,
+              ...features,
+            },
+          });
+        }
       });
   }
 }

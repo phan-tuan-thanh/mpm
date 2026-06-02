@@ -16,6 +16,7 @@ import { CurrentUser, RequestUser } from '../auth/decorators/current-user.decora
 import { ProjectRoles } from '../auth/decorators/project-roles.decorator';
 import { ProjectService } from './project.service';
 import { CreateProjectDto, UpdateProjectDto } from './dto';
+import { UpdateFeaturesDto } from '@mpm/shared-types';
 
 @Controller('api/projects')
 export class ProjectController {
@@ -37,12 +38,11 @@ export class ProjectController {
     @CurrentUser() user: RequestUser,
     @Query('name') name?: string,
     @Query('status') status?: string,
-    @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string,
+    @Query('network') network?: string,
   ) {
     return this.projectService.findAll(
       user.id,
-      { name, status, startDate, endDate },
+      { name, status, network },
       user.systemRole,
     );
   }
@@ -135,6 +135,37 @@ export class ProjectController {
     return this.projectService.bulkDelete(
       ids,
       user.id,
+      user.systemRole,
+      ipAddress,
+      userAgent,
+    );
+  }
+
+  @Post(':projectId/join')
+  async join(
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+    @CurrentUser() user: RequestUser,
+    @Req() req: Request,
+  ) {
+    const ipAddress = this.extractIpAddress(req);
+    const userAgent = req.headers['user-agent'] ?? 'unknown';
+    return this.projectService.join(projectId, user.id, ipAddress, userAgent);
+  }
+
+  @Patch(':projectId/features')
+  @ProjectRoles('Scrum_Master')
+  async updateFeatures(
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+    @CurrentUser() user: RequestUser,
+    @Body() dto: UpdateFeaturesDto,
+    @Req() req: Request,
+  ) {
+    const ipAddress = this.extractIpAddress(req);
+    const userAgent = req.headers['user-agent'] ?? 'unknown';
+    return this.projectService.updateFeatures(
+      projectId,
+      user.id,
+      dto,
       user.systemRole,
       ipAddress,
       userAgent,

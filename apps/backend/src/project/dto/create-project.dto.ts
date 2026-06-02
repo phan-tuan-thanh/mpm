@@ -1,4 +1,5 @@
-import { IsString, Length, Matches, IsOptional, MaxLength } from 'class-validator';
+import { IsString, Length, Matches, IsOptional, MaxLength, IsEnum, IsUUID } from 'class-validator';
+import { ProjectNetwork } from '@mpm/shared-types';
 
 export class CreateProjectDto {
   @IsString()
@@ -15,4 +16,22 @@ export class CreateProjectDto {
   @IsString()
   @MaxLength(2000)
   description?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(30)
+  emoji?: string | null;
+
+  @IsOptional()
+  @IsEnum(ProjectNetwork)
+  network?: ProjectNetwork;
+
+  @IsOptional()
+  @IsUUID()
+  leadId?: string | null;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  timezone?: string;
 }

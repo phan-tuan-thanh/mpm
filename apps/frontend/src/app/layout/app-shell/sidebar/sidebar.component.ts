@@ -33,17 +33,25 @@ import { ProjectListItem } from '@mpm/shared-types';
           >
             <ng-template let-project pTemplate="selectedItem">
               <div class="flex items-center gap-2 text-gray-800 dark:text-surface-100 font-semibold truncate">
-                <div class="flex h-5 w-5 items-center justify-center rounded bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-400 text-[10px] font-bold">
-                  {{ project.key }}
-                </div>
-                <span>{{ project.name }}</span>
+                @if (project.emoji) {
+                  <span class="text-sm flex-shrink-0">{{ project.emoji }}</span>
+                } @else {
+                  <div class="flex h-5 w-5 items-center justify-center rounded bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-400 text-[10px] font-bold flex-shrink-0">
+                    {{ project.name.slice(0, 2).toUpperCase() }}
+                  </div>
+                }
+                <span class="truncate">{{ project.name }}</span>
               </div>
             </ng-template>
             <ng-template let-project pTemplate="item">
               <div class="flex items-center gap-2 py-1 text-gray-800 dark:text-surface-100">
-                <div class="flex h-5 w-5 items-center justify-center rounded bg-gray-100 dark:bg-surface-800 text-gray-600 dark:text-surface-400 text-[10px] font-bold">
-                  {{ project.key }}
-                </div>
+                @if (project.emoji) {
+                  <span class="text-sm flex-shrink-0">{{ project.emoji }}</span>
+                } @else {
+                  <div class="flex h-5 w-5 items-center justify-center rounded bg-gray-100 dark:bg-surface-800 text-gray-600 dark:text-surface-400 text-[10px] font-bold flex-shrink-0">
+                    {{ project.name.slice(0, 2).toUpperCase() }}
+                  </div>
+                }
                 <span>{{ project.name }}</span>
               </div>
             </ng-template>
@@ -56,7 +64,11 @@ import { ProjectListItem } from '@mpm/shared-types';
               class="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition duration-200 cursor-pointer"
               title="Chuyển dự án"
             >
-              <i class="pi pi-folder-open text-lg"></i>
+              @if (projectStore.currentProject()?.emoji) {
+                <span class="text-lg">{{ projectStore.currentProject()?.emoji }}</span>
+              } @else {
+                <i class="pi pi-folder-open text-lg"></i>
+              }
             </button>
           </div>
         }
@@ -82,7 +94,7 @@ import { ProjectListItem } from '@mpm/shared-types';
           <!-- Divider -->
           <div class="my-2 border-t border-[#f1f5f9] dark:border-surface-800"></div>
 
-          <!-- Board -->
+          <!-- Board (Always visible) -->
           <a
             [routerLink]="['/projects', currentKey(), 'board']"
             routerLinkActive="bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 font-semibold border-l-4 border-indigo-600"
@@ -96,7 +108,7 @@ import { ProjectListItem } from '@mpm/shared-types';
             }
           </a>
 
-          <!-- Backlog -->
+          <!-- Backlog (Always visible) -->
           <a
             [routerLink]="['/projects', currentKey(), 'backlog']"
             routerLinkActive="bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 font-semibold border-l-4 border-indigo-600"
@@ -104,13 +116,93 @@ import { ProjectListItem } from '@mpm/shared-types';
             class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 dark:text-surface-400 hover:bg-gray-50 dark:hover:bg-surface-800 hover:text-gray-900 dark:hover:text-surface-100 transition duration-200"
             [title]="layoutService.isCollapsed() ? 'Backlog' : ''"
           >
-            <i class="pi pi-list text-base"></i>
+            <i class="pi pi-align-left text-base"></i>
             @if (!layoutService.isCollapsed()) {
               <span>Backlog</span>
             }
           </a>
 
-          <!-- Settings -->
+          <!-- Sprints/Cycles (Conditional) -->
+          @if (features().cycles) {
+            <a
+              [routerLink]="['/projects', currentKey(), 'cycles']"
+              routerLinkActive="bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 font-semibold border-l-4 border-indigo-600"
+              [routerLinkActiveOptions]="{ exact: false }"
+              class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 dark:text-surface-400 hover:bg-gray-50 dark:hover:bg-surface-800 hover:text-gray-900 dark:hover:text-surface-100 transition duration-200"
+              [title]="layoutService.isCollapsed() ? 'Sprints/Cycles' : ''"
+            >
+              <i class="pi pi-sync text-base"></i>
+              @if (!layoutService.isCollapsed()) {
+                <span>Sprints/Cycles</span>
+              }
+            </a>
+          }
+
+          <!-- Modules (Conditional) -->
+          @if (features().modules) {
+            <a
+              [routerLink]="['/projects', currentKey(), 'modules']"
+              routerLinkActive="bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 font-semibold border-l-4 border-indigo-600"
+              [routerLinkActiveOptions]="{ exact: false }"
+              class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 dark:text-surface-400 hover:bg-gray-50 dark:hover:bg-surface-800 hover:text-gray-900 dark:hover:text-surface-100 transition duration-200"
+              [title]="layoutService.isCollapsed() ? 'Modules' : ''"
+            >
+              <i class="pi pi-box text-base"></i>
+              @if (!layoutService.isCollapsed()) {
+                <span>Modules</span>
+              }
+            </a>
+          }
+
+          <!-- Views (Conditional) -->
+          @if (features().views) {
+            <a
+              [routerLink]="['/projects', currentKey(), 'views']"
+              routerLinkActive="bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 font-semibold border-l-4 border-indigo-600"
+              [routerLinkActiveOptions]="{ exact: false }"
+              class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 dark:text-surface-400 hover:bg-gray-50 dark:hover:bg-surface-800 hover:text-gray-900 dark:hover:text-surface-100 transition duration-200"
+              [title]="layoutService.isCollapsed() ? 'Custom Views' : ''"
+            >
+              <i class="pi pi-filter text-base"></i>
+              @if (!layoutService.isCollapsed()) {
+                <span>Custom Views</span>
+              }
+            </a>
+          }
+
+          <!-- Pages (Conditional) -->
+          @if (features().pages) {
+            <a
+              [routerLink]="['/projects', currentKey(), 'pages']"
+              routerLinkActive="bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 font-semibold border-l-4 border-indigo-600"
+              [routerLinkActiveOptions]="{ exact: false }"
+              class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 dark:text-surface-400 hover:bg-gray-50 dark:hover:bg-surface-800 hover:text-gray-900 dark:hover:text-surface-100 transition duration-200"
+              [title]="layoutService.isCollapsed() ? 'Pages' : ''"
+            >
+              <i class="pi pi-file text-base"></i>
+              @if (!layoutService.isCollapsed()) {
+                <span>Pages (Tài liệu)</span>
+              }
+            </a>
+          }
+
+          <!-- Intake (Conditional) -->
+          @if (features().intake) {
+            <a
+              [routerLink]="['/projects', currentKey(), 'intake']"
+              routerLinkActive="bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 font-semibold border-l-4 border-indigo-600"
+              [routerLinkActiveOptions]="{ exact: false }"
+              class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 dark:text-surface-400 hover:bg-gray-50 dark:hover:bg-surface-800 hover:text-gray-900 dark:hover:text-surface-100 transition duration-200"
+              [title]="layoutService.isCollapsed() ? 'Intake' : ''"
+            >
+              <i class="pi pi-inbox text-base"></i>
+              @if (!layoutService.isCollapsed()) {
+                <span>Intake (Yêu cầu)</span>
+              }
+            </a>
+          }
+
+          <!-- Settings (Always visible) -->
           <a
             [routerLink]="['/projects', currentKey(), 'settings']"
             routerLinkActive="bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 font-semibold border-l-4 border-indigo-600"
@@ -143,11 +235,25 @@ export class SidebarComponent implements OnInit {
       status: current.status,
       myRole: 'Developer',
       createdAt: current.createdAt,
+      emoji: current.emoji,
+      network: current.network,
+      lead: current.lead,
     };
   });
 
   readonly currentKey = computed(() => {
     return this.projectStore.currentProject()?.key || '';
+  });
+
+  readonly features = computed(() => {
+    return this.projectStore.currentProject()?.features || {
+      cycles: true,
+      modules: true,
+      views: true,
+      pages: true,
+      intake: false,
+      timeTracking: false,
+    };
   });
 
   ngOnInit(): void {

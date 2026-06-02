@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { ProjectStore } from '../../state/project.store';
 import { ProjectService } from '../../services/project.service';
@@ -83,6 +83,18 @@ import { FormsModule } from '@angular/forms';
             ></p-select>
           </div>
 
+          <!-- Network Filter -->
+          <div class="w-full md:w-48 flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider px-1">Quyền riêng tư</label>
+            <p-select
+              [options]="networkOptions"
+              [(ngModel)]="selectedNetwork"
+              optionLabel="label"
+              optionValue="value"
+              (onChange)="onFilterChange()"
+            ></p-select>
+          </div>
+
           <!-- Date Range Filter -->
           <div class="w-full md:w-72 flex flex-col gap-1.5">
             <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider px-1">Ngày tạo</label>
@@ -133,6 +145,8 @@ import { FormsModule } from '@angular/forms';
               </th>
               <th class="py-3.5 px-4 text-left font-semibold text-gray-500 text-xs uppercase tracking-wider">Tên dự án</th>
               <th class="py-3.5 px-4 text-left font-semibold text-gray-500 text-xs uppercase tracking-wider">Project Key</th>
+              <th class="py-3.5 px-4 text-left font-semibold text-gray-500 text-xs uppercase tracking-wider">Lead</th>
+              <th class="py-3.5 px-4 text-left font-semibold text-gray-500 text-xs uppercase tracking-wider">Network</th>
               <th class="py-3.5 px-4 text-left font-semibold text-gray-500 text-xs uppercase tracking-wider">Trạng thái</th>
               <th class="py-3.5 px-4 text-left font-semibold text-gray-500 text-xs uppercase tracking-wider">Vai trò của tôi</th>
               <th class="py-3.5 px-4 text-left font-semibold text-gray-500 text-xs uppercase tracking-wider">Ngày tạo</th>
@@ -144,6 +158,8 @@ import { FormsModule } from '@angular/forms';
                 <td class="py-3.5 px-4"><p-skeleton width="1.5rem" height="1.5rem" /></td>
                 <td class="py-3.5 px-4"><p-skeleton width="12rem" height="1.2rem" /></td>
                 <td class="py-3.5 px-4"><p-skeleton width="4rem" height="1.2rem" /></td>
+                <td class="py-3.5 px-4"><p-skeleton width="6rem" height="1.2rem" /></td>
+                <td class="py-3.5 px-4"><p-skeleton width="5rem" height="1.2rem" /></td>
                 <td class="py-3.5 px-4"><p-skeleton width="5rem" height="1.2rem" /></td>
                 <td class="py-3.5 px-4"><p-skeleton width="7rem" height="1.2rem" /></td>
                 <td class="py-3.5 px-4"><p-skeleton width="6rem" height="1.2rem" /></td>
@@ -154,14 +170,44 @@ import { FormsModule } from '@angular/forms';
                   <p-tableCheckbox [value]="project" />
                 </td>
                 <td class="py-3.5 px-4 font-semibold text-indigo-600 hover:text-indigo-800 transition">
-                  <a [routerLink]="['/projects', project.key, 'board']">
-                    {{ project.name }}
+                  <a [routerLink]="['/projects', project.key, 'board']" class="flex items-center gap-2">
+                    @if (project.emoji) {
+                      <span class="text-lg">{{ project.emoji }}</span>
+                    } @else {
+                      <div class="w-6 h-6 rounded bg-indigo-50 border border-indigo-100 flex items-center justify-center text-[10px] text-indigo-600 font-bold uppercase">
+                        {{ project.name.slice(0, 2).toUpperCase() }}
+                      </div>
+                    }
+                    <span>{{ project.name }}</span>
                   </a>
                 </td>
                 <td class="py-3.5 px-4">
                   <span class="inline-flex items-center rounded bg-gray-100 px-2 py-0.5 text-xs font-bold text-gray-600">
                     {{ project.key }}
                   </span>
+                </td>
+                <td class="py-3.5 px-4 text-gray-600 font-medium">
+                  @if (project.lead) {
+                    <div class="flex items-center gap-2">
+                      @if (project.lead.avatarUrl) {
+                        <img [src]="project.lead.avatarUrl" class="w-6 h-6 rounded-full" />
+                      } @else {
+                        <div class="w-6 h-6 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center text-[10px] text-indigo-600 font-bold uppercase">
+                          {{ project.lead.displayName.slice(0, 2) }}
+                        </div>
+                      }
+                      <span>{{ project.lead.displayName }}</span>
+                    </div>
+                  } @else {
+                    <span class="text-gray-400">—</span>
+                  }
+                </td>
+                <td class="py-3.5 px-4">
+                  <p-tag
+                    [value]="project.network === 'public' ? 'Public' : 'Secret'"
+                    [severity]="project.network === 'public' ? 'info' : 'warn'"
+                    class="text-xs font-semibold"
+                  ></p-tag>
                 </td>
                 <td class="py-3.5 px-4">
                   <p-tag
@@ -182,7 +228,7 @@ import { FormsModule } from '@angular/forms';
 
           <ng-template pTemplate="emptymessage">
             <tr>
-              <td colspan="6" class="text-center py-12 text-gray-400">
+              <td colspan="8" class="text-center py-12 text-gray-400">
                 <div class="flex flex-col items-center justify-center space-y-3">
                   <i class="pi pi-folder-open text-4xl text-gray-300"></i>
                   @if (hasActiveFilters()) {
@@ -223,6 +269,7 @@ export class ProjectListComponent implements OnInit, OnDestroy {
   // States
   selectedProjects: ProjectListItem[] = [];
   selectedStatus: string = 'all';
+  selectedNetwork: string = 'all';
   dateRange: Date[] | null = null;
   filterName: string = '';
 
@@ -230,6 +277,12 @@ export class ProjectListComponent implements OnInit, OnDestroy {
     { label: 'Tất cả trạng thái', value: 'all' },
     { label: 'Đang hoạt động', value: 'active' },
     { label: 'Đã lưu trữ', value: 'archived' },
+  ];
+
+  readonly networkOptions = [
+    { label: 'Tất cả quyền riêng tư', value: 'all' },
+    { label: 'Công khai (Public)', value: 'public' },
+    { label: 'Bảo mật (Secret)', value: 'secret' },
   ];
 
   readonly dummyProjects = Array(5).fill({});
@@ -243,6 +296,7 @@ export class ProjectListComponent implements OnInit, OnDestroy {
     this.routeSubscription = this.route.queryParams.subscribe((params) => {
       this.filterName = params['name'] || '';
       this.selectedStatus = params['status'] || 'all';
+      this.selectedNetwork = params['network'] || 'all';
 
       if (params['startDate'] && params['endDate']) {
         this.dateRange = [new Date(params['startDate']), new Date(params['endDate'])];
@@ -268,19 +322,10 @@ export class ProjectListComponent implements OnInit, OnDestroy {
   }
 
   fetchProjects(): void {
-    let startDate: string | undefined;
-    let endDate: string | undefined;
-
-    if (this.dateRange && this.dateRange.length === 2) {
-      if (this.dateRange[0]) startDate = this.dateRange[0].toISOString();
-      if (this.dateRange[1]) endDate = this.dateRange[1].toISOString();
-    }
-
     this.projectStore.loadProjects({
       name: this.filterName,
       status: this.selectedStatus,
-      startDate,
-      endDate,
+      network: this.selectedNetwork === 'all' ? undefined : this.selectedNetwork,
     });
   }
 
@@ -300,12 +345,13 @@ export class ProjectListComponent implements OnInit, OnDestroy {
   clearFilters(): void {
     this.filterName = '';
     this.selectedStatus = 'all';
+    this.selectedNetwork = 'all';
     this.dateRange = null;
     this.updateUrlParams();
   }
 
   hasActiveFilters(): boolean {
-    return !!this.filterName || this.selectedStatus !== 'all' || !!this.dateRange;
+    return !!this.filterName || this.selectedStatus !== 'all' || this.selectedNetwork !== 'all' || !!this.dateRange;
   }
 
   updateUrlParams(): void {
@@ -317,12 +363,10 @@ export class ProjectListComponent implements OnInit, OnDestroy {
     if (this.selectedStatus && this.selectedStatus !== 'all') {
       queryParams.status = this.selectedStatus;
     }
-    if (this.dateRange && this.dateRange.length === 2 && this.dateRange[0] && this.dateRange[1]) {
-      queryParams.startDate = this.dateRange[0].toISOString();
-      queryParams.endDate = this.dateRange[1].toISOString();
+    if (this.selectedNetwork && this.selectedNetwork !== 'all') {
+      queryParams.network = this.selectedNetwork;
     }
 
-    // Navigate to update URL query params without reloading page
     void this.router.navigate([], {
       relativeTo: this.route,
       queryParams,
@@ -385,7 +429,7 @@ export class ProjectListComponent implements OnInit, OnDestroy {
       case 'Stakeholder':
         return 'Stakeholder';
       default:
-        return role || '';
+        return role || 'Non-member'; // If they joined public project but they aren't loaded or similar
     }
   }
 }
