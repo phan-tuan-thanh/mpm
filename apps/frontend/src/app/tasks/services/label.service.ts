@@ -9,19 +9,19 @@ export class LabelService {
 
   getLabels(projectId: string): Observable<Array<Label & { taskCount: number }>> {
     return this.http.get<Array<Label & { taskCount: number }>>(
-      `/api/projects/${projectId}/tasks/labels`,
+      `/api/projects/${projectId}/labels`,
     );
   }
 
   createLabel(projectId: string, dto: CreateLabelDto): Observable<Label> {
-    return this.http.post<Label>(`/api/projects/${projectId}/tasks/labels`, dto);
+    return this.http.post<Label>(`/api/projects/${projectId}/labels`, dto);
   }
 
   updateLabel(projectId: string, labelId: string, dto: UpdateLabelDto): Observable<Label> {
-    return this.http.patch<Label>(`/api/projects/${projectId}/tasks/labels/${labelId}`, dto);
+    return this.http.patch<Label>(`/api/projects/${projectId}/labels/${labelId}`, dto);
   }
 
   deleteLabel(projectId: string, labelId: string): Observable<void> {
-    return this.http.delete<void>(`/api/projects/${projectId}/tasks/labels/${labelId}`);
+    return this.http.delete<void>(`/api/projects/${projectId}/labels/${labelId}`);
   }
 }

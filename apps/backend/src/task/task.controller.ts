@@ -13,7 +13,6 @@ import { CurrentUser, RequestUser } from '../auth/decorators/current-user.decora
 import { ProjectRoles } from '../auth/decorators/project-roles.decorator';
 import { TaskService } from './task.service';
 import { ActivityService } from './activity/activity.service';
-import { LabelService } from './label/label.service';
 import type { TaskType, TaskPriority } from './entities/task.entity';
 
 @Controller('api/projects/:projectId/tasks')
@@ -21,7 +20,6 @@ export class TaskController {
   constructor(
     private readonly taskService: TaskService,
     private readonly activityService: ActivityService,
-    private readonly labelService: LabelService,
   ) {}
 
   // ─── Tasks ───────────────────────────────────────────────────────────────
@@ -156,42 +154,4 @@ export class TaskController {
     );
   }
 
-  // ─── Labels ───────────────────────────────────────────────────────────
-
-  @Get('/labels')
-  @ProjectRoles('Scrum_Master', 'Product_Owner', 'Developer', 'QA', 'Stakeholder')
-  async getLabels(@Param('projectId', ParseUUIDPipe) projectId: string) {
-    return this.labelService.findAll(projectId);
-  }
-
-  @Post('/labels')
-  @ProjectRoles('Scrum_Master', 'Product_Owner')
-  async createLabel(
-    @Param('projectId', ParseUUIDPipe) projectId: string,
-    @CurrentUser() user: RequestUser,
-    @Body() body: { name: string; color: string },
-  ) {
-    return this.labelService.create(projectId, user.id, body);
-  }
-
-  @Patch('/labels/:labelId')
-  @ProjectRoles('Scrum_Master', 'Product_Owner')
-  async updateLabel(
-    @Param('projectId', ParseUUIDPipe) projectId: string,
-    @Param('labelId', ParseUUIDPipe) labelId: string,
-    @Body() body: { name?: string; color?: string },
-  ) {
-    return this.labelService.update(labelId, projectId, body);
-  }
-
-  @Delete('/labels/:labelId')
-  @ProjectRoles('Scrum_Master', 'Product_Owner')
-  async deleteLabel(
-    @Param('projectId', ParseUUIDPipe) projectId: string,
-    @Param('labelId', ParseUUIDPipe) labelId: string,
-    @CurrentUser() user: RequestUser,
-  ) {
-    await this.labelService.delete(labelId, projectId, user.id);
-    return { ok: true };
-  }
 }

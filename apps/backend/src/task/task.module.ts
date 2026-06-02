@@ -14,6 +14,7 @@ import { ProjectMember } from '../auth/entities/project-member.entity';
 import { User } from '../auth/entities/user.entity';
 
 import { TaskController } from './task.controller';
+import { LabelController } from './label/label.controller';
 import { AttachmentController } from './attachment/attachment.controller';
 import { LinkController } from './link/link.controller';
 import { RelationController } from './relation/relation.controller';
@@ -50,6 +51,7 @@ import { AuditModule } from '../audit/audit.module';
   ],
   controllers: [
     TaskController,
+    LabelController,
     AttachmentController,
     LinkController,
     RelationController,
