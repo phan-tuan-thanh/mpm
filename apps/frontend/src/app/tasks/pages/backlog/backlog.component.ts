@@ -9,6 +9,7 @@ import { ToastModule } from 'primeng/toast';
 
 import { TaskStore } from '../../state/task.store';
 import { ProjectStore } from '../../../projects/state/project.store';
+import { LayoutService } from '../../../layout/services/layout.service';
 import { BacklogToolbarComponent, BacklogFilter } from './backlog-toolbar/backlog-toolbar.component';
 import { TaskListComponent } from './task-list/task-list.component';
 import { QuickCreateComponent } from './quick-create/quick-create.component';
@@ -25,7 +26,7 @@ import { Subject, takeUntil } from 'rxjs';
   ],
   providers: [ConfirmationService, MessageService],
   template: `
-    <div class="flex flex-col h-full">
+    <div class="flex flex-col h-full bg-white dark:bg-surface-900">
       <!-- Toolbar -->
       <app-backlog-toolbar
         [selectedGroupBy]="selectedGroupBy"
@@ -80,6 +81,7 @@ import { Subject, takeUntil } from 'rxjs';
 export class BacklogComponent implements OnInit, OnDestroy {
   readonly taskStore = inject(TaskStore);
   private readonly projectStore = inject(ProjectStore);
+  private readonly layoutService = inject(LayoutService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly confirmService = inject(ConfirmationService);
@@ -91,6 +93,8 @@ export class BacklogComponent implements OnInit, OnDestroy {
   private projectId = '';
 
   ngOnInit(): void {
+    this.layoutService.fullBleed.set(true);
+
     this.route.parent?.params.pipe(takeUntil(this.destroy$)).subscribe(() => {
       const project = this.projectStore.currentProject();
       this.projectId = project?.id ?? '';
@@ -110,6 +114,7 @@ export class BacklogComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.layoutService.fullBleed.set(false);
     this.destroy$.next();
     this.destroy$.complete();
   }

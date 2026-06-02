@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { RouterOutlet, ActivatedRoute, Router, NavigationEnd } from '@angular/router';
 import { ProjectStore } from '../../projects/state/project.store';
+import { LayoutService } from '../services/layout.service';
 import { SidebarComponent } from './sidebar/sidebar.component';
 import { TopbarComponent } from './topbar/topbar.component';
 import { CommonModule } from '@angular/common';
@@ -47,7 +48,13 @@ import { filter } from 'rxjs/operators';
         } @else {
           <!-- Sidebar and Content View -->
           <app-sidebar class="flex-shrink-0 h-full" />
-          <main class="flex-1 overflow-y-auto min-w-0 p-4 sm:p-6 bg-surface-50 dark:bg-surface-950">
+          <main
+            class="flex-1 min-w-0 bg-surface-50 dark:bg-surface-950"
+            [class.overflow-hidden]="layoutService.fullBleed()"
+            [class.overflow-y-auto]="!layoutService.fullBleed()"
+            [class.p-4]="!layoutService.fullBleed()"
+            [class.sm:p-6]="!layoutService.fullBleed()"
+          >
             <router-outlet />
           </main>
         }
@@ -57,6 +64,7 @@ import { filter } from 'rxjs/operators';
 })
 export class AppShellComponent implements OnInit {
   readonly projectStore = inject(ProjectStore);
+  readonly layoutService = inject(LayoutService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 

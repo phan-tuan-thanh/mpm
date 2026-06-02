@@ -9,6 +9,9 @@ export class LayoutService {
     localStorage.getItem('sidebar_collapsed') === 'true'
   );
 
+  // Full-bleed layout mode (no padding, no scroll on main — page manages its own)
+  readonly fullBleed = signal<boolean>(false);
+
   // Dark mode state
   readonly isDarkMode = signal<boolean>(
     localStorage.getItem('dark_mode') === 'true' ||
