@@ -1,0 +1,97 @@
+# =============================================================================
+# Authentik Blueprint — Agile PM Setup
+#
+# File này được Authentik worker tự động phát hiện và apply khi khởi động.
+# Tạo: OAuth2/OpenID Provider + Application cho ứng dụng Agile PM.
+#
+# Yêu cầu các biến môi trường sau phải có trong container authentik-worker:
+#   AUTHENTIK_CLIENT_ID      — Client ID (ví dụ: agile-pm-frontend)
+#   AUTHENTIK_CLIENT_SECRET  — Client Secret (chuỗi ngẫu nhiên ≥ 32 ký tự)
+#   AUTHENTIK_REDIRECT_URI   — Redirect URI sau khi đăng nhập thành công
+#   FRONTEND_URL             — URL gốc của frontend (dùng làm launch URL)
+#
+# Blueprint là idempotent: có thể chạy lại nhiều lần mà không tạo duplicate.
+# state: present = tạo mới nếu chưa có, cập nhật nếu đã có.
+# =============================================================================
+
+version: 1
+
+metadata:
+  name: agile-pm-setup
+  labels:
+    blueprints.goauthentik.io/instantiate: "true"
+
+entries:
+  # ─── 1. OAuth2/OpenID Connect Provider ──────────────────────────────────────
+  #
+  # Tạo OAuth2 Provider với Authorization Code flow.
+  # client_id và client_secret được đọc từ environment variables.
+  # Redirect URI khớp với AUTHENTIK_REDIRECT_URI trong .env.
+  #
+  - model: authentik_providers_oauth2.oauth2provider
+    state: present
+    identifiers:
+      name: agile-pm-provider
+    attrs:
+      name: agile-pm-provider
+
+      # Authorization flow mặc định của Authentik (được tạo trong initial setup)
+      authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-explicit-consent]]
+
+      # Client credentials — đọc từ env vars của container
+      client_type: confidential
+      client_id: !Env [AUTHENTIK_CLIENT_ID, agile-pm-frontend]
+      client_secret: !Env [AUTHENTIK_CLIENT_SECRET, changeme-replace-in-env]
+
+      # Redirect URIs — list format yêu cầu bởi Authentik 2024.8+
+      redirect_uris:
+        - url: !Env [AUTHENTIK_REDIRECT_URI, http://localhost:4200/auth/callback]
+          matching_mode: strict
+
+      # Signing key — dùng certificate self-signed mặc định của Authentik
+      signing_key: !Find [authentik_crypto.certificatekeypair, [name, "authentik Self-signed Certificate"]]
+
+      # OIDC Scopes — cung cấp sub, email, name, preferred_username cho ID token
+      property_mappings:
+        - !Find [authentik_providers_oauth2.scopemapping, [scope_name, openid]]
+        - !Find [authentik_providers_oauth2.scopemapping, [scope_name, email]]
+        - !Find [authentik_providers_oauth2.scopemapping, [scope_name, profile]]
+
+      # sub_mode: hashed_user_id — hash stable của UUID user
+      # AuthService lưu claims.sub vào users.external_id để lookup user
+      sub_mode: hashed_user_id
+
+      # Token validity — phù hợp với JWT_ACCESS_TOKEN_EXPIRY = 15m
+      access_code_validity: seconds=60
+      access_token_validity: minutes=5
+      refresh_token_validity: days=30
+
+      # Invalidation flow — dùng default logout flow
+      invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+
+  # ─── 2. Application ──────────────────────────────────────────────────────────
+  #
+  # Tạo Application liên kết với Provider trên.
+  # slug phải khớp với tên trong AUTHENTIK_ISSUER_URL, AUTHENTIK_TOKEN_URL, v.v.
+  # Ví dụ: http://localhost:9000/application/o/agile-pm/
+  #                                                  ^^^^^^^^ slug này
+  #
+  - model: authentik_core.application
+    state: present
+    identifiers:
+      slug: agile-pm
+    attrs:
+      name: Agile PM
+      slug: agile-pm
+
+      # Liên kết với OAuth2 Provider vừa tạo
+      provider: !Find [authentik_providers_oauth2.oauth2provider, [name, agile-pm-provider]]
+
+      # Cho phép truy cập nếu thỏa mãn bất kỳ policy nào (mặc định: không có policy = cho tất cả)
+      policy_engine_mode: any
+
+      # URL để Authentik redirect sau khi đăng nhập (launch URL trong Authentik App Library)
+      meta_launch_url: !Env [FRONTEND_URL, http://localhost:4200]
+
+      meta_description: Agile Project Management System — Powered by NestJS & Angular
+      meta_publisher: Agile PM Team

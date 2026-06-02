@@ -125,6 +125,10 @@ export class AuthService {
     // Bước 3: Upsert user trong PostgreSQL
     const user = await this.upsertUser(claims);
 
+    // Bước 3b: Xóa forced-logout flag — user vừa re-authenticate thành công
+    // Flag này được set khi role thay đổi để buộc re-login; sau khi login xong phải clear
+    await this.sessionService.removeFromForcedLogout(user.id);
+
     // Bước 4: Load project roles cho user
     const projectRoles = await this.loadProjectRoles(user.id);
 
@@ -491,12 +495,23 @@ export class AuthService {
       return user;
     }
 
-    // Tạo user mới với default role = 'User'
+    // Đọc INITIAL_ADMIN_EMAIL từ ConfigService (optional)
+    const initialAdminEmail = this.configService.get<string>('INITIAL_ADMIN_EMAIL');
+    const isInitialAdmin =
+      !!claims.email &&
+      !!initialAdminEmail &&
+      claims.email.toLowerCase() === initialAdminEmail.trim().toLowerCase();
+
+    if (isInitialAdmin) {
+      this.logger.log('[BOOTSTRAP] Initial admin created');
+    }
+
+    // Tạo user mới với role thích hợp
     const newUser = this.userRepository.create({
       externalId: claims.sub,
       email: claims.email,
       displayName: claims.name || claims.preferred_username || claims.email.split('@')[0],
-      systemRole: 'User',
+      systemRole: isInitialAdmin ? 'Admin' : 'User',
       isActive: true,
     });
 

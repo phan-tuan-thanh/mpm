@@ -68,6 +68,16 @@ import { AuthService } from '../../../auth/services/auth.service';
               </div>
 
               <div class="py-1">
+                @if (authService.currentUser()?.systemRole === 'Admin') {
+                  <button
+                    (click)="goToAdminPanel()"
+                    class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-surface-200 hover:bg-gray-50 dark:hover:bg-surface-800 transition duration-200 cursor-pointer text-left font-medium"
+                  >
+                    <i class="pi pi-shield"></i>
+                    <span>Trang quản trị</span>
+                  </button>
+                  <div class="my-1 border-t border-[#f1f5f9] dark:border-surface-800"></div>
+                }
                 <button
                   (click)="logout()"
                   class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition duration-200 cursor-pointer text-left font-medium"
@@ -122,6 +132,11 @@ export class TopbarComponent {
   toggleProfileMenu(event: MouseEvent) {
     event.stopPropagation();
     this.isProfileMenuOpen.set(!this.isProfileMenuOpen());
+  }
+
+  goToAdminPanel() {
+    this.isProfileMenuOpen.set(false);
+    void this.router.navigate(['/admin/users']);
   }
 
   logout() {

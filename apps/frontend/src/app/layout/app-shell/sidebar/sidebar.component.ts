@@ -2,6 +2,7 @@ import { Component, OnInit, computed, inject } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { ProjectStore } from '../../../projects/state/project.store';
 import { LayoutService } from '../../services/layout.service';
+import { AuthStore } from '../../../auth/state/auth.store';
 import { CommonModule } from '@angular/common';
 import { SelectModule } from 'primeng/select';
 import { FormsModule } from '@angular/forms';
@@ -89,6 +90,21 @@ import { ProjectListItem } from '@mpm/shared-types';
             <span>Danh sách dự án</span>
           }
         </a>
+
+        @if (authStore.isAdmin()) {
+          <a
+            routerLink="/admin/users"
+            routerLinkActive="bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 font-semibold border-l-4 border-indigo-600"
+            [routerLinkActiveOptions]="{ exact: false }"
+            class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 dark:text-surface-400 hover:bg-gray-50 dark:hover:bg-surface-800 hover:text-gray-900 dark:hover:text-surface-100 transition duration-200"
+            [title]="layoutService.isCollapsed() ? 'Quản trị hệ thống' : ''"
+          >
+            <i class="pi pi-shield text-base"></i>
+            @if (!layoutService.isCollapsed()) {
+              <span>Quản trị</span>
+            }
+          </a>
+        }
 
         @if (projectStore.currentProject()) {
           <!-- Divider -->
@@ -223,6 +239,7 @@ import { ProjectListItem } from '@mpm/shared-types';
 export class SidebarComponent implements OnInit {
   readonly projectStore = inject(ProjectStore);
   readonly layoutService = inject(LayoutService);
+  readonly authStore = inject(AuthStore);
   private readonly router = inject(Router);
 
   readonly selectedProject = computed<ProjectListItem | null>(() => {

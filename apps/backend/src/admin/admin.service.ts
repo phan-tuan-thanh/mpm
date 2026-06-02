@@ -215,6 +215,72 @@ export class AdminService {
     return this.toAdminUserResponse(targetUser);
   }
 
+  /**
+   * Enable account — kích hoạt lại tài khoản user
+   *
+   * Flow:
+   * 1. Tìm user theo ID
+   * 2. Set isActive = true
+   * 3. Xóa khỏi danh sách forced-logout
+   * 4. Ghi audit log
+   *
+   * @param targetUserId - ID user cần enable
+   * @param adminId - ID admin thực hiện thao tác
+   * @param ipAddress - IP address của admin
+   * @param userAgent - User-Agent của admin
+   */
+  async enableAccount(
+    targetUserId: string,
+    adminId: string,
+    ipAddress: string,
+    userAgent: string,
+  ): Promise<AdminUserResponse> {
+    // Bước 1: Tìm user
+    const targetUser = await this.userRepository.findOne({
+      where: { id: targetUserId },
+    });
+
+    if (!targetUser) {
+      throw new NotFoundException({
+        statusCode: 404,
+        error: 'Not Found',
+        message: `User with ID ${targetUserId} not found`,
+        errorCode: 'USER_NOT_FOUND',
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // Nếu đã active, trả về user hiện tại
+    if (targetUser.isActive) {
+      return this.toAdminUserResponse(targetUser);
+    }
+
+    // Bước 2: Set isActive = true
+    targetUser.isActive = true;
+    await this.userRepository.save(targetUser);
+
+    // Bước 3: Xóa khỏi danh sách forced-logout
+    await this.sessionService.removeFromForcedLogout(targetUserId);
+
+    // Bước 4: Ghi audit log
+    this.auditService.log(
+      AuthEvent.ACCOUNT_ENABLED,
+      adminId,
+      ipAddress,
+      userAgent,
+      {
+        targetUserId,
+        targetEmail: targetUser.email,
+      },
+    );
+
+    this.logger.log(
+      `Account enabled: user ${targetUserId} (${targetUser.email}) by admin ${adminId}`,
+    );
+
+    return this.toAdminUserResponse(targetUser);
+  }
+
   // ─── Private Helpers ────────────────────────────────────────────────────────
 
   /**

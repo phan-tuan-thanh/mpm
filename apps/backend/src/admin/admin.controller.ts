@@ -78,17 +78,20 @@ export class AdminController {
 
   /**
    * POST /api/admin/users/:id/disable — Disable account
-   *
-   * Side effects:
-   * - Set isActive = false
-   * - Full session invalidation (revokeAll + forcedLogout)
-   * - Ghi audit log
-   *
-   * Errors:
-   * - 404: User not found
-   * - 400: Last admin protection (nếu user là admin cuối cùng)
    */
   @Post('users/:id/disable')
+  async disableAccountPost(
+    @Param('id', ParseUUIDPipe) targetUserId: string,
+    @CurrentUser() admin: RequestUser,
+    @Req() req: Request,
+  ): Promise<AdminUserResponse> {
+    return this.disableAccount(targetUserId, admin, req);
+  }
+
+  /**
+   * PATCH /api/admin/users/:id/disable — Disable account
+   */
+  @Patch('users/:id/disable')
   async disableAccount(
     @Param('id', ParseUUIDPipe) targetUserId: string,
     @CurrentUser() admin: RequestUser,
@@ -98,6 +101,38 @@ export class AdminController {
     const userAgent = req.headers['user-agent'] ?? 'unknown';
 
     return this.adminService.disableAccount(
+      targetUserId,
+      admin.id,
+      ipAddress,
+      userAgent,
+    );
+  }
+
+  /**
+   * POST /api/admin/users/:id/enable — Enable account
+   */
+  @Post('users/:id/enable')
+  async enableAccountPost(
+    @Param('id', ParseUUIDPipe) targetUserId: string,
+    @CurrentUser() admin: RequestUser,
+    @Req() req: Request,
+  ): Promise<AdminUserResponse> {
+    return this.enableAccount(targetUserId, admin, req);
+  }
+
+  /**
+   * PATCH /api/admin/users/:id/enable — Enable account
+   */
+  @Patch('users/:id/enable')
+  async enableAccount(
+    @Param('id', ParseUUIDPipe) targetUserId: string,
+    @CurrentUser() admin: RequestUser,
+    @Req() req: Request,
+  ): Promise<AdminUserResponse> {
+    const ipAddress = this.extractIpAddress(req);
+    const userAgent = req.headers['user-agent'] ?? 'unknown';
+
+    return this.adminService.enableAccount(
       targetUserId,
       admin.id,
       ipAddress,

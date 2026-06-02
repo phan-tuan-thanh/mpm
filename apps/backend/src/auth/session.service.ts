@@ -316,6 +316,16 @@ export class SessionService {
   }
 
   /**
+   * Xóa user khỏi danh sách forced-logout (khi re-enable)
+   */
+  async removeFromForcedLogout(userId: string): Promise<void> {
+    const key = `forced_logout:${userId}`;
+    await this.redis.del(key);
+
+    this.logger.debug(`User ${userId} removed from forced-logout list`);
+  }
+
+  /**
    * Kiểm tra user có đang bị forced-logout không
    */
   async isForceLoggedOut(userId: string): Promise<boolean> {

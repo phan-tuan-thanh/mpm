@@ -49,12 +49,18 @@ Mở `.env` và **đổi tất cả mật khẩu mặc định** (`changeme_*`).
 
 - `POSTGRES_PASSWORD`
 - `REDIS_PASSWORD`
-- `AUTHENTIK_SECRET_KEY` — chuỗi ngẫu nhiên ≥ 50 ký tự, tạo bằng:
+- `AUTHENTIK_SECRET_KEY` — chuỗi ngẫu nhiên ≥ 50 ký tự:
   ```bash
   openssl rand -base64 60
   ```
+- `AUTHENTIK_CLIENT_SECRET` — chuỗi ngẫu nhiên ≥ 32 ký tự:
+  ```bash
+  openssl rand -hex 32
+  ```
+- `AUTHENTIK_CLIENT_ID` — để nguyên `agile-pm-frontend` hoặc đổi tùy ý (phải khớp với Bước 4).
+- `INITIAL_ADMIN_EMAIL` — email tài khoản Authentik của bạn; user đó sẽ là System Admin khi đăng nhập lần đầu.
 
-> `AUTHENTIK_CLIENT_ID` và `AUTHENTIK_CLIENT_SECRET` sẽ điền ở **Bước 3** sau khi tạo OAuth provider trong Authentik.
+> **Không cần** cấu hình Authentik thủ công — Blueprint sẽ tự động tạo Provider và Application (xem Bước 2).
 
 ### Bước 2 — Khởi động hạ tầng (Docker)
 
@@ -64,35 +70,22 @@ Mở `.env` và **đổi tất cả mật khẩu mặc định** (`changeme_*`).
 
 Lệnh này sẽ:
 - Tạo cặp khóa RSA (`keys/private.pem`, `keys/public.pem`) cho JWT nếu chưa có.
-- Khởi động PostgreSQL, Redis, Authentik.
-- Chờ các dịch vụ healthy (Authentik lần đầu có thể mất 1–2 phút).
+- Khởi động PostgreSQL, Redis, Authentik server và worker.
+- Authentik worker tự động apply [docker/plans/agile-pm.yaml](docker/plans/agile-pm.yaml) để tạo:
+  - **OAuth2/OpenID Provider** `agile-pm-provider` với `client_id` và `client_secret` từ `.env`
+  - **Application** `agile-pm` với slug khớp với các URL trong `.env`
 
-### Bước 3 — Cấu hình Authentik (OAuth2 Provider)
+> Blueprint chạy bất đồng bộ — Authentik worker cần hoàn tất initial setup (~1–2 phút) trước khi apply blueprint. Kiểm tra log: `docker logs mpm-authentik-worker | grep -i blueprint`
 
-Authentik cần được cấu hình **một lần** để ứng dụng đăng nhập được.
+### Bước 3 — Tạo tài khoản Authentik (akadmin)
 
-1. Mở `http://localhost:9000/if/flow/initial-setup/` để tạo tài khoản **admin** (`akadmin`) lần đầu.
-2. Vào **Admin interface → Applications → Providers → Create → OAuth2/OpenID Provider**:
-   - **Name**: `agile-pm-provider`
-   - **Authorization flow**: `default-provider-authorization-explicit-consent`
-   - **Client type**: `Confidential`
-   - **Client ID**: `agile-pm-frontend`  ← **phải khớp** với frontend (xem Bước 4)
-   - **Client Secret**: bấm sao chép lại để điền vào `.env`
-   - **Redirect URIs**:
-     ```
-     http://localhost:4200/auth/callback
-     ```
-   - **Signing Key**: chọn certificate mặc định.
-3. Vào **Applications → Create**:
-   - **Name**: `Agile PM`
-   - **Slug**: `agile-pm` (khớp với các URL `…/application/o/agile-pm/` trong `.env`)
-   - **Provider**: chọn `agile-pm-provider` vừa tạo.
-4. Tạo ít nhất một **User** (Directory → Users) để đăng nhập thử.
-5. Quay lại `.env`, điền:
-   ```env
-   AUTHENTIK_CLIENT_ID=agile-pm-frontend
-   AUTHENTIK_CLIENT_SECRET=<client secret vừa sao chép>
-   ```
+Lần đầu khởi động, Authentik yêu cầu tạo tài khoản admin của nó:
+
+1. Mở `http://localhost:9000/if/flow/initial-setup/`
+2. Tạo tài khoản **akadmin** (admin của Authentik — khác với System Admin của ứng dụng).
+3. Tạo ít nhất một **User** (Directory → Users) để đăng nhập vào Agile PM, email phải khớp với `INITIAL_ADMIN_EMAIL` trong `.env` nếu muốn user đó là System Admin.
+
+> **Verify blueprint đã apply**: Vào `http://localhost:9000` → Admin Interface → Applications → Providers — phải thấy `agile-pm-provider`. Nếu chưa thấy, đợi thêm 1–2 phút hoặc xem log worker.
 
 ### Bước 4 — Kiểm tra cấu hình frontend
 

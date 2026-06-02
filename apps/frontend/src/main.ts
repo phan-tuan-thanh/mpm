@@ -7,6 +7,7 @@ import Aura from '@primeuix/themes/aura';
 import { AppComponent } from './app/app.component';
 import { authInterceptor } from './app/auth/interceptors/auth.interceptor';
 import { authGuard } from './app/auth/guards/auth.guard';
+import { adminGuard } from './app/admin/guards/admin.guard';
 import { APP_INITIALIZER } from '@angular/core';
 import { AuthService } from './app/auth/services/auth.service';
 import { projectFeatureGuard } from './app/core/guards/project-feature.guard';
@@ -16,6 +17,16 @@ const routes = [
     path: 'auth',
     loadChildren: () =>
       import('./app/auth/auth.routes').then((m) => m.AUTH_ROUTES),
+  },
+  {
+    path: 'admin',
+    canActivate: [authGuard, adminGuard],
+    loadComponent: () =>
+      import('./app/layout/app-shell/app-shell.component').then(
+        (m) => m.AppShellComponent
+      ),
+    loadChildren: () =>
+      import('./app/admin/admin.routes').then((m) => m.ADMIN_ROUTES),
   },
   {
     path: 'projects',

@@ -53,6 +53,11 @@ services:
       AUTHENTIK_POSTGRESQL__USER: ${POSTGRES_USER:-mpm}
       AUTHENTIK_POSTGRESQL__PASSWORD: ${POSTGRES_PASSWORD}
       AUTHENTIK_POSTGRESQL__NAME: ${AUTHENTIK_DB_NAME:-authentik}
+      # Blueprint variables — cần thiết khi server scan blueprints lúc migration
+      AUTHENTIK_CLIENT_ID: ${AUTHENTIK_CLIENT_ID:-agile-pm-frontend}
+      AUTHENTIK_CLIENT_SECRET: ${AUTHENTIK_CLIENT_SECRET:-changeme}
+      AUTHENTIK_REDIRECT_URI: ${AUTHENTIK_REDIRECT_URI:-http://localhost:4200/auth/callback}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:4200}
     depends_on:
       postgres:
         condition: service_healthy
@@ -74,6 +79,14 @@ services:
       AUTHENTIK_POSTGRESQL__USER: ${POSTGRES_USER:-mpm}
       AUTHENTIK_POSTGRESQL__PASSWORD: ${POSTGRES_PASSWORD}
       AUTHENTIK_POSTGRESQL__NAME: ${AUTHENTIK_DB_NAME:-authentik}
+      # Blueprint variables — được đọc bởi !Env trong docker/plans/agile-pm.yaml
+      AUTHENTIK_CLIENT_ID: ${AUTHENTIK_CLIENT_ID:?AUTHENTIK_CLIENT_ID is required}
+      AUTHENTIK_CLIENT_SECRET: ${AUTHENTIK_CLIENT_SECRET:?AUTHENTIK_CLIENT_SECRET is required}
+      AUTHENTIK_REDIRECT_URI: ${AUTHENTIK_REDIRECT_URI:-http://localhost:4200/auth/callback}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:4200}
+    volumes:
+      # Custom blueprints — worker tự động apply khi khởi động
+      - ./plans:/blueprints/custom:ro
     depends_on:
       postgres:
         condition: service_healthy
