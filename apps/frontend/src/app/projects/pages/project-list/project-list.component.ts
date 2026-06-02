@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { ProjectStore } from '../../state/project.store';
 import { ProjectService } from '../../services/project.service';
+import { LayoutService } from '../../../layout/services/layout.service';
 import { CommonModule } from '@angular/common';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
@@ -34,14 +35,14 @@ import { FormsModule } from '@angular/forms';
     FormsModule,
   ],
   template: `
-    <div class="p-6 max-w-7xl mx-auto space-y-6">
-      <!-- Header Section -->
-      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div class="flex flex-col h-full bg-surface-50 dark:bg-surface-950 overflow-y-auto">
+      <!-- Header -->
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 px-6 py-5 bg-white dark:bg-surface-900 border-b border-gray-100 dark:border-surface-700">
         <div>
-          <h1 class="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-gray-900 via-gray-800 to-indigo-900 bg-clip-text text-transparent">
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-surface-0">
             Dự án của bạn
           </h1>
-          <p class="mt-1 text-sm text-gray-500 font-medium">
+          <p class="mt-0.5 text-sm text-gray-500 dark:text-surface-400">
             Quản lý và chuyển đổi nhanh giữa các không gian làm việc.
           </p>
         </div>
@@ -53,8 +54,9 @@ import { FormsModule } from '@angular/forms';
         ></button>
       </div>
 
+      <div class="flex-1 px-6 py-4 space-y-4">
       <!-- Filters Panel -->
-      <div class="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
+      <div class="bg-white dark:bg-surface-900 rounded-xl border border-gray-100 dark:border-surface-700 p-4 shadow-sm">
         <p-fluid class="flex flex-col md:flex-row gap-4 items-end">
           <!-- Search Input -->
           <div class="w-full md:w-80 flex flex-col gap-1.5">
@@ -113,7 +115,7 @@ import { FormsModule } from '@angular/forms';
 
       <!-- Selected Rows Action Toolbar -->
       @if (selectedProjects.length > 0 && !projectStore.isLoading()) {
-        <div class="flex items-center justify-between bg-indigo-50/70 border border-indigo-100 p-4 rounded-xl shadow-sm transition animate-fade-in">
+        <div class="flex items-center justify-between bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900 p-4 rounded-xl shadow-sm transition animate-fade-in">
           <span class="text-sm font-semibold text-indigo-900">
             Đã chọn {{ selectedProjects.length }} dự án
           </span>
@@ -129,7 +131,7 @@ import { FormsModule } from '@angular/forms';
       }
 
       <!-- Projects Table -->
-      <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+      <div class="bg-white dark:bg-surface-900 rounded-xl border border-gray-100 dark:border-surface-700 shadow-sm overflow-hidden">
         <p-table
           [value]="projectStore.isLoading() ? dummyProjects : projectStore.projects()"
           [(selection)]="selectedProjects"
@@ -255,12 +257,14 @@ import { FormsModule } from '@angular/forms';
           </ng-template>
         </p-table>
       </div>
+      </div><!-- /flex-1 px-6 py-4 -->
     </div>
   `,
 })
 export class ProjectListComponent implements OnInit, OnDestroy {
   readonly projectStore = inject(ProjectStore);
   private readonly projectService = inject(ProjectService);
+  private readonly layoutService = inject(LayoutService);
   private readonly confirmService = inject(ConfirmationService);
   private readonly messageService = inject(MessageService);
   private readonly router = inject(Router);
@@ -292,6 +296,8 @@ export class ProjectListComponent implements OnInit, OnDestroy {
   private routeSubscription?: Subscription;
 
   ngOnInit(): void {
+    this.layoutService.fullBleed.set(true);
+
     // 1. Đồng bộ filter state từ URL query params
     this.routeSubscription = this.route.queryParams.subscribe((params) => {
       this.filterName = params['name'] || '';
@@ -317,6 +323,7 @@ export class ProjectListComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.layoutService.fullBleed.set(false);
     this.searchSubscription?.unsubscribe();
     this.routeSubscription?.unsubscribe();
   }
