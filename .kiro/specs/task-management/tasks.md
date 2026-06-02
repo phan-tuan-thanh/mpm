@@ -307,15 +307,15 @@ Stack: NestJS 11 + TypeORM + PostgreSQL 17 (backend), Angular 21 + Signals + Ang
 
 | Task group | Người làm | Deadline | Trạng thái |
 |-----------|-----------|---------|-----------|
-| 1–2 (Migration + Types) | | | todo |
-| 3–6 (Backend core) | | | todo |
-| 7–9 (Attachment/Link/Relation/Comment) | | | todo |
-| 10–12 (Wire + Tests + Checkpoint) | | | todo |
-| 13 (Angular Services + Stores) | | | todo |
-| 14 (Backlog Page) | | | todo |
-| 15 (Task Detail Panel) | | | todo |
-| 16–18 (Attachment/Link/Label UI) | | | todo |
-| 19–20 (Checkpoints) | | | todo |
+| 1–2 (Migration + Types) | — | — | ✅ Done |
+| 3–6 (Backend core) | — | — | ✅ Done |
+| 7–9 (Attachment/Link/Relation/Comment) | — | — | ✅ Done |
+| 10–12 (Wire + Tests + Checkpoint) | — | — | ✅ Done |
+| 13 (Angular Services + Stores) | — | — | ✅ Done |
+| 14 (Backlog Page) | — | — | ✅ Done |
+| 15 (Task Detail Panel) | — | — | ✅ Done |
+| 16–18 (Attachment/Link/Label UI) | — | — | ✅ Done |
+| 19–20 (Checkpoints) | — | — | ✅ Done |
 
 ## Ghi chú implementation
 

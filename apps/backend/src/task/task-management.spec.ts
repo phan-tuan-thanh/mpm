@@ -17,7 +17,9 @@ import {
   UnprocessableEntityException,
   ForbiddenException,
   NotFoundException,
+  PayloadTooLargeException,
 } from '@nestjs/common';
+import { TaskAttachment } from './entities/task-attachment.entity';
 
 jest.setTimeout(30000);
 
@@ -33,10 +35,13 @@ describe('Task Management Integration Tests (Epic B)', () => {
   let stateRepo: Repository<ProjectState>;
   let taskRepo: Repository<Task>;
   let memberRepo: Repository<ProjectMember>;
+  let attachmentRepo: Repository<TaskAttachment>;
   let dataSource: DataSource;
+  let attachmentService: AttachmentService;
 
   let testUser1: User;
   let testUser2: User;
+  let stakeholderUser: User;
   let nonMember: User;
 
   beforeAll(async () => {
@@ -48,6 +53,7 @@ describe('Task Management Integration Tests (Epic B)', () => {
     activityService = moduleRef.get<ActivityService>(ActivityService);
     labelService = moduleRef.get<LabelService>(LabelService);
     relationService = moduleRef.get<RelationService>(RelationService);
+    attachmentService = moduleRef.get<AttachmentService>(AttachmentService);
     projectService = moduleRef.get<ProjectService>(ProjectService);
 
     userRepo = moduleRef.get<Repository<User>>(getRepositoryToken(User));
@@ -55,6 +61,7 @@ describe('Task Management Integration Tests (Epic B)', () => {
     stateRepo = moduleRef.get<Repository<ProjectState>>(getRepositoryToken(ProjectState));
     taskRepo = moduleRef.get<Repository<Task>>(getRepositoryToken(Task));
     memberRepo = moduleRef.get<Repository<ProjectMember>>(getRepositoryToken(ProjectMember));
+    attachmentRepo = moduleRef.get<Repository<TaskAttachment>>(getRepositoryToken(TaskAttachment));
     dataSource = moduleRef.get<DataSource>(DataSource);
 
     // Create test users
@@ -63,6 +70,9 @@ describe('Task Management Integration Tests (Epic B)', () => {
       await userRepo.save(userRepo.create({ email: `epic-b-u1-${ts}@test.com`, displayName: 'Epic B User1', externalId: `eb1-${ts}` }));
     testUser2 = await userRepo.findOne({ where: { email: 'dev@demo.local' } }) ||
       await userRepo.save(userRepo.create({ email: `epic-b-u2-${ts}@test.com`, displayName: 'Epic B User2', externalId: `eb2-${ts}` }));
+    stakeholderUser = await userRepo.save(
+      userRepo.create({ email: `epic-b-sh-${ts}@test.com`, displayName: 'Stakeholder', externalId: `ebsh-${ts}` }),
+    );
     nonMember = await userRepo.save(
       userRepo.create({ email: `epic-b-nm-${ts}@test.com`, displayName: 'Non Member', externalId: `ebnm-${ts}` }),
     );
@@ -173,17 +183,32 @@ describe('Task Management Integration Tests (Epic B)', () => {
     expect(deletedSubtask).toBeNull();
   });
 
-  // ─── P5: Permission matrix (simplified) ──────────────────────────────
+  // ─── P5: Permission Matrix ────────────────────────────────────────────
 
-  it('P5: Assignee validation — non-member cannot be assigned', async () => {
+  it('P5: Permission Matrix — Stakeholder can comment; Developer cannot delete another\'s comment; SM can', async () => {
     const project = await createTestProject('P5');
 
+    // Add stakeholderUser as Stakeholder in this project
+    await memberRepo.save(
+      memberRepo.create({ userId: stakeholderUser.id, projectId: project.id, projectRole: 'Stakeholder' }),
+    );
+
+    const task = await taskService.create(project.id, testUser1.id, { title: 'P5 Permission Task' });
+
+    // Stakeholder CAN add a comment (POST comment → 200)
+    const comment = await activityService.addComment(task.id, stakeholderUser.id, 'Stakeholder comment');
+    expect(comment).toBeDefined();
+    expect(comment.comment).toBe('Stakeholder comment');
+
+    // testUser2 (Developer) CANNOT delete Stakeholder's comment — ForbiddenException
     await expect(
-      taskService.create(project.id, testUser1.id, {
-        title: 'Task with non-member assignee',
-        assigneeIds: [nonMember.id],
-      }),
-    ).rejects.toThrow(UnprocessableEntityException);
+      activityService.deleteComment(comment.id, testUser2.id),
+    ).rejects.toThrow(ForbiddenException);
+
+    // testUser1 with 'Scrum_Master' callerRole CAN delete anyone's comment
+    await expect(
+      activityService.deleteComment(comment.id, testUser1.id, 'Scrum_Master'),
+    ).resolves.not.toThrow();
   });
 
   // ─── P6: Date Range Validation ────────────────────────────────────────
@@ -255,16 +280,45 @@ describe('Task Management Integration Tests (Epic B)', () => {
     ).rejects.toThrow(UnprocessableEntityException);
   });
 
-  // ─── P10: Activity Log ────────────────────────────────────────────────
+  // ─── P10: Attachment Limits ───────────────────────────────────────────
 
-  it('P10: Creating a task logs a "created" activity entry', async () => {
+  it('P10: Attachment limits — 21st upload throws 422; file > 20MB throws 413', async () => {
     const project = await createTestProject('P10');
+    const task = await taskService.create(project.id, testUser1.id, { title: 'Attachment Limit Task' });
 
-    const task = await taskService.create(project.id, testUser1.id, { title: 'Activity Task' });
+    // Insert 20 attachment records directly to simulate already-at-limit
+    for (let i = 0; i < 20; i++) {
+      await dataSource.query(
+        `INSERT INTO task_attachments (id, task_id, original_name, storage_path, mime_type, size_bytes, uploader_id)
+         VALUES (gen_random_uuid(), $1, $2, $3, 'text/plain', 100, $4)`,
+        [task.id, `file-${i}.txt`, `/tmp/fake-${i}.txt`, testUser1.id],
+      );
+    }
 
-    const timeline = await activityService.getTimeline(task.id);
-    expect(timeline.data.length).toBeGreaterThan(0);
-    expect(timeline.data.some((a) => a.entryType === 'created')).toBe(true);
+    const smallFile = {
+      originalname: 'extra.txt',
+      buffer: Buffer.from('x'),
+      size: 100,
+      mimetype: 'text/plain',
+    } as Express.Multer.File;
+
+    // 21st upload → 422 UnprocessableEntityException
+    await expect(
+      attachmentService.upload(task.id, project.id, testUser1.id, smallFile),
+    ).rejects.toThrow(UnprocessableEntityException);
+
+    // File > 20MB → 413 PayloadTooLargeException
+    const bigFile = {
+      originalname: 'huge.bin',
+      buffer: Buffer.alloc(0),
+      size: 21 * 1024 * 1024,
+      mimetype: 'application/octet-stream',
+    } as Express.Multer.File;
+
+    const task2 = await taskService.create(project.id, testUser1.id, { title: 'Attachment Size Task' });
+    await expect(
+      attachmentService.upload(task2.id, project.id, testUser1.id, bigFile),
+    ).rejects.toThrow(PayloadTooLargeException);
   });
 
   // ─── P11: Backlog Order Rebalance ─────────────────────────────────────
@@ -298,12 +352,22 @@ describe('Task Management Integration Tests (Epic B)', () => {
     expect(reordered[0].backlogOrder).toBeGreaterThan(0);
   });
 
-  // ─── P12: Comment Add/Edit/Delete ────────────────────────────────────
+  // ─── P12: Activity Log ───────────────────────────────────────────────
 
-  it('P12: Comment can be added, edited, and deleted', async () => {
+  it('P12: Activity Log — create/update/comment all produce correct activity entries', async () => {
     const project = await createTestProject('P12');
-    const task = await taskService.create(project.id, testUser1.id, { title: 'Comment Task' });
+    const task = await taskService.create(project.id, testUser1.id, { title: 'Activity Log Task' });
 
+    // CREATE logs 'created'
+    const afterCreate = await activityService.getTimeline(task.id);
+    expect(afterCreate.data.some((a) => a.entryType === 'created')).toBe(true);
+
+    // UPDATE title logs 'title_changed'
+    await taskService.update(project.id, task.id, testUser1.id, { title: 'Updated Title' });
+    const afterUpdate = await activityService.getTimeline(task.id);
+    expect(afterUpdate.data.some((a) => a.entryType === 'title_changed')).toBe(true);
+
+    // Comment add/edit/delete
     const comment = await activityService.addComment(task.id, testUser1.id, 'Hello world');
     expect(comment.comment).toBe('Hello world');
 
@@ -311,7 +375,6 @@ describe('Task Management Integration Tests (Epic B)', () => {
     expect(edited.comment).toBe('Updated comment');
 
     await activityService.deleteComment(comment.id, testUser1.id);
-
     const timeline = await activityService.getTimeline(task.id);
     expect(timeline.data.some((a) => a.id === comment.id)).toBe(false);
   });
