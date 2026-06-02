@@ -105,6 +105,15 @@ const ERROR_MESSAGES: Record<AuthErrorCode, string> = {
             </svg>
             Đăng nhập với Authentik
           </button>
+
+          <!-- Đăng nhập bằng tài khoản khác -->
+          <button
+            type="button"
+            (click)="switchAccount()"
+            class="mt-3 w-full text-center text-sm font-medium text-indigo-600 hover:text-indigo-500 hover:underline"
+          >
+            Đăng nhập bằng tài khoản khác
+          </button>
         </div>
       </div>
     </div>
@@ -119,6 +128,14 @@ export class LoginComponent implements OnInit {
   constructor(private readonly route: ActivatedRoute) {}
 
   ngOnInit(): void {
+    // Nếu vừa logout khỏi Authentik để đổi tài khoản → tự động bắt đầu login lại.
+    // Lúc này Authentik không còn SSO session nên sẽ buộc hỏi tài khoản.
+    if (localStorage.getItem('relogin_after_logout') === '1') {
+      localStorage.removeItem('relogin_after_logout');
+      this.loginWithAuthentik();
+      return;
+    }
+
     // Đọc error từ query params (nếu redirect back với error)
     const errorCode = this.route.snapshot.queryParamMap.get('error');
     const reason = this.route.snapshot.queryParamMap.get('reason');
@@ -132,9 +149,30 @@ export class LoginComponent implements OnInit {
   }
 
   /**
+   * Đăng nhập bằng tài khoản khác.
+   *
+   * Authentik bỏ qua prompt=select_account/login (hoặc gây loop), nên cách chắc
+   * chắn để đổi user là: đăng xuất khỏi Authentik (end-session) trước, rồi quay
+   * lại app và tự động bắt đầu login (ngOnInit sẽ phát hiện cờ relogin_after_logout).
+   *
+   * post_logout_redirect_uri trỏ về /auth/callback (đã đăng ký trong Authentik).
+   * Callback không có code sẽ điều hướng về /auth/login, nơi auto-relogin chạy.
+   */
+  switchAccount(): void {
+    this.authService.clearAuthState();
+    localStorage.removeItem('mpm_logged_in');
+    localStorage.setItem('relogin_after_logout', '1');
+
+    const params = new URLSearchParams({
+      post_logout_redirect_uri: environment.authentik.redirectUri,
+    });
+    window.location.href = `${environment.authentik.endSessionUrl}?${params.toString()}`;
+  }
+
+  /**
    * Khởi tạo OAuth2 flow:
    * 1. Generate state parameter (crypto.randomUUID) để chống CSRF
-   * 2. Lưu state vào sessionStorage
+   * 2. Lưu state vào cookie Lax (+ sessionStorage fallback)
    * 3. Redirect đến Authentik authorize endpoint
    */
   loginWithAuthentik(): void {
@@ -153,10 +191,6 @@ export class LoginComponent implements OnInit {
     sessionStorage.setItem('oauth_state', state);
 
     // Xây dựng authorize URL
-    // Lưu ý: KHÔNG dùng prompt=login — Authentik bị loop (sau khi auth xong,
-    // authorize endpoint thấy prompt=login lại buộc auth lần nữa → lặp vô hạn).
-    // Khi chưa có SSO session, Authentik tự hiện form login.
-    // Để đổi user khi đã có session: đăng xuất (gọi end-session) rồi đăng nhập lại.
     const params = new URLSearchParams({
       response_type: 'code',
       client_id: environment.authentik.clientId,

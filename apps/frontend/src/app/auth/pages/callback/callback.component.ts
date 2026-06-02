@@ -132,6 +132,12 @@ export class CallbackComponent implements OnInit {
 
     // Kiểm tra có code và state không
     if (!code || !state) {
+      // Trường hợp quay lại sau khi logout khỏi Authentik để đổi tài khoản:
+      // không có code, nhưng có cờ relogin → về /auth/login để auto-relogin.
+      if (localStorage.getItem('relogin_after_logout') === '1') {
+        void this.router.navigate(['/auth/login']);
+        return;
+      }
       this.handleError('unknown');
       return;
     }

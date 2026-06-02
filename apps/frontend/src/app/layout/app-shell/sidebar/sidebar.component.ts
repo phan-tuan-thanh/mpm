@@ -15,10 +15,25 @@ import { ProjectListItem } from '@mpm/shared-types';
     <div
       [class.w-64]="!isCollapsed()"
       [class.w-16]="isCollapsed()"
-      class="flex h-full flex-col border-r border-[#e2e8f0] bg-white text-[#2d3748] transition-all duration-300 ease-in-out select-none shadow-sm"
+      class="relative flex h-full flex-col border-r border-[#e2e8f0] bg-white text-[#2d3748] transition-all duration-300 ease-in-out select-none shadow-sm"
     >
+      <!-- Floating Collapse/Expand Button -->
+      <button
+        (click)="toggleSidebar()"
+        class="absolute -right-3 top-5 z-50 flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-400 shadow-sm hover:bg-gray-50 hover:text-indigo-600 hover:border-indigo-200 transition duration-200 cursor-pointer"
+        [attr.aria-label]="isCollapsed() ? 'Mở rộng menu' : 'Thu gọn menu'"
+        [title]="isCollapsed() ? 'Mở rộng menu' : 'Thu gọn menu'"
+      >
+        <i [class]="isCollapsed() ? 'pi pi-chevron-right text-[9px]' : 'pi pi-chevron-left text-[9px]'"></i>
+      </button>
+
       <!-- Logo / Header -->
-      <div class="flex h-16 items-center justify-between px-4 border-b border-[#f1f5f9]">
+      <div 
+        class="flex h-16 items-center border-b border-[#f1f5f9] transition-all duration-300"
+        [class.justify-between]="!isCollapsed()"
+        [class.justify-center]="isCollapsed()"
+        [class.px-4]="!isCollapsed()"
+      >
         <div class="flex items-center gap-2 overflow-hidden">
           <div class="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-indigo-600 text-white font-bold shadow-md shadow-indigo-100">
             A
@@ -29,17 +44,6 @@ import { ProjectListItem } from '@mpm/shared-types';
             </span>
           }
         </div>
-        <button
-          (click)="toggleSidebar()"
-          class="flex h-8 w-8 items-center justify-center rounded-md text-gray-400 hover:bg-[#f1f5f9] hover:text-[#1a202c] transition"
-          [attr.aria-label]="isCollapsed() ? 'Mở rộng menu' : 'Thu gọn menu'"
-        >
-          @if (isCollapsed()) {
-            <i class="pi pi-angle-double-right font-medium"></i>
-          } @else {
-            <i class="pi pi-angle-double-left font-medium"></i>
-          }
-        </button>
       </div>
 
       <!-- Project Switcher -->

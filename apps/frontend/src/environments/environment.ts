@@ -14,6 +14,8 @@ export const environment = {
   authentik: {
     /** Authentik authorize endpoint */
     authorizeUrl: 'http://localhost:9000/application/o/authorize/',
+    /** Authentik end-session (RP-initiated logout) endpoint */
+    endSessionUrl: 'http://localhost:9000/application/o/agile-pm/end-session/',
     /** OAuth2 Client ID (public) — phải khớp AUTHENTIK_CLIENT_ID trong .env / Authentik provider */
     clientId: 'agile-pm-frontend',
     /** Redirect URI sau khi Authentik xác thực xong */
