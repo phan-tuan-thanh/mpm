@@ -1,6 +1,7 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { environment } from '../../../../environments/environment';
+import { AuthService } from '../../services/auth.service';
 
 /**
  * Mã lỗi có thể nhận từ query params khi redirect back
@@ -110,6 +111,8 @@ const ERROR_MESSAGES: Record<AuthErrorCode, string> = {
   `,
 })
 export class LoginComponent implements OnInit {
+  private readonly authService = inject(AuthService);
+
   /** Signal chứa error message hiển thị cho user */
   readonly errorMessage = signal<string>('');
 
@@ -135,13 +138,25 @@ export class LoginComponent implements OnInit {
    * 3. Redirect đến Authentik authorize endpoint
    */
   loginWithAuthentik(): void {
+    // Xóa auth state cũ để đảm bảo không còn session cũ nào ảnh hưởng
+    this.authService.clearAuthState();
+    localStorage.removeItem('mpm_logged_in');
+
     // Generate state parameter ngẫu nhiên
     const state = crypto.randomUUID();
 
-    // Lưu state vào sessionStorage để verify khi callback
+    // Lưu state vào cookie Lax (first-party) thay vì sessionStorage.
+    // sessionStorage bị một số trình duyệt (Brave) xóa khi redirect cross-site
+    // qua OAuth (Authentik), gây state mismatch → phải đăng nhập 2 lần.
+    // Cookie Lax tồn tại qua redirect. Giữ sessionStorage làm fallback.
+    document.cookie = `oauth_state=${state}; path=/; max-age=600; samesite=lax`;
     sessionStorage.setItem('oauth_state', state);
 
     // Xây dựng authorize URL
+    // Lưu ý: KHÔNG dùng prompt=login — Authentik bị loop (sau khi auth xong,
+    // authorize endpoint thấy prompt=login lại buộc auth lần nữa → lặp vô hạn).
+    // Khi chưa có SSO session, Authentik tự hiện form login.
+    // Để đổi user khi đã có session: đăng xuất (gọi end-session) rồi đăng nhập lại.
     const params = new URLSearchParams({
       response_type: 'code',
       client_id: environment.authentik.clientId,

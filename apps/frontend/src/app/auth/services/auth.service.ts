@@ -52,7 +52,30 @@ export class AuthService {
     private readonly router: Router
   ) {}
 
+  /**
+   * Promise của lần initialize() đầu tiên — guard await để tránh race condition.
+   * withEnabledBlockingInitialNavigation chạy initial navigation SONG SONG với
+   * APP_INITIALIZER, nên guard có thể chạy trước khi refresh xong. Guard phải
+   * await whenReady() để đảm bảo refresh hoàn tất trước khi kiểm tra auth.
+   */
+  private initPromise: Promise<void> | null = null;
+
   initialize(): Promise<void> {
+    if (!this.initPromise) {
+      this.initPromise = this.runInitialize();
+    }
+    return this.initPromise;
+  }
+
+  /**
+   * Trả về promise hoàn tất khi initialize() (gồm cả refresh) đã xong.
+   * Dùng trong authGuard.
+   */
+  whenReady(): Promise<void> {
+    return this.initPromise ?? Promise.resolve();
+  }
+
+  private runInitialize(): Promise<void> {
     const token = this.tokenService.getAccessToken();
     if (token && !this.tokenService.isTokenExpired()) {
       this.updateUserFromToken(token);

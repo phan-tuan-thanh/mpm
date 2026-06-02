@@ -73,6 +73,14 @@ export class SessionService {
     // Set TTL 7 ngày
     await this.redis.expire(key, SESSION_TTL_SECONDS);
 
+    // Lưu mapping refresh_owner:{tokenHash} → userId để lookup nhanh khi refresh
+    await this.redis.set(
+      `refresh_owner:${refreshTokenHash}`,
+      userId,
+      'EX',
+      SESSION_TTL_SECONDS,
+    );
+
     this.logger.debug(
       `Session created: ${sessionId} for user ${userId}`,
     );
@@ -168,15 +176,91 @@ export class SessionService {
     // Xóa session
     await this.redis.del(key);
 
-    // Blacklist refresh token nếu có
+    // Blacklist refresh token và xóa refresh_owner mapping
     if (refreshTokenHash) {
       const blacklistTtl = remainingTtl > 0 ? remainingTtl : SESSION_TTL_SECONDS;
       await this.blacklistRefreshToken(refreshTokenHash, blacklistTtl);
+      await this.redis.del(`refresh_owner:${refreshTokenHash}`);
     }
 
     this.logger.debug(
       `Session revoked: ${sessionId} for user ${userId}`,
     );
+  }
+
+  /**
+   * Tìm userId theo refresh token hash
+   * Dùng key `refresh_owner:{tokenHash}` được tạo khi createSession
+   *
+   * Fallback (self-heal): nếu mapping chưa tồn tại (session tạo bởi code cũ
+   * trước khi có refresh_owner), quét session:* để tìm session khớp
+   * refreshTokenHash rồi backfill mapping. Tránh bắt user phải đăng nhập lại.
+   */
+  async findUserByRefreshTokenHash(tokenHash: string): Promise<string | null> {
+    const owner = await this.redis.get(`refresh_owner:${tokenHash}`);
+    if (owner) {
+      return owner;
+    }
+
+    // Fallback: scan toàn bộ session keys để tìm hash khớp
+    let cursor = '0';
+    do {
+      const [nextCursor, keys] = await this.redis.scan(
+        cursor,
+        'MATCH',
+        'session:*',
+        'COUNT',
+        100,
+      );
+      cursor = nextCursor;
+
+      for (const key of keys) {
+        const hash = await this.redis.hget(key, 'refreshTokenHash');
+        if (hash === tokenHash) {
+          const userId = await this.redis.hget(key, 'userId');
+          if (userId) {
+            // Backfill mapping để lần sau lookup nhanh
+            await this.redis.set(
+              `refresh_owner:${tokenHash}`,
+              userId,
+              'EX',
+              SESSION_TTL_SECONDS,
+            );
+            return userId;
+          }
+        }
+      }
+    } while (cursor !== '0');
+
+    return null;
+  }
+
+  /**
+   * Cập nhật refreshTokenHash sau khi rotate token
+   * - Xóa mapping cũ, tạo mapping mới
+   * - Cập nhật field trong session hash
+   */
+  async updateRefreshTokenHash(
+    userId: string,
+    sessionId: string,
+    oldHash: string,
+    newHash: string,
+  ): Promise<void> {
+    const key = this.buildSessionKey(userId, sessionId);
+
+    // Cập nhật field trong session hash
+    await this.redis.hset(key, 'refreshTokenHash', newHash);
+
+    // Lưu mapping mới
+    await this.redis.set(
+      `refresh_owner:${newHash}`,
+      userId,
+      'EX',
+      SESSION_TTL_SECONDS,
+    );
+
+    // Xóa mapping cũ (đã bị blacklist ở auth.service)
+    await this.redis.del(`refresh_owner:${oldHash}`);
   }
 
   /**
@@ -206,9 +290,10 @@ export class SessionService {
         // Xóa session
         await this.redis.del(key);
 
-        // Blacklist refresh token
+        // Blacklist refresh token và xóa refresh_owner mapping
         if (refreshTokenHash) {
           await this.blacklistRefreshToken(refreshTokenHash, SESSION_TTL_SECONDS);
+          await this.redis.del(`refresh_owner:${refreshTokenHash}`);
         }
       }
     } while (cursor !== '0');

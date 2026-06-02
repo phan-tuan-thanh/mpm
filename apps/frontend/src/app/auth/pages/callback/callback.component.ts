@@ -136,24 +136,31 @@ export class CallbackComponent implements OnInit {
       return;
     }
 
-    // Verify state matches sessionStorage (chống CSRF — Requirement 1.9)
-    const savedState = sessionStorage.getItem('oauth_state');
+    // Verify state (chống CSRF — Requirement 1.9).
+    // Đọc từ cookie trước (bền qua OAuth redirect), fallback sang sessionStorage.
+    const savedState =
+      this.readCookie('oauth_state') ?? sessionStorage.getItem('oauth_state');
 
     if (!savedState || savedState !== state) {
       // State không khớp → redirect to login với error
-      sessionStorage.removeItem('oauth_state');
+      this.clearOauthState();
       void this.router.navigate(['/auth/login'], {
         queryParams: { error: 'invalid_state' },
       });
       return;
     }
 
-    // Xóa state khỏi sessionStorage (đã sử dụng)
-    sessionStorage.removeItem('oauth_state');
+    // Xóa state (đã sử dụng)
+    this.clearOauthState();
 
     // Gọi backend để exchange code lấy tokens
+    // withCredentials: true để browser xử lý Set-Cookie (refresh token) trong response
     this.http
-      .post<AuthCallbackResponse>('/api/auth/callback', { code, state })
+      .post<AuthCallbackResponse>(
+        '/api/auth/callback',
+        { code, state },
+        { withCredentials: true },
+      )
       .subscribe({
         next: (response) => {
           // Lưu accessToken vào memory và cập nhật auth state
@@ -212,5 +219,23 @@ export class CallbackComponent implements OnInit {
   private handleError(code: CallbackErrorCode): void {
     this.isLoading.set(false);
     this.errorMessage.set(ERROR_MESSAGES[code]);
+  }
+
+  /**
+   * Đọc giá trị một cookie theo tên (trả về null nếu không có)
+   */
+  private readCookie(name: string): string | null {
+    const match = document.cookie.match(
+      new RegExp('(?:^|; )' + name + '=([^;]*)'),
+    );
+    return match ? decodeURIComponent(match[1]) : null;
+  }
+
+  /**
+   * Xóa oauth_state ở cả cookie lẫn sessionStorage
+   */
+  private clearOauthState(): void {
+    document.cookie = 'oauth_state=; path=/; max-age=0; samesite=lax';
+    sessionStorage.removeItem('oauth_state');
   }
 }

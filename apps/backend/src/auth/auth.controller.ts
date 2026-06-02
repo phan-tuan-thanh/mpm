@@ -289,7 +289,10 @@ export class AuthController {
    * Flags:
    * - httpOnly: true — không accessible từ JavaScript
    * - secure: true (production) — chỉ gửi qua HTTPS
-   * - sameSite: 'strict' — chống CSRF
+   * - sameSite: 'lax' — chống CSRF nhưng vẫn cho phép cookie được lưu/gửi
+   *   trong OAuth redirect flow (Authentik → frontend). 'strict' khiến một số
+   *   trình duyệt (Brave/Chrome) KHÔNG lưu cookie set trong luồng khởi tạo
+   *   cross-site, gây mất phiên khi reload.
    * - path: '/api/auth/refresh' — chỉ gửi cho refresh endpoint
    * - maxAge: 604800000 (7 ngày tính bằng ms)
    */
@@ -297,7 +300,7 @@ export class AuthController {
     res.cookie(REFRESH_TOKEN_COOKIE, refreshToken, {
       httpOnly: true,
       secure: this.isProduction,
-      sameSite: 'strict',
+      sameSite: 'lax',
       path: '/api/auth/refresh',
       maxAge: COOKIE_MAX_AGE_SECONDS * 1000, // Express dùng milliseconds
     });
@@ -310,7 +313,7 @@ export class AuthController {
     res.clearCookie(REFRESH_TOKEN_COOKIE, {
       httpOnly: true,
       secure: this.isProduction,
-      sameSite: 'strict',
+      sameSite: 'lax',
       path: '/api/auth/refresh',
     });
   }

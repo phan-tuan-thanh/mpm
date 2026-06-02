@@ -15,9 +15,18 @@ import { AuthService } from '../services/auth.service';
  *
  * Validates: Requirements 8.1
  */
-export const authGuard: CanActivateFn = (route, state): boolean | UrlTree => {
+export const authGuard: CanActivateFn = async (
+  route,
+  state,
+): Promise<boolean | UrlTree> => {
   const authService = inject(AuthService);
   const router = inject(Router);
+
+  // Chờ initialize() (gồm refresh từ cookie) hoàn tất trước khi kiểm tra.
+  // Tránh race condition: withEnabledBlockingInitialNavigation chạy guard
+  // song song với APP_INITIALIZER, nếu không chờ thì isAuthenticated() còn
+  // false khi reload → văng login dù refresh đang chạy.
+  await authService.whenReady();
 
   if (authService.isAuthenticated()) {
     return true;

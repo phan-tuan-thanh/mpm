@@ -546,27 +546,12 @@ export class AuthService {
   }
 
   /**
-   * Tìm userId từ refresh token hash
-   *
-   * Lưu ý: Trong implementation thực tế, nên lưu mapping tokenHash → userId
-   * trong Redis để tránh scan. Hiện tại dùng approach đơn giản hơn:
-   * lưu userId trong token metadata hoặc decode từ session.
-   *
-   * Tạm thời: method này sẽ được gọi khi token đã bị blacklist,
-   * nghĩa là ta cần cách khác để tìm userId.
-   * Giải pháp: lưu thêm key `refresh_owner:{tokenHash}` → userId khi tạo session.
+   * Tìm userId từ refresh token hash qua key `refresh_owner:{tokenHash}` trong Redis
    */
   private async findUserByRefreshTokenHash(
-    _tokenHash: string,
+    tokenHash: string,
   ): Promise<string | null> {
-    // TODO: Implement lookup từ Redis key `refresh_owner:{tokenHash}`
-    // Hiện tại trả về null — sẽ được implement khi wire đầy đủ
-    // Trong flow thực tế, controller sẽ truyền userId từ session/cookie
-    this.logger.warn(
-      'findUserByRefreshTokenHash: lookup not yet implemented — ' +
-        'userId should be provided by controller context',
-    );
-    return null;
+    return this.sessionService.findUserByRefreshTokenHash(tokenHash);
   }
 
   /**
@@ -577,22 +562,15 @@ export class AuthService {
     sessionId: string,
     newRefreshTokenHash: string,
   ): Promise<void> {
-    // SessionService không expose update method trực tiếp cho refreshTokenHash
-    // Workaround: get session, delete, recreate — hoặc dùng Redis HSET trực tiếp
-    // Vì SessionService dùng Redis Hash, ta cần thêm method hoặc access Redis
-    // Tạm thời: log warning, session vẫn hoạt động với hash cũ trong blacklist check
     const session = await this.sessionService.getSession(userId, sessionId);
     if (session) {
-      // SessionService cần method updateRefreshTokenHash
-      // Tạm thời ghi log — sẽ thêm method vào SessionService khi wire
-      this.logger.debug(
-        `Session ${sessionId} refresh token rotated for user ${userId}`,
+      await this.sessionService.updateRefreshTokenHash(
+        userId,
+        sessionId,
+        session.refreshTokenHash,
+        newRefreshTokenHash,
       );
     }
-
-    // Lưu ý: Trong implementation đầy đủ, cần thêm method vào SessionService:
-    // await this.sessionService.updateRefreshTokenHash(userId, sessionId, newRefreshTokenHash);
-    void newRefreshTokenHash; // Suppress unused variable warning
   }
 
   /**

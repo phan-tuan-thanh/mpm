@@ -125,27 +125,39 @@ setup_env() {
 # ─── 3. Generate RSA keys ─────────────────────────────────────────────────────
 
 generate_jwt_keys() {
-  local KEYS_DIR="$PROJECT_ROOT/keys"
+  local BACKEND_DIR="$PROJECT_ROOT/apps/backend"
 
-  if [ -f "$KEYS_DIR/private.pem" ] && [ -f "$KEYS_DIR/public.pem" ]; then
-    log_success "RSA key pair đã tồn tại tại keys/"
+  # Đọc path từ .env; nếu là relative path thì resolve từ backend directory
+  local PRIVATE_KEY_PATH="${JWT_PRIVATE_KEY_PATH:-./keys/private.pem}"
+  local PUBLIC_KEY_PATH="${JWT_PUBLIC_KEY_PATH:-./keys/public.pem}"
+
+  if [[ "$PRIVATE_KEY_PATH" != /* ]]; then
+    PRIVATE_KEY_PATH="$BACKEND_DIR/$PRIVATE_KEY_PATH"
+  fi
+  if [[ "$PUBLIC_KEY_PATH" != /* ]]; then
+    PUBLIC_KEY_PATH="$BACKEND_DIR/$PUBLIC_KEY_PATH"
+  fi
+
+  if [ -f "$PRIVATE_KEY_PATH" ] && [ -f "$PUBLIC_KEY_PATH" ]; then
+    log_success "RSA key pair đã tồn tại ($(dirname "$PRIVATE_KEY_PATH" | sed "s|$PROJECT_ROOT/||"))"
     return
   fi
 
+  if ! command -v openssl &> /dev/null; then
+    log_error "openssl không tìm thấy. Vui lòng cài openssl để tạo RSA keys."
+    exit 1
+  fi
+
   log_info "Tạo RSA key pair (2048-bit) cho JWT RS256..."
-  mkdir -p "$KEYS_DIR"
+  mkdir -p "$(dirname "$PRIVATE_KEY_PATH")"
 
-  # Generate private key
-  openssl genrsa -out "$KEYS_DIR/private.pem" 2048 2>/dev/null
+  openssl genrsa -out "$PRIVATE_KEY_PATH" 2048 2>/dev/null
+  openssl rsa -in "$PRIVATE_KEY_PATH" -pubout -out "$PUBLIC_KEY_PATH" 2>/dev/null
 
-  # Extract public key
-  openssl rsa -in "$KEYS_DIR/private.pem" -pubout -out "$KEYS_DIR/public.pem" 2>/dev/null
+  chmod 600 "$PRIVATE_KEY_PATH"
+  chmod 644 "$PUBLIC_KEY_PATH"
 
-  # Restrict permissions
-  chmod 600 "$KEYS_DIR/private.pem"
-  chmod 644 "$KEYS_DIR/public.pem"
-
-  log_success "RSA key pair đã tạo tại keys/"
+  log_success "RSA key pair đã tạo tại $(dirname "$PRIVATE_KEY_PATH" | sed "s|$PROJECT_ROOT/||")"
 }
 
 # ─── 4. Start Docker infrastructure ───────────────────────────────────────────
@@ -362,6 +374,7 @@ main() {
       ;;
     backend)
       setup_env
+      generate_jwt_keys
       install_deps
       run_migrations
       start_backend
