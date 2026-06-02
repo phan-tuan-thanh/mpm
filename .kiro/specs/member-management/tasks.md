@@ -1,7 +1,7 @@
 ---
 specName: member-management
 version: 1.0
-status: in-progress
+status: completed
 estimatedDays: 3
 ---
 
@@ -64,8 +64,8 @@ Stack: NestJS 11 + TypeORM + PostgreSQL 17 (backend), Angular 21 + Signals + Pri
   - [x] 3.3 Confirmation dialog khi hạ cấp Scrum_Master hoặc xóa member
   - _Requirements: 6.1–6.6_
 
-- [ ] 4. Backend — INITIAL_ADMIN_EMAIL Bootstrap
-  - [ ] 4.1 Cập nhật `AuthService.upsertUser()` trong `apps/backend/src/auth/auth.service.ts`
+- [x] 4. Backend — INITIAL_ADMIN_EMAIL Bootstrap
+  - [x] 4.1 Cập nhật `AuthService.upsertUser()` trong `apps/backend/src/auth/auth.service.ts`
     - Đọc `INITIAL_ADMIN_EMAIL` từ `ConfigService` (không `getOrThrow` — optional)
     - So sánh case-insensitive với `claims.email` chỉ khi INSERT user mới
     - Set `systemRole: isInitialAdmin ? 'Admin' : 'User'`
@@ -73,12 +73,12 @@ Stack: NestJS 11 + TypeORM + PostgreSQL 17 (backend), Angular 21 + Signals + Pri
     - Không thay đổi logic cho user đã tồn tại
     - _Requirements: 1.1–1.5_
 
-  - [ ] 4.2 Cập nhật `.env.example`
+  - [x] 4.2 Cập nhật `.env.example`
     - Thêm section `# Initial Admin Bootstrap`
     - Thêm `INITIAL_ADMIN_EMAIL=` với comment: "Email của user sẽ được cấp Admin khi đăng nhập lần đầu. Gỡ bỏ sau khi setup xong."
     - _Requirements: 1.6_
 
-- [ ] 5. Checkpoint — Verify INITIAL_ADMIN_EMAIL
+- [x] 5. Checkpoint — Verify INITIAL_ADMIN_EMAIL
   - Chạy backend local với `INITIAL_ADMIN_EMAIL=<email_test>`
   - Đăng nhập lần đầu với email đó → verify `users.system_role = 'Admin'` trong DB
   - Đăng nhập lần thứ hai → verify role không thay đổi (không cần re-trigger)
@@ -86,41 +86,41 @@ Stack: NestJS 11 + TypeORM + PostgreSQL 17 (backend), Angular 21 + Signals + Pri
   - Xóa `INITIAL_ADMIN_EMAIL` khỏi env → verify không có side effect
   - Hỏi user nếu có vấn đề
 
-- [ ] 6. Frontend — Admin Module
-  - [ ] 6.1 Tạo `AdminModule` và routing
+- [x] 6. Frontend — Admin Module
+  - [x] 6.1 Tạo `AdminModule` và routing
     - `apps/frontend/src/app/admin/admin.module.ts` (hoặc standalone routes)
     - Route `/admin/users` protected bởi `AdminGuard`
     - Link "Admin" trong sidebar/topbar chỉ hiển thị khi `user.systemRole === 'Admin'`
     - _Requirements: 4.5_
 
-  - [ ] 6.2 Implement `AdminGuard`
+  - [x] 6.2 Implement `AdminGuard`
     - `apps/frontend/src/app/admin/guards/admin.guard.ts`
     - `CanActivateFn`: kiểm tra `authService.currentUser()?.systemRole === 'Admin'`
     - Redirect về `/` với toast "Bạn không có quyền truy cập trang này" nếu không phải Admin
     - _Requirements: 4.5_
 
-  - [ ] 6.3 Implement `AdminService` (Angular)
+  - [x] 6.3 Implement `AdminService` (Angular)
     - `apps/frontend/src/app/admin/services/admin.service.ts`
     - `listUsers(): Observable<AdminUserResponse[]>` → `GET /api/admin/users`
     - `changeRole(userId, role): Observable<AdminUserResponse>` → `PATCH /api/admin/users/:id/role`
     - `disableUser(userId): Observable<AdminUserResponse>` → `PATCH /api/admin/users/:id/disable`
     - _Requirements: 4.1–4.3_
 
-  - [ ] 6.4 Implement `UserListComponent`
+  - [x] 6.4 Implement `UserListComponent`
     - `apps/frontend/src/app/admin/pages/user-list/user-list.component.ts`
     - `p-table` với cột: Email, Tên, System Role (badge), Trạng thái (Active/Disabled chip), Ngày tạo, Hành động
     - Cột Hành động: button "Đổi role" (dropdown Admin/User) + button "Disable/Enable"
     - Load data khi init: `this.adminService.listUsers()`
     - _Requirements: 4.6_
 
-  - [ ] 6.5 Confirmation dialog trước khi đổi role/disable
+  - [x] 6.5 Confirmation dialog trước khi đổi role/disable
     - Dùng `ConfirmationService` của PrimeNG (`p-confirmDialog`)
     - Khi đổi Admin → User: "Bạn có chắc muốn hạ quyền [tên]?"
     - Khi disable: "Bạn có chắc muốn vô hiệu hóa tài khoản [tên]? Họ sẽ bị đăng xuất ngay."
     - Cảnh báo đặc biệt nếu đang thao tác với Admin duy nhất
     - _Requirements: 4.7–4.8_
 
-- [ ] 7. Checkpoint — Verify Admin Panel
+- [x] 7. Checkpoint — Verify Admin Panel
   - Login với tài khoản Admin → thấy link "Admin" trong navigation
   - Login với tài khoản User → không thấy link "Admin", truy cập `/admin/users` bị redirect
   - Đổi role User → Admin → verify badge cập nhật, user bị re-login
@@ -128,7 +128,7 @@ Stack: NestJS 11 + TypeORM + PostgreSQL 17 (backend), Angular 21 + Signals + Pri
   - Cố disable Admin duy nhất → verify warning và API trả về 400
   - Hỏi user nếu có vấn đề
 
-- [ ] 8. Viết property tests
+- [x] 8. Viết property tests
   - **P1: INITIAL_ADMIN_EMAIL — new user** — user mới với email khớp → `system_role = 'Admin'`
   - **P2: INITIAL_ADMIN_EMAIL — existing user** — user đã có trong DB → role không đổi
   - **P3: INITIAL_ADMIN_EMAIL — case insensitive** — `ADMIN@CO.COM` khớp với `admin@co.com`
@@ -143,7 +143,7 @@ Stack: NestJS 11 + TypeORM + PostgreSQL 17 (backend), Angular 21 + Signals + Pri
   - **P12: Last admin protection** — hạ role Admin duy nhất → 400
   - _Validates: Req 1–5_
 
-- [ ] 9. Final checkpoint
+- [x] 9. Final checkpoint
   - Chạy `npm test` backend — P1–P12 pass
   - Chạy `ng build` frontend — zero compile errors
   - Full E2E flow: deploy fresh → set INITIAL_ADMIN_EMAIL → login → verify Admin → vào Admin Panel → promote user khác → gỡ INITIAL_ADMIN_EMAIL → hệ thống vẫn hoạt động
@@ -154,11 +154,11 @@ Stack: NestJS 11 + TypeORM + PostgreSQL 17 (backend), Angular 21 + Signals + Pri
 | Task | Người làm | Deadline | Trạng thái |
 |------|-----------|---------|-----------|
 | 1–3 (Backend + Members Tab) | — | — | ✅ Done |
-| 4 (INITIAL_ADMIN_EMAIL) | — | — | todo |
-| 5 (Checkpoint bootstrap) | — | — | todo |
-| 6 (Admin Panel frontend) | — | — | todo |
-| 7 (Checkpoint admin panel) | — | — | todo |
-| 8–9 (Tests + Final) | — | — | todo |
+| 4 (INITIAL_ADMIN_EMAIL) | — | — | ✅ Done |
+| 5 (Checkpoint bootstrap) | — | — | ✅ Done |
+| 6 (Admin Panel frontend) | — | — | ✅ Done |
+| 7 (Checkpoint admin panel) | — | — | ✅ Done |
+| 8–9 (Tests + Final) | — | — | ✅ Done |
 
 ## Ghi chú implementation
 
