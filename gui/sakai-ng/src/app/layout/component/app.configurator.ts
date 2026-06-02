@@ -8,6 +8,7 @@ import Lara from '@primeuix/themes/lara';
 import Nora from '@primeuix/themes/nora';
 import { PrimeNG } from 'primeng/config';
 import { SelectButtonModule } from 'primeng/selectbutton';
+import { ButtonModule } from 'primeng/button';
 import { LayoutService } from '@/app/layout/service/layout.service';
 
 const presets = {
@@ -39,9 +40,33 @@ declare type SurfacesType = {
 @Component({
     selector: 'app-configurator',
     standalone: true,
-    imports: [CommonModule, FormsModule, SelectButtonModule],
+    imports: [CommonModule, FormsModule, SelectButtonModule, ButtonModule],
     template: `
         <div class="flex flex-col gap-4">
+            <div>
+                <span class="text-sm text-muted-color font-semibold">Scale</span>
+                <div class="flex items-center gap-3 pt-2">
+                    <p-button icon="pi pi-minus" (onClick)="decrementScale()" [rounded]="true" text severity="secondary" size="small" [disabled]="scale() <= 12" />
+                    <div class="flex gap-2 items-center">
+                        @for (s of scales; track s) {
+                            <div
+                                class="w-2 h-2 rounded-full transition-all"
+                                [ngClass]="{
+                                    'bg-primary scale-125': s === scale(),
+                                    'bg-surface-300 dark:bg-surface-600': s !== scale()
+                                }"
+                            ></div>
+                        }
+                    </div>
+                    <p-button icon="pi pi-plus" (onClick)="incrementScale()" [rounded]="true" text severity="secondary" size="small" [disabled]="scale() >= 16" />
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-2">
+                <span class="text-sm text-muted-color font-semibold">Input Style</span>
+                <p-selectbutton [options]="inputStyleOptions" [ngModel]="inputStyle()" (ngModelChange)="onInputStyleChange($event)" [allowEmpty]="false" size="small" />
+            </div>
+
             <div>
                 <span class="text-sm text-muted-color font-semibold">Primary</span>
                 <div class="pt-2 flex gap-2 flex-wrap justify-start">
@@ -51,17 +76,18 @@ declare type SurfacesType = {
                             [title]="primaryColor.name"
                             (click)="updateColors($event, 'primary', primaryColor)"
                             [ngClass]="{
-                                    'outline outline-primary': primaryColor.name === selectedPrimaryColor()
-                                }"
+                                'outline outline-primary': primaryColor.name === selectedPrimaryColor()
+                            }"
                             class="cursor-pointer w-5 h-5 rounded-full flex shrink-0 items-center justify-center outline-offset-1 shadow"
                             [style]="{
-                                    'background-color': primaryColor?.name === 'noir' ? 'var(--text-color)' : primaryColor?.palette?.['500']
-                                }"
+                                'background-color': primaryColor?.name === 'noir' ? 'var(--text-color)' : primaryColor?.palette?.['500']
+                            }"
                         >
                         </button>
                     }
                 </div>
             </div>
+
             <div>
                 <span class="text-sm text-muted-color font-semibold">Surface</span>
                 <div class="pt-2 flex gap-2 flex-wrap justify-start">
@@ -72,19 +98,21 @@ declare type SurfacesType = {
                             (click)="updateColors($event, 'surface', surface)"
                             class="cursor-pointer w-5 h-5 rounded-full flex shrink-0 items-center justify-center p-0 outline-offset-1"
                             [ngClass]="{
-                                    'outline outline-primary': selectedSurfaceColor() ? selectedSurfaceColor() === surface.name : layoutService.layoutConfig().darkTheme ? surface.name === 'zinc' : surface.name === 'slate'
-                                }"
+                                'outline outline-primary': selectedSurfaceColor() ? selectedSurfaceColor() === surface.name : layoutService.layoutConfig().darkTheme ? surface.name === 'zinc' : surface.name === 'slate'
+                            }"
                             [style]="{
-                                    'background-color': surface?.palette?.['500']
-                                }"
+                                'background-color': surface?.palette?.['500']
+                            }"
                         ></button>
                     }
                 </div>
             </div>
+
             <div class="flex flex-col gap-2">
                 <span class="text-sm text-muted-color font-semibold">Presets</span>
-                <p-selectbutton [options]="presets" [ngModel]="selectedPreset()" (ngModelChange)="onPresetChange($event)" [allowEmpty]="false" size="small" />
+                <p-selectbutton [options]="presetOptions" [ngModel]="selectedPreset()" (ngModelChange)="onPresetChange($event)" [allowEmpty]="false" size="small" />
             </div>
+
             <div *ngIf="showMenuModeButton()" class="flex flex-col gap-2">
                 <span class="text-sm text-muted-color font-semibold">Menu Mode</span>
                 <p-selectbutton [ngModel]="menuMode()" (ngModelChange)="onMenuModeChange($event)" [options]="menuModeOptions" [allowEmpty]="false" size="small" />
@@ -106,7 +134,9 @@ export class AppConfigurator {
 
     primeng = inject(PrimeNG);
 
-    presets = Object.keys(presets);
+    presetOptions = Object.keys(presets);
+
+    scales = [12, 13, 14, 15, 16];
 
     showMenuModeButton = signal(!this.router.url.includes('auth'));
 
@@ -115,9 +145,15 @@ export class AppConfigurator {
         { label: 'Overlay', value: 'overlay' }
     ];
 
+    inputStyleOptions = [
+        { label: 'Outlined', value: 'outlined' },
+        { label: 'Filled', value: 'filled' }
+    ];
+
     ngOnInit() {
         if (isPlatformBrowser(this.platformId)) {
             this.onPresetChange(this.layoutService.layoutConfig().preset);
+            this.primeng.inputStyle.set(this.layoutService.layoutConfig().inputStyle as any);
         }
     }
 
@@ -269,6 +305,10 @@ export class AppConfigurator {
     selectedPreset = computed(() => this.layoutService.layoutConfig().preset);
 
     menuMode = computed(() => this.layoutService.layoutConfig().menuMode);
+
+    scale = computed(() => this.layoutService.layoutConfig().scale);
+
+    inputStyle = computed(() => this.layoutService.layoutConfig().inputStyle);
 
     primaryColors = computed<SurfacesType[]>(() => {
         const presetPalette = presets[this.layoutService.layoutConfig().preset as KeyOfType<typeof presets>].primitive;
@@ -442,5 +482,24 @@ export class AppConfigurator {
 
     onMenuModeChange(event: string) {
         this.layoutService.layoutConfig.update((prev) => ({ ...prev, menuMode: event }));
+    }
+
+    onInputStyleChange(event: string) {
+        this.primeng.inputStyle.set(event as any);
+        this.layoutService.layoutConfig.update((prev) => ({ ...prev, inputStyle: event }));
+    }
+
+    incrementScale() {
+        const current = this.scale();
+        if (current < 16) {
+            this.layoutService.layoutConfig.update((prev) => ({ ...prev, scale: current + 1 }));
+        }
+    }
+
+    decrementScale() {
+        const current = this.scale();
+        if (current > 12) {
+            this.layoutService.layoutConfig.update((prev) => ({ ...prev, scale: current - 1 }));
+        }
     }
 }

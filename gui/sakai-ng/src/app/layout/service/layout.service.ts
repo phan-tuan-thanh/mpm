@@ -1,4 +1,5 @@
-import { Injectable, effect, signal, computed } from '@angular/core';
+import { Injectable, effect, signal, computed, PLATFORM_ID, inject } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 
 export interface LayoutConfig {
     preset: string;
@@ -6,6 +7,8 @@ export interface LayoutConfig {
     surface: string | undefined | null;
     darkTheme: boolean;
     menuMode: string;
+    scale: number;
+    inputStyle: string;
 }
 
 interface LayoutState {
@@ -17,17 +20,34 @@ interface LayoutState {
     activePath: string | null;
 }
 
+const STORAGE_KEY = 'layout-config';
+
+const defaultConfig: LayoutConfig = {
+    preset: 'Aura',
+    primary: 'emerald',
+    surface: null,
+    darkTheme: false,
+    menuMode: 'static',
+    scale: 14,
+    inputStyle: 'outlined'
+};
+
 @Injectable({
     providedIn: 'root'
 })
 export class LayoutService {
-    layoutConfig = signal<LayoutConfig>({
-        preset: 'Aura',
-        primary: 'emerald',
-        surface: null,
-        darkTheme: false,
-        menuMode: 'static'
-    });
+    private platformId = inject(PLATFORM_ID);
+
+    private loadSavedConfig(): LayoutConfig {
+        if (!isPlatformBrowser(this.platformId)) return defaultConfig;
+        try {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) return { ...defaultConfig, ...JSON.parse(saved) };
+        } catch {}
+        return defaultConfig;
+    }
+
+    layoutConfig = signal<LayoutConfig>(this.loadSavedConfig());
 
     layoutState = signal<LayoutState>({
         staticMenuDesktopInactive: false,
@@ -58,13 +78,27 @@ export class LayoutService {
         effect(() => {
             const config = this.layoutConfig();
 
-            if (!this.initialized || !config) {
+            if (isPlatformBrowser(this.platformId)) {
+                try {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+                } catch {}
+                this.applyScale(config.scale);
+            }
+
+            if (!this.initialized) {
                 this.initialized = true;
+                this.toggleDarkMode(config);
                 return;
             }
 
+            if (!config) return;
+
             this.handleDarkModeTransition(config);
         });
+    }
+
+    applyScale(scale: number): void {
+        document.documentElement.style.fontSize = scale + 'px';
     }
 
     private handleDarkModeTransition(config: LayoutConfig): void {
