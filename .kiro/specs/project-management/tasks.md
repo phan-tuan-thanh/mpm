@@ -234,13 +234,13 @@ Stack: NestJS 11 + TypeORM + PostgreSQL 17 (backend), Angular 21 + Signals + Pri
     - Hiện warning text mô tả hậu quả của từng hành động
     - _Requirements: 4.2, 4.4, 7.4_
 
-- [ ] 13. Checkpoint — Verify toàn bộ frontend
+- [x] 13. Checkpoint — Verify toàn bộ frontend
   - Chạy `ng build` — không có compile errors
   - Test manual toàn bộ flow: đăng nhập → xem project list → tạo project → mời member → settings → archive → delete
   - Kiểm tra responsive trên mobile viewport
   - Hỏi user nếu có vấn đề
 
-- [ ] 14. Final checkpoint — Đảm bảo tất cả tests pass
+- [x] 14. Final checkpoint — Đảm bảo tất cả tests pass
   - Chạy tất cả backend tests: `npm test` trong `apps/backend`
   - Chạy `ng test` trong `apps/frontend`
   - Kiểm tra không còn imports nào từ InvitationModule đã xóa
