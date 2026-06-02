@@ -9,6 +9,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as path from 'path';
 import * as fs from 'fs';
+import { fromBuffer as fileTypeFromBuffer } from 'file-type';
 import { TaskAttachment } from '../entities/task-attachment.entity';
 import { ActivityService } from '../activity/activity.service';
 
@@ -34,16 +35,17 @@ export class AttachmentService {
       throw new PayloadTooLargeException('File size exceeds 20MB limit');
     }
 
-    // Validate magic bytes using file-type
-    let detectedType: { mime: string } | undefined;
+    // Validate magic bytes using file-type v16 (CommonJS-compatible)
+    let mimeType = file.mimetype;
     try {
-      const { fileTypeFromBuffer } = await import('file-type');
-      detectedType = await fileTypeFromBuffer(file.buffer ?? fs.readFileSync(file.path));
+      const buf = file.buffer ?? (file.path ? fs.readFileSync(file.path) : null);
+      if (buf) {
+        const detected = await fileTypeFromBuffer(buf);
+        if (detected) mimeType = detected.mime;
+      }
     } catch {
-      // file-type not available or unrecognized — allow through (mime from multer is fallback)
+      // Unrecognized type — fall back to multer's mime
     }
-
-    const mimeType = detectedType?.mime ?? file.mimetype;
 
     // Check attachment count
     const count = await this.attachmentRepo.count({ where: { taskId } });
