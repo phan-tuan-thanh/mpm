@@ -411,10 +411,12 @@ describe('ProjectSettings Integration Tests (Epic A+)', () => {
     });
 
     // Fetch backlog tasks
-    const backlogTasks = await taskService.findAll(project.id, { isBacklog: true });
+    const backlogResult = await taskService.findAll(project.id, {
+      stateIds: [backlogState.id],
+    });
 
     // task1 should be in backlog list, task2 should not
-    expect(backlogTasks.some((t) => t.id === task1.id)).toBe(true);
-    expect(backlogTasks.some((t) => t.id === task2.id)).toBe(false);
+    expect(backlogResult.data.some((t) => t.id === task1.id)).toBe(true);
+    expect(backlogResult.data.some((t) => t.id === task2.id)).toBe(false);
   });
 });

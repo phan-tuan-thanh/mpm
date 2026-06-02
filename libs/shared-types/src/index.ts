@@ -11,6 +11,38 @@ export {
 } from './auth.types';
 
 export {
+  TaskType,
+  TaskPriority,
+  TaskRelationType,
+  TaskActivityType,
+  TaskAssignee,
+  Label,
+  TaskAttachment,
+  TaskLink,
+  TaskRelation,
+  TaskActivity,
+  TaskStateRef,
+  TaskParentRef,
+  TaskListItem,
+  Task,
+  TaskGrouped,
+  TaskListResponse,
+  TaskGroupedResponse,
+  CreateTaskDto,
+  UpdateTaskDto,
+  ReorderTaskItem,
+  ReorderTasksDto,
+  BulkDeleteTasksDto,
+  CreateLabelDto,
+  UpdateLabelDto,
+  CreateLinkDto,
+  CreateRelationDto,
+  CreateCommentDto,
+  UpdateCommentDto,
+  TaskQueryDto,
+} from './task.types';
+
+export {
   ProjectStatus,
   ProjectAuditEvent,
   Project,

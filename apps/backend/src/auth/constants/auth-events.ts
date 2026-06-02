@@ -61,6 +61,18 @@ export const AuthEvent = {
   MEMBER_REMOVED: 'member_removed',
   /** Thay đổi vai trò thành viên */
   MEMBER_ROLE_CHANGED: 'member_role_changed',
+  /** Tạo task mới */
+  TASK_CREATED: 'task_created',
+  /** Cập nhật task */
+  TASK_UPDATED: 'task_updated',
+  /** Xóa task */
+  TASK_DELETED: 'task_deleted',
+  /** Sắp xếp lại thứ tự tasks */
+  TASK_REORDERED: 'task_reordered',
+  /** Tạo label mới */
+  LABEL_CREATED: 'label_created',
+  /** Xóa label */
+  LABEL_DELETED: 'label_deleted',
 } as const;
 
 /** Type cho giá trị của AuthEvent */
