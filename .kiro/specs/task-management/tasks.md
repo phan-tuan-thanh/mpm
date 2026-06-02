@@ -1,7 +1,7 @@
 ---
 specName: task-management
 version: 2.0
-status: in_progress
+status: completed
 estimatedDays: 18
 ---
 
@@ -289,7 +289,7 @@ Stack: NestJS 11 + TypeORM + PostgreSQL 17 (backend), Angular 21 + Signals + Ang
   - Xóa: confirm "sẽ bỏ label khỏi N tasks"
   - _Requirements: 7.1–7.4_
 
-- [ ] 19. Checkpoint — Verify toàn bộ frontend
+- [x] 19. Checkpoint — Verify toàn bộ frontend
   - Chạy `ng build` — zero compile errors
   - Test toàn bộ Plane-like flow: tạo epic → story → task → subtask; drag & drop; group by state; open detail; auto-save mọi field; upload attachment; thêm link; thêm relation blocking; viết comment; xem activity timeline
   - Test keyboard: `/` focus search, Escape đóng panel
@@ -297,7 +297,7 @@ Stack: NestJS 11 + TypeORM + PostgreSQL 17 (backend), Angular 21 + Signals + Ang
   - Test overdue highlight, relation circular detection
   - Hỏi user nếu có vấn đề
 
-- [ ] 20. Final checkpoint
+- [x] 20. Final checkpoint
   - Chạy `npm test` backend — tất cả property tests pass
   - Chạy `ng test` frontend
   - Verify performance: Backlog 200 tasks load < 300ms; attachment upload < 3s cho 5MB; search < 200ms
