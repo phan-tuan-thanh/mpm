@@ -265,9 +265,9 @@ Stack: NestJS 11 + TypeORM + PostgreSQL 17 (backend), Angular 21 + Signals + Pri
   - Hỏi user nếu có vấn đề
 
 - [x] 19. Final checkpoint
-  - Chạy `npm test` backend — tất cả 12 property tests pass ✅
-  - Chạy `ng build` frontend — zero compile errors ✅
-  - Verify không còn reference nào đến `task_state_enum` trong codebase ✅
+  - Chạy `npm test` backend — tất cả 12 property tests pass
+  - Chạy `ng test` frontend
+  - Verify không còn reference nào đến `task_state_enum` trong codebase
   - Confirm Epic B (task-management) team đã được notify về schema changes (`tasks.state_id`, `project_states` table)
   - Hỏi user nếu có vấn đề
 
@@ -275,19 +275,19 @@ Stack: NestJS 11 + TypeORM + PostgreSQL 17 (backend), Angular 21 + Signals + Pri
 
 | Task group | Người làm | Deadline | Trạng thái |
 |-----------|-----------|---------|-----------|
-| 1 (Migrations) | — | — | ✅ Done |
-| 2–3 (Types + Checkpoint) | — | — | ✅ Done |
-| 4 (State Service + Controller) | — | — | ✅ Done |
-| 5 (Estimate Config) | — | — | ✅ Done |
-| 6 (Project Service updates) | — | — | ✅ Done |
-| 7 (Task Entity/Service update) | — | — | ✅ Done |
-| 8–10 (Wire + Tests + Checkpoint) | — | — | ✅ Done |
-| 11–12 (Angular Store + List) | — | — | ✅ Done |
-| 13 (Create Project form) | — | — | ✅ Done |
-| 14 (Settings tabs: States/Estimates/Features) | — | — | ✅ Done |
-| 15–16 (Sidebar + Guards) | — | — | ✅ Done |
-| 17 (Task Store updates) | — | — | ✅ Done |
-| 18–19 (Checkpoints) | — | — | ✅ Done |
+| 1 (Migrations) | | | ✅ Done |
+| 2–3 (Types + Checkpoint) | | | ✅ Done |
+| 4 (State Service + Controller) | | | ✅ Done |
+| 5 (Estimate Config) | | | ✅ Done |
+| 6 (Project Service updates) | | | ✅ Done |
+| 7 (Task Entity/Service update) | | | ✅ Done |
+| 8–10 (Wire + Tests + Checkpoint) | | | ✅ Done |
+| 11–12 (Angular Store + List) | | | ✅ Done |
+| 13 (Create Project form) | | | ✅ Done |
+| 14 (Settings tabs: States/Estimates/Features) | | | ✅ Done |
+| 15–16 (Sidebar + Guards) | | | ✅ Done |
+| 17 (Task Store updates) | | | ✅ Done |
+| 18–19 (Checkpoints) | | | ✅ Done |
 
 ## Ghi chú implementation
 
