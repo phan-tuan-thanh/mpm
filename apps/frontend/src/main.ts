@@ -66,8 +66,8 @@ const routes = [
           {
             path: 'backlog',
             loadComponent: () =>
-              import('./app/projects/pages/backlog-placeholder.component').then(
-                (m) => m.BacklogPlaceholderComponent
+              import('./app/tasks/pages/backlog/backlog.component').then(
+                (m) => m.BacklogComponent
               ),
             title: 'Backlog — Agile PM',
           },
