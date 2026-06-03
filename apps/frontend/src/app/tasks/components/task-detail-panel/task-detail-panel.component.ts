@@ -1,5 +1,5 @@
 import {
-  Component, OnInit, OnDestroy, inject, signal, computed, Input, Output, EventEmitter,
+  Component, OnInit, OnDestroy, inject, signal, computed, effect,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -349,6 +349,12 @@ export class TaskDetailPanelComponent implements OnInit, OnDestroy {
   private readonly messageService = inject(MessageService);
   private readonly destroy$ = new Subject<void>();
 
+  constructor() {
+    effect(() => {
+      if (this.task()) this.syncFields();
+    });
+  }
+
   readonly task = this.taskStore.currentTask;
   readonly isVisible = signal(false);
 
@@ -375,9 +381,7 @@ export class TaskDetailPanelComponent implements OnInit, OnDestroy {
       : [],
   );
 
-  protected readonly memberOptions = computed(() =>
-    (this.projectStore as any).members?.() ?? [],
-  );
+  protected readonly memberOptions = computed(() => this.projectStore.members());
 
   protected readonly priorityOptions = [
     { label: '🔴 Urgent', value: 'urgent' },
@@ -413,16 +417,17 @@ export class TaskDetailPanelComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.route.queryParams.pipe(takeUntil(this.destroy$)).subscribe((params) => {
       const taskId = params['taskId'];
-      if (taskId && this.projectId()) {
+      const projectId = this.projectId();
+      if (taskId && projectId) {
         this.isVisible.set(true);
-        this.taskStore.loadTask(this.projectId(), taskId);
+        this.taskStore.loadTask(projectId, taskId);
+        if (!this.projectStore.members().length) {
+          this.projectStore.loadMembers(projectId);
+        }
       } else {
         this.isVisible.set(false);
       }
     });
-
-    // Sync form fields when task loads
-    this.task;
   }
 
   ngOnDestroy(): void {

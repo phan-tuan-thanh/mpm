@@ -117,6 +117,19 @@ export class TaskStore {
       });
   }
 
+  moveToState(projectId: string, taskId: string, stateId: string, backlogOrder: number): void {
+    // Optimistic update — task moves to new group immediately
+    this.tasks.update((prev) =>
+      prev.map((t) => (t.id === taskId ? { ...t, stateId, backlogOrder } : t)),
+    );
+    this.taskService.updateTask(projectId, taskId, { stateId })
+      .pipe(catchError(() => of(null)))
+      .subscribe();
+    this.taskService.reorderTasks(projectId, { items: [{ taskId, backlogOrder }] })
+      .pipe(catchError(() => of(null)))
+      .subscribe();
+  }
+
   deleteTask(projectId: string, taskId: string): void {
     this.taskService
       .deleteTask(projectId, taskId)

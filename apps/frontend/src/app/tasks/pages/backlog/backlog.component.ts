@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal, computed, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -13,6 +13,8 @@ import { LayoutService } from '../../../layout/services/layout.service';
 import { BacklogToolbarComponent, BacklogFilter } from './backlog-toolbar/backlog-toolbar.component';
 import { TaskListComponent } from './task-list/task-list.component';
 import { QuickCreateComponent } from './quick-create/quick-create.component';
+import { TaskDetailPanelComponent } from '../../components/task-detail-panel/task-detail-panel.component';
+import { LabelManagerComponent } from '../../components/label-manager/label-manager.component';
 import type { TaskListItem, CreateTaskDto, ReorderTaskItem } from '@mpm/shared-types';
 import { Subject, takeUntil } from 'rxjs';
 
@@ -23,6 +25,7 @@ import { Subject, takeUntil } from 'rxjs';
     CommonModule,
     ButtonModule, ConfirmDialogModule, ToastModule,
     BacklogToolbarComponent, TaskListComponent, QuickCreateComponent,
+    TaskDetailPanelComponent, LabelManagerComponent,
   ],
   providers: [ConfirmationService, MessageService],
   template: `
@@ -34,7 +37,7 @@ import { Subject, takeUntil } from 'rxjs';
         (filterChange)="onFilterChange($event)"
         (groupByChange)="onGroupByChange($event)"
         (orderByChange)="onOrderByChange($event)"
-        (newTaskClick)="showQuickCreate.set(true)"
+        (newTaskClick)="openQuickCreate()"
         (labelManagerClick)="openLabelManager()"
       />
 
@@ -55,12 +58,15 @@ import { Subject, takeUntil } from 'rxjs';
       <div class="flex-1 overflow-y-auto">
         <app-task-list
           [tasks]="taskStore.tasks()"
+          [states]="flatStates()"
           [isLoading]="taskStore.isLoading()"
           [orderBy]="selectedOrderBy"
           [selectedIds]="taskStore.selectedTaskIds()"
           (taskClick)="openDetail($event)"
           (selectionToggle)="taskStore.toggleSelect($event)"
           (reorder)="onReorder($event)"
+          (moveTask)="onMoveTask($event)"
+          (newTaskInState)="openQuickCreate($event)"
         />
       </div>
 
@@ -68,17 +74,22 @@ import { Subject, takeUntil } from 'rxjs';
       @if (showQuickCreate()) {
         <app-quick-create
           [visible]="showQuickCreate()"
+          [stateId]="quickCreateStateId()"
           (create)="onQuickCreate($event)"
-          (cancel)="showQuickCreate.set(false)"
+          (cancel)="closeQuickCreate()"
         />
       }
     </div>
 
     <p-confirmDialog />
     <p-toast />
+    <app-task-detail-panel />
+    <app-label-manager #labelManager [projectId]="projectId" />
   `,
 })
 export class BacklogComponent implements OnInit, OnDestroy {
+  @ViewChild('labelManager') private readonly labelManager!: LabelManagerComponent;
+
   readonly taskStore = inject(TaskStore);
   private readonly projectStore = inject(ProjectStore);
   private readonly layoutService = inject(LayoutService);
@@ -87,10 +98,17 @@ export class BacklogComponent implements OnInit, OnDestroy {
   private readonly confirmService = inject(ConfirmationService);
   private readonly destroy$ = new Subject<void>();
 
-  protected selectedGroupBy = 'none';
+  protected selectedGroupBy = 'state';
   protected selectedOrderBy = 'rank';
   protected showQuickCreate = signal(false);
-  private projectId = '';
+  protected quickCreateStateId = signal<string | undefined>(undefined);
+  protected projectId = '';
+
+  protected readonly flatStates = computed(() => {
+    const grouped = this.projectStore.currentProjectStates();
+    if (!grouped) return [];
+    return Object.values(grouped).flat();
+  });
 
   ngOnInit(): void {
     this.layoutService.fullBleed.set(true);
@@ -104,7 +122,6 @@ export class BacklogComponent implements OnInit, OnDestroy {
       }
     });
 
-    // Load immediately if project already available
     const project = this.projectStore.currentProject();
     if (project?.id) {
       this.projectId = project.id;
@@ -117,6 +134,16 @@ export class BacklogComponent implements OnInit, OnDestroy {
     this.layoutService.fullBleed.set(false);
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  protected openQuickCreate(stateId?: string): void {
+    this.quickCreateStateId.set(stateId);
+    this.showQuickCreate.set(true);
+  }
+
+  protected closeQuickCreate(): void {
+    this.showQuickCreate.set(false);
+    this.quickCreateStateId.set(undefined);
   }
 
   protected onFilterChange(filter: BacklogFilter): void {
@@ -148,10 +175,14 @@ export class BacklogComponent implements OnInit, OnDestroy {
     this.taskStore.reorder(this.projectId, items);
   }
 
+  protected onMoveTask(event: { taskId: string; stateId: string; backlogOrder: number }): void {
+    this.taskStore.moveToState(this.projectId, event.taskId, event.stateId, event.backlogOrder);
+  }
+
   protected async onQuickCreate(dto: CreateTaskDto): Promise<void> {
     if (!this.projectId) return;
     await this.taskStore.createTask(this.projectId, dto);
-    this.showQuickCreate.set(false);
+    this.closeQuickCreate();
     this.taskStore.loadBacklog(this.projectId);
   }
 
@@ -171,6 +202,6 @@ export class BacklogComponent implements OnInit, OnDestroy {
   }
 
   protected openLabelManager(): void {
-    // Label manager dialog opened via a separate component if needed
+    this.labelManager.open();
   }
 }
