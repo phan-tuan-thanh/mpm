@@ -99,7 +99,15 @@ interface TaskNode { task: TaskListItem; children: TaskListItem[] }
             <div cdkDropList
                  [cdkDropListDisabled]="orderBy !== 'rank'"
                  [id]="'grp-' + group.state.id"
-                 (cdkDropListDropped)="onDrop($event, group.rootTasks, group.state.id)">
+                 (cdkDropListDropped)="onDrop($event, group.rootTasks, group.state.id)"
+                 [style.min-height]="group.rootTasks.length === 0 ? '48px' : null">
+
+              <!-- Empty drop zone placeholder — giữ height để CDK detect drop -->
+              @if (group.rootTasks.length === 0) {
+                <div class="h-12 flex items-center px-10 text-xs text-gray-300 border-b border-dashed border-gray-100 select-none">
+                  Kéo task vào đây
+                </div>
+              }
 
               @for (node of group.rootTasks; track node.task.id) {
 
