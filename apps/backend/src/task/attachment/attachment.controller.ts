@@ -48,10 +48,14 @@ export class AttachmentController {
   @Delete(':attachmentId')
   @ProjectRoles('Scrum_Master', 'Product_Owner', 'Developer', 'QA')
   async delete(
+    @Param('projectId', ParseUUIDPipe) projectId: string,
     @Param('attachmentId', ParseUUIDPipe) attachmentId: string,
     @CurrentUser() user: RequestUser,
   ) {
-    await this.attachmentService.delete(attachmentId, user.id);
+    const callerRole = user.systemRole === 'Admin'
+      ? 'Admin'
+      : user.projectRoles?.find((r) => r.projectId === projectId)?.role;
+    await this.attachmentService.delete(attachmentId, user.id, callerRole);
     return { ok: true };
   }
 }

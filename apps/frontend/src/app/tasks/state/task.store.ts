@@ -98,10 +98,11 @@ export class TaskStore {
   updateTask(projectId: string, taskId: string, dto: UpdateTaskDto): void {
     this.saveStatus.set('saving');
     this.taskService
-      .updateTask(projectId, dto.title !== undefined ? taskId : taskId, dto)
+      .updateTask(projectId, taskId, dto)
       .pipe(
         catchError(() => {
           this.saveStatus.set('error');
+          setTimeout(() => this.saveStatus.set('idle'), 3000);
           return of(null);
         }),
       )

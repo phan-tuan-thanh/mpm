@@ -25,7 +25,7 @@ const VALID_PARENTS: Record<TaskType, TaskType[]> = {
 
 function validateHierarchy(childType: TaskType, parentType: TaskType): void {
   const allowed = VALID_PARENTS[childType];
-  if (allowed.length > 0 && !allowed.includes(parentType)) {
+  if (!allowed.includes(parentType)) {
     throw new UnprocessableEntityException(
       `A ${childType} cannot be a child of a ${parentType}`,
     );

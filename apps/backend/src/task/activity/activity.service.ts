@@ -74,7 +74,7 @@ export class ActivityService {
     const entry = await this.activityRepo.findOne({ where: { id: commentId } });
     if (!entry) throw new NotFoundException('Comment not found');
     if (entry.actorId !== actorId) throw new ForbiddenException('Cannot edit another user\'s comment');
-    if (entry.entryType !== 'comment_added') throw new NotFoundException('Comment not found');
+    if (entry.entryType !== 'comment_added' && entry.entryType !== 'comment_edited') throw new NotFoundException('Comment not found');
 
     entry.comment = content;
     entry.entryType = 'comment_edited';

@@ -351,7 +351,10 @@ export class TaskDetailPanelComponent implements OnInit, OnDestroy {
 
   constructor() {
     effect(() => {
-      if (this.task()) this.syncFields();
+      if (this.task()) {
+        this.syncFields();
+        this.loadActivity();
+      }
     });
   }
 
@@ -564,7 +567,7 @@ export class TaskDetailPanelComponent implements OnInit, OnDestroy {
     this.taskStore.createTask(this.projectId(), {
       title: this.newChildTitle,
       parentId: t.id,
-      type: t.type === 'story' ? 'task' : 'subtask',
+      type: t.type === 'epic' ? 'story' : t.type === 'story' ? 'task' : 'subtask',
     }).then(() => {
       this.newChildTitle = '';
       this.taskStore.loadTask(this.projectId(), t.taskId);

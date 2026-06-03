@@ -38,10 +38,14 @@ export class CommentController {
   @Delete(':commentId')
   @ProjectRoles('Scrum_Master', 'Product_Owner', 'Developer', 'QA', 'Stakeholder')
   async delete(
+    @Param('projectId', ParseUUIDPipe) projectId: string,
     @Param('commentId', ParseUUIDPipe) commentId: string,
     @CurrentUser() user: RequestUser,
   ) {
-    await this.activityService.deleteComment(commentId, user.id);
+    const callerRole = user.systemRole === 'Admin'
+      ? 'Admin'
+      : user.projectRoles?.find((r) => r.projectId === projectId)?.role;
+    await this.activityService.deleteComment(commentId, user.id, callerRole);
     return { ok: true };
   }
 }

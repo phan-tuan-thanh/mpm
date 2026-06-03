@@ -72,9 +72,9 @@ export class RelationService {
       });
       const saved = await em.save(TaskRelation, relation);
 
-      // Create inverse relation
+      // Create inverse relation (always, including duplicate_of ↔ duplicate_of)
       const inverseType = INVERSE_TYPE[dto.relationType];
-      if (dto.relationType !== inverseType) {
+      if (dto.relationType !== 'relates_to') {
         const inverseExists = await em.findOne(TaskRelation, {
           where: { sourceTaskId: dto.targetTaskId, targetTaskId: sourceTaskId, relationType: inverseType },
         });
@@ -105,9 +105,9 @@ export class RelationService {
     await this.dataSource.transaction(async (em) => {
       await em.delete(TaskRelation, { id: relationId });
 
-      // Remove inverse relation
+      // Remove inverse relation (always, including duplicate_of ↔ duplicate_of)
       const inverseType = INVERSE_TYPE[relation.relationType];
-      if (relation.relationType !== inverseType) {
+      if (relation.relationType !== 'relates_to') {
         await em.delete(TaskRelation, {
           sourceTaskId: relation.targetTaskId,
           targetTaskId: relation.sourceTaskId,
