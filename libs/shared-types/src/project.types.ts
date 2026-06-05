@@ -52,6 +52,7 @@ export interface Project {
   key: string;
   status: ProjectStatus;
   ownerId: string;
+  workspaceId: string | null;
   taskCounter: number;
   createdAt: Date;
   updatedAt: Date;
@@ -94,6 +95,19 @@ export interface ProjectState {
   group: StateGroup;
   isDefault: boolean;
   order: number;
+  templateId?: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface WorkspaceStateTemplate {
+  id: string;
+  workspaceId: string;
+  name: string;
+  color: string;
+  group: StateGroup;
+  isDefault: boolean;
+  order: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -115,6 +129,8 @@ export interface EstimateConfig {
   updatedAt: Date;
 }
 
+export type StateTemplate = 'blank' | 'workspace';
+
 export interface CreateProjectDto {
   name: string;
   key: string;
@@ -123,6 +139,7 @@ export interface CreateProjectDto {
   network?: ProjectNetwork;
   leadId?: string | null;
   timezone?: string;
+  stateTemplate?: StateTemplate;
 }
 
 export interface UpdateProjectDto {

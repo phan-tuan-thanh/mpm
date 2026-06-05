@@ -12,6 +12,7 @@ Tài liệu này hướng dẫn cài đặt và chạy hệ thống **Agile PM**
 | Node.js | **21+** | Khuyến nghị 22/24 LTS |
 | npm | đi kèm Node | |
 | OpenSSL | có sẵn trên macOS/Linux | Dùng để tạo cặp khóa RSA cho JWT |
+| Python 3 | có sẵn trên macOS/Linux | Dùng bởi script để parse JSON từ Authentik API |
 
 Kiểm tra nhanh:
 
@@ -19,6 +20,7 @@ Kiểm tra nhanh:
 docker --version && docker compose version
 node -v        # >= v21
 openssl version
+python3 --version
 ```
 
 ---
@@ -57,10 +59,16 @@ Mở `.env` và **đổi tất cả mật khẩu mặc định** (`changeme_*`).
   ```bash
   openssl rand -hex 32
   ```
-- `AUTHENTIK_CLIENT_ID` — để nguyên `agile-pm-frontend` hoặc đổi tùy ý (phải khớp với Bước 4).
+- `AUTHENTIK_CLIENT_ID` — để nguyên `agile-pm-frontend` hoặc đổi tùy ý (phải khớp với `environment.ts`).
 - `INITIAL_ADMIN_EMAIL` — email tài khoản Authentik của bạn; user đó sẽ là System Admin khi đăng nhập lần đầu.
 
-> **Không cần** cấu hình Authentik thủ công — Blueprint sẽ tự động tạo Provider và Application (xem Bước 2).
+Các biến bootstrap (tự động tạo admin Authentik):
+
+- `AUTHENTIK_BOOTSTRAP_PASSWORD` — password cho user `akadmin` (mặc định: `agile-pm-admin-2024`)
+- `AUTHENTIK_BOOTSTRAP_EMAIL` — email cho `akadmin` (mặc định: `admin@agilepm.local`)
+- `AUTHENTIK_BOOTSTRAP_TOKEN` — API token nội bộ dùng bởi script (mặc định: `ak-bootstrap-token-for-api`)
+
+> **Không cần** cấu hình Authentik thủ công — Bootstrap tự tạo admin user và Blueprint tự tạo Provider + Application.
 
 ### Bước 2 — Khởi động hạ tầng (Docker)
 
@@ -68,24 +76,48 @@ Mở `.env` và **đổi tất cả mật khẩu mặc định** (`changeme_*`).
 ./start.sh infra
 ```
 
-Lệnh này sẽ:
-- Tạo cặp khóa RSA (`keys/private.pem`, `keys/public.pem`) cho JWT nếu chưa có.
-- Khởi động PostgreSQL, Redis, Authentik server và worker.
-- Authentik worker tự động apply [docker/plans/agile-pm.yaml](docker/plans/agile-pm.yaml) để tạo:
-  - **OAuth2/OpenID Provider** `agile-pm-provider` với `client_id` và `client_secret` từ `.env`
-  - **Application** `agile-pm` với slug khớp với các URL trong `.env`
+Lệnh này sẽ thực hiện tự động:
 
-> Blueprint chạy bất đồng bộ — Authentik worker cần hoàn tất initial setup (~1–2 phút) trước khi apply blueprint. Kiểm tra log: `docker logs mpm-authentik-worker | grep -i blueprint`
+1. **Tạo cặp khóa RSA** (`keys/private.pem`, `keys/public.pem`) cho JWT nếu chưa có.
+2. **Khởi động Docker services**: PostgreSQL, Redis, Authentik server và worker.
+3. **Chờ services healthy** (PostgreSQL, Redis, Authentik).
+4. **Bootstrap Authentik admin** — tự động tạo user `akadmin` nhờ biến `AUTHENTIK_BOOTSTRAP_*` (không cần vào giao diện initial setup).
+5. **Apply blueprint** — script tự kiểm tra và trigger re-apply [docker/plans/agile-pm.yaml](docker/plans/agile-pm.yaml) nếu provider chưa được tạo. Blueprint tạo:
+   - **OAuth2/OpenID Provider** `agile-pm-provider` với `client_id` và `client_secret` từ `.env`
+   - **Application** `agile-pm` với slug khớp với các URL trong `.env`
 
-### Bước 3 — Tạo tài khoản Authentik (akadmin)
+Khi hoàn tất, sẽ hiển thị:
 
-Lần đầu khởi động, Authentik yêu cầu tạo tài khoản admin của nó:
+```
+[OK] Infrastructure sẵn sàng!
+  PostgreSQL: localhost:5432
+  Redis:      localhost:6379
+  Authentik:  http://localhost:9000
+```
 
-1. Mở `http://localhost:9000/if/flow/initial-setup/`
-2. Tạo tài khoản **akadmin** (admin của Authentik — khác với System Admin của ứng dụng).
-3. Tạo ít nhất một **User** (Directory → Users) để đăng nhập vào Agile PM, email phải khớp với `INITIAL_ADMIN_EMAIL` trong `.env` nếu muốn user đó là System Admin.
+#### Verify thành công
 
-> **Verify blueprint đã apply**: Vào `http://localhost:9000` → Admin Interface → Applications → Providers — phải thấy `agile-pm-provider`. Nếu chưa thấy, đợi thêm 1–2 phút hoặc xem log worker.
+```bash
+# OIDC endpoint phải trả JSON
+curl -s http://localhost:9000/application/o/agile-pm/.well-known/openid-configuration | python3 -m json.tool | head -5
+
+# Hoặc kiểm tra qua API
+curl -s -H "Authorization: Bearer ak-bootstrap-token-for-api" \
+  http://localhost:9000/api/v3/providers/oauth2/?search=agile | python3 -c "
+import sys,json; d=json.load(sys.stdin); print('Providers:', d['pagination']['count'])"
+```
+
+### Bước 3 — Tạo user đăng nhập Agile PM
+
+Mở Authentik Admin: `http://localhost:9000` → đăng nhập với:
+- Username: `akadmin`
+- Password: giá trị `AUTHENTIK_BOOTSTRAP_PASSWORD` trong `.env` (mặc định: `agile-pm-admin-2024`)
+
+Tạo user mới (Directory → Users → Create):
+- Email **phải khớp** với `INITIAL_ADMIN_EMAIL` trong `.env` nếu muốn user đó là System Admin khi đăng nhập Agile PM lần đầu.
+- Set password cho user đó.
+
+> Hoặc dùng trực tiếp `akadmin` — miễn email khớp với `INITIAL_ADMIN_EMAIL`.
 
 ### Bước 4 — Kiểm tra cấu hình frontend
 
@@ -94,13 +126,13 @@ File [apps/frontend/src/environments/environment.ts](apps/frontend/src/environme
 ```ts
 authentik: {
   authorizeUrl: 'http://localhost:9000/application/o/authorize/',
-  clientId: 'agile-pm-frontend',                       // = Client ID ở Bước 3
-  redirectUri: 'http://localhost:4200/auth/callback',  // = Redirect URI ở Bước 3
+  clientId: 'agile-pm-frontend',                       // = AUTHENTIK_CLIENT_ID trong .env
+  redirectUri: 'http://localhost:4200/auth/callback',  // = AUTHENTIK_REDIRECT_URI trong .env
   scopes: 'openid profile email',
 }
 ```
 
-> Nếu đổi `clientId` hoặc slug, phải sửa đồng bộ ở cả ba nơi: Authentik, `.env`, và `environment.ts`.
+> Nếu đổi `clientId` hoặc slug, phải sửa đồng bộ ở cả ba nơi: `.env`, `environment.ts`, và blueprint sẽ tự cập nhật.
 
 ### Bước 5 — Chạy toàn bộ hệ thống
 
@@ -108,7 +140,7 @@ authentik: {
 ./start.sh
 ```
 
-Lệnh `all` sẽ: cài dependencies → chạy database migrations → khởi động backend → khởi động frontend.
+Lệnh `all` sẽ: khởi động infra → cài dependencies → chạy database migrations → khởi động backend → khởi động frontend.
 
 Khi thấy:
 
@@ -117,7 +149,7 @@ Frontend:  http://localhost:4200
 Backend:   http://localhost:3000
 ```
 
-mở trình duyệt tại **http://localhost:4200** — sẽ chuyển tới trang đăng nhập với nút **“Đăng nhập với Authentik”**.
+mở trình duyệt tại **http://localhost:4200** — sẽ chuyển tới trang đăng nhập với nút **"Đăng nhập với Authentik"**.
 
 ---
 
@@ -125,8 +157,8 @@ mở trình duyệt tại **http://localhost:4200** — sẽ chuyển tới tran
 
 ```bash
 ./start.sh           # Khởi động toàn bộ (infra + backend + frontend)
-./start.sh infra     # Chỉ khởi động Docker (Postgres/Redis/Authentik)
-./start.sh backend   # Chỉ khởi động backend
+./start.sh infra     # Chỉ khởi động Docker (Postgres/Redis/Authentik) + verify blueprint
+./start.sh backend   # Chỉ khởi động backend (giả sử infra đã chạy)
 ./start.sh frontend  # Chỉ khởi động frontend
 ./start.sh stop      # Dừng tất cả (Docker + tiến trình nền)
 ```
@@ -137,7 +169,34 @@ mở trình duyệt tại **http://localhost:4200** — sẽ chuyển tới tran
 
 ## 5. Xử lý sự cố thường gặp
 
+### Blueprint không tạo provider/app
+
+**Triệu chứng**: `curl http://localhost:9000/application/o/agile-pm/.well-known/openid-configuration` trả 404 hoặc HTML.
+
+**Nguyên nhân**: Race condition — worker apply blueprint trước khi default flows sẵn sàng.
+
+**Fix**:
+```bash
+# Trigger re-apply thủ công
+BLUEPRINT_PK=$(curl -s -H "Authorization: Bearer ak-bootstrap-token-for-api" \
+  http://localhost:9000/api/v3/managed/blueprints/ | python3 -c "
+import sys,json
+for r in json.load(sys.stdin)['results']:
+    if 'agile' in r.get('path',''): print(r['pk']); break
+")
+
+curl -X POST -H "Authorization: Bearer ak-bootstrap-token-for-api" \
+  "http://localhost:9000/api/v3/managed/blueprints/$BLUEPRINT_PK/apply/"
+```
+
+Hoặc đơn giản hơn — chạy lại script:
+```bash
+./start.sh stop
+./start.sh infra
+```
+
 ### Trang `http://localhost:4200` trắng / mất giao diện
+
 - **Nguyên nhân thường gặp**: dev server đang chạy được khởi động *trước khi* cấu hình CSS được thêm. Hãy **khởi động lại frontend**:
   ```bash
   ./start.sh stop && ./start.sh
@@ -146,6 +205,7 @@ mở trình duyệt tại **http://localhost:4200** — sẽ chuyển tới tran
 - Mở **DevTools → Console** của trình duyệt để xem lỗi runtime nếu vẫn trắng.
 
 ### `Error: listen EADDRINUSE: address already in use :::3000`
+
 Một tiến trình backend cũ còn chiếm cổng. Giải phóng:
 ```bash
 ./start.sh stop
@@ -155,21 +215,25 @@ lsof -nP -iTCP:3000 -sTCP:LISTEN -t | xargs kill
 Tương tự với cổng `4200` (frontend) nếu cần.
 
 ### Build frontend lỗi `File 'src/main.ts' is missing from the TypeScript compilation`
+
 Do `"noEmit": true` trong [apps/frontend/tsconfig.json](apps/frontend/tsconfig.json). Builder esbuild của Angular cần compiler **emit** output. Bỏ `noEmit` và đảm bảo có `"files": ["src/main.ts"]`.
 
 ### Đăng nhập báo lỗi / redirect sai
+
 - Kiểm tra **Redirect URI** trong Authentik đúng `http://localhost:4200/auth/callback`.
-- `clientId` ở `environment.ts` phải khớp Client ID của provider.
-- `AUTHENTIK_CLIENT_ID` / `AUTHENTIK_CLIENT_SECRET` trong `.env` phải khớp provider.
+- `clientId` ở `environment.ts` phải khớp Client ID của provider (`AUTHENTIK_CLIENT_ID` trong `.env`).
+- `AUTHENTIK_CLIENT_SECRET` trong `.env` phải khớp provider.
 - Slug application (`agile-pm`) phải khớp các URL trong `.env`.
 
 ### Authentik chưa sẵn sàng
-Lần đầu Authentik cần migrate DB nội bộ, có thể mất vài phút. Theo dõi:
+
+Lần đầu Authentik cần migrate DB nội bộ, có thể mất 1-2 phút. Theo dõi:
 ```bash
 docker logs -f mpm-authentik-server
 ```
 
 ### Migration database lỗi
+
 Chạy lại thủ công:
 ```bash
 npm --prefix apps/backend run migration:run
@@ -177,7 +241,23 @@ npm --prefix apps/backend run migration:run
 
 ---
 
-## 6. Dừng & dọn dẹp
+## 6. Đăng nhập Authentik Admin UI
+
+| Field | Giá trị |
+|-------|---------|
+| URL | `http://localhost:9000` |
+| Username | `akadmin` |
+| Password | Giá trị `AUTHENTIK_BOOTSTRAP_PASSWORD` trong `.env` (mặc định: `agile-pm-admin-2024`) |
+
+Từ Admin UI có thể:
+- Xem/sửa Provider: Applications → Providers → `agile-pm-provider`
+- Xem/sửa Application: Applications → `Agile PM`
+- Quản lý users: Directory → Users
+- Xem blueprints: System → Blueprints → `agile-pm-setup`
+
+---
+
+## 7. Dừng & dọn dẹp
 
 ```bash
 ./start.sh stop          # Dừng dịch vụ + container
@@ -188,4 +268,26 @@ Xóa sạch dữ liệu (Postgres/Redis volumes) để cài lại từ đầu:
 docker compose -f docker/docker-compose.yml --env-file .env down -v
 ```
 
-> ⚠️ Lệnh `down -v` xóa toàn bộ dữ liệu CSDL, bao gồm cấu hình Authentik — sẽ phải làm lại Bước 3.
+> ⚠️ Lệnh `down -v` xóa toàn bộ dữ liệu CSDL, bao gồm cấu hình Authentik — sẽ phải chạy lại `./start.sh infra` (bootstrap sẽ tự tạo lại admin và blueprint sẽ re-apply provider/app).
+
+---
+
+## 8. Tóm tắt flow khởi động
+
+```
+./start.sh infra
+    │
+    ├── 1. Check prerequisites (Docker, Node, OpenSSL)
+    ├── 2. Load .env
+    ├── 3. Generate RSA keys (nếu chưa có)
+    ├── 4. docker compose up -d
+    │       ├── PostgreSQL (healthy check)
+    │       ├── Redis (healthy check)
+    │       ├── Authentik Server (bootstrap admin user)
+    │       └── Authentik Worker (apply blueprints)
+    ├── 5. Wait services healthy
+    └── 6. Ensure blueprint applied
+            ├── Chờ 10s cho default blueprints
+            ├── Check provider exists via API
+            └── Nếu chưa → trigger re-apply → verify
+```

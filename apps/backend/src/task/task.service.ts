@@ -8,6 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, In } from 'typeorm';
 import { Task, TaskType, TaskPriority } from './entities/task.entity';
 import { Label } from './entities/label.entity';
+import { Module } from './entities/module.entity';
 import { Project } from '../project/entities/project.entity';
 import { ProjectState } from '../project/entities/project-state.entity';
 import { ProjectMember } from '../auth/entities/project-member.entity';
@@ -190,11 +191,32 @@ export class TaskService {
     const page = query.page ?? 1;
     const limit = Math.min(query.limit ?? 50, 200);
 
+    // Lấy workspace_id của project để filter modules theo scope
+    const project = await this.dataSource
+      .getRepository(Project)
+      .findOne({ where: { id: projectId }, select: ['id', 'workspaceId'] });
+    const workspaceId = project?.workspaceId;
+
     const qb = this.taskRepo
       .createQueryBuilder('t')
       .leftJoinAndSelect('t.state', 'state')
       .leftJoinAndSelect('t.assignees', 'assignee')
       .leftJoinAndSelect('t.labels', 'label')
+      .leftJoin(
+        'task_modules',
+        'tm',
+        'tm.task_id = t.id',
+      )
+      .leftJoinAndMapMany(
+        't.modules',
+        Module,
+        'module',
+        `module.id = tm.module_id AND (
+          (module.scope = 'workspace' AND module.workspace_id = :workspaceId)
+          OR (module.scope = 'project' AND module.project_id = :projectId)
+        )`,
+        { workspaceId: workspaceId ?? '00000000-0000-0000-0000-000000000000', projectId },
+      )
       .loadRelationCountAndMap('t.subItemCount', 't.children')
       .loadRelationCountAndMap('t.attachmentCount', 't.attachments')
       .loadRelationCountAndMap('t.linkCount', 't.links')

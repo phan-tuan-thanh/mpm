@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -17,55 +18,145 @@ export class LabelService {
     private readonly auditService: AuditService,
   ) {}
 
-  async findAll(projectId: string): Promise<Array<Label & { taskCount: number }>> {
+  /**
+   * Trả về merged list: workspace labels + project labels
+   * Sorted: scope ASC (workspace trước), sau đó name ASC
+   * Includes taskCount từ task_labels join
+   */
+  async findAllForProject(
+    projectId: string,
+    workspaceId: string,
+  ): Promise<Array<Label & { taskCount: number }>> {
     const rows = await this.labelRepo
       .createQueryBuilder('l')
       .leftJoin('task_labels', 'tl', 'tl.label_id = l.id')
       .select('l.*')
       .addSelect('COUNT(tl.task_id)', 'taskCount')
-      .where('l.projectId = :projectId', { projectId })
+      .where(
+        '(l.scope = :ws AND l.workspace_id = :wid) OR (l.scope = :proj AND l.project_id = :pid)',
+        {
+          ws: 'workspace',
+          wid: workspaceId,
+          proj: 'project',
+          pid: projectId,
+        },
+      )
       .groupBy('l.id')
-      .orderBy('l.name', 'ASC')
+      .orderBy('l.scope', 'ASC') // workspace trước project
+      .addOrderBy('l.name', 'ASC')
       .getRawMany<Label & { taskCount: string }>();
 
-    return rows.map((r) => ({ ...r, taskCount: parseInt(r.taskCount as unknown as string, 10) }));
+    return rows.map((r) => ({
+      ...r,
+      taskCount: parseInt(r.taskCount as unknown as string, 10),
+    }));
   }
 
+  /**
+   * Tạo label với scope parameter
+   * - scope='workspace': tạo workspace-level label (workspace_id required, project_id = null)
+   * - scope='project': tạo project-level label (project_id required)
+   */
   async create(
-    projectId: string,
-    userId: string,
     dto: { name: string; color: string },
+    opts: {
+      scope: 'workspace' | 'project';
+      workspaceId: string;
+      projectId?: string | null;
+      userId: string;
+    },
   ): Promise<Label> {
     if (!/^#[0-9A-Fa-f]{6}$/.test(dto.color)) {
       throw new ConflictException('Color must be a valid hex code (e.g. #FF0000)');
     }
 
-    const existing = await this.labelRepo.findOne({ where: { projectId, name: dto.name } });
-    if (existing) throw new ConflictException('A label with this name already exists in the project');
+    // Validate uniqueness theo scope
+    if (opts.scope === 'workspace') {
+      const existing = await this.labelRepo.findOne({
+        where: { scope: 'workspace', workspaceId: opts.workspaceId, name: dto.name },
+      });
+      if (existing) {
+        throw new ConflictException('A label with this name already exists in the workspace');
+      }
+    } else {
+      const existing = await this.labelRepo.findOne({
+        where: { scope: 'project', projectId: opts.projectId!, name: dto.name },
+      });
+      if (existing) {
+        throw new ConflictException('A label with this name already exists in the project');
+      }
+    }
 
-    const label = this.labelRepo.create({ projectId, name: dto.name, color: dto.color });
+    const label = this.labelRepo.create({
+      scope: opts.scope,
+      workspaceId: opts.scope === 'workspace' ? opts.workspaceId : opts.workspaceId,
+      projectId: opts.scope === 'project' ? opts.projectId : null,
+      name: dto.name,
+      color: dto.color,
+    });
+
     const saved = await this.labelRepo.save(label);
 
-    this.auditService.log(AuthEvent.LABEL_CREATED, userId, 'internal', 'system', { projectId, name: dto.name });
+    this.auditService.log(AuthEvent.LABEL_CREATED, opts.userId, 'internal', 'system', {
+      scope: opts.scope,
+      workspaceId: opts.workspaceId,
+      projectId: opts.projectId ?? null,
+      name: dto.name,
+    });
 
     return saved;
   }
 
+  /**
+   * Cập nhật label — validate scope:
+   * - Workspace label: chỉ Workspace Admin (systemRole='Admin') mới được sửa
+   * - Project label: SM/PO được sửa
+   */
   async update(
     labelId: string,
-    projectId: string,
     dto: { name?: string; color?: string },
+    opts: {
+      workspaceId?: string;
+      projectId?: string;
+      userSystemRole: string;
+    },
   ): Promise<Label> {
-    const label = await this.labelRepo.findOne({ where: { id: labelId, projectId } });
+    const label = await this.labelRepo.findOne({ where: { id: labelId } });
     if (!label) throw new NotFoundException('Label not found');
+
+    // Scope validation: workspace label chỉ Admin mới sửa
+    if (label.scope === 'workspace' && opts.userSystemRole !== 'Admin') {
+      throw new ForbiddenException({
+        statusCode: 403,
+        error: 'Forbidden',
+        message: 'Only Workspace Admin can edit workspace labels',
+        errorCode: 'INSUFFICIENT_ROLE',
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // Project label: verify label thuộc đúng project
+    if (label.scope === 'project' && opts.projectId && label.projectId !== opts.projectId) {
+      throw new NotFoundException('Label not found');
+    }
 
     if (dto.color && !/^#[0-9A-Fa-f]{6}$/.test(dto.color)) {
       throw new ConflictException('Color must be a valid hex code');
     }
 
+    // Validate name uniqueness trong cùng scope
     if (dto.name && dto.name !== label.name) {
-      const existing = await this.labelRepo.findOne({ where: { projectId, name: dto.name } });
-      if (existing) throw new ConflictException('A label with this name already exists');
+      if (label.scope === 'workspace') {
+        const existing = await this.labelRepo.findOne({
+          where: { scope: 'workspace', workspaceId: label.workspaceId!, name: dto.name },
+        });
+        if (existing) throw new ConflictException('A label with this name already exists in the workspace');
+      } else {
+        const existing = await this.labelRepo.findOne({
+          where: { scope: 'project', projectId: label.projectId!, name: dto.name },
+        });
+        if (existing) throw new ConflictException('A label with this name already exists');
+      }
     }
 
     if (dto.name !== undefined) label.name = dto.name;
@@ -74,12 +165,103 @@ export class LabelService {
     return this.labelRepo.save(label);
   }
 
-  async delete(labelId: string, projectId: string, userId: string): Promise<void> {
-    const label = await this.labelRepo.findOne({ where: { id: labelId, projectId } });
+  /**
+   * Xóa label — tính affectedTaskCount trước khi xóa
+   * - Workspace label: cascade xóa task_labels cross-project, chỉ Admin mới xóa
+   * - Project label: xóa task_labels trong project đó
+   * Trả về { deletedLabelId, affectedTaskCount }
+   */
+  async delete(
+    labelId: string,
+    opts: {
+      workspaceId?: string;
+      projectId?: string;
+      userId: string;
+      userSystemRole: string;
+    },
+  ): Promise<{ deletedLabelId: string; affectedTaskCount: number }> {
+    const label = await this.labelRepo.findOne({ where: { id: labelId } });
     if (!label) throw new NotFoundException('Label not found');
 
+    // Scope validation: workspace label chỉ Admin mới xóa
+    if (label.scope === 'workspace' && opts.userSystemRole !== 'Admin') {
+      throw new ForbiddenException({
+        statusCode: 403,
+        error: 'Forbidden',
+        message: 'Only Workspace Admin can delete workspace labels',
+        errorCode: 'INSUFFICIENT_ROLE',
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // Project label: verify label thuộc đúng project
+    if (label.scope === 'project' && opts.projectId && label.projectId !== opts.projectId) {
+      throw new NotFoundException('Label not found');
+    }
+
+    // Tính affectedTaskCount trước khi xóa
+    const affectedResult = await this.labelRepo
+      .createQueryBuilder()
+      .select('COUNT(*)', 'count')
+      .from('task_labels', 'tl')
+      .where('tl.label_id = :labelId', { labelId })
+      .getRawOne<{ count: string }>();
+
+    const affectedTaskCount = parseInt(affectedResult?.count ?? '0', 10);
+
+    // Xóa label — task_labels sẽ cascade delete (FK ON DELETE CASCADE)
     await this.labelRepo.delete(labelId);
 
-    this.auditService.log(AuthEvent.LABEL_DELETED, userId, 'internal', 'system', { projectId, name: label.name });
+    this.auditService.log(AuthEvent.LABEL_DELETED, opts.userId, 'internal', 'system', {
+      scope: label.scope,
+      workspaceId: label.workspaceId,
+      projectId: label.projectId,
+      name: label.name,
+      affectedTaskCount,
+    });
+
+    return { deletedLabelId: labelId, affectedTaskCount };
+  }
+
+  /**
+   * Trả về chỉ workspace-scoped labels (cho workspace admin management)
+   * Sorted theo name ASC, includes taskCount
+   */
+  async findAllForWorkspace(workspaceId: string): Promise<Array<Label & { taskCount: number }>> {
+    const rows = await this.labelRepo
+      .createQueryBuilder('l')
+      .leftJoin('task_labels', 'tl', 'tl.label_id = l.id')
+      .select('l.*')
+      .addSelect('COUNT(tl.task_id)', 'taskCount')
+      .where('l.scope = :scope AND l.workspace_id = :wid', {
+        scope: 'workspace',
+        wid: workspaceId,
+      })
+      .groupBy('l.id')
+      .orderBy('l.name', 'ASC')
+      .getRawMany<Label & { taskCount: string }>();
+
+    return rows.map((r) => ({
+      ...r,
+      taskCount: parseInt(r.taskCount as unknown as string, 10),
+    }));
+  }
+
+  /**
+   * Backward-compatible findAll — delegates to findAllForProject
+   * Dùng cho trường hợp chỉ có projectId (legacy)
+   */
+  async findAll(projectId: string): Promise<Array<Label & { taskCount: number }>> {
+    const rows = await this.labelRepo
+      .createQueryBuilder('l')
+      .leftJoin('task_labels', 'tl', 'tl.label_id = l.id')
+      .select('l.*')
+      .addSelect('COUNT(tl.task_id)', 'taskCount')
+      .where('l.project_id = :projectId', { projectId })
+      .groupBy('l.id')
+      .orderBy('l.name', 'ASC')
+      .getRawMany<Label & { taskCount: string }>();
+
+    return rows.map((r) => ({ ...r, taskCount: parseInt(r.taskCount as unknown as string, 10) }));
   }
 }

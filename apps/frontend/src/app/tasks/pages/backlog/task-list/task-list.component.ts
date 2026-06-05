@@ -10,7 +10,8 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { TooltipModule } from 'primeng/tooltip';
 import { SkeletonModule } from 'primeng/skeleton';
 
-import type { TaskListItem, TaskType, TaskPriority, ReorderTaskItem } from '@mpm/shared-types';
+import type { TaskListItem, TaskType, TaskPriority, ReorderTaskItem, DisplayProperties, Label } from '@mpm/shared-types';
+import { DEFAULT_DISPLAY_PROPS } from '@mpm/shared-types';
 import type { ProjectState } from '@mpm/shared-types';
 
 const PRIORITY_CONFIG: Record<TaskPriority, { icon: string; color: string; label: string }> = {
@@ -113,7 +114,7 @@ interface TaskNode { task: TaskListItem; children: TaskListItem[] }
 
                 <!-- ── Root row: WITH cdkDrag ── -->
                 <div cdkDrag
-                     class="row-hover flex items-center border-b border-gray-50 cursor-pointer"
+                     class="row-hover flex items-center border-b border-gray-50 cursor-grab active:cursor-grabbing"
                      style="height:38px"
                      [class.bg-indigo-50]="selectedIds.has(node.task.id)"
                      (click)="taskClick.emit(node.task)">
@@ -162,8 +163,7 @@ interface TaskNode { task: TaskListItem; children: TaskListItem[] }
           <span class="block w-3 h-px bg-gray-200"></span>
         </span>
       } @else {
-        <i cdkDragHandle
-           class="show-on-hover opacity-0 pi pi-bars text-[10px] text-gray-300 hover:text-gray-500 cursor-grab flex-shrink-0 mr-1"
+        <i class="show-on-hover opacity-0 pi pi-bars text-[10px] text-gray-300 flex-shrink-0 mr-1"
            style="width:12px"
            (click)="$event.stopPropagation()"></i>
       }
@@ -198,22 +198,74 @@ interface TaskNode { task: TaskListItem; children: TaskListItem[] }
       <span class="flex-1 text-sm text-gray-800 truncate">{{ task.title }}</span>
 
       <!-- ══ Right metadata (on hover) ══ -->
-      @if (childCount > 0) {
+      @if (displayProps.showSubItemCount && childCount > 0) {
         <span class="show-on-hover opacity-0 flex items-center gap-0.5 text-xs text-gray-400 flex-shrink-0 mr-2"
               [pTooltip]="childCount + ' sub-items'">
           <i class="pi pi-sitemap text-[10px]"></i>{{ childCount }}
         </span>
       }
-      @for (label of (task.labels ?? []).slice(0, 2); track label.id) {
-        <span class="show-on-hover opacity-0 text-xs px-1.5 py-px rounded-full font-medium flex-shrink-0 mr-1 max-w-[72px] truncate"
-              [style.background]="label.color + '22'" [style.color]="label.color">{{ label.name }}</span>
+      @if (displayProps.showLabels && task.labels?.length) {
+        <div class="inline-flex items-center gap-1 flex-shrink-0 mr-2"
+             [class.show-on-hover]="!displayProps.alwaysShowLabels"
+             [class.opacity-0]="!displayProps.alwaysShowLabels">
+          @if (displayProps.labelMode === 'badge') {
+            @for (label of (task.labels ?? []).slice(0, displayProps.maxLabels); track label.id) {
+              <span class="inline-flex items-center gap-1 text-xs font-medium px-1.5 py-px rounded-full flex-shrink-0 border"
+                    [style.background]="label.color + '14'"
+                    [style.border-color]="label.color + '44'"
+                    [style.color]="label.color">
+                @if (label.scope === 'workspace') {
+                  <i class="pi pi-globe text-[10px]"></i>
+                } @else {
+                  <span class="w-2 h-2 rounded-full flex-shrink-0" [style.background]="label.color"></span>
+                }
+                <span class="truncate" style="max-width:80px">{{ label.name }}</span>
+              </span>
+            }
+            @if ((task.labels ?? []).length > displayProps.maxLabels) {
+              <span class="inline-flex items-center text-xs text-gray-500 font-medium px-1 py-px rounded-full bg-gray-100 border border-gray-200 flex-shrink-0 cursor-default"
+                    [pTooltip]="hiddenLabelsTooltip(task.labels!, displayProps.maxLabels)">
+                +{{ (task.labels ?? []).length - displayProps.maxLabels }}
+              </span>
+            }
+          } @else {
+            @for (label of (task.labels ?? []).slice(0, displayProps.maxLabels); track label.id) {
+              <span class="w-2 h-2 rounded-full flex-shrink-0"
+                    [style.background]="label.color"
+                    [pTooltip]="label.name"></span>
+            }
+            @if ((task.labels ?? []).length > displayProps.maxLabels) {
+              <span class="inline-flex items-center text-xs text-gray-500 font-medium px-1 py-px rounded-full bg-gray-100 border border-gray-200 flex-shrink-0 cursor-default"
+                    [pTooltip]="hiddenLabelsTooltip(task.labels!, displayProps.maxLabels)">
+                +{{ (task.labels ?? []).length - displayProps.maxLabels }}
+              </span>
+            }
+          }
+        </div>
       }
-      @if (task.estimateValue != null) {
+      @if (displayProps.showModules && task.modules?.length) {
+        <div class="inline-flex items-center gap-1 flex-shrink-0 mr-2 show-on-hover opacity-0">
+          @for (mod of task.modules.slice(0, displayProps.maxModules); track mod.id) {
+            <span class="inline-flex items-center gap-1 text-xs font-medium px-1.5 py-px rounded-full flex-shrink-0 border"
+                  [class]="mod.scope === 'workspace' ? 'border-indigo-300 bg-indigo-50 text-indigo-700' : 'border-teal-300 bg-teal-50 text-teal-700'">
+              <i [class]="mod.scope === 'workspace' ? 'pi pi-globe text-[10px]' : 'pi pi-folder text-[10px]'"></i>
+              <span class="truncate" style="max-width:80px">{{ mod.name }}</span>
+            </span>
+          }
+          @if (task.modules.length > displayProps.maxModules) {
+            <span class="inline-flex items-center text-xs text-gray-500 font-medium px-1 py-px rounded-full bg-gray-100 border border-gray-200 flex-shrink-0 cursor-default"
+                  [pTooltip]="hiddenModulesTooltip(task.modules, displayProps.maxModules)">
+              +{{ task.modules.length - displayProps.maxModules }}
+            </span>
+          }
+        </div>
+      }
+      @if (displayProps.showEstimate && task.estimateValue != null) {
         <span class="show-on-hover opacity-0 flex items-center gap-0.5 text-xs text-gray-400 flex-shrink-0 mr-2" pTooltip="Estimate">
           <i class="pi pi-hourglass text-[10px]"></i>{{ task.estimateValue }}
         </span>
       }
-      @if (task.dueDate) {
+      @if (displayProps.showDueDate && task.dueDate) {
         <span class="flex items-center gap-0.5 text-xs flex-shrink-0 mr-2"
               [class.text-red-500]="isOverdue(task.dueDate)"
               [class.text-gray-400]="!isOverdue(task.dueDate)"
@@ -221,13 +273,13 @@ interface TaskNode { task: TaskListItem; children: TaskListItem[] }
           <i class="pi pi-calendar text-[10px]"></i>{{ formatDate(task.dueDate) }}
         </span>
       }
-      @if (task.priority !== 'none') {
+      @if (displayProps.showPriority && task.priority !== 'none') {
         <i class="show-on-hover opacity-0 flex-shrink-0 text-xs mr-2"
            [class]="priorityIcon(task.priority)"
            [style.color]="priorityColor(task.priority)"
            [pTooltip]="'Priority: ' + task.priority"></i>
       }
-      @if (task.assignees?.length) {
+      @if (displayProps.showAssignee && task.assignees?.length) {
         <div class="show-on-hover opacity-0 flex -space-x-1.5 flex-shrink-0 mr-2">
           @for (a of task.assignees.slice(0, 3); track a.userId) {
             <div class="w-5 h-5 rounded-full border-2 border-white flex items-center justify-center text-[10px] font-bold"
@@ -258,6 +310,7 @@ export class TaskListComponent {
   @Input() isLoading = false;
   @Input() orderBy = 'rank';
   @Input() selectedIds = new Set<string>();
+  @Input() displayProps: DisplayProperties = DEFAULT_DISPLAY_PROPS;
 
   @Output() taskClick = new EventEmitter<TaskListItem>();
   @Output() taskMenuClick = new EventEmitter<TaskListItem>();
@@ -326,6 +379,14 @@ export class TaskListComponent {
   protected priorityColor(p: TaskPriority): string { return PRIORITY_CONFIG[p]?.color ?? '#D1D5DB'; }
 
   protected isOverdue(d: string | null): boolean { return !!d && new Date(d) < new Date(); }
+
+  protected hiddenLabelsTooltip(labels: Label[], maxLabels: number): string {
+    return labels.slice(maxLabels).map(l => l.name).join(', ');
+  }
+
+  protected hiddenModulesTooltip(modules: { name: string }[], maxModules: number): string {
+    return modules.slice(maxModules).map(m => m.name).join(', ');
+  }
   protected formatDate(d: string): string {
     return new Date(d).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
   }

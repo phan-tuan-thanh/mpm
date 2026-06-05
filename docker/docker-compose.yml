@@ -53,6 +53,10 @@ services:
       AUTHENTIK_POSTGRESQL__USER: ${POSTGRES_USER:-mpm}
       AUTHENTIK_POSTGRESQL__PASSWORD: ${POSTGRES_PASSWORD}
       AUTHENTIK_POSTGRESQL__NAME: ${AUTHENTIK_DB_NAME:-authentik}
+      # Bootstrap — tự động tạo admin user, bỏ qua initial setup flow
+      AUTHENTIK_BOOTSTRAP_PASSWORD: ${AUTHENTIK_BOOTSTRAP_PASSWORD:-agile-pm-admin-2024}
+      AUTHENTIK_BOOTSTRAP_EMAIL: ${AUTHENTIK_BOOTSTRAP_EMAIL:-admin@agilepm.local}
+      AUTHENTIK_BOOTSTRAP_TOKEN: ${AUTHENTIK_BOOTSTRAP_TOKEN:-ak-bootstrap-token-for-api}
       # Blueprint variables — cần thiết khi server scan blueprints lúc migration
       AUTHENTIK_CLIENT_ID: ${AUTHENTIK_CLIENT_ID:-agile-pm-frontend}
       AUTHENTIK_CLIENT_SECRET: ${AUTHENTIK_CLIENT_SECRET:-changeme}
@@ -79,6 +83,10 @@ services:
       AUTHENTIK_POSTGRESQL__USER: ${POSTGRES_USER:-mpm}
       AUTHENTIK_POSTGRESQL__PASSWORD: ${POSTGRES_PASSWORD}
       AUTHENTIK_POSTGRESQL__NAME: ${AUTHENTIK_DB_NAME:-authentik}
+      # Bootstrap — cần đồng bộ với server để worker nhận diện admin
+      AUTHENTIK_BOOTSTRAP_PASSWORD: ${AUTHENTIK_BOOTSTRAP_PASSWORD:-agile-pm-admin-2024}
+      AUTHENTIK_BOOTSTRAP_EMAIL: ${AUTHENTIK_BOOTSTRAP_EMAIL:-admin@agilepm.local}
+      AUTHENTIK_BOOTSTRAP_TOKEN: ${AUTHENTIK_BOOTSTRAP_TOKEN:-ak-bootstrap-token-for-api}
       # Blueprint variables — được đọc bởi !Env trong docker/plans/agile-pm.yaml
       AUTHENTIK_CLIENT_ID: ${AUTHENTIK_CLIENT_ID:?AUTHENTIK_CLIENT_ID is required}
       AUTHENTIK_CLIENT_SECRET: ${AUTHENTIK_CLIENT_SECRET:?AUTHENTIK_CLIENT_SECRET is required}

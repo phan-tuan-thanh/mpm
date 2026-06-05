@@ -15,7 +15,8 @@ import { TaskListComponent } from './task-list/task-list.component';
 import { QuickCreateComponent } from './quick-create/quick-create.component';
 import { TaskDetailPanelComponent } from '../../components/task-detail-panel/task-detail-panel.component';
 import { LabelManagerComponent } from '../../components/label-manager/label-manager.component';
-import type { TaskListItem, CreateTaskDto, ReorderTaskItem } from '@mpm/shared-types';
+import type { TaskListItem, CreateTaskDto, ReorderTaskItem, DisplayProperties } from '@mpm/shared-types';
+import { DEFAULT_DISPLAY_PROPS } from '@mpm/shared-types';
 import { Subject, takeUntil } from 'rxjs';
 
 @Component({
@@ -32,11 +33,13 @@ import { Subject, takeUntil } from 'rxjs';
     <div class="flex flex-col h-full bg-white dark:bg-surface-900">
       <!-- Toolbar -->
       <app-backlog-toolbar
+        [displayProps]="displayProps()"
         [selectedGroupBy]="selectedGroupBy"
         [selectedOrderBy]="selectedOrderBy"
         (filterChange)="onFilterChange($event)"
         (groupByChange)="onGroupByChange($event)"
         (orderByChange)="onOrderByChange($event)"
+        (displayPropsChange)="updateDisplayProps($event)"
         (newTaskClick)="openQuickCreate()"
         (labelManagerClick)="openLabelManager()"
       />
@@ -62,6 +65,7 @@ import { Subject, takeUntil } from 'rxjs';
           [isLoading]="taskStore.isLoading()"
           [orderBy]="selectedOrderBy"
           [selectedIds]="taskStore.selectedTaskIds()"
+          [displayProps]="displayProps()"
           (taskClick)="openDetail($event)"
           (selectionToggle)="taskStore.toggleSelect($event)"
           (reorder)="onReorder($event)"
@@ -84,7 +88,7 @@ import { Subject, takeUntil } from 'rxjs';
     <p-confirmDialog />
     <p-toast />
     <app-task-detail-panel />
-    <app-label-manager #labelManager [projectId]="projectId" />
+    <app-label-manager #labelManager [projectId]="projectId" [workspaceId]="workspaceId" />
   `,
 })
 export class BacklogComponent implements OnInit, OnDestroy {
@@ -103,6 +107,9 @@ export class BacklogComponent implements OnInit, OnDestroy {
   protected showQuickCreate = signal(false);
   protected quickCreateStateId = signal<string | undefined>(undefined);
   protected projectId = '';
+  protected workspaceId = '';
+
+  protected readonly displayProps = signal<DisplayProperties>(DEFAULT_DISPLAY_PROPS);
 
   protected readonly flatStates = computed(() => {
     const grouped = this.projectStore.currentProjectStates();
@@ -116,7 +123,9 @@ export class BacklogComponent implements OnInit, OnDestroy {
     this.route.parent?.params.pipe(takeUntil(this.destroy$)).subscribe(() => {
       const project = this.projectStore.currentProject();
       this.projectId = project?.id ?? '';
+      this.workspaceId = project?.workspaceId ?? '';
       if (this.projectId) {
+        this.loadDisplayPropsFromStorage();
         this.taskStore.loadBacklog(this.projectId);
         this.taskStore.loadLabels(this.projectId);
       }
@@ -125,6 +134,8 @@ export class BacklogComponent implements OnInit, OnDestroy {
     const project = this.projectStore.currentProject();
     if (project?.id) {
       this.projectId = project.id;
+      this.workspaceId = project?.workspaceId ?? '';
+      this.loadDisplayPropsFromStorage();
       this.taskStore.loadBacklog(this.projectId);
       this.taskStore.loadLabels(this.projectId);
     }
@@ -203,5 +214,33 @@ export class BacklogComponent implements OnInit, OnDestroy {
 
   protected openLabelManager(): void {
     this.labelManager.open();
+  }
+
+  protected updateDisplayProps(patch: Partial<DisplayProperties>): void {
+    this.displayProps.update(prev => {
+      const next = { ...prev, ...patch };
+      try {
+        localStorage.setItem(`display-props-${this.projectId}`, JSON.stringify(next));
+      } catch {
+        // localStorage full or unavailable — ignore silently
+      }
+      return next;
+    });
+  }
+
+  private loadDisplayPropsFromStorage(): void {
+    if (!this.projectId) return;
+    try {
+      const raw = localStorage.getItem(`display-props-${this.projectId}`);
+      if (raw) {
+        const parsed = JSON.parse(raw) as DisplayProperties;
+        this.displayProps.set({ ...DEFAULT_DISPLAY_PROPS, ...parsed });
+      } else {
+        this.displayProps.set(DEFAULT_DISPLAY_PROPS);
+      }
+    } catch (e) {
+      console.warn('[Backlog] Failed to parse display-props from localStorage, using defaults', e);
+      this.displayProps.set(DEFAULT_DISPLAY_PROPS);
+    }
   }
 }

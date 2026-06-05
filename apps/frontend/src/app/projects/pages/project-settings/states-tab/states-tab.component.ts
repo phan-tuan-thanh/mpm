@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, computed, signal } from '@angular/core';
 import { ProjectStore } from '../../../state/project.store';
 import { ProjectService } from '../../../services/project.service';
+import { StateTemplateService } from '../../../services/state-template.service';
 import { AuthService } from '../../../../auth/services/auth.service';
 import { CommonModule } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
@@ -11,7 +12,8 @@ import { FluidModule } from 'primeng/fluid';
 import { MessageService } from 'primeng/api';
 import { FormsModule } from '@angular/forms';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
-import { StateGroup, ProjectState } from '@mpm/shared-types';
+import { TooltipModule } from 'primeng/tooltip';
+import { StateGroup, ProjectState, WorkspaceStateTemplate } from '@mpm/shared-types';
 
 @Component({
   standalone: true,
@@ -25,6 +27,7 @@ import { StateGroup, ProjectState } from '@mpm/shared-types';
     FluidModule,
     FormsModule,
     DragDropModule,
+    TooltipModule,
   ],
   template: `
     <div class="space-y-6">
@@ -35,7 +38,50 @@ import { StateGroup, ProjectState } from '@mpm/shared-types';
         </div>
       </div>
 
-      <!-- Main Groups Layout -->
+      <!-- Workspace Template Section (Read-only) -->
+      @if (workspaceTemplates().length > 0) {
+        <div class="bg-gray-50 rounded-xl border border-gray-200 p-5 space-y-4">
+          <div class="flex justify-between items-center pb-2 border-b border-gray-200">
+            <div class="flex items-center gap-2">
+              <i class="pi pi-globe text-sm text-indigo-500"></i>
+              <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wider">Workspace Template</h3>
+              <span class="text-xs text-gray-400 font-semibold">({{ workspaceTemplates().length }})</span>
+            </div>
+            @if (isAdmin()) {
+              <button
+                pButton
+                type="button"
+                icon="pi pi-refresh"
+                label="Áp dụng lại template"
+                class="p-button-outlined p-button-sm font-semibold text-xs py-1"
+                [loading]="isApplyingTemplate()"
+                (click)="onApplyTemplate()"
+              ></button>
+            }
+          </div>
+
+          <p class="text-xs text-gray-500 italic">Danh sách template tham khảo (read-only). States được tạo từ template sẽ hiển thị icon <i class="pi pi-link text-xs"></i>.</p>
+
+          <!-- Template States List -->
+          <div class="space-y-2">
+            @for (tpl of workspaceTemplates(); track tpl.id) {
+              <div class="flex items-center gap-3 p-2.5 rounded-lg border border-gray-150 bg-white">
+                <span
+                  class="w-5 h-5 rounded-full flex-shrink-0 border border-gray-200"
+                  [style.background-color]="tpl.color"
+                ></span>
+                <span class="text-sm font-medium text-gray-700">{{ tpl.name }}</span>
+                <span class="text-[11px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">{{ getGroupName(tpl.group) }}</span>
+                @if (tpl.isDefault) {
+                  <span class="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-full">Mặc định</span>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Project States Section (Editable) -->
       <div class="grid grid-cols-1 gap-6">
         @for (group of groupOrder; track group) {
           <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-4">
@@ -99,6 +145,15 @@ import { StateGroup, ProjectState } from '@mpm/shared-types';
                       [disabled]="isReadOnly()"
                       class="bg-transparent border-none focus:bg-gray-50 focus:ring-1 focus:ring-indigo-500 rounded px-2 py-0.5 text-sm font-semibold text-gray-800 hover:bg-gray-50 transition w-full max-w-xs"
                     />
+
+                    <!-- Template origin icon -->
+                    @if (state.templateId) {
+                      <i
+                        class="pi pi-link text-xs text-indigo-400"
+                        pTooltip="Từ workspace template"
+                        tooltipPosition="top"
+                      ></i>
+                    }
 
                     <!-- Default indicator -->
                     @if (state.isDefault) {
@@ -248,6 +303,7 @@ import { StateGroup, ProjectState } from '@mpm/shared-types';
 export class StatesTabComponent implements OnInit {
   readonly projectStore = inject(ProjectStore);
   private readonly projectService = inject(ProjectService);
+  private readonly stateTemplateService = inject(StateTemplateService);
   private readonly authService = inject(AuthService);
   private readonly messageService = inject(MessageService);
 
@@ -258,6 +314,10 @@ export class StatesTabComponent implements OnInit {
     StateGroup.COMPLETED,
     StateGroup.CANCELLED,
   ];
+
+  // Workspace templates (read-only section)
+  readonly workspaceTemplates = signal<WorkspaceStateTemplate[]>([]);
+  readonly isApplyingTemplate = signal<boolean>(false);
 
   // Inline Creation form bindings
   showAddForm: Record<string, boolean> = {};
@@ -289,7 +349,7 @@ export class StatesTabComponent implements OnInit {
 
   readonly totalStatesCount = computed(() => this.allStatesList().length);
 
-  // Check read-only state
+  // Check read-only state (SM/PO can edit project states)
   readonly isReadOnly = computed(() => {
     const project = this.projectStore.currentProject();
     if (!project) return true;
@@ -301,6 +361,12 @@ export class StatesTabComponent implements OnInit {
 
     const member = this.projectStore.members().find((m) => m.userId === user.id);
     return member?.projectRole !== 'Scrum_Master';
+  });
+
+  // Check if user is admin (for "Áp dụng lại template" button)
+  readonly isAdmin = computed(() => {
+    const user = this.authService.currentUser();
+    return user?.systemRole === 'Admin';
   });
 
   ngOnInit(): void {
@@ -315,7 +381,63 @@ export class StatesTabComponent implements OnInit {
     if (project) {
       this.projectStore.loadStates(project.id);
       this.projectStore.loadMembers(project.id);
+      this.loadWorkspaceTemplates(project.workspaceId);
     }
+  }
+
+  /**
+   * Tải workspace state templates để hiển thị section tham khảo
+   */
+  private loadWorkspaceTemplates(workspaceId: string | null): void {
+    if (!workspaceId) return;
+
+    this.stateTemplateService.getTemplates(workspaceId).subscribe({
+      next: (templates) => this.workspaceTemplates.set(templates),
+      error: () => {
+        // Không hiển thị section nếu không lấy được templates
+        this.workspaceTemplates.set([]);
+      },
+    });
+  }
+
+  /**
+   * Áp dụng lại workspace template vào project hiện tại
+   * Chỉ admin mới có thể thực hiện
+   */
+  onApplyTemplate(): void {
+    const project = this.projectStore.currentProject();
+    if (!project || !project.workspaceId) return;
+
+    this.isApplyingTemplate.set(true);
+
+    this.stateTemplateService.applyToProject(project.workspaceId, project.id).subscribe({
+      next: (result) => {
+        this.isApplyingTemplate.set(false);
+        this.projectStore.loadStates(project.id);
+
+        if (result.addedCount > 0) {
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Áp dụng template thành công',
+            detail: `Đã thêm ${result.addedCount} trạng thái mới từ template (bỏ qua ${result.skippedCount} đã tồn tại).`,
+          });
+        } else {
+          this.messageService.add({
+            severity: 'info',
+            summary: 'Không có thay đổi',
+            detail: `Tất cả ${result.skippedCount} trạng thái từ template đã tồn tại trong project.`,
+          });
+        }
+      },
+      error: (err) => {
+        this.isApplyingTemplate.set(false);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Áp dụng template thất bại',
+          detail: err.error?.message || 'Có lỗi xảy ra khi áp dụng template.',
+        });
+      },
+    });
   }
 
   statesForGroup(group: StateGroup): ProjectState[] {

@@ -67,7 +67,7 @@ export class CreateTaskManagementTables1748822400000 implements MigrationInterfa
     // ─── Indexes on tasks ─────────────────────────────────────────────────
     await queryRunner.query(`CREATE INDEX "idx_tasks_type" ON "tasks"("project_id", "type")`);
     await queryRunner.query(`CREATE INDEX "idx_tasks_priority" ON "tasks"("project_id", "priority")`);
-    await queryRunner.query(`CREATE INDEX "idx_tasks_state_id" ON "tasks"("project_id", "state_id")`);
+    await queryRunner.query(`CREATE INDEX IF NOT EXISTS "idx_tasks_state_id" ON "tasks"("project_id", "state_id")`);
     await queryRunner.query(`CREATE INDEX "idx_tasks_parent" ON "tasks"("parent_id")`);
     await queryRunner.query(`CREATE INDEX "idx_tasks_backlog_order" ON "tasks"("project_id", "backlog_order")`);
     await queryRunner.query(`CREATE INDEX "idx_tasks_due_date" ON "tasks"("project_id", "due_date")`);

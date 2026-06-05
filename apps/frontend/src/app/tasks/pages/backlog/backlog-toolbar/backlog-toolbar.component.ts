@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, inject } from '@angular/core';
+import { Component, Input, Output, EventEmitter, inject, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -6,9 +6,12 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { MultiSelectModule } from 'primeng/multiselect';
+import { PopoverModule, Popover } from 'primeng/popover';
 
 import { ProjectStore } from '../../../../projects/state/project.store';
-import type { TaskQueryDto, TaskType, TaskPriority } from '@mpm/shared-types';
+import { DisplayPropertiesPanelComponent } from './display-properties-panel.component';
+import type { TaskQueryDto, TaskType, TaskPriority, DisplayProperties } from '@mpm/shared-types';
+import { DEFAULT_DISPLAY_PROPS } from '@mpm/shared-types';
 
 export interface BacklogFilter {
   search?: string;
@@ -22,7 +25,7 @@ export interface BacklogFilter {
 @Component({
   standalone: true,
   selector: 'app-backlog-toolbar',
-  imports: [CommonModule, FormsModule, ButtonModule, InputTextModule, SelectModule, MultiSelectModule],
+  imports: [CommonModule, FormsModule, ButtonModule, InputTextModule, SelectModule, MultiSelectModule, PopoverModule, DisplayPropertiesPanelComponent],
   template: `
     <div class="flex items-center gap-3 px-4 py-3 border-b border-gray-200 dark:border-surface-700 bg-white dark:bg-surface-900 flex-shrink-0 flex-wrap">
       <h1 class="text-lg font-semibold text-gray-900 dark:text-surface-0 mr-2">Backlog</h1>
@@ -100,6 +103,20 @@ export interface BacklogFilter {
           pTooltip="Xóa bộ lọc" (click)="clearFilters()"></button>
       }
 
+      <!-- Display Properties -->
+      <button pButton label="Display" icon="pi pi-sliders-h" severity="secondary" size="small" text
+        (click)="displayPopover.toggle($event)" aria-label="Display Properties"></button>
+      <p-popover #displayPopover>
+        <app-display-properties-panel
+          [displayProps]="displayProps"
+          [selectedGroupBy]="selectedGroupBy"
+          [selectedOrderBy]="selectedOrderBy"
+          (displayPropsChange)="displayPropsChange.emit($event)"
+          (groupByChange)="groupByChange.emit($event)"
+          (orderByChange)="orderByChange.emit($event)"
+        />
+      </p-popover>
+
       <div class="flex-1"></div>
 
       <!-- Label manager (SM/PO only) -->
@@ -115,6 +132,7 @@ export interface BacklogFilter {
 export class BacklogToolbarComponent {
   private readonly projectStore = inject(ProjectStore);
 
+  @Input() displayProps: DisplayProperties = DEFAULT_DISPLAY_PROPS;
   @Input() selectedGroupBy = 'none';
   @Input() selectedOrderBy = 'rank';
   @Output() filterChange = new EventEmitter<BacklogFilter>();
@@ -122,6 +140,9 @@ export class BacklogToolbarComponent {
   @Output() orderByChange = new EventEmitter<string>();
   @Output() newTaskClick = new EventEmitter<void>();
   @Output() labelManagerClick = new EventEmitter<void>();
+  @Output() displayPropsChange = new EventEmitter<Partial<DisplayProperties>>();
+
+  @ViewChild('displayPopover') private readonly displayPopover!: Popover;
 
   protected searchText = '';
   protected selectedTypes: TaskType[] = [];

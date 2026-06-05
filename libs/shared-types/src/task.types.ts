@@ -40,11 +40,15 @@ export interface TaskAssignee {
   assignedAt: Date;
 }
 
+export type LabelScope = 'workspace' | 'project';
+
 export interface Label {
   id: string;
-  projectId: string;
+  projectId: string | null;
   name: string;
   color: string;
+  scope?: LabelScope;
+  workspaceId?: string;
   taskCount?: number;
   createdAt: Date;
   updatedAt: Date;
@@ -121,6 +125,7 @@ export interface TaskListItem {
   state?: TaskStateRef;
   assignees: TaskAssignee[];
   labels: Label[];
+  modules?: TaskModuleRef[];
   estimateValue: number | null;
   startDate: string | null;
   dueDate: string | null;
@@ -249,3 +254,66 @@ export interface TaskQueryDto {
   limit?: number;
   parentId?: string | null;
 }
+
+// ─── Modules ──────────────────────────────────────────────────────────────────
+
+export type ModuleStatus = 'backlog' | 'in_progress' | 'paused' | 'completed' | 'cancelled';
+
+export interface ProjectModule {
+  id: string;
+  scope: 'workspace' | 'project';
+  workspaceId: string;
+  projectId: string | null;
+  name: string;
+  description: string | null;
+  status: ModuleStatus;
+  startDate: string | null;
+  endDate: string | null;
+  taskCount: number;
+  completedCount: number;
+  progress: number;
+  createdBy: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface TaskModuleRef {
+  id: string;
+  name: string;
+  scope: 'workspace' | 'project';
+  status: ModuleStatus;
+}
+
+// ─── Display Properties ───────────────────────────────────────────────────────
+
+export interface DisplayProperties {
+  showAssignee: boolean;
+  showPriority: boolean;
+  showDueDate: boolean;
+  showStartDate: boolean;
+  showLabels: boolean;
+  showEstimate: boolean;
+  showSubItemCount: boolean;
+  showState: boolean;
+  showModules: boolean;
+  alwaysShowLabels: boolean;
+  labelMode: 'badge' | 'dot';
+  maxLabels: number;   // 1–4
+  maxModules: number;  // 1–3
+}
+
+export const DEFAULT_DISPLAY_PROPS: DisplayProperties = {
+  showAssignee: true,
+  showPriority: true,
+  showDueDate: true,
+  showStartDate: false,
+  showLabels: true,
+  showEstimate: true,
+  showSubItemCount: true,
+  showState: true,
+  showModules: true,
+  alwaysShowLabels: false,
+  labelMode: 'badge',
+  maxLabels: 2,
+  maxModules: 1,
+};

@@ -14,6 +14,7 @@ import { User } from '../auth/entities/user.entity';
 import { ProjectState } from './entities/project-state.entity';
 import { ProjectEstimateConfig } from './entities/project-estimate-config.entity';
 import { AuditService } from '../audit/audit.service';
+import { StateTemplateService } from './state-template/state-template.service';
 import { AuthEvent } from '../auth/constants/auth-events';
 import { CreateProjectDto, UpdateProjectDto } from './dto';
 import {
@@ -38,6 +39,7 @@ export class ProjectService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly auditService: AuditService,
+    private readonly stateTemplateService: StateTemplateService,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -147,13 +149,28 @@ export class ProjectService {
 
       await queryRunner.manager.save(ProjectMember, projectMember);
 
-      // Seeding 6 default states
-      for (const state of this.DEFAULT_STATES) {
-        const ps = queryRunner.manager.create(ProjectState, {
-          ...state,
-          projectId: savedProject.id,
-        });
-        await queryRunner.manager.save(ProjectState, ps);
+      // Seeding states: từ workspace template hoặc mặc định
+      let statesSeeded = false;
+      if (dto.stateTemplate === 'workspace' && savedProject.workspaceId) {
+        const result = await this.stateTemplateService.applyToProject(
+          savedProject.workspaceId,
+          savedProject.id,
+        );
+        // Nếu workspace có templates → sử dụng, không seed defaults
+        if (result.addedCount > 0) {
+          statesSeeded = true;
+        }
+      }
+
+      // Fallback: seed 6 default states nếu không dùng template hoặc workspace không có template
+      if (!statesSeeded) {
+        for (const state of this.DEFAULT_STATES) {
+          const ps = queryRunner.manager.create(ProjectState, {
+            ...state,
+            projectId: savedProject.id,
+          });
+          await queryRunner.manager.save(ProjectState, ps);
+        }
       }
 
       // Seeding default estimate config

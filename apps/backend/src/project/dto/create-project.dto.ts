@@ -1,4 +1,4 @@
-import { IsString, Length, Matches, IsOptional, MaxLength, IsEnum, IsUUID } from 'class-validator';
+import { IsString, Length, Matches, IsOptional, MaxLength, IsEnum, IsUUID, IsIn } from 'class-validator';
 import { ProjectNetwork } from '@mpm/shared-types';
 
 export class CreateProjectDto {
@@ -34,4 +34,8 @@ export class CreateProjectDto {
   @IsString()
   @MaxLength(50)
   timezone?: string;
+
+  @IsOptional()
+  @IsIn(['blank', 'workspace'])
+  stateTemplate?: 'blank' | 'workspace';
 }

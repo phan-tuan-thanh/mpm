@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Project } from './entities/project.entity';
 import { ProjectState } from './entities/project-state.entity';
 import { ProjectEstimateConfig } from './entities/project-estimate-config.entity';
+import { WorkspaceStateTemplate } from './entities/workspace-state-template.entity';
 import { ProjectMember } from '../auth/entities/project-member.entity';
 import { User } from '../auth/entities/user.entity';
 import { Task } from '../task/entities/task.entity';
@@ -15,6 +16,9 @@ import { ProjectMemberService } from './members/project-member.service';
 
 import { ProjectStateController } from './state/project-state.controller';
 import { ProjectStateService } from './state/project-state.service';
+
+import { StateTemplateController } from './state-template/state-template.controller';
+import { StateTemplateService } from './state-template/state-template.service';
 
 import { EstimateConfigController } from './estimate/estimate-config.controller';
 import { EstimateConfigService } from './estimate/estimate-config.service';
@@ -31,6 +35,7 @@ import { AuditModule } from '../audit/audit.module';
       Project,
       ProjectState,
       ProjectEstimateConfig,
+      WorkspaceStateTemplate,
       ProjectMember,
       User,
       Task,
@@ -42,6 +47,7 @@ import { AuditModule } from '../audit/audit.module';
     ProjectController,
     ProjectMemberController,
     ProjectStateController,
+    StateTemplateController,
     EstimateConfigController,
     CoverController,
   ],
@@ -49,6 +55,7 @@ import { AuditModule } from '../audit/audit.module';
     ProjectService,
     ProjectMemberService,
     ProjectStateService,
+    StateTemplateService,
     EstimateConfigService,
     CoverService,
   ],
@@ -56,6 +63,7 @@ import { AuditModule } from '../audit/audit.module';
     ProjectService,
     ProjectMemberService,
     ProjectStateService,
+    StateTemplateService,
     EstimateConfigService,
     CoverService,
   ],

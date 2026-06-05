@@ -84,8 +84,8 @@ const routes = [
             path: 'modules',
             canActivate: [projectFeatureGuard],
             loadComponent: () =>
-              import('./app/projects/pages/feature-placeholder.component').then(
-                (m) => m.FeaturePlaceholderComponent
+              import('./app/tasks/pages/modules/modules.component').then(
+                (m) => m.ModulesComponent
               ),
             data: { feature: 'modules', title: 'Modules' },
           },

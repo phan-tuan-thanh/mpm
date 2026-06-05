@@ -227,6 +227,59 @@ wait_for_services() {
   fi
 }
 
+# ─── 5b. Ensure Authentik blueprint applied ────────────────────────────────────
+
+ensure_authentik_blueprint() {
+  local AUTHENTIK_URL="http://localhost:${AUTHENTIK_PORT:-9000}"
+  local TOKEN="${AUTHENTIK_BOOTSTRAP_TOKEN:-ak-bootstrap-token-for-api}"
+
+  # Chờ thêm 10s để Authentik worker hoàn tất default blueprints
+  log_info "Chờ Authentik worker apply default blueprints..."
+  sleep 10
+
+  # Kiểm tra xem provider đã được tạo chưa
+  local provider_count
+  provider_count=$(curl -s -H "Authorization: Bearer $TOKEN" "$AUTHENTIK_URL/api/v3/providers/oauth2/?search=agile-pm" 2>/dev/null | python3 -c "import sys,json; print(json.load(sys.stdin)['pagination']['count'])" 2>/dev/null || echo "0")
+
+  if [ "$provider_count" = "0" ]; then
+    log_info "Blueprint chưa apply provider — trigger re-apply..."
+
+    # Tìm blueprint PK
+    local blueprint_pk
+    blueprint_pk=$(curl -s -H "Authorization: Bearer $TOKEN" "$AUTHENTIK_URL/api/v3/managed/blueprints/" 2>/dev/null | python3 -c "
+import sys,json
+d=json.load(sys.stdin)
+for r in d['results']:
+    if 'agile' in r.get('path','').lower():
+        print(r['pk'])
+        break
+" 2>/dev/null)
+
+    if [ -n "$blueprint_pk" ]; then
+      # Trigger re-apply
+      curl -s -X POST -H "Authorization: Bearer $TOKEN" "$AUTHENTIK_URL/api/v3/managed/blueprints/$blueprint_pk/apply/" &>/dev/null
+      sleep 3
+
+      # Verify
+      provider_count=$(curl -s -H "Authorization: Bearer $TOKEN" "$AUTHENTIK_URL/api/v3/providers/oauth2/?search=agile-pm" 2>/dev/null | python3 -c "import sys,json; print(json.load(sys.stdin)['pagination']['count'])" 2>/dev/null || echo "0")
+
+      if [ "$provider_count" != "0" ]; then
+        log_success "Authentik OAuth2 Provider + Application đã được tạo"
+      else
+        log_warn "Blueprint re-apply chưa thành công. Thử lại sau 15s..."
+        sleep 15
+        curl -s -X POST -H "Authorization: Bearer $TOKEN" "$AUTHENTIK_URL/api/v3/managed/blueprints/$blueprint_pk/apply/" &>/dev/null
+        sleep 3
+        log_success "Blueprint re-applied (kiểm tra Authentik Admin UI để xác nhận)"
+      fi
+    else
+      log_warn "Không tìm thấy blueprint agile-pm-setup. Kiểm tra docker/plans/agile-pm.yaml"
+    fi
+  else
+    log_success "Authentik OAuth2 Provider đã tồn tại (agile-pm-provider)"
+  fi
+}
+
 # ─── 6. Install dependencies ──────────────────────────────────────────────────
 
 install_deps() {
@@ -366,6 +419,7 @@ main() {
       generate_jwt_keys
       start_infra
       wait_for_services
+      ensure_authentik_blueprint
       echo ""
       log_success "Infrastructure sẵn sàng!"
       echo -e "  PostgreSQL: localhost:${POSTGRES_PORT:-5432}"
@@ -390,6 +444,7 @@ main() {
       generate_jwt_keys
       start_infra
       wait_for_services
+      ensure_authentik_blueprint
       install_deps
       run_migrations
       start_backend

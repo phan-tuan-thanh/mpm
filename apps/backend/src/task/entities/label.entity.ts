@@ -14,8 +14,14 @@ export class Label {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ name: 'project_id', type: 'uuid' })
-  projectId!: string;
+  @Column({ type: 'varchar', length: 10, default: 'project' })
+  scope!: 'workspace' | 'project';
+
+  @Column({ name: 'workspace_id', type: 'uuid', nullable: true })
+  workspaceId!: string | null;
+
+  @Column({ name: 'project_id', type: 'uuid', nullable: true })
+  projectId!: string | null;
 
   @Column({ type: 'varchar', length: 50 })
   name!: string;
@@ -29,7 +35,7 @@ export class Label {
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
   updatedAt!: Date;
 
-  @ManyToOne(() => Project, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Project, { onDelete: 'CASCADE', nullable: true })
   @JoinColumn({ name: 'project_id' })
-  project!: Project;
+  project!: Project | null;
 }

@@ -5,6 +5,7 @@ import { Project } from './entities/project.entity';
 import { ProjectMember } from '../auth/entities/project-member.entity';
 import { User } from '../auth/entities/user.entity';
 import { AuditService } from '../audit/audit.service';
+import { StateTemplateService } from './state-template/state-template.service';
 import { DataSource } from 'typeorm';
 import { ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
 
@@ -14,6 +15,7 @@ describe('ProjectService', () => {
   let projectMemberRepo: any;
   let userRepo: any;
   let auditService: any;
+  let stateTemplateService: any;
   let dataSource: any;
   let queryRunner: any;
 
@@ -68,6 +70,12 @@ describe('ProjectService', () => {
           },
         },
         {
+          provide: StateTemplateService,
+          useValue: {
+            applyToProject: jest.fn().mockResolvedValue({ addedCount: 0, skippedCount: 0 }),
+          },
+        },
+        {
           provide: DataSource,
           useValue: dataSource,
         },
@@ -79,6 +87,7 @@ describe('ProjectService', () => {
     projectMemberRepo = module.get(getRepositoryToken(ProjectMember));
     userRepo = module.get(getRepositoryToken(User));
     auditService = module.get(AuditService);
+    stateTemplateService = module.get(StateTemplateService);
   });
 
   describe('create', () => {

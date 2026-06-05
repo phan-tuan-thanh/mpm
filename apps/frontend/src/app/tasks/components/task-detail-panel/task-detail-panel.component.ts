@@ -20,11 +20,12 @@ import { MessageService } from 'primeng/api';
 
 import { TaskStore } from '../../state/task.store';
 import { ProjectStore } from '../../../projects/state/project.store';
+import { ModuleStore } from '../../state/module.store';
 import { TaskService } from '../../services/task.service';
 import { AttachmentService } from '../../services/attachment.service';
 import { LinkService } from '../../services/link.service';
 import { RelationService } from '../../services/relation.service';
-import type { Task, TaskActivity, TaskAttachment, TaskLink } from '@mpm/shared-types';
+import type { Task, TaskActivity, TaskAttachment, TaskLink, ProjectModule } from '@mpm/shared-types';
 import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 
 @Component({
@@ -177,6 +178,37 @@ import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
                     <label class="text-xs text-gray-500 uppercase tracking-wide mb-1 block">Tạo lúc</label>
                     <span class="text-gray-500 text-xs">{{ task()!.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
                   </div>
+                </div>
+
+                <!-- Modules -->
+                <div class="mt-3 px-2">
+                  <label class="text-xs text-gray-500 uppercase tracking-wide mb-1 block">Modules</label>
+                  <p-multiselect
+                    [options]="moduleGroupOptions()"
+                    [(ngModel)]="editModuleIds"
+                    [group]="true"
+                    optionLabel="name"
+                    optionValue="id"
+                    optionGroupLabel="label"
+                    optionGroupChildren="items"
+                    placeholder="Chọn modules..."
+                    styleClass="w-full text-sm"
+                    display="chip"
+                    (ngModelChange)="onModulesChange($event)"
+                  >
+                    <ng-template let-group pTemplate="group">
+                      <div class="flex items-center gap-2">
+                        <i [class]="group.icon"></i>
+                        <span>{{ group.label }}</span>
+                      </div>
+                    </ng-template>
+                    <ng-template let-module pTemplate="item">
+                      <div class="flex items-center gap-2">
+                        <i [class]="module.scope === 'workspace' ? 'pi pi-globe text-indigo-500' : 'pi pi-folder text-teal-500'" class="text-xs"></i>
+                        <span>{{ module.name }}</span>
+                      </div>
+                    </ng-template>
+                  </p-multiselect>
                 </div>
 
                 <!-- Description -->
@@ -340,6 +372,7 @@ import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 export class TaskDetailPanelComponent implements OnInit, OnDestroy {
   readonly taskStore = inject(TaskStore);
   readonly projectStore = inject(ProjectStore);
+  readonly moduleStore = inject(ModuleStore);
   readonly attachmentService = inject(AttachmentService);
   private readonly taskService = inject(TaskService);
   private readonly linkService = inject(LinkService);
@@ -370,6 +403,7 @@ export class TaskDetailPanelComponent implements OnInit, OnDestroy {
   protected editStartDate: Date | null = null;
   protected editDueDate: Date | null = null;
   protected editDescription = '';
+  protected editModuleIds: string[] = [];
   protected newLinkUrl = '';
   protected newLinkTitle = '';
   protected newChildTitle = '';
@@ -385,6 +419,24 @@ export class TaskDetailPanelComponent implements OnInit, OnDestroy {
   );
 
   protected readonly memberOptions = computed(() => this.projectStore.members());
+
+  protected readonly moduleGroupOptions = computed(() => {
+    const modules = this.moduleStore.modules();
+    const workspaceModules = modules.filter(m => m.scope === 'workspace');
+    const projectModules = modules.filter(m => m.scope === 'project');
+    return [
+      {
+        label: 'Workspace Modules',
+        icon: 'pi pi-globe text-indigo-500',
+        items: workspaceModules.map(m => ({ id: m.id, name: m.name, scope: m.scope })),
+      },
+      {
+        label: 'Project Modules',
+        icon: 'pi pi-folder text-teal-500',
+        items: projectModules.map(m => ({ id: m.id, name: m.name, scope: m.scope })),
+      },
+    ];
+  });
 
   protected readonly priorityOptions = [
     { label: '🔴 Urgent', value: 'urgent' },
@@ -427,6 +479,10 @@ export class TaskDetailPanelComponent implements OnInit, OnDestroy {
         if (!this.projectStore.members().length) {
           this.projectStore.loadMembers(projectId);
         }
+        // Load modules cho picker
+        if (!this.moduleStore.modules().length) {
+          this.moduleStore.loadModules(projectId);
+        }
       } else {
         this.isVisible.set(false);
       }
@@ -449,6 +505,7 @@ export class TaskDetailPanelComponent implements OnInit, OnDestroy {
     this.editStartDate = t.startDate ? new Date(t.startDate) : null;
     this.editDueDate = t.dueDate ? new Date(t.dueDate) : null;
     this.editDescription = t.description ?? '';
+    this.editModuleIds = t.modules?.map(m => m.id) ?? [];
   }
 
   protected onClose(): void {
@@ -480,6 +537,32 @@ export class TaskDetailPanelComponent implements OnInit, OnDestroy {
     const t = this.task();
     if (!t || this.editDescription === t.description) return;
     this.taskStore.updateTask(this.projectId(), t.id, { description: this.editDescription });
+  }
+
+  protected onModulesChange(newModuleIds: string[]): void {
+    const t = this.task();
+    if (!t) return;
+    const projectId = this.projectId();
+    const previousIds = t.modules?.map(m => m.id) ?? [];
+
+    // Modules thêm mới (có trong newModuleIds nhưng không có trong previousIds)
+    const added = newModuleIds.filter(id => !previousIds.includes(id));
+    // Modules bị bỏ (có trong previousIds nhưng không có trong newModuleIds)
+    const removed = previousIds.filter(id => !newModuleIds.includes(id));
+
+    // Gọi addTasksToModule cho từng module mới
+    for (const moduleId of added) {
+      this.moduleStore.addTasksToModule(projectId, moduleId, [t.id]).then(() => {
+        this.taskStore.loadTask(projectId, t.taskId);
+      });
+    }
+
+    // Gọi removeTaskFromModule cho từng module bị bỏ
+    for (const moduleId of removed) {
+      this.moduleStore.removeTaskFromModule(projectId, moduleId, t.id).then(() => {
+        this.taskStore.loadTask(projectId, t.taskId);
+      });
+    }
   }
 
   protected isOverdue(): boolean {

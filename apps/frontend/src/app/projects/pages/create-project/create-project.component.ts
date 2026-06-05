@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { ProjectService } from '../../services/project.service';
+import { StateTemplateService } from '../../services/state-template.service';
 import { ProjectStore } from '../../state/project.store';
 import { AuthService } from '../../../auth/services/auth.service';
 import { CommonModule } from '@angular/common';
@@ -9,11 +10,12 @@ import { TextareaModule } from 'primeng/textarea';
 import { ButtonModule } from 'primeng/button';
 import { SelectModule } from 'primeng/select';
 import { FluidModule } from 'primeng/fluid';
+import { RadioButtonModule } from 'primeng/radiobutton';
 import { MessageService } from 'primeng/api';
 import { Subject, Subscription, of } from 'rxjs';
 import { debounceTime, distinctUntilChanged, catchError, switchMap } from 'rxjs/operators';
 import { FormsModule } from '@angular/forms';
-import { ProjectNetwork } from '@mpm/shared-types';
+import { ProjectNetwork, StateTemplate, WorkspaceStateTemplate } from '@mpm/shared-types';
 
 @Component({
   standalone: true,
@@ -26,6 +28,7 @@ import { ProjectNetwork } from '@mpm/shared-types';
     ButtonModule,
     SelectModule,
     FluidModule,
+    RadioButtonModule,
     FormsModule,
   ],
   template: `
@@ -152,6 +155,41 @@ import { ProjectNetwork } from '@mpm/shared-types';
             ></textarea>
           </div>
 
+          <!-- State Template Selection (chỉ hiện nếu workspace có templates) -->
+          @if (hasWorkspaceTemplates()) {
+            <div class="flex flex-col gap-2">
+              <label class="text-sm font-semibold text-gray-700">Trạng thái khởi tạo</label>
+              <div class="flex flex-col gap-3">
+                <div class="flex items-start gap-2">
+                  <p-radiobutton
+                    name="stateTemplate"
+                    value="blank"
+                    [(ngModel)]="stateTemplate"
+                    inputId="stateTemplate-blank"
+                  ></p-radiobutton>
+                  <label for="stateTemplate-blank" class="cursor-pointer">
+                    <span class="text-sm font-medium text-gray-700">Mặc định (Blank)</span>
+                    <p class="text-[11px] text-gray-400 mt-0.5">Khởi tạo 3 trạng thái cơ bản: Backlog, In Progress, Done.</p>
+                  </label>
+                </div>
+                <div class="flex items-start gap-2">
+                  <p-radiobutton
+                    name="stateTemplate"
+                    value="workspace"
+                    [(ngModel)]="stateTemplate"
+                    inputId="stateTemplate-workspace"
+                  ></p-radiobutton>
+                  <label for="stateTemplate-workspace" class="cursor-pointer">
+                    <span class="text-sm font-medium text-gray-700">Từ Workspace Template</span>
+                    <p class="text-[11px] text-gray-400 mt-0.5">
+                      Sử dụng {{ workspaceTemplates().length }} trạng thái đã được định nghĩa sẵn cho workspace.
+                    </p>
+                  </label>
+                </div>
+              </div>
+            </div>
+          }
+
           <!-- Network (Quyền riêng tư) -->
           <div class="flex flex-col gap-2">
             <label class="text-sm font-semibold text-gray-700">Quyền riêng tư</label>
@@ -244,6 +282,7 @@ export class CreateProjectComponent implements OnInit, OnDestroy {
   readonly ProjectNetwork = ProjectNetwork;
 
   private readonly projectService = inject(ProjectService);
+  private readonly stateTemplateService = inject(StateTemplateService);
   private readonly projectStore = inject(ProjectStore);
   private readonly authService = inject(AuthService);
   private readonly messageService = inject(MessageService);
@@ -257,6 +296,11 @@ export class CreateProjectComponent implements OnInit, OnDestroy {
   network: ProjectNetwork = ProjectNetwork.SECRET;
   leadId: string | null = null;
   timezone = 'Asia/Ho_Chi_Minh';
+  stateTemplate: StateTemplate = 'blank';
+
+  // Workspace templates state
+  readonly workspaceTemplates = signal<WorkspaceStateTemplate[]>([]);
+  readonly hasWorkspaceTemplates = computed(() => this.workspaceTemplates().length > 0);
 
   // UI States
   showEmojiPicker = signal<boolean>(false);
@@ -318,6 +362,9 @@ export class CreateProjectComponent implements OnInit, OnDestroy {
     if (currentUser) {
       this.leadId = currentUser.id;
     }
+
+    // Fetch workspace state templates (chỉ hiện option nếu có)
+    this.loadWorkspaceTemplates();
   }
 
   ngOnDestroy(): void {
@@ -367,6 +414,7 @@ export class CreateProjectComponent implements OnInit, OnDestroy {
         network: this.network,
         leadId: this.leadId || undefined,
         timezone: this.timezone,
+        stateTemplate: this.stateTemplate,
       })
       .subscribe({
         next: (project) => {
@@ -387,5 +435,36 @@ export class CreateProjectComponent implements OnInit, OnDestroy {
           });
         },
       });
+  }
+
+  /**
+   * Lấy workspace ID từ project hiện tại hoặc project đầu tiên trong danh sách,
+   * sau đó fetch state templates. Chỉ hiển thị option "Workspace Template" nếu có templates.
+   */
+  private loadWorkspaceTemplates(): void {
+    const workspaceId = this.getWorkspaceId();
+    if (!workspaceId) return;
+
+    this.stateTemplateService
+      .getTemplates(workspaceId)
+      .pipe(catchError(() => of([])))
+      .subscribe((templates) => {
+        this.workspaceTemplates.set(templates);
+      });
+  }
+
+  /**
+   * Lấy workspace ID từ project đã load (currentProject hoặc first project in list)
+   */
+  private getWorkspaceId(): string | null {
+    // Ưu tiên lấy từ current project đã load
+    const currentProject = this.projectStore.currentProject();
+    if (currentProject?.workspaceId) {
+      return currentProject.workspaceId;
+    }
+
+    // Fallback: lấy từ first project in list (getProjectByKey sẽ được gọi riêng nếu cần)
+    // Nếu không có project nào → không có workspace → không có templates
+    return null;
   }
 }

@@ -14,6 +14,7 @@ import { Project } from '../../project/entities/project.entity';
 import { ProjectState } from '../../project/entities/project-state.entity';
 import { User } from '../../auth/entities/user.entity';
 import { Label } from './label.entity';
+import { Module } from './module.entity';
 import { TaskAttachment } from './task-attachment.entity';
 import { TaskLink } from './task-link.entity';
 import { TaskRelation } from './task-relation.entity';
@@ -114,6 +115,14 @@ export class Task {
     inverseJoinColumn: { name: 'label_id', referencedColumnName: 'id' },
   })
   labels!: Label[];
+
+  @ManyToMany(() => Module)
+  @JoinTable({
+    name: 'task_modules',
+    joinColumn: { name: 'task_id', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'module_id', referencedColumnName: 'id' },
+  })
+  modules!: Module[];
 
   @OneToMany(() => TaskAttachment, (a) => a.task)
   attachments!: TaskAttachment[];

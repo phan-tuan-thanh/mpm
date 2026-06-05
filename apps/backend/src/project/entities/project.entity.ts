@@ -36,6 +36,9 @@ export class Project {
   })
   status!: ProjectStatus;
 
+  @Column({ name: 'workspace_id', type: 'uuid', nullable: true })
+  workspaceId!: string | null;
+
   @Column({ name: 'owner_id', type: 'uuid' })
   ownerId!: string;
 

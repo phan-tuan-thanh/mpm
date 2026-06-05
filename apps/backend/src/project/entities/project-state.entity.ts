@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 import { Project } from './project.entity';
 import { Task } from '../../task/entities/task.entity';
+import { WorkspaceStateTemplate } from './workspace-state-template.entity';
 import { StateGroup } from '@mpm/shared-types';
 
 @Entity('project_states')
@@ -45,10 +46,17 @@ export class ProjectState {
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
   updatedAt!: Date;
 
+  @Column({ name: 'template_id', type: 'uuid', nullable: true })
+  templateId!: string | null;
+
   // Relations
   @ManyToOne(() => Project, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'project_id' })
   project!: Project;
+
+  @ManyToOne(() => WorkspaceStateTemplate, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'template_id' })
+  template!: WorkspaceStateTemplate | null;
 
   @OneToMany(() => Task, (task) => task.state)
   tasks!: Task[];
