@@ -1,4 +1,5 @@
 import { ProjectRole } from './auth.types';
+import type { TiptapDoc } from './task.types';
 
 export type ProjectStatus = 'active' | 'archived';
 
@@ -48,7 +49,7 @@ export interface ProjectFeatures {
 export interface Project {
   id: string;
   name: string;
-  description: string | null;
+  description: TiptapDoc | null;
   key: string;
   status: ProjectStatus;
   ownerId: string;
@@ -134,7 +135,7 @@ export type StateTemplate = 'blank' | 'workspace';
 export interface CreateProjectDto {
   name: string;
   key: string;
-  description?: string;
+  description?: TiptapDoc;
   emoji?: string | null;
   network?: ProjectNetwork;
   leadId?: string | null;
@@ -144,7 +145,7 @@ export interface CreateProjectDto {
 
 export interface UpdateProjectDto {
   name?: string;
-  description?: string | null;
+  description?: TiptapDoc | null;
   emoji?: string | null;
   network?: ProjectNetwork;
   leadId?: string | null;
@@ -153,7 +154,7 @@ export interface UpdateProjectDto {
 
 export interface UpdateProjectGeneralDto {
   name?: string;
-  description?: string | null;
+  description?: TiptapDoc | null;
   emoji?: string | null;
   network?: ProjectNetwork;
   leadId?: string | null;

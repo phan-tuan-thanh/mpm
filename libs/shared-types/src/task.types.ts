@@ -1,3 +1,5 @@
+export type TiptapDoc = Record<string, any>;
+
 export type TaskType = 'epic' | 'story' | 'task' | 'subtask';
 
 export type TaskPriority = 'urgent' | 'high' | 'medium' | 'low' | 'none';
@@ -144,7 +146,7 @@ export interface TaskListItem {
 }
 
 export interface Task extends TaskListItem {
-  description: string | null;
+  description: TiptapDoc | null;
   parent?: TaskParentRef | null;
   children?: TaskListItem[];
   attachments: TaskAttachment[];
@@ -178,7 +180,7 @@ export interface CreateTaskDto {
   title: string;
   type?: TaskType;
   priority?: TaskPriority;
-  description?: string;
+  description?: TiptapDoc;
   stateId?: string;
   assigneeIds?: string[];
   labelIds?: string[];
@@ -192,7 +194,7 @@ export interface UpdateTaskDto {
   title?: string;
   type?: TaskType;
   priority?: TaskPriority;
-  description?: string | null;
+  description?: TiptapDoc | null;
   stateId?: string;
   assigneeIds?: string[];
   labelIds?: string[];
@@ -271,7 +273,7 @@ export interface ProjectModule {
   workspaceId: string;
   projectId: string | null;
   name: string;
-  description: string | null;
+  description: TiptapDoc | null;
   status: ModuleStatus;
   startDate: string | null;
   endDate: string | null;
