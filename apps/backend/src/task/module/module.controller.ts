@@ -39,12 +39,12 @@ export class ModuleController {
   /**
    * Resolve workspaceId từ project entity
    */
-  private async resolveWorkspaceId(projectId: string): Promise<string> {
+  private async resolveWorkspaceId(projectId: string): Promise<string | null> {
     const project = await this.projectRepo.findOne({
       where: { id: projectId },
       select: ['id', 'workspaceId'],
     });
-    return project?.workspaceId ?? '';
+    return project?.workspaceId ?? null;
   }
 
   /**

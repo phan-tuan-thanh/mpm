@@ -117,7 +117,7 @@ export class TaskQueryService {
     const task = await this.taskRepo.findOne({
       where,
       relations: [
-        'state', 'reporter', 'assignees', 'labels',
+        'state', 'reporter', 'assignees', 'labels', 'modules',
         'parent', 'children', 'children.state',
         'attachments', 'attachments.uploader',
         'links', 'relations', 'relations.targetTask', 'relations.targetTask.state',

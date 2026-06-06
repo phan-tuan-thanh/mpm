@@ -11,6 +11,7 @@ import { MessageService } from 'primeng/api';
 import { TaskStore } from '../../state/task.store';
 import { ProjectStore } from '../../../projects/state/project.store';
 import { ModuleStore } from '../../state/module.store';
+import { AuthStore } from '../../../auth/state/auth.store';
 import { TaskService } from '../../services/task.service';
 import { AttachmentService } from '../../services/attachment.service';
 import { LinkService } from '../../services/link.service';
@@ -69,6 +70,7 @@ export class TaskDetailPanelComponent implements OnInit, OnDestroy {
   readonly taskStore = inject(TaskStore);
   readonly projectStore = inject(ProjectStore);
   readonly moduleStore = inject(ModuleStore);
+  private readonly authStore = inject(AuthStore);
   private readonly attachmentService = inject(AttachmentService);
   private readonly taskService = inject(TaskService);
   private readonly linkService = inject(LinkService);
@@ -82,7 +84,7 @@ export class TaskDetailPanelComponent implements OnInit, OnDestroy {
   readonly isVisible = signal(false);
   protected editTitle = '';
   protected activity = signal<TaskActivity[]>([]);
-  protected currentUserId = signal('');
+  protected readonly currentUserId = computed(() => this.authStore.currentUser()?.id ?? '');
 
   protected readonly stateOptions = computed(() => this.projectStore.currentProjectStates() ? Object.values(this.projectStore.currentProjectStates()!).flat() : []);
   protected readonly memberOptions = computed(() => this.projectStore.members());
@@ -191,9 +193,9 @@ export class TaskDetailPanelComponent implements OnInit, OnDestroy {
     });
   }
 
-  protected editComment(entry: TaskActivity): void {
-    const content = prompt('Sửa comment:', entry.comment ?? '');
-    if (content !== null && this.task()) this.taskService.editComment(this.projectId(), this.task()!.id, entry.id, { content }).subscribe(() => this.loadActivity());
+  protected editComment(event: { id: string; content: string }): void {
+    const t = this.task();
+    if (t) this.taskService.editComment(this.projectId(), t.id, event.id, { content: event.content }).subscribe(() => this.loadActivity());
   }
 
   private loadActivity(): void {

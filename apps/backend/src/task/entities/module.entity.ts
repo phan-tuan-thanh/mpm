@@ -21,8 +21,8 @@ export class Module {
   @Column({ type: 'varchar', length: 10 })
   scope!: ModuleScope;
 
-  @Column({ name: 'workspace_id', type: 'uuid' })
-  workspaceId!: string;
+  @Column({ name: 'workspace_id', type: 'uuid', nullable: true })
+  workspaceId!: string | null;
 
   @Column({ name: 'project_id', type: 'uuid', nullable: true })
   projectId!: string | null;

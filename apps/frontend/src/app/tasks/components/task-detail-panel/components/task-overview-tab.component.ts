@@ -81,18 +81,14 @@ const PRIORITY_OPTIONS = [
           display="chip"
           (ngModelChange)="changeModules.emit($event)"
         >
+          <!-- Group header — keep icon+label -->
           <ng-template let-group pTemplate="group">
-            <div class="flex items-center gap-2">
-              <i [class]="group.icon"></i>
+            <div class="flex items-center gap-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+              <i [class]="group.icon" class="text-xs"></i>
               <span>{{ group.label }}</span>
             </div>
           </ng-template>
-          <ng-template let-module pTemplate="item">
-            <div class="flex items-center gap-2">
-              <i [class]="module.scope === 'workspace' ? 'pi pi-globe text-indigo-500' : 'pi pi-folder text-teal-500'" class="text-xs"></i>
-              <span>{{ module.name }}</span>
-            </div>
-          </ng-template>
+          <!-- No custom item template: PrimeNG renders default checkbox + optionLabel so selection is visible -->
         </p-multiselect>
       </div>
       <div class="mt-4 px-2">
@@ -118,7 +114,8 @@ export class TaskOverviewTabComponent {
     if (v) {
       this.editStateId = v.stateId;
       this.editPriority = v.priority;
-      this.editAssigneeIds = v.assignees?.map((a) => a.userId) ?? [];
+      // Backend returns User[] (field: .id), shared type declares TaskAssignee (field: .userId)
+      this.editAssigneeIds = v.assignees?.map((a: any) => a.userId ?? a.id) ?? [];
       this.editEstimate = v.estimateValue;
       this.editStartDate = v.startDate ? new Date(v.startDate) : null;
       this.editDueDate = v.dueDate ? new Date(v.dueDate) : null;

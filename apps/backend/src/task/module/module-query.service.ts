@@ -25,9 +25,11 @@ export class ModuleQueryService {
    */
   async findAllForProject(
     projectId: string,
-    workspaceId: string,
+    workspaceId: string | null,
     query?: ModuleQueryDto,
   ): Promise<ModuleWithProgress[]> {
+    const hasWorkspace = !!workspaceId;
+
     const qb = this.moduleRepo
       .createQueryBuilder('m')
       .leftJoin('task_modules', 'tm', 'tm.module_id = m.id')
@@ -51,6 +53,9 @@ export class ModuleQueryService {
 
     // Scope filter
     if (query?.scope === 'workspace') {
+      if (!hasWorkspace) {
+        return [];
+      }
       qb.where('m.scope = :ws AND m.workspace_id = :wid', {
         ws: 'workspace',
         wid: workspaceId,
@@ -60,7 +65,7 @@ export class ModuleQueryService {
         proj: 'project',
         pid2: projectId,
       });
-    } else {
+    } else if (hasWorkspace) {
       // Default: merged list (workspace + project)
       qb.where(
         '(m.scope = :ws AND m.workspace_id = :wid) OR (m.scope = :proj AND m.project_id = :pid2)',
@@ -71,6 +76,12 @@ export class ModuleQueryService {
           pid2: projectId,
         },
       );
+    } else {
+      // No workspace — only project-scoped modules
+      qb.where('m.scope = :proj AND m.project_id = :pid2', {
+        proj: 'project',
+        pid2: projectId,
+      });
     }
 
     // Optional status filter

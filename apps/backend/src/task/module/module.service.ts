@@ -40,7 +40,7 @@ export class ModuleService {
   /** @see ModuleQueryService.findAllForProject */
   findAllForProject(
     projectId: string,
-    workspaceId: string,
+    workspaceId: string | null,
     query?: ModuleQueryDto,
   ): Promise<ModuleWithProgress[]> {
     return this.queryService.findAllForProject(projectId, workspaceId, query);
@@ -76,7 +76,7 @@ export class ModuleService {
    */
   async create(
     scope: ModuleScope,
-    workspaceId: string,
+    workspaceId: string | null,
     projectId: string | null,
     userId: string,
     dto: CreateModuleDto,
@@ -92,7 +92,7 @@ export class ModuleService {
     // Validate unique name trong cùng scope
     if (scope === 'workspace') {
       const existing = await this.moduleRepo.findOne({
-        where: { scope: 'workspace', workspaceId, name: dto.name },
+        where: { scope: 'workspace', workspaceId: workspaceId!, name: dto.name },
       });
       if (existing) {
         throw new ConflictException({
@@ -120,7 +120,7 @@ export class ModuleService {
 
     const module = this.moduleRepo.create({
       scope,
-      workspaceId,
+      workspaceId: workspaceId ?? null,
       projectId: scope === 'project' ? projectId : null,
       name: dto.name,
       description: dto.description ?? null,
@@ -171,7 +171,7 @@ export class ModuleService {
     if (dto.name && dto.name !== module.name) {
       if (module.scope === 'workspace') {
         const existing = await this.moduleRepo.findOne({
-          where: { scope: 'workspace', workspaceId: module.workspaceId, name: dto.name },
+          where: { scope: 'workspace', workspaceId: module.workspaceId!, name: dto.name },
         });
         if (existing) {
           throw new ConflictException({
