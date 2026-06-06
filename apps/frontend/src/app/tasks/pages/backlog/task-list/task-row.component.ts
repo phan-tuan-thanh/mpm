@@ -40,21 +40,23 @@ const AVATAR_PALETTE = [
     :host { display: flex; align-items: center; width: 100%; }
   `],
   template: `
-    <div class="flex items-center justify-center flex-shrink-0" style="width:40px" (click)="$event.stopPropagation()">
-      <p-checkbox [binary]="true" [ngModel]="isSelected" (ngModelChange)="selectionToggle.emit(task.id)" />
+    <div class="flex items-center justify-center flex-shrink-0 animate-fade-in" style="width:40px" (click)="$event.stopPropagation()">
+      <p-checkbox 
+        [class.show-on-hover]="!isSelected" 
+        [class.opacity-0]="!isSelected" 
+        [binary]="true" 
+        [ngModel]="isSelected" 
+        (ngModelChange)="selectionToggle.emit(task.id)" />
     </div>
     @if (depth === 1) {
       <span class="flex-shrink-0" style="width:20px; padding-left:4px"><span class="block w-3 h-px bg-gray-200"></span></span>
-    } @else {
-      <i class="show-on-hover opacity-0 pi pi-bars text-[10px] text-gray-300 hover:text-gray-500 flex-shrink-0 mr-1" style="width:12px" (click)="$event.stopPropagation()"></i>
     }
+    <span class="text-xs font-mono text-gray-400 flex-shrink-0 mr-2" style="width:58px">{{ task.taskId }}</span>
     @if (childCount > 0) {
-      <button class="flex items-center justify-center flex-shrink-0 w-4 h-4 rounded hover:bg-gray-200 mr-1" (click)="$event.stopPropagation(); toggleExpand.emit(task.id)">
+      <button class="flex items-center justify-center flex-shrink-0 w-4 h-4 rounded hover:bg-gray-200 mr-2" (click)="$event.stopPropagation(); toggleExpand.emit(task.id)">
         <i class="pi text-[9px] text-gray-500" [class.pi-chevron-right]="!isExpanded" [class.pi-chevron-down]="isExpanded"></i>
       </button>
-    } @else { <span class="flex-shrink-0 mr-1" style="width:16px"></span> }
-    <span class="w-3.5 h-3.5 rounded-full flex-shrink-0 border-2 mr-2" [style.border-color]="task.state?.color ?? '#9CA3AF'" [style.background]="isFilledState(task.state?.group ?? '') ? (task.state?.color ?? '#9CA3AF') : 'transparent'" [pTooltip]="task.state?.name"></span>
-    <span class="text-xs font-mono text-gray-400 flex-shrink-0 mr-2" style="width:58px">{{ task.taskId }}</span>
+    }
     <i class="flex-shrink-0 text-xs mr-2" [class]="typeIcon(task.type)" [style.color]="typeColor(task.type)" [pTooltip]="task.type"></i>
     <span class="flex-1 text-sm text-gray-800 truncate">{{ task.title }}</span>
     @if (childCount > 0) {

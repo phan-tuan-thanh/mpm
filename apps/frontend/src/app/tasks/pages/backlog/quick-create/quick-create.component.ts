@@ -282,6 +282,12 @@ const VALID_CHILDREN: Partial<Record<TaskType, TaskType[]>> = {
 
           <div class="meta-divider"></div>
 
+          <!-- Parent Task -->
+          <button class="meta-pill" [class.active]="selectedParentId() !== null" (click)="parentPopover.toggle($event)">
+            <i class="pi pi-sitemap" style="font-size: 11px" [style.color]="selectedParentId() !== null ? '#6366f1' : undefined"></i>
+            <span [style.color]="selectedParentId() !== null ? '#6366f1' : undefined">{{ selectedParentTitle() }}</span>
+          </button>
+
           <!-- Start date -->
           <button class="meta-pill" [class.active]="!!startDate" (click)="startDatePopover.toggle($event)">
             <i class="pi pi-calendar" style="font-size: 11px" [style.color]="startDate ? '#6366f1' : undefined"></i>
@@ -378,24 +384,39 @@ const VALID_CHILDREN: Partial<Record<TaskType, TaskType[]>> = {
     </p-popover>
 
     <!-- Assignees -->
-    <p-popover #assigneePopover>
-      <div style="min-width: 180px; padding: 2px; max-height: 240px; overflow-y: auto">
-        @if (!memberOptions().length) {
-          <p style="padding: 8px 10px; font-size: 12px; color: var(--text-color-secondary)">Chưa có thành viên</p>
-        }
-        @for (m of memberOptions(); track m.userId) {
-          <button class="pop-item" [class.selected]="selectedAssigneeIds.includes(m.userId)"
-            style="padding: 5px 10px; font-size: 12px"
-            (click)="toggleAssignee(m.userId)">
-            <div class="avatar-xs" style="margin: 0; width: 20px; height: 20px; font-size: 9px">
-              {{ m.displayName[0]?.toUpperCase() }}
-            </div>
-            <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ m.displayName }}</span>
-            @if (selectedAssigneeIds.includes(m.userId)) {
-              <i class="pi pi-check" style="font-size: 10px; color: #6366f1"></i>
-            }
-          </button>
-        }
+    <p-popover #assigneePopover (onShow)="focusAssigneeSearch()">
+      <div style="min-width: 200px; max-width: 260px; padding: 2px; display: flex; flex-direction: column; gap: 2px">
+        <div style="padding: 2px">
+          <input
+            #assigneeSearchInput
+            pInputText type="text"
+            style="width: 100%; height: 26px; font-size: 11px; padding: 0 6px; border-radius: 4px"
+            placeholder="Tìm kiếm thành viên..."
+            [ngModel]="assigneeSearch()"
+            (ngModelChange)="assigneeSearch.set($event)"
+            (click)="$event.stopPropagation()"
+          />
+        </div>
+        <div style="max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 1px">
+          @if (!filteredMembers().length) {
+            <p style="padding: 6px; font-size: 11px; color: var(--text-color-secondary); text-align: center">
+              {{ memberOptions().length ? 'Không tìm thấy thành viên' : 'Chưa có thành viên' }}
+            </p>
+          }
+          @for (m of filteredMembers(); track m.userId) {
+            <button class="pop-item" [class.selected]="selectedAssigneeIds.includes(m.userId)"
+              style="padding: 5px 10px; font-size: 12px; border-radius: 4px"
+              (click)="toggleAssignee(m.userId)">
+              <div class="avatar-xs" style="margin: 0; width: 20px; height: 20px; font-size: 9px">
+                {{ m.displayName[0]?.toUpperCase() }}
+              </div>
+              <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px">{{ m.displayName }}</span>
+              @if (selectedAssigneeIds.includes(m.userId)) {
+                <i class="pi pi-check" style="font-size: 10px; color: #6366f1; flex-shrink: 0"></i>
+              }
+            </button>
+          }
+        </div>
       </div>
     </p-popover>
 
@@ -460,6 +481,51 @@ const VALID_CHILDREN: Partial<Record<TaskType, TaskType[]>> = {
       </div>
     </p-popover>
 
+    <!-- Parent Task Selection Popover -->
+    <p-popover #parentPopover (onShow)="focusParentSearch()">
+      <div style="min-width: 250px; max-width: 320px; padding: 2px; display: flex; flex-direction: column; gap: 2px">
+        <div style="padding: 2px">
+          <input
+            #parentSearchInput
+            pInputText type="text"
+            style="width: 100%; height: 26px; font-size: 11px; padding: 0 6px; border-radius: 4px"
+            placeholder="Tìm kiếm parent task..."
+            [ngModel]="parentSearch()"
+            (ngModelChange)="parentSearch.set($event)"
+            (click)="$event.stopPropagation()"
+          />
+        </div>
+        <div style="max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 1px">
+          <button class="pop-item" [class.selected]="selectedParentId() === null"
+            style="padding: 5px 8px; border-radius: 4px"
+            (click)="onParentSelected(null); parentPopover.hide()">
+            <i class="pi pi-times" style="font-size: 10px; color: var(--text-color-secondary)"></i>
+            <span style="font-size: 12px; font-weight: 500">Không có parent</span>
+          </button>
+          
+          @if (!filteredParents().length) {
+            <p style="padding: 6px; font-size: 11px; color: var(--text-color-secondary); text-align: center">
+              Không tìm thấy task
+            </p>
+          }
+          @for (p of filteredParents(); track p.id) {
+            <button class="pop-item" style="display: flex; align-items: center; justify-content: space-between; padding: 5px 8px; border-radius: 4px"
+              [class.selected]="selectedParentId() === p.id"
+              (click)="onParentSelected(p.id); parentPopover.hide()">
+              <div style="display: flex; align-items: center; gap: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">
+                <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" [style.background]="p.state?.color ?? '#9CA3AF'"></span>
+                <span class="text-xs font-mono text-gray-400 flex-shrink-0">{{ p.taskId }}</span>
+                <span style="font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ p.title }}</span>
+              </div>
+              @if (selectedParentId() === p.id) {
+                <i class="pi pi-check" style="font-size: 10px; color: #6366f1; flex-shrink: 0"></i>
+              }
+            </button>
+          }
+        </div>
+      </div>
+    </p-popover>
+
     <!-- Start date -->
     <p-popover #startDatePopover>
       <p-datepicker [(ngModel)]="startDate" [inline]="true" dateFormat="dd/mm/yy"
@@ -514,6 +580,63 @@ export class QuickCreateComponent implements OnChanges {
 
   @ViewChild('titleInput') titleInput?: ElementRef<HTMLInputElement>;
   @ViewChild('labelSearchInput') labelSearchInput?: ElementRef<HTMLInputElement>;
+  @ViewChild('parentSearchInput') parentSearchInput?: ElementRef<HTMLInputElement>;
+  @ViewChild('assigneeSearchInput') assigneeSearchInput?: ElementRef<HTMLInputElement>;
+
+  // ─── Assignee Filter signals & computed ──────────────────────────────────
+  protected readonly assigneeSearch = signal('');
+
+  protected readonly filteredMembers = computed(() => {
+    const query = this.assigneeSearch().trim().toLowerCase();
+    const list = this.memberOptions();
+    if (!query) return list;
+    return list.filter(m => m.displayName.toLowerCase().includes(query));
+  });
+
+  protected focusAssigneeSearch(): void {
+    setTimeout(() => this.assigneeSearchInput?.nativeElement.focus(), 50);
+  }
+
+  // ─── Parent Task signals & computed ──────────────────────────────────────
+  protected readonly selectedParentId = signal<string | null>(null);
+  protected readonly parentSearch = signal('');
+
+  protected readonly parentOptions = computed(() =>
+    this.taskStore.tasks().filter((t) => !t.parentId)
+  );
+
+  protected readonly filteredParents = computed(() => {
+    const query = this.parentSearch().trim().toLowerCase();
+    const list = this.parentOptions();
+    if (!query) return list;
+    return list.filter(t => t.taskId.toLowerCase().includes(query) || t.title.toLowerCase().includes(query));
+  });
+
+  protected readonly selectedParentTitle = computed(() => {
+    const id = this.selectedParentId();
+    if (!id) return 'Parent';
+    const match = this.parentOptions().find(t => t.id === id);
+    return match ? `${match.taskId} ${match.title}` : 'Parent';
+  });
+
+  protected focusParentSearch(): void {
+    setTimeout(() => this.parentSearchInput?.nativeElement.focus(), 50);
+  }
+
+  protected onParentSelected(parentId: string | null): void {
+    this.selectedParentId.set(parentId);
+    const parent = parentId ? this.parentOptions().find(t => t.id === parentId) : null;
+    if (parent) {
+      const valid = VALID_CHILDREN[parent.type] ?? [];
+      if (!valid.includes(this.selectedType())) {
+        this.selectedType.set(valid[0] ?? 'task');
+      }
+    } else {
+      if (this.selectedType() === 'subtask') {
+        this.selectedType.set('task');
+      }
+    }
+  }
 
   // ─── Plain form fields ───────────────────────────────────────────────────
   protected title = '';
@@ -534,8 +657,12 @@ export class QuickCreateComponent implements OnChanges {
   protected readonly priorityOptions = PRIORITY_OPTIONS;
 
   protected readonly availableTypes = computed(() => {
-    if (this.parentType) {
-      const valid = VALID_CHILDREN[this.parentType] ?? [];
+    const activeParentId = this.selectedParentId();
+    const parent = activeParentId
+      ? this.parentOptions().find((t) => t.id === activeParentId)
+      : null;
+    if (parent) {
+      const valid = VALID_CHILDREN[parent.type] ?? [];
       return TYPE_OPTIONS.filter((t) => valid.includes(t.value));
     }
     return TYPE_OPTIONS.filter((t) => t.value !== 'subtask');
@@ -670,9 +797,18 @@ export class QuickCreateComponent implements OnChanges {
   // ─── Lifecycle ───────────────────────────────────────────────────────────
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['visible']?.currentValue === true && !changes['visible'].previousValue) {
-      const defaultType = this.parentType
-        ? (VALID_CHILDREN[this.parentType]?.[0] ?? 'task')
+      const activeParentId = this.parentId ?? null;
+      this.selectedParentId.set(activeParentId);
+      this.parentSearch.set('');
+      this.assigneeSearch.set('');
+
+      const activeParent = activeParentId
+        ? this.parentOptions().find((t) => t.id === activeParentId)
+        : null;
+      const defaultType = activeParent
+        ? (VALID_CHILDREN[activeParent.type]?.[0] ?? 'task')
         : 'task';
+
       this.selectedType.set(defaultType);
       this.selectedPriority.set('none');
       this.selectedAssigneeIds = [];
@@ -709,7 +845,7 @@ export class QuickCreateComponent implements OnChanges {
       estimateValue: this.estimateValue ?? undefined,
       startDate: this.startDate ? this.startDate.toISOString().split('T')[0] : undefined,
       dueDate: this.dueDate ? this.dueDate.toISOString().split('T')[0] : undefined,
-      parentId: this.parentId,
+      parentId: this.selectedParentId() || undefined,
     });
 
     if (this.createMore) {
@@ -799,5 +935,8 @@ export class QuickCreateComponent implements OnChanges {
     this.estimateValue = null;
     this.createMore = false;
     this.labelSearch.set('');
+    this.selectedParentId.set(null);
+    this.parentSearch.set('');
+    this.assigneeSearch.set('');
   }
 }
