@@ -1,132 +1,205 @@
-import { Component, forwardRef, OnDestroy, Input, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component,
+  Input,
+  Output,
+  EventEmitter,
+  OnInit,
+  OnDestroy,
+  ChangeDetectionStrategy,
+  signal,
+  forwardRef,
+  NgZone,
+  inject,
+} from '@angular/core';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { NgxTiptapModule } from 'ngx-tiptap';
 import { Editor } from '@tiptap/core';
-import { StarterKit } from '@tiptap/starter-kit';
-import { Underline } from '@tiptap/extension-underline';
-import { Link } from '@tiptap/extension-link';
-import { Image } from '@tiptap/extension-image';
-import { Table } from '@tiptap/extension-table';
-import { TableRow } from '@tiptap/extension-table-row';
-import { TableCell } from '@tiptap/extension-table-cell';
-import { TableHeader } from '@tiptap/extension-table-header';
-import { Color } from '@tiptap/extension-color';
-import { TextStyle } from '@tiptap/extension-text-style';
-import { TaskList } from '@tiptap/extension-task-list';
-import { TaskItem } from '@tiptap/extension-task-item';
-import { Placeholder } from '@tiptap/extension-placeholder';
-import { TiptapEditorDirective } from 'ngx-tiptap';
-
-export type TiptapDoc = Record<string, any>;
+import { Observable, take } from 'rxjs';
+import type { TiptapDoc } from '@mpm/shared-types';
+import { type RteFeatures, type ToolbarMode, RTE_FULL } from './rte-features';
+import { buildExtensions } from './rte-extensions';
+import type { MentionItem } from './rte-mention';
 
 @Component({
   selector: 'app-rich-text-editor',
   standalone: true,
+  imports: [CommonModule, FormsModule, NgxTiptapModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, TiptapEditorDirective],
-  providers: [{
-    provide: NG_VALUE_ACCESSOR,
-    useExisting: forwardRef(() => RichTextEditorComponent),
-    multi: true,
-  }],
-  styleUrls: ['./rich-text-editor.component.css'],
-  template: `
-    <div class="rte-wrapper"
-         [class.rte-disabled]="isDisabled">
-      <div class="rte-toolbar">
-        <button type="button" class="rte-btn" (click)="editor.chain().focus().toggleBold().run()"
-                [class.rte-active]="editor.isActive('bold')" title="Bold"><b>B</b></button>
-        <button type="button" class="rte-btn rte-italic" (click)="editor.chain().focus().toggleItalic().run()"
-                [class.rte-active]="editor.isActive('italic')" title="Italic">I</button>
-        <button type="button" class="rte-btn rte-underline" (click)="editor.chain().focus().toggleUnderline().run()"
-                [class.rte-active]="editor.isActive('underline')" title="Underline">U</button>
-        <div class="rte-sep"></div>
-        <button type="button" class="rte-btn" (click)="editor.chain().focus().toggleHeading({ level: 1 }).run()"
-                [class.rte-active]="editor.isActive('heading', { level: 1 })">H1</button>
-        <button type="button" class="rte-btn" (click)="editor.chain().focus().toggleHeading({ level: 2 }).run()"
-                [class.rte-active]="editor.isActive('heading', { level: 2 })">H2</button>
-        <button type="button" class="rte-btn" (click)="editor.chain().focus().toggleHeading({ level: 3 }).run()"
-                [class.rte-active]="editor.isActive('heading', { level: 3 })">H3</button>
-        <div class="rte-sep"></div>
-        <button type="button" class="rte-btn" (click)="editor.chain().focus().toggleBulletList().run()"
-                [class.rte-active]="editor.isActive('bulletList')" title="Bullet list">
-          <i class="pi pi-list" style="font-size:11px"></i>
-        </button>
-        <button type="button" class="rte-btn" (click)="editor.chain().focus().toggleOrderedList().run()"
-                [class.rte-active]="editor.isActive('orderedList')" title="Numbered list">
-          <i class="pi pi-sort-amount-down" style="font-size:11px"></i>
-        </button>
-        <button type="button" class="rte-btn" (click)="editor.chain().focus().toggleTaskList().run()"
-                [class.rte-active]="editor.isActive('taskList')" title="Checklist">
-          <i class="pi pi-check-square" style="font-size:11px"></i>
-        </button>
-        <div class="rte-sep"></div>
-        <button type="button" class="rte-btn" (click)="editor.chain().focus().toggleBlockquote().run()"
-                [class.rte-active]="editor.isActive('blockquote')" title="Blockquote">
-          <i class="pi pi-comment" style="font-size:11px"></i>
-        </button>
-        <button type="button" class="rte-btn" (click)="editor.chain().focus().toggleCodeBlock().run()"
-                [class.rte-active]="editor.isActive('codeBlock')" title="Code block">
-          <i class="pi pi-code" style="font-size:11px"></i>
-        </button>
-        <button type="button" class="rte-btn" (click)="insertTable()" title="Insert table">
-          <i class="pi pi-table" style="font-size:11px"></i>
-        </button>
-      </div>
-      <tiptap-editor [editor]="editor" class="rte-content"></tiptap-editor>
-    </div>
-  `,
+  providers: [
+    {
+      provide: NG_VALUE_ACCESSOR,
+      useExisting: forwardRef(() => RichTextEditorComponent),
+      multi: true,
+    },
+  ],
+  templateUrl: './rich-text-editor.component.html',
+  styleUrl: './rich-text-editor.component.css',
 })
-export class RichTextEditorComponent implements ControlValueAccessor, OnDestroy {
-  @Input() placeholder = 'Nhập nội dung...';
+export class RichTextEditorComponent implements ControlValueAccessor, OnInit, OnDestroy {
+  @Input() placeholder = '';
+  @Input() toolbarMode: ToolbarMode = 'full';
+  @Input() features: RteFeatures = RTE_FULL;
+  @Input() uploadImage?: (file: File) => Observable<string>;
+  @Input() mentionSearch?: (query: string) => Promise<MentionItem[]>;
   @Output() blurEditor = new EventEmitter<void>();
 
-  isDisabled = false;
-  private onChange: (val: TiptapDoc | null) => void = () => {};
-  private onTouched: () => void = () => {};
+  editor!: Editor;
 
-  editor = new Editor({
-    extensions: [
-      StarterKit,
-      Underline,
-      Link.configure({ openOnClick: false }),
-      Image,
-      Table.configure({ resizable: true }),
-      TableRow,
-      TableCell,
-      TableHeader,
-      TextStyle,
-      Color,
-      TaskList,
-      TaskItem.configure({ nested: true }),
-      Placeholder.configure({ placeholder: this.placeholder }),
-    ],
-    onUpdate: ({ editor }) => {
-      this.onChange(editor.isEmpty ? null : editor.getJSON());
-    },
-    onBlur: () => { this.onTouched(); this.blurEditor.emit(); },
-  });
+  protected readonly hasSelection = signal(false);
+  protected readonly bubbleTop = signal(0);
+  protected readonly bubbleLeft = signal(0);
+  protected readonly showFloating = signal(false);
+  protected readonly floatingTop = signal(0);
+  protected readonly floatingLeft = signal(0);
+  protected readonly showOverflow = signal(false);
 
-  writeValue(value: TiptapDoc | string | null): void {
-    if (value && typeof value === 'object') {
-      this.editor.commands.setContent(value, { emitUpdate: false });
-    } else if (typeof value === 'string' && value) {
-      this.editor.commands.setContent(
-        { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: value }] }] },
-        { emitUpdate: false },
-      );
-    } else {
-      this.editor.commands.clearContent(false);
+  private onChange: (v: TiptapDoc | null) => void = () => {};
+  protected onTouched: () => void = () => {};
+  private pendingValue: TiptapDoc | null = null;
+
+  private readonly zone = inject(NgZone);
+
+  ngOnInit(): void {
+    this.editor = new Editor({
+      extensions: buildExtensions(this.features, this.placeholder, this.mentionSearch),
+      editorProps: {
+        handleDrop: this.features.image ? this.handleDrop.bind(this) : undefined,
+        handlePaste: this.features.image ? this.handlePaste.bind(this) : undefined,
+      },
+      onUpdate: ({ editor }) => {
+        const val = editor.isEmpty ? null : (editor.getJSON() as TiptapDoc);
+        this.zone.run(() => this.onChange(val));
+      },
+      onBlur: () => {
+        this.zone.run(() => {
+          this.onTouched();
+          this.blurEditor.emit();
+        });
+      },
+      onSelectionUpdate: ({ editor }) => {
+        const { from, to } = editor.state.selection;
+        const sel = from !== to;
+        this.zone.run(() => {
+          this.hasSelection.set(sel);
+          if (sel) {
+            const dom = editor.view.dom.getBoundingClientRect();
+            this.bubbleTop.set(dom.top - 44);
+            this.bubbleLeft.set(dom.left);
+          }
+          // Floating menu: empty paragraph
+          const node = editor.state.selection.$anchor.parent;
+          const empty = node.childCount === 0 && node.type.name === 'paragraph';
+          this.showFloating.set(empty);
+          if (empty) {
+            try {
+              const coords = editor.view.coordsAtPos(editor.state.selection.from);
+              this.floatingTop.set(coords.top);
+              this.floatingLeft.set(coords.left);
+            } catch {}
+          }
+        });
+      },
+    });
+
+    if (this.pendingValue !== null) {
+      this.editor.commands.setContent(this.pendingValue, false);
+      this.pendingValue = null;
     }
   }
 
-  registerOnChange(fn: (val: TiptapDoc | null) => void): void { this.onChange = fn; }
-  registerOnTouched(fn: () => void): void { this.onTouched = fn; }
-  setDisabledState(isDisabled: boolean): void { this.isDisabled = isDisabled; }
-
-  insertTable(): void {
-    this.editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
+  ngOnDestroy(): void {
+    this.editor?.destroy();
   }
 
-  ngOnDestroy(): void { this.editor.destroy(); }
+  writeValue(value: TiptapDoc | null): void {
+    if (!this.editor) {
+      this.pendingValue = value;
+      return;
+    }
+    const current = this.editor.isEmpty ? null : (this.editor.getJSON() as TiptapDoc);
+    if (JSON.stringify(value) !== JSON.stringify(current)) {
+      this.editor.commands.setContent(value ?? '', false);
+    }
+  }
+
+  registerOnChange(fn: (v: TiptapDoc | null) => void): void {
+    this.onChange = fn;
+  }
+
+  registerOnTouched(fn: () => void): void {
+    this.onTouched = fn;
+  }
+
+  setDisabledState(disabled: boolean): void {
+    disabled ? this.editor?.setEditable(false) : this.editor?.setEditable(true);
+  }
+
+  // ── Toolbar commands ──────────────────────────────────────────────
+
+  toggleBold(): void { this.editor.chain().focus().toggleBold().run(); }
+  toggleItalic(): void { this.editor.chain().focus().toggleItalic().run(); }
+  toggleUnderline(): void { this.editor.chain().focus().toggleUnderline().run(); }
+  toggleStrike(): void { this.editor.chain().focus().toggleStrike().run(); }
+  toggleHighlight(): void { this.editor.chain().focus().toggleHighlight().run(); }
+  toggleSubscript(): void { this.editor.chain().focus().toggleSubscript().run(); }
+  toggleSuperscript(): void { this.editor.chain().focus().toggleSuperscript().run(); }
+  setHeading(level: 1 | 2 | 3): void { this.editor.chain().focus().toggleHeading({ level }).run(); }
+  toggleBulletList(): void { this.editor.chain().focus().toggleBulletList().run(); }
+  toggleOrderedList(): void { this.editor.chain().focus().toggleOrderedList().run(); }
+  toggleTaskList(): void { this.editor.chain().focus().toggleTaskList().run(); }
+  toggleBlockquote(): void { this.editor.chain().focus().toggleBlockquote().run(); }
+  toggleCodeBlock(): void { this.editor.chain().focus().toggleCodeBlock().run(); }
+  setTextAlign(align: 'left' | 'center' | 'right' | 'justify'): void {
+    this.editor.chain().focus().setTextAlign(align).run();
+  }
+  undo(): void { this.editor.chain().focus().undo().run(); }
+  redo(): void { this.editor.chain().focus().redo().run(); }
+
+  toggleOverflow(): void { this.showOverflow.update(v => !v); }
+
+  onInsertImage(): void {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) this.handleImageFile(file);
+    };
+    input.click();
+  }
+
+  // ── Image upload ──────────────────────────────────────────────────
+
+  private handleDrop(view: any, event: DragEvent): boolean {
+    const file = event.dataTransfer?.files?.[0];
+    if (file?.type.startsWith('image/')) {
+      event.preventDefault();
+      this.handleImageFile(file);
+      return true;
+    }
+    return false;
+  }
+
+  private handlePaste(view: any, event: ClipboardEvent): boolean {
+    const item = Array.from(event.clipboardData?.items ?? []).find(i =>
+      i.type.startsWith('image/'),
+    );
+    if (item) {
+      const file = item.getAsFile();
+      if (file) { this.handleImageFile(file); return true; }
+    }
+    return false;
+  }
+
+  private handleImageFile(file: File): void {
+    if (this.uploadImage) {
+      this.uploadImage(file)
+        .pipe(take(1))
+        .subscribe(url => this.editor.chain().focus().setImage({ src: url }).run());
+    } else {
+      const url = URL.createObjectURL(file);
+      this.editor.chain().focus().setImage({ src: url }).run();
+    }
+  }
 }
