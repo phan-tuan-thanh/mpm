@@ -149,7 +149,7 @@ import { RichTextEditorComponent } from '../../../../shared/components/rich-text
           <!-- Description -->
           <div class="flex flex-col gap-2">
             <label class="text-sm font-semibold text-gray-700">Mô tả</label>
-            <app-rich-text-editor toolbarMode="full" [(ngModel)]="description" placeholder="Không có mô tả cho dự án này."></app-rich-text-editor>
+            <app-rich-text-editor toolbarMode="full" name="description" [(ngModel)]="description" placeholder="Không có mô tả cho dự án này."></app-rich-text-editor>
           </div>
 
           <!-- Network (Quyền riêng tư) -->
