@@ -77,13 +77,17 @@ Lệnh này sẽ:
 
 > Blueprint chạy bất đồng bộ — Authentik worker cần hoàn tất initial setup (~1–2 phút) trước khi apply blueprint. Kiểm tra log: `docker logs mpm-authentik-worker | grep -i blueprint`
 
-### Bước 3 — Tạo tài khoản Authentik (akadmin)
+### Bước 3 — Đăng nhập và cấu hình Authentik (akadmin)
 
-Lần đầu khởi động, Authentik yêu cầu tạo tài khoản admin của nó:
+Hệ thống đã cấu hình tự động khởi tạo (bootstrap) tài khoản admin của Authentik thông qua các biến môi trường trong `.env`:
+- **Tài khoản (Username)**: `akadmin` (hoặc email cấu hình trong `AUTHENTIK_BOOTSTRAP_EMAIL`, mặc định là `admin@authentik.local`)
+- **Mật khẩu (Password)**: Giá trị của `AUTHENTIK_BOOTSTRAP_PASSWORD` trong `.env` (mặc định là `changeme_authentik_admin_password`)
 
-1. Mở `http://localhost:9000/if/flow/initial-setup/`
-2. Tạo tài khoản **akadmin** (admin của Authentik — khác với System Admin của ứng dụng).
-3. Tạo ít nhất một **User** (Directory → Users) để đăng nhập vào Agile PM, email phải khớp với `INITIAL_ADMIN_EMAIL` trong `.env` nếu muốn user đó là System Admin.
+Các bước đăng nhập và tạo tài khoản sử dụng:
+
+1. Mở trang quản trị Authentik tại `http://localhost:9000` và đăng nhập bằng tài khoản `akadmin` cùng mật khẩu trên.
+   > **Lưu ý**: Nếu không cấu hình bootstrap trong `.env`, Authentik sẽ yêu cầu bạn tạo mật khẩu thủ công tại `http://localhost:9000/if/flow/initial-setup/` trong lần đầu tiên khởi động.
+2. Tạo ít nhất một **User** mới (vào mục **Directory** → **Users**) để đăng nhập vào ứng dụng Agile PM. Email của user này phải khớp với `INITIAL_ADMIN_EMAIL` trong `.env` để được tự động cấp quyền System Admin của ứng dụng.
 
 > **Verify blueprint đã apply**: Vào `http://localhost:9000` → Admin Interface → Applications → Providers — phải thấy `agile-pm-provider`. Nếu chưa thấy, đợi thêm 1–2 phút hoặc xem log worker.
 
