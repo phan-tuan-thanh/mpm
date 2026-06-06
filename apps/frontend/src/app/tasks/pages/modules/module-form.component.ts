@@ -61,7 +61,7 @@ export interface ModuleFormData {
         <!-- Description -->
         <div class="flex flex-col gap-1">
           <label class="text-sm font-medium text-gray-700 dark:text-surface-300">Mô tả</label>
-          <app-rich-text-editor [(ngModel)]="formData.description" placeholder="Mô tả ngắn gọn cho module..."></app-rich-text-editor>
+          <app-rich-text-editor toolbarMode="overflow" [(ngModel)]="formData.description" placeholder="Mô tả ngắn gọn cho module..."></app-rich-text-editor>
         </div>
 
         <!-- Status -->
