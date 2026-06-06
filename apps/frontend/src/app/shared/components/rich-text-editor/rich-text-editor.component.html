@@ -1,0 +1,253 @@
+<div class="rte-wrapper">
+  @if (editor) {
+    @switch (toolbarMode) {
+
+      @case ('full') {
+        <div class="rte-toolbar rte-toolbar--full">
+          <!-- History -->
+          <button type="button" class="rte-btn" title="Hoàn tác" (click)="undo()">
+            <i class="pi pi-undo"></i>
+          </button>
+          <button type="button" class="rte-btn" title="Làm lại" (click)="redo()">
+            <i class="pi pi-refresh"></i>
+          </button>
+          <span class="rte-sep"></span>
+
+          <!-- Headings -->
+          @if (features.headings !== false) {
+            <button type="button" class="rte-btn" [class.rte-btn--active]="editor.isActive('heading', { level: 1 })" (click)="setHeading(1)">H1</button>
+            <button type="button" class="rte-btn" [class.rte-btn--active]="editor.isActive('heading', { level: 2 })" (click)="setHeading(2)">H2</button>
+            <button type="button" class="rte-btn" [class.rte-btn--active]="editor.isActive('heading', { level: 3 })" (click)="setHeading(3)">H3</button>
+            <span class="rte-sep"></span>
+          }
+
+          <!-- Formatting -->
+          @if (features.bold !== false) {
+            <button type="button" class="rte-btn" [class.rte-btn--active]="editor.isActive('bold')" title="Đậm" (click)="toggleBold()"><b>B</b></button>
+          }
+          @if (features.italic !== false) {
+            <button type="button" class="rte-btn" [class.rte-btn--active]="editor.isActive('italic')" title="Nghiêng" (click)="toggleItalic()"><i>I</i></button>
+          }
+          @if (features.underline !== false) {
+            <button type="button" class="rte-btn" [class.rte-btn--active]="editor.isActive('underline')" title="Gạch chân" (click)="toggleUnderline()"><u>U</u></button>
+          }
+          @if (features.strike !== false) {
+            <button type="button" class="rte-btn" [class.rte-btn--active]="editor.isActive('strike')" title="Gạch ngang" (click)="toggleStrike()"><s>S</s></button>
+          }
+          @if (features.highlight) {
+            <button type="button" class="rte-btn" [class.rte-btn--active]="editor.isActive('highlight')" title="Tô màu nền" (click)="toggleHighlight()">
+              <i class="pi pi-pencil"></i>
+            </button>
+          }
+          <span class="rte-sep"></span>
+
+          <!-- Lists -->
+          @if (features.bulletList !== false) {
+            <button type="button" class="rte-btn" [class.rte-btn--active]="editor.isActive('bulletList')" title="Danh sách" (click)="toggleBulletList()">
+              <i class="pi pi-list"></i>
+            </button>
+          }
+          @if (features.orderedList !== false) {
+            <button type="button" class="rte-btn" [class.rte-btn--active]="editor.isActive('orderedList')" title="Danh sách đánh số" (click)="toggleOrderedList()">
+              <i class="pi pi-sort-amount-down"></i>
+            </button>
+          }
+          @if (features.taskList !== false) {
+            <button type="button" class="rte-btn" [class.rte-btn--active]="editor.isActive('taskList')" title="Danh sách việc" (click)="toggleTaskList()">
+              <i class="pi pi-check-square"></i>
+            </button>
+          }
+          <span class="rte-sep"></span>
+
+          <!-- Block -->
+          @if (features.blockquote !== false) {
+            <button type="button" class="rte-btn" [class.rte-btn--active]="editor.isActive('blockquote')" title="Trích dẫn" (click)="toggleBlockquote()">
+              <i class="pi pi-comment"></i>
+            </button>
+          }
+          @if (features.codeBlock !== false) {
+            <button type="button" class="rte-btn" [class.rte-btn--active]="editor.isActive('codeBlock')" title="Code block" (click)="toggleCodeBlock()">
+              <i class="pi pi-code"></i>
+            </button>
+          }
+          @if (features.image !== false) {
+            <button type="button" class="rte-btn" title="Chèn ảnh" (click)="onInsertImage()">
+              <i class="pi pi-image"></i>
+            </button>
+          }
+
+          <!-- Sub/Sup -->
+          @if (features.subscript) {
+            <button type="button" class="rte-btn" [class.rte-btn--active]="editor.isActive('subscript')" title="Chỉ số dưới" (click)="toggleSubscript()">x₂</button>
+          }
+          @if (features.superscript) {
+            <button type="button" class="rte-btn" [class.rte-btn--active]="editor.isActive('superscript')" title="Chỉ số trên" (click)="toggleSuperscript()">x²</button>
+          }
+
+          <!-- Text align -->
+          @if (features.textAlign) {
+            <span class="rte-sep"></span>
+            <button type="button" class="rte-btn" title="Trái" (click)="setTextAlign('left')"><i class="pi pi-align-left"></i></button>
+            <button type="button" class="rte-btn" title="Giữa" (click)="setTextAlign('center')"><i class="pi pi-align-center"></i></button>
+            <button type="button" class="rte-btn" title="Phải" (click)="setTextAlign('right')"><i class="pi pi-align-right"></i></button>
+            <button type="button" class="rte-btn" title="Đều hai bên" (click)="setTextAlign('justify')"><i class="pi pi-align-justify"></i></button>
+          }
+        </div>
+      }
+
+      @case ('bubble') {
+        <!-- Static structural toolbar -->
+        <div class="rte-toolbar rte-toolbar--bubble-static">
+          @if (features.headings !== false) {
+            <button type="button" class="rte-btn" [class.rte-btn--active]="editor.isActive('heading', { level: 1 })" (click)="setHeading(1)">H1</button>
+            <button type="button" class="rte-btn" [class.rte-btn--active]="editor.isActive('heading', { level: 2 })" (click)="setHeading(2)">H2</button>
+            <button type="button" class="rte-btn" [class.rte-btn--active]="editor.isActive('heading', { level: 3 })" (click)="setHeading(3)">H3</button>
+            <span class="rte-sep"></span>
+          }
+          @if (features.bulletList !== false) {
+            <button type="button" class="rte-btn" [class.rte-btn--active]="editor.isActive('bulletList')" (click)="toggleBulletList()"><i class="pi pi-list"></i></button>
+          }
+          @if (features.orderedList !== false) {
+            <button type="button" class="rte-btn" [class.rte-btn--active]="editor.isActive('orderedList')" (click)="toggleOrderedList()"><i class="pi pi-sort-amount-down"></i></button>
+          }
+          @if (features.taskList !== false) {
+            <button type="button" class="rte-btn" [class.rte-btn--active]="editor.isActive('taskList')" (click)="toggleTaskList()"><i class="pi pi-check-square"></i></button>
+          }
+          <span class="rte-sep"></span>
+          @if (features.codeBlock !== false) {
+            <button type="button" class="rte-btn" [class.rte-btn--active]="editor.isActive('codeBlock')" (click)="toggleCodeBlock()"><i class="pi pi-code"></i></button>
+          }
+          @if (features.image !== false) {
+            <button type="button" class="rte-btn" (click)="onInsertImage()"><i class="pi pi-image"></i></button>
+          }
+        </div>
+
+        <!-- Bubble menu (shown on text selection) -->
+        @if (hasSelection()) {
+          <div class="rte-bubble-menu" [style.top.px]="bubbleTop()" [style.left.px]="bubbleLeft()">
+            @if (features.bold !== false) {
+              <button type="button" class="rte-btn" [class.rte-btn--active]="editor.isActive('bold')" (click)="toggleBold()"><b>B</b></button>
+            }
+            @if (features.italic !== false) {
+              <button type="button" class="rte-btn" [class.rte-btn--active]="editor.isActive('italic')" (click)="toggleItalic()"><i>I</i></button>
+            }
+            @if (features.underline !== false) {
+              <button type="button" class="rte-btn" [class.rte-btn--active]="editor.isActive('underline')" (click)="toggleUnderline()"><u>U</u></button>
+            }
+            @if (features.strike !== false) {
+              <button type="button" class="rte-btn" [class.rte-btn--active]="editor.isActive('strike')" (click)="toggleStrike()"><s>S</s></button>
+            }
+            @if (features.highlight) {
+              <button type="button" class="rte-btn" [class.rte-btn--active]="editor.isActive('highlight')" (click)="toggleHighlight()"><i class="pi pi-pencil"></i></button>
+            }
+            @if (features.subscript) {
+              <span class="rte-sep"></span>
+              <button type="button" class="rte-btn" [class.rte-btn--active]="editor.isActive('subscript')" (click)="toggleSubscript()">x₂</button>
+            }
+            @if (features.superscript) {
+              <button type="button" class="rte-btn" [class.rte-btn--active]="editor.isActive('superscript')" (click)="toggleSuperscript()">x²</button>
+            }
+            @if (features.textAlign) {
+              <span class="rte-sep"></span>
+              <button type="button" class="rte-btn" (click)="setTextAlign('left')"><i class="pi pi-align-left"></i></button>
+              <button type="button" class="rte-btn" (click)="setTextAlign('center')"><i class="pi pi-align-center"></i></button>
+              <button type="button" class="rte-btn" (click)="setTextAlign('right')"><i class="pi pi-align-right"></i></button>
+            }
+          </div>
+        }
+
+        <!-- Floating menu (shown on empty paragraph) -->
+        @if (showFloating()) {
+          <div class="rte-floating-menu" [style.top.px]="floatingTop()" [style.left.px]="floatingLeft()">
+            <button type="button" class="rte-btn rte-btn--floating" title="Heading 1" (click)="setHeading(1)">H1</button>
+            <button type="button" class="rte-btn rte-btn--floating" title="Heading 2" (click)="setHeading(2)">H2</button>
+            <button type="button" class="rte-btn rte-btn--floating" title="Danh sách" (click)="toggleBulletList()"><i class="pi pi-list"></i></button>
+            <button type="button" class="rte-btn rte-btn--floating" title="Danh sách việc" (click)="toggleTaskList()"><i class="pi pi-check-square"></i></button>
+            @if (features.codeBlock !== false) {
+              <button type="button" class="rte-btn rte-btn--floating" title="Code" (click)="toggleCodeBlock()"><i class="pi pi-code"></i></button>
+            }
+            @if (features.image !== false) {
+              <button type="button" class="rte-btn rte-btn--floating" title="Ảnh" (click)="onInsertImage()"><i class="pi pi-image"></i></button>
+            }
+          </div>
+        }
+      }
+
+      @case ('overflow') {
+        <div class="rte-toolbar rte-toolbar--overflow">
+          <!-- Primary buttons (always shown) -->
+          @if (features.bold !== false) {
+            <button type="button" class="rte-btn" [class.rte-btn--active]="editor.isActive('bold')" (click)="toggleBold()"><b>B</b></button>
+          }
+          @if (features.italic !== false) {
+            <button type="button" class="rte-btn" [class.rte-btn--active]="editor.isActive('italic')" (click)="toggleItalic()"><i>I</i></button>
+          }
+          @if (features.underline !== false) {
+            <button type="button" class="rte-btn" [class.rte-btn--active]="editor.isActive('underline')" (click)="toggleUnderline()"><u>U</u></button>
+          }
+          @if (features.headings !== false) {
+            <span class="rte-sep"></span>
+            <button type="button" class="rte-btn" [class.rte-btn--active]="editor.isActive('heading', { level: 1 })" (click)="setHeading(1)">H1</button>
+            <button type="button" class="rte-btn" [class.rte-btn--active]="editor.isActive('heading', { level: 2 })" (click)="setHeading(2)">H2</button>
+            <button type="button" class="rte-btn" [class.rte-btn--active]="editor.isActive('heading', { level: 3 })" (click)="setHeading(3)">H3</button>
+          }
+          @if (features.bulletList !== false) {
+            <span class="rte-sep"></span>
+            <button type="button" class="rte-btn" [class.rte-btn--active]="editor.isActive('bulletList')" (click)="toggleBulletList()"><i class="pi pi-list"></i></button>
+          }
+          @if (features.image !== false) {
+            <button type="button" class="rte-btn" (click)="onInsertImage()"><i class="pi pi-image"></i></button>
+          }
+          @if (features.codeBlock !== false) {
+            <button type="button" class="rte-btn" [class.rte-btn--active]="editor.isActive('codeBlock')" (click)="toggleCodeBlock()"><i class="pi pi-code"></i></button>
+          }
+
+          <!-- Overflow toggle -->
+          <span class="rte-sep"></span>
+          <div class="rte-overflow-wrapper">
+            <button type="button" class="rte-btn" title="Thêm" (click)="toggleOverflow()">···</button>
+            @if (showOverflow()) {
+              <div class="rte-overflow-panel">
+                @if (features.strike !== false) {
+                  <button type="button" class="rte-btn" [class.rte-btn--active]="editor.isActive('strike')" (click)="toggleStrike()"><s>S</s></button>
+                }
+                @if (features.highlight) {
+                  <button type="button" class="rte-btn" [class.rte-btn--active]="editor.isActive('highlight')" (click)="toggleHighlight()"><i class="pi pi-pencil"></i></button>
+                }
+                @if (features.subscript) {
+                  <button type="button" class="rte-btn" [class.rte-btn--active]="editor.isActive('subscript')" (click)="toggleSubscript()">x₂</button>
+                }
+                @if (features.superscript) {
+                  <button type="button" class="rte-btn" [class.rte-btn--active]="editor.isActive('superscript')" (click)="toggleSuperscript()">x²</button>
+                }
+                @if (features.textAlign) {
+                  <span class="rte-sep"></span>
+                  <button type="button" class="rte-btn" (click)="setTextAlign('left')"><i class="pi pi-align-left"></i></button>
+                  <button type="button" class="rte-btn" (click)="setTextAlign('center')"><i class="pi pi-align-center"></i></button>
+                  <button type="button" class="rte-btn" (click)="setTextAlign('right')"><i class="pi pi-align-right"></i></button>
+                }
+                @if (features.orderedList !== false) {
+                  <span class="rte-sep"></span>
+                  <button type="button" class="rte-btn" [class.rte-btn--active]="editor.isActive('orderedList')" (click)="toggleOrderedList()"><i class="pi pi-sort-amount-down"></i></button>
+                }
+                @if (features.taskList !== false) {
+                  <button type="button" class="rte-btn" [class.rte-btn--active]="editor.isActive('taskList')" (click)="toggleTaskList()"><i class="pi pi-check-square"></i></button>
+                }
+                @if (features.blockquote !== false) {
+                  <button type="button" class="rte-btn" [class.rte-btn--active]="editor.isActive('blockquote')" (click)="toggleBlockquote()"><i class="pi pi-comment"></i></button>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      }
+    }
+  }
+
+  <!-- Editor content area -->
+  <div class="rte-content">
+    @if (editor) {
+      <tiptap-editor [editor]="editor"></tiptap-editor>
+    }
+  </div>
+</div>
