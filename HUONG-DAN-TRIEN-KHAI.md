@@ -64,8 +64,8 @@ Mở `.env` và **đổi tất cả mật khẩu mặc định** (`changeme_*`).
 
 Các biến bootstrap (tự động tạo admin Authentik):
 
-- `AUTHENTIK_BOOTSTRAP_PASSWORD` — password cho user `akadmin` (mặc định: `agile-pm-admin-2024`)
-- `AUTHENTIK_BOOTSTRAP_EMAIL` — email cho `akadmin` (mặc định: `admin@agilepm.local`)
+- `AUTHENTIK_BOOTSTRAP_PASSWORD` — password cho user `akadmin` (mặc định: `changeme_authentik_admin_password`)
+- `AUTHENTIK_BOOTSTRAP_EMAIL` — email cho `akadmin` (mặc định: `admin@authentik.local`)
 - `AUTHENTIK_BOOTSTRAP_TOKEN` — API token nội bộ dùng bởi script (mặc định: `ak-bootstrap-token-for-api`)
 
 > **Không cần** cấu hình Authentik thủ công — Bootstrap tự tạo admin user và Blueprint tự tạo Provider + Application.
@@ -111,7 +111,7 @@ import sys,json; d=json.load(sys.stdin); print('Providers:', d['pagination']['co
 
 Mở Authentik Admin: `http://localhost:9000` → đăng nhập với:
 - Username: `akadmin`
-- Password: giá trị `AUTHENTIK_BOOTSTRAP_PASSWORD` trong `.env` (mặc định: `agile-pm-admin-2024`)
+- Password: giá trị `AUTHENTIK_BOOTSTRAP_PASSWORD` trong `.env` (mặc định: `changeme_authentik_admin_password`)
 
 Tạo user mới (Directory → Users → Create):
 - Email **phải khớp** với `INITIAL_ADMIN_EMAIL` trong `.env` nếu muốn user đó là System Admin khi đăng nhập Agile PM lần đầu.

@@ -1,0 +1,71 @@
+# Antigravity Agent — Main Configuration (v2.0 — 3-Phase)
+
+agent:
+  name: Antigravity
+  version: "2.0.0"
+  description: "AI agent với quy trình 3-Phase: Requirements → Design → Tasks"
+
+behavior:
+  # 3-Phase Documentation bắt buộc
+  require_requirements: true
+  require_design: true
+  require_tasks: true
+
+  # Bắt buộc approve từng phase
+  require_phase_approval: true
+
+  # Tự động approve (chỉ dùng cho CI/automation)
+  auto_approve: false
+
+  # Dừng và hỏi nếu step thất bại
+  stop_on_failure: true
+
+  # Ghi log mọi hành động
+  audit_log: true
+
+  # Cập nhật tiến độ live sau mỗi step
+  live_progress_update: true
+
+  # Bắt buộc clarify & solution summary trước khi execute
+  require_clarification: true
+
+  # Bắt buộc generate report sau mỗi task
+  require_report: true
+
+clarification:
+  max_questions_per_round: 3
+  solution_summary_path: context/
+  require_user_confirmation: true
+
+reporting:
+  auto_generate: true
+  output_path: reports/
+  include_ac_check: true
+  include_file_map: true
+  include_next_steps: true
+
+memory:
+  auto_load: true
+  auto_save: true
+  project_context: memory/project.context.json
+  session_context: memory/session.context.json
+  decisions_log: memory/decisions.log.md
+
+paths:
+  solution_summary: context/
+  requirements: context/
+  design: plans/
+  tasks: plans/
+  reports: reports/
+  logs: logs/
+  templates: templates/
+
+hooks:
+  pre_task: hooks/pre-task.sh
+  post_task: hooks/post-task.sh
+  pre_design: hooks/pre-design.sh
+  post_step: hooks/post-step.sh
+
+workflow:
+  default: workflows/standard-task.workflow.md
+  emergency: workflows/emergency-task.workflow.md

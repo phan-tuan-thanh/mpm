@@ -356,7 +356,7 @@ describe('ProjectSettings Integration Tests (Epic A+)', () => {
     );
 
     // Wait briefly for background update to complete
-    await new Promise((resolve) => setImmediate(resolve));
+    await new Promise((resolve) => setTimeout(resolve, 50));
 
     // Verify task estimate value is reset to null
     const updatedTask = await taskRepo.findOneBy({ id: task.id });

@@ -11,12 +11,12 @@ import { TaskAttachment } from './entities/task-attachment.entity';
 import { TaskLink } from './entities/task-link.entity';
 import { TaskRelation } from './entities/task-relation.entity';
 import { TaskActivity } from './entities/task-activity.entity';
-
 import { ProjectMember } from '../auth/entities/project-member.entity';
 import { User } from '../auth/entities/user.entity';
 import { Project } from '../project/entities/project.entity';
 
 import { TaskController } from './task.controller';
+import { TaskQueryController } from './task-query.controller';
 import { LabelController } from './label/label.controller';
 import { WorkspaceLabelController } from './label/workspace-label.controller';
 import { AttachmentController } from './attachment/attachment.controller';
@@ -26,6 +26,11 @@ import { CommentController } from './comment/comment.controller';
 import { ModuleController, WorkspaceModuleController } from './module/module.controller';
 
 import { TaskService } from './task.service';
+import { TaskQueryService } from './task-query.service';
+import { TaskCreateService } from './task-create.service';
+import { TaskUpdateService } from './task-update.service';
+import { TaskDeleteService } from './task-delete.service';
+import { TaskOrderService } from './task-order.service';
 import { ActivityService } from './activity/activity.service';
 import { LabelService } from './label/label.service';
 import { AttachmentService } from './attachment/attachment.service';
@@ -55,11 +60,11 @@ import { AuditModule } from '../audit/audit.module';
       storage: diskStorage({ destination: 'uploads/tmp' }),
       limits: { fileSize: 20 * 1024 * 1024 },
     }),
-    AuthModule,
-    AuditModule,
+    AuthModule, AuditModule,
   ],
   controllers: [
     TaskController,
+    TaskQueryController,
     LabelController,
     WorkspaceLabelController,
     AttachmentController,
@@ -71,6 +76,11 @@ import { AuditModule } from '../audit/audit.module';
   ],
   providers: [
     TaskService,
+    TaskQueryService,
+    TaskCreateService,
+    TaskUpdateService,
+    TaskDeleteService,
+    TaskOrderService,
     ActivityService,
     LabelService,
     AttachmentService,
@@ -78,10 +88,6 @@ import { AuditModule } from '../audit/audit.module';
     RelationService,
     ModuleService,
   ],
-  exports: [
-    TaskService,
-    ActivityService,
-    LabelService,
-  ],
+  exports: [TaskService, ActivityService, LabelService],
 })
 export class TaskModule {}

@@ -1,0 +1,67 @@
+{
+  "_description": "Context cố định của dự án + Steering data — cập nhật thủ công hoặc qua init-project",
+  "project": {
+    "name": "",
+    "description": "",
+    "version": "",
+    "repository": "",
+    "team": []
+  },
+  "tech_stack": {
+    "language": [],
+    "framework": [],
+    "database": [],
+    "infrastructure": [],
+    "package_manager": ""
+  },
+  "architecture_patterns": {
+    "folder_structure": "",
+    "design_pattern": "",
+    "state_management": "",
+    "component_pattern": ""
+  },
+  "coding_standards": {
+    "naming_convention": "",
+    "formatting_tool": "",
+    "linting_tool": "",
+    "max_file_length": "",
+    "import_order": "",
+    "file_size_limits": {
+      "_note": "Giới hạn số dòng để agent đọc hiệu quả. Vượt giới hạn → tách file",
+      "component": 150,
+      "service": 100,
+      "utility": 80,
+      "route_handler": 80,
+      "model_schema": 100,
+      "config": 50,
+      "test": 200,
+      "constants": 50
+    }
+  },
+  "testing_strategy": {
+    "unit_test_framework": "",
+    "integration_test_framework": "",
+    "e2e_tool": "",
+    "coverage_min": "",
+    "test_naming_convention": ""
+  },
+  "api_conventions": {
+    "style": "",
+    "versioning": "",
+    "error_format": "",
+    "auth_method": ""
+  },
+  "conventions": {
+    "branch_naming": "",
+    "commit_format": "",
+    "pr_template": "",
+    "code_review_process": ""
+  },
+  "environments": {
+    "development": {},
+    "staging": {},
+    "production": {}
+  },
+  "glossary_ref": ".antigravity/memory/glossary.md",
+  "last_updated": ""
+}
