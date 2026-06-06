@@ -18,6 +18,7 @@ import { InputNumberModule } from 'primeng/inputnumber';
 
 import { ProjectStore } from '../../../../projects/state/project.store';
 import { TaskStore } from '../../../state/task.store';
+import { LabelStore } from '../../../state/label.store';
 import type { TaskType, TaskPriority, CreateTaskDto } from '@mpm/shared-types';
 
 // ─── Static option sets ──────────────────────────────────────────────────────
@@ -162,7 +163,7 @@ const VALID_CHILDREN: Partial<Record<TaskType, TaskType[]>> = {
       [closable]="false"
       [showHeader]="false"
       styleClass="qc-dialog"
-      [style]="{ width: '600px', padding: '0' }"
+      [style]="{ width: '750px', padding: '0' }"
       [contentStyle]="{ padding: '0', borderRadius: '14px', overflow: 'hidden' }"
       [dismissableMask]="true"
       (onHide)="onCancel()"
@@ -196,10 +197,13 @@ const VALID_CHILDREN: Partial<Record<TaskType, TaskType[]>> = {
         <div style="padding: 0 18px 12px">
           <textarea
             pTextarea
-            style="width: 100%; font-size: 13px; color: var(--text-color-secondary); border: none; box-shadow: none; background: transparent; padding: 0; resize: none; outline: none"
+            style="width: 100%; font-size: 13px; color: var(--text-color-secondary); border: none; box-shadow: none; background: transparent; padding: 0; min-height: 120px; resize: vertical; outline: none"
             placeholder="Mô tả (tùy chọn)"
-            [rows]="2"
+            [rows]="6"
             [(ngModel)]="description"
+            (keydown.control.enter)="title.trim() && onSubmit()"
+            (keydown.meta.enter)="title.trim() && onSubmit()"
+            (keydown.escape)="onCancel()"
           ></textarea>
         </div>
 
@@ -250,7 +254,7 @@ const VALID_CHILDREN: Partial<Record<TaskType, TaskType[]>> = {
               <div class="flex items-center gap-1">
                 @for (id of selectedLabelIds.slice(0, 2); track id) {
                   @if (isScoped(getLabelName(id))) {
-                    <span class="inline-flex items-center text-[10px] rounded-full overflow-hidden border border-gray-200 bg-white font-medium">
+                    <span class="inline-flex items-center text-[10px] rounded-full overflow-hidden border border-gray-200 bg-white font-medium" [pTooltip]="getLabelDescription(id) ? getLabelName(id) + ': ' + getLabelDescription(id) : getLabelName(id)">
                       <span class="px-1.5 py-px text-white" 
                             [style.background]="layoutService.getAdaptiveColor(getScopeColor(getLabelName(id), getLabelColor(id)))" 
                             [style.color]="layoutService.getTextColor(layoutService.getAdaptiveColor(getScopeColor(getLabelName(id), getLabelColor(id))))">{{ getScope(getLabelName(id)) }}</span>
@@ -261,7 +265,8 @@ const VALID_CHILDREN: Partial<Record<TaskType, TaskType[]>> = {
                   } @else {
                     <span class="text-[10px] px-1 py-px rounded-full font-medium bg-white border" 
                           [style.border-color]="layoutService.getAdaptiveColor(getLabelColor(id))"
-                          [style.color]="layoutService.getAdaptiveColor(getLabelColor(id))">
+                          [style.color]="layoutService.getAdaptiveColor(getLabelColor(id))"
+                          [pTooltip]="getLabelDescription(id) ? getLabelName(id) + ': ' + getLabelDescription(id) : getLabelName(id)">
                       {{ getLabelName(id) }}
                     </span>
                   }
@@ -322,14 +327,15 @@ const VALID_CHILDREN: Partial<Record<TaskType, TaskType[]>> = {
 
     <!-- Type -->
     <p-popover #typePopover>
-      <div style="min-width: 140px; padding: 4px">
+      <div style="min-width: 110px; padding: 2px">
         @for (t of availableTypes(); track t.value) {
           <button class="pop-item" [class.selected]="selectedType() === t.value"
+            style="padding: 5px 10px; font-size: 12px"
             (click)="selectedType.set(t.value); typePopover.hide()">
-            <i [class]="t.icon" [style.color]="t.color"></i>
+            <i [class]="t.icon" [style.color]="t.color" style="font-size: 11px"></i>
             <span>{{ t.label }}</span>
             @if (selectedType() === t.value) {
-              <i class="pi pi-check" style="margin-left: auto; font-size: 11px"></i>
+              <i class="pi pi-check" style="margin-left: auto; font-size: 10px"></i>
             }
           </button>
         }
@@ -338,16 +344,16 @@ const VALID_CHILDREN: Partial<Record<TaskType, TaskType[]>> = {
 
     <!-- State -->
     <p-popover #statePopover>
-      <div style="min-width: 176px; padding: 4px">
-        <div style="font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-color-secondary); padding: 4px 12px 6px">Trạng thái</div>
+      <div style="min-width: 140px; padding: 2px">
         @for (s of stateOptions(); track s.id) {
           <button class="pop-item" [class.selected]="selectedStateId() === s.id"
+            style="padding: 5px 10px; font-size: 12px"
             (click)="selectedStateId.set(s.id); statePopover.hide()">
-            <span style="width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; border: 1px solid rgba(0,0,0,0.08)"
+            <span style="width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; border: 1px solid rgba(0,0,0,0.08)"
               [style.background]="s.color"></span>
             <span>{{ s.name }}</span>
             @if (selectedStateId() === s.id) {
-              <i class="pi pi-check" style="margin-left: auto; font-size: 11px"></i>
+              <i class="pi pi-check" style="margin-left: auto; font-size: 10px"></i>
             }
           </button>
         }
@@ -356,15 +362,15 @@ const VALID_CHILDREN: Partial<Record<TaskType, TaskType[]>> = {
 
     <!-- Priority -->
     <p-popover #priorityPopover>
-      <div style="min-width: 140px; padding: 4px">
-        <div style="font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-color-secondary); padding: 4px 12px 6px">Mức ưu tiên</div>
+      <div style="min-width: 120px; padding: 2px">
         @for (p of priorityOptions; track p.value) {
           <button class="pop-item" [class.selected]="selectedPriority() === p.value"
+            style="padding: 5px 10px; font-size: 12px"
             (click)="selectedPriority.set(p.value); priorityPopover.hide()">
-            <i [class]="p.icon" [style.color]="p.color"></i>
+            <i [class]="p.icon" [style.color]="p.color" style="font-size: 11px"></i>
             <span>{{ p.label }}</span>
             @if (selectedPriority() === p.value) {
-              <i class="pi pi-check" style="margin-left: auto; font-size: 11px"></i>
+              <i class="pi pi-check" style="margin-left: auto; font-size: 10px"></i>
             }
           </button>
         }
@@ -373,20 +379,20 @@ const VALID_CHILDREN: Partial<Record<TaskType, TaskType[]>> = {
 
     <!-- Assignees -->
     <p-popover #assigneePopover>
-      <div style="min-width: 220px; padding: 4px">
-        <div style="font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-color-secondary); padding: 4px 12px 6px">Thành viên dự án</div>
+      <div style="min-width: 180px; padding: 2px; max-height: 240px; overflow-y: auto">
         @if (!memberOptions().length) {
-          <p style="padding: 8px 12px; font-size: 12px; color: var(--text-color-secondary)">Chưa có thành viên</p>
+          <p style="padding: 8px 10px; font-size: 12px; color: var(--text-color-secondary)">Chưa có thành viên</p>
         }
         @for (m of memberOptions(); track m.userId) {
           <button class="pop-item" [class.selected]="selectedAssigneeIds.includes(m.userId)"
+            style="padding: 5px 10px; font-size: 12px"
             (click)="toggleAssignee(m.userId)">
-            <div class="avatar-xs" style="margin: 0; width: 22px; height: 22px; font-size: 10px">
+            <div class="avatar-xs" style="margin: 0; width: 20px; height: 20px; font-size: 9px">
               {{ m.displayName[0]?.toUpperCase() }}
             </div>
             <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ m.displayName }}</span>
             @if (selectedAssigneeIds.includes(m.userId)) {
-              <i class="pi pi-check" style="font-size: 11px; color: #6366f1"></i>
+              <i class="pi pi-check" style="font-size: 10px; color: #6366f1"></i>
             }
           </button>
         }
@@ -394,31 +400,34 @@ const VALID_CHILDREN: Partial<Record<TaskType, TaskType[]>> = {
     </p-popover>
 
     <!-- Labels -->
-    <p-popover #labelPopover>
-      <div style="min-width: 220px; max-width: 285px; padding: 4px; display: flex; flex-direction: column; gap: 4px">
-        <div style="font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-color-secondary); padding: 4px 8px 2px">Nhãn</div>
-        <div style="padding: 2px 4px 6px">
-          <input pInputText type="text"
-            style="width: 100%; height: 28px; font-size: 12px; padding: 0 8px; border-radius: 6px"
-            placeholder="Tìm kiếm nhãn..."
+    <p-popover #labelPopover (onShow)="focusLabelSearch()">
+      <div style="min-width: 200px; max-width: 260px; padding: 2px; display: flex; flex-direction: column; gap: 2px">
+        <div style="padding: 2px">
+          <input
+            #labelSearchInput
+            pInputText type="text"
+            style="width: 100%; height: 26px; font-size: 11px; padding: 0 6px; border-radius: 4px"
+            placeholder="Tìm kiếm hoặc tạo nhãn..."
             [ngModel]="labelSearch()"
             (ngModelChange)="labelSearch.set($event)"
             (click)="$event.stopPropagation()"
+            (keydown.enter)="onLabelSearchEnter($event)"
           />
         </div>
-        <div style="max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px">
+        <div style="max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 1px">
           @if (!filteredLabels().length) {
-            <p style="padding: 8px; font-size: 12px; color: var(--text-color-secondary); text-align: center">
+            <p style="padding: 6px; font-size: 11px; color: var(--text-color-secondary); text-align: center">
               {{ labelOptions().length ? 'Không tìm thấy nhãn' : 'Chưa có nhãn' }}
             </p>
           }
           @for (l of filteredLabels(); track l.id) {
-            <button class="pop-item" style="display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; border-radius: 6px"
+            <button class="pop-item" style="display: flex; align-items: center; justify-content: space-between; padding: 5px 8px; border-radius: 4px"
               [class.selected]="selectedLabelIds.includes(l.id)"
-              (click)="toggleLabel(l.id)">
-              <div style="display: flex; align-items: center; gap: 8px; overflow: hidden">
+              (click)="toggleLabel(l.id)"
+              [pTooltip]="l.description ? l.name + ': ' + l.description : l.name">
+              <div style="display: flex; align-items: center; gap: 6px; overflow: hidden">
                 @if (isScoped(l.name)) {
-                  <span class="inline-flex items-center text-xs rounded-full overflow-hidden border border-gray-200 dark:border-surface-700 font-medium bg-white dark:bg-surface-800">
+                  <span class="inline-flex items-center text-[10px] rounded-full overflow-hidden border border-gray-200 dark:border-surface-700 font-medium bg-white dark:bg-surface-800">
                     <span class="px-1.5 py-px text-white" 
                           [style.background]="layoutService.getAdaptiveColor(getScopeColor(l.name, l.color))" 
                           [style.color]="layoutService.getTextColor(layoutService.getAdaptiveColor(getScopeColor(l.name, l.color)))">{{ getScope(l.name) }}</span>
@@ -427,7 +436,7 @@ const VALID_CHILDREN: Partial<Record<TaskType, TaskType[]>> = {
                           [style.color]="layoutService.getAdaptiveColor(l.color)">{{ getValue(l.name) }}</span>
                   </span>
                 } @else {
-                  <span class="text-xs px-2 py-px rounded-full font-medium" 
+                  <span class="text-[10px] px-1.5 py-px rounded-full font-medium" 
                         [style.background]="layoutService.getAdaptiveColor(l.color) + '22'" 
                         [style.color]="layoutService.getAdaptiveColor(l.color)">
                     {{ l.name }}
@@ -435,11 +444,19 @@ const VALID_CHILDREN: Partial<Record<TaskType, TaskType[]>> = {
                 }
               </div>
               @if (selectedLabelIds.includes(l.id)) {
-                <i class="pi pi-check" style="font-size: 11px; color: #6366f1; flex-shrink: 0"></i>
+                <i class="pi pi-check" style="font-size: 10px; color: #6366f1; flex-shrink: 0"></i>
               }
             </button>
           }
         </div>
+        @if (labelSearch().trim() && !hasExactMatch()) {
+          <button class="pop-item" style="display: flex; align-items: center; gap: 6px; color: #6366f1; border-top: 1px solid var(--surface-100, #f1f5f9); margin-top: 2px; padding: 6px 8px; border-radius: 4px" (click)="quickCreateLabel()">
+            <i class="pi pi-plus" style="font-size: 10px"></i>
+            <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px">
+              Tạo nhãn <strong>"{{ labelSearch().trim() }}"</strong>
+            </span>
+          </button>
+        }
       </div>
     </p-popover>
 
@@ -469,17 +486,14 @@ const VALID_CHILDREN: Partial<Record<TaskType, TaskType[]>> = {
 
     <!-- Estimate -->
     <p-popover #estimatePopover>
-      <div style="padding: 12px; display: flex; flex-direction: column; gap: 10px; width: 180px">
-        <label style="font-size: 12px; color: var(--text-color-secondary); font-weight: 600">Story points</label>
+      <div style="padding: 6px 8px; display: flex; align-items: center; gap: 6px; width: 160px">
         <p-inputnumber [(ngModel)]="estimateValue" [min]="0" [maxFractionDigits]="1"
-          styleClass="w-full" inputStyleClass="text-sm" placeholder="0" [autofocus]="true" />
-        <div style="display: flex; gap: 6px">
-          <button pButton label="Xong" size="small" style="flex: 1" (click)="estimatePopover.hide()"></button>
-          @if (estimateValue !== null) {
-            <button pButton icon="pi pi-times" severity="secondary" [text]="true" size="small"
-              pTooltip="Xóa" (click)="estimateValue = null; estimatePopover.hide()"></button>
-          }
-        </div>
+          styleClass="w-full flex-1" inputStyleClass="w-full text-xs" placeholder="Story points" [autofocus]="true"
+          (keydown.enter)="estimatePopover.hide()" />
+        @if (estimateValue !== null) {
+          <button pButton icon="pi pi-times" severity="secondary" [text]="true" size="small"
+            pTooltip="Xóa" (click)="estimateValue = null; estimatePopover.hide()" style="flex-shrink: 0; width: 24px; height: 24px; padding: 0"></button>
+        }
       </div>
     </p-popover>
   `,
@@ -487,6 +501,7 @@ const VALID_CHILDREN: Partial<Record<TaskType, TaskType[]>> = {
 export class QuickCreateComponent implements OnChanges {
   private readonly projectStore = inject(ProjectStore);
   private readonly taskStore = inject(TaskStore);
+  private readonly labelStore = inject(LabelStore);
   protected readonly layoutService = inject(LayoutService);
 
   @Input() visible = false;
@@ -498,6 +513,7 @@ export class QuickCreateComponent implements OnChanges {
   @Output() cancel = new EventEmitter<void>();
 
   @ViewChild('titleInput') titleInput?: ElementRef<HTMLInputElement>;
+  @ViewChild('labelSearchInput') labelSearchInput?: ElementRef<HTMLInputElement>;
 
   // ─── Plain form fields ───────────────────────────────────────────────────
   protected title = '';
@@ -534,7 +550,7 @@ export class QuickCreateComponent implements OnChanges {
   protected readonly memberOptions = computed(() => this.projectStore.members());
 
   protected readonly labelOptions = computed(() =>
-    this.taskStore.labels().map((l) => ({ id: l.id, name: l.name, color: l.color, isExclusive: l.isExclusive })),
+    this.taskStore.labels().map((l) => ({ id: l.id, name: l.name, color: l.color, isExclusive: l.isExclusive, description: l.description })),
   );
 
   // ─── Computed display values ─────────────────────────────────────────────
@@ -601,6 +617,10 @@ export class QuickCreateComponent implements OnChanges {
 
   protected getLabelName(id: string): string {
     return this.labelOptions().find((l) => l.id === id)?.name ?? id;
+  }
+
+  protected getLabelDescription(id: string): string | undefined {
+    return this.labelOptions().find((l) => l.id === id)?.description || undefined;
   }
 
   protected toggleAssignee(userId: string): void {
@@ -704,6 +724,67 @@ export class QuickCreateComponent implements OnChanges {
   protected onCancel(): void {
     this.resetForm();
     this.cancel.emit();
+  }
+
+  protected focusLabelSearch(): void {
+    setTimeout(() => this.labelSearchInput?.nativeElement.focus(), 50);
+  }
+
+  protected onLabelSearchEnter(event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    const query = this.labelSearch().trim();
+    if (!query) return;
+
+    const filtered = this.filteredLabels();
+    if (filtered.length === 1) {
+      this.toggleLabel(filtered[0].id);
+      this.labelSearch.set('');
+    } else if (filtered.length === 0 && !this.hasExactMatch()) {
+      this.quickCreateLabel();
+    }
+  }
+
+  protected hasExactMatch(): boolean {
+    const query = this.labelSearch().trim().toLowerCase();
+    if (!query) return false;
+    return this.labelOptions().some(l => l.name.toLowerCase() === query);
+  }
+
+  protected quickCreateLabel(): void {
+    const query = this.labelSearch().trim();
+    if (!query) return;
+    const projectId = this.projectStore.currentProject()?.id;
+    if (!projectId) return;
+
+    let chosenColor = '';
+    if (query.includes('::')) {
+      const scope = query.split('::')[0].trim().toLowerCase();
+      const match = this.labelOptions().find(l => l.name.includes('::') && l.name.split('::')[0].trim().toLowerCase() === scope);
+      if (match) {
+        chosenColor = match.color;
+      }
+    }
+
+    if (!chosenColor) {
+      const colorPresets = [
+        '#EF4444', '#F97316', '#F59E0B', '#10B981', '#0D9488',
+        '#3B82F6', '#6366F1', '#8B5CF6', '#EC4899', '#6B7280',
+      ];
+      const idx = Math.floor(Math.random() * colorPresets.length);
+      chosenColor = colorPresets[idx];
+    }
+
+    this.labelStore.createLabel(projectId, {
+      name: query,
+      color: chosenColor,
+      isExclusive: true,
+    }).then((created) => {
+      if (created) {
+        this.toggleLabel(created.id);
+        this.labelSearch.set('');
+      }
+    });
   }
 
   private resetForm(): void {

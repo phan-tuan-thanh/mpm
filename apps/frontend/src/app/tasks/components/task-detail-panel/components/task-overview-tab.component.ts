@@ -6,6 +6,7 @@ import { DatePickerModule } from 'primeng/datepicker';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { TextareaModule } from 'primeng/textarea';
+import { TooltipModule } from 'primeng/tooltip';
 import { TaskAttachmentsComponent } from './task-attachments.component';
 import { TaskLinksComponent } from './task-links.component';
 import { LayoutService } from '../../../../layout/services/layout.service';
@@ -22,7 +23,7 @@ const PRIORITY_OPTIONS = [
   selector: 'app-task-overview-tab',
   imports: [
     CommonModule, FormsModule, SelectModule, DatePickerModule, InputNumberModule,
-    MultiSelectModule, TextareaModule, TaskAttachmentsComponent, TaskLinksComponent,
+    MultiSelectModule, TextareaModule, TooltipModule, TaskAttachmentsComponent, TaskLinksComponent,
   ],
   template: `
     @if (taskVal) {
@@ -55,7 +56,7 @@ const PRIORITY_OPTIONS = [
           >
             <!-- Custom dropdown item template -->
             <ng-template let-label pTemplate="item">
-              <div class="flex items-center gap-2">
+              <div class="flex items-center gap-2" [pTooltip]="label.description ? label.name + ': ' + label.description : label.name">
                 @if (isScoped(label.name)) {
                   <span class="inline-flex items-center text-xs rounded-full overflow-hidden border border-gray-200 dark:border-surface-700 font-medium bg-white dark:bg-surface-800">
                     <span class="px-1.5 py-px text-white" 
@@ -82,7 +83,7 @@ const PRIORITY_OPTIONS = [
                   @let label = getLabelById(valId);
                   @if (label) {
                     @if (isScoped(label.name)) {
-                      <span class="inline-flex items-center text-[10px] rounded-full overflow-hidden border border-gray-200 dark:border-surface-700 font-medium bg-white dark:bg-surface-800">
+                      <span class="inline-flex items-center text-[10px] rounded-full overflow-hidden border border-gray-200 dark:border-surface-700 font-medium bg-white dark:bg-surface-800" [pTooltip]="label.description ? label.name + ': ' + label.description : label.name">
                         <span class="px-1.5 py-px text-white" 
                               [style.background]="layoutService.getAdaptiveColor(getScopeColor(label.name, label.color))" 
                               [style.color]="layoutService.getTextColor(layoutService.getAdaptiveColor(getScopeColor(label.name, label.color)))">{{ getScope(label.name) }}</span>
@@ -93,7 +94,8 @@ const PRIORITY_OPTIONS = [
                     } @else {
                       <span class="text-[10px] px-2 py-px rounded-full font-medium bg-white dark:bg-surface-800 border" 
                             [style.border-color]="layoutService.getAdaptiveColor(label.color)" 
-                            [style.color]="layoutService.getAdaptiveColor(label.color)">
+                            [style.color]="layoutService.getAdaptiveColor(label.color)"
+                            [pTooltip]="label.description ? label.name + ': ' + label.description : label.name">
                         {{ label.name }}
                       </span>
                     }

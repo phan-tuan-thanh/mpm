@@ -51,6 +51,7 @@ export interface Label {
   workspaceId?: string;
   taskCount?: number;
   isExclusive?: boolean;
+  description?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -218,12 +219,14 @@ export interface CreateLabelDto {
   name: string;
   color: string;
   isExclusive?: boolean;
+  description?: string | null;
 }
 
 export interface UpdateLabelDto {
   name?: string;
   color?: string;
   isExclusive?: boolean;
+  description?: string | null;
 }
 
 export interface CreateLinkDto {

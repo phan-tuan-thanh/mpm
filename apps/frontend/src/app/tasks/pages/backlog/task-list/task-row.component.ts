@@ -68,7 +68,7 @@ const AVATAR_PALETTE = [
           @for (label of task.labels.slice(0, 4); track label.id) {
             <span class="w-2.5 h-2.5 rounded-full border border-white dark:border-surface-900 flex-shrink-0"
                   [style.background]="layoutService.getAdaptiveColor(label.color)"
-                  [pTooltip]="label.name"></span>
+                  [pTooltip]="label.description ? label.name + ': ' + label.description : label.name"></span>
           }
           @if (task.labels.length > 4) {
             <span class="text-[10px] text-gray-500 font-medium pl-1.5"
@@ -81,7 +81,7 @@ const AVATAR_PALETTE = [
         <div class="flex items-center gap-1 flex-shrink-0 mr-2">
           @for (label of task.labels.slice(0, displayProps.maxLabels); track label.id) {
             @if (isScoped(label.name)) {
-              <span class="inline-flex items-center text-[10px] rounded-full overflow-hidden border border-gray-200 dark:border-surface-700 font-medium select-none cursor-default" [pTooltip]="label.name">
+              <span class="inline-flex items-center text-[10px] rounded-full overflow-hidden border border-gray-200 dark:border-surface-700 font-medium select-none cursor-default" [pTooltip]="label.description ? label.name + ': ' + label.description : label.name">
                 <span class="px-1.5 py-0.5" 
                       [style.background]="layoutService.getAdaptiveColor(getScopeColor(label.name, label.color))" 
                       [style.color]="layoutService.getTextColor(layoutService.getAdaptiveColor(getScopeColor(label.name, label.color)))">{{ getScope(label.name) }}</span>
@@ -93,7 +93,7 @@ const AVATAR_PALETTE = [
               <span class="text-[10px] px-2 py-0.5 rounded-full font-medium select-none cursor-default"
                     [style.background]="layoutService.getAdaptiveColor(label.color) + '22'" 
                     [style.color]="layoutService.getAdaptiveColor(label.color)"
-                    [pTooltip]="label.name">
+                    [pTooltip]="label.description ? label.name + ': ' + label.description : label.name">
                 {{ label.name }}
               </span>
             }

@@ -58,6 +58,7 @@ export class LabelService {
       name: r.name,
       color: r.color,
       isExclusive: r.is_exclusive ?? r.isExclusive ?? true,
+      description: r.description ?? null,
       createdAt: r.created_at ?? r.createdAt,
       updatedAt: r.updated_at ?? r.updatedAt,
       taskCount: parseInt(r.taskCount as unknown as string, 10) || 0,
@@ -70,7 +71,7 @@ export class LabelService {
    * - scope='project': tạo project-level label (project_id required)
    */
   async create(
-    dto: { name: string; color: string; isExclusive?: boolean },
+    dto: { name: string; color: string; isExclusive?: boolean; description?: string | null },
     opts: {
       scope: 'workspace' | 'project';
       workspaceId: string | null;
@@ -132,6 +133,7 @@ export class LabelService {
       name: dto.name,
       color: dto.color,
       isExclusive,
+      description: dto.description ?? null,
     });
 
     const saved = await this.labelRepo.save(label);
@@ -153,7 +155,7 @@ export class LabelService {
    */
   async update(
     labelId: string,
-    dto: { name?: string; color?: string; isExclusive?: boolean },
+    dto: { name?: string; color?: string; isExclusive?: boolean; description?: string | null },
     opts: {
       workspaceId?: string;
       projectId?: string;
@@ -200,6 +202,7 @@ export class LabelService {
 
     if (dto.name !== undefined) label.name = dto.name;
     if (dto.color !== undefined) label.color = dto.color;
+    if (dto.description !== undefined) label.description = dto.description;
     if (dto.isExclusive !== undefined) {
       label.isExclusive = dto.isExclusive;
       if (label.name.includes('::')) {

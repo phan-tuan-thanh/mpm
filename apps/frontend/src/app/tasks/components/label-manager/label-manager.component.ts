@@ -202,6 +202,13 @@ import type { Label } from '@mpm/shared-types';
                             <label for="wsEditExclusiveCheck" class="text-xs text-gray-500 font-medium cursor-pointer">Exclusive</label>
                           </div>
                         }
+                        <div class="w-full mt-1.5">
+                          <input pInputText style="height: 28px; font-size: 12px; padding: 0 8px; width: 100%"
+                            [(ngModel)]="wsEditDescription"
+                            placeholder="Mô tả nhãn (tùy chọn)..."
+                            (keydown.enter)="saveWsEdit(label)"
+                            (keydown.escape)="cancelWsEdit()" />
+                        </div>
                       </div>
                       <button class="icon-btn success" pTooltip="Lưu" (click)="saveWsEdit(label)">
                         <i class="pi pi-check"></i>
@@ -214,7 +221,7 @@ import type { Label } from '@mpm/shared-types';
                       <div class="flex-1 flex items-center min-w-0 mr-2">
                         @if (isScoped(label.name)) {
                           <span class="inline-flex items-center text-xs rounded-full overflow-hidden border border-surface-200 dark:border-surface-700 font-medium"
-                                [pTooltip]="label.isExclusive !== false ? 'Exclusive' : 'Multi-select'">
+                                [pTooltip]="label.description ? label.description + ' (' + (label.isExclusive !== false ? 'Exclusive' : 'Multi-select') + ')' : (label.isExclusive !== false ? 'Exclusive' : 'Multi-select')">
                             <span class="px-2 py-0.5" 
                                   [style.background]="layoutService.getAdaptiveColor(getScopeColor(label.name, label.color))" 
                                   [style.color]="layoutService.getTextColor(layoutService.getAdaptiveColor(getScopeColor(label.name, label.color)))">
@@ -232,7 +239,8 @@ import type { Label } from '@mpm/shared-types';
                         } @else {
                           <span class="text-xs px-2 py-0.5 rounded-full font-medium"
                                 [style.background]="layoutService.getAdaptiveColor(label.color) + '22'" 
-                                [style.color]="layoutService.getAdaptiveColor(label.color)">
+                                [style.color]="layoutService.getAdaptiveColor(label.color)"
+                                [pTooltip]="label.description || label.name">
                             {{ label.name }}
                           </span>
                         }
@@ -336,18 +344,25 @@ import type { Label } from '@mpm/shared-types';
                     }
                   </div>
 
-                  <div class="create-form">
-                    <div class="color-preview-swatch" [style.background]="'#' + wsNewColor" pTooltip="Màu đang chọn"></div>
-                    <input pInputText class="flex-1" style="height: 32px; font-size: 13px; padding: 0 8px; background: transparent; border: none; box-shadow: none"
-                      placeholder="Tên label..."
-                      [(ngModel)]="wsNewName"
+                  <div class="flex flex-col gap-2 mt-2">
+                    <div class="create-form">
+                      <div class="color-preview-swatch" [style.background]="'#' + wsNewColor" pTooltip="Màu đang chọn"></div>
+                      <input pInputText class="flex-1" style="height: 32px; font-size: 13px; padding: 0 8px; background: transparent; border: none; box-shadow: none"
+                        placeholder="Tên label..."
+                        [(ngModel)]="wsNewName"
+                        (keydown.enter)="wsNewName.trim() && createWsLabel()"
+                      />
+                      <button pButton label="Thêm" size="small"
+                        (click)="createWsLabel()"
+                        [disabled]="!wsNewName.trim()"
+                        style="height: 30px; font-size: 12px; padding: 0 14px"
+                      ></button>
+                    </div>
+                    <input pInputText style="height: 28px; font-size: 12px; padding: 0 8px; border-radius: 6px"
+                      placeholder="Mô tả nhãn (tùy chọn)..."
+                      [(ngModel)]="wsNewDescription"
                       (keydown.enter)="wsNewName.trim() && createWsLabel()"
                     />
-                    <button pButton label="Thêm" size="small"
-                      (click)="createWsLabel()"
-                      [disabled]="!wsNewName.trim()"
-                      style="height: 30px; font-size: 12px; padding: 0 14px"
-                    ></button>
                   </div>
                 </div>
               }
@@ -384,6 +399,13 @@ import type { Label } from '@mpm/shared-types';
                             <label for="editExclusiveCheck" class="text-xs text-gray-500 font-medium cursor-pointer">Exclusive</label>
                           </div>
                         }
+                        <div class="w-full mt-1.5">
+                          <input pInputText style="height: 28px; font-size: 12px; padding: 0 8px; width: 100%"
+                            [(ngModel)]="editDescription"
+                            placeholder="Mô tả nhãn (tùy chọn)..."
+                            (keydown.enter)="saveEdit(label)"
+                            (keydown.escape)="cancelEdit()" />
+                        </div>
                       </div>
                       <button class="icon-btn success" pTooltip="Lưu" (click)="saveEdit(label)">
                         <i class="pi pi-check"></i>
@@ -396,7 +418,7 @@ import type { Label } from '@mpm/shared-types';
                       <div class="flex-1 flex items-center min-w-0 mr-2">
                         @if (isScoped(label.name)) {
                           <span class="inline-flex items-center text-xs rounded-full overflow-hidden border border-surface-200 dark:border-surface-700 font-medium"
-                                [pTooltip]="label.isExclusive !== false ? 'Exclusive' : 'Multi-select'">
+                                [pTooltip]="label.description ? label.description + ' (' + (label.isExclusive !== false ? 'Exclusive' : 'Multi-select') + ')' : (label.isExclusive !== false ? 'Exclusive' : 'Multi-select')">
                             <span class="px-2 py-0.5" 
                                   [style.background]="layoutService.getAdaptiveColor(getScopeColor(label.name, label.color))" 
                                   [style.color]="layoutService.getTextColor(layoutService.getAdaptiveColor(getScopeColor(label.name, label.color)))">
@@ -414,7 +436,8 @@ import type { Label } from '@mpm/shared-types';
                         } @else {
                           <span class="text-xs px-2 py-0.5 rounded-full font-medium"
                                 [style.background]="layoutService.getAdaptiveColor(label.color) + '22'" 
-                                [style.color]="layoutService.getAdaptiveColor(label.color)">
+                                [style.color]="layoutService.getAdaptiveColor(label.color)"
+                                [pTooltip]="label.description || label.name">
                             {{ label.name }}
                           </span>
                         }
@@ -515,18 +538,25 @@ import type { Label } from '@mpm/shared-types';
                   }
                 </div>
 
-                <div class="create-form">
-                  <div class="color-preview-swatch" [style.background]="'#' + newColor" pTooltip="Màu đang chọn"></div>
-                  <input pInputText class="flex-1" style="height: 32px; font-size: 13px; padding: 0 8px; background: transparent; border: none; box-shadow: none"
-                    placeholder="Tên label..."
-                    [(ngModel)]="newName"
+                <div class="flex flex-col gap-2 mt-2">
+                  <div class="create-form">
+                    <div class="color-preview-swatch" [style.background]="'#' + newColor" pTooltip="Màu đang chọn"></div>
+                    <input pInputText class="flex-1" style="height: 32px; font-size: 13px; padding: 0 8px; background: transparent; border: none; box-shadow: none"
+                      placeholder="Tên label..."
+                      [(ngModel)]="newName"
+                      (keydown.enter)="newName.trim() && createLabel()"
+                    />
+                    <button pButton label="Thêm" size="small"
+                      (click)="createLabel()"
+                      [disabled]="!newName.trim()"
+                      style="height: 30px; font-size: 12px; padding: 0 14px"
+                    ></button>
+                  </div>
+                  <input pInputText style="height: 28px; font-size: 12px; padding: 0 8px; border-radius: 6px"
+                    placeholder="Mô tả nhãn (tùy chọn)..."
+                    [(ngModel)]="newDescription"
                     (keydown.enter)="newName.trim() && createLabel()"
                   />
-                  <button pButton label="Thêm" size="small"
-                    (click)="createLabel()"
-                    [disabled]="!newName.trim()"
-                    style="height: 30px; font-size: 12px; padding: 0 14px"
-                  ></button>
                 </div>
               </div>
             </div>
@@ -625,18 +655,22 @@ export class LabelManagerComponent implements OnInit {
   protected editName = '';
   protected editColor = '';
   protected editIsExclusive = true;
+  protected editDescription = '';
   protected newName = '';
   protected newColor = '';
   protected isExclusive = true;
+  protected newDescription = '';
 
   // Workspace label editing state
   protected wsEditingId = signal<string | null>(null);
   protected wsEditName = '';
   protected wsEditColor = '';
   protected wsEditIsExclusive = true;
+  protected wsEditDescription = '';
   protected wsNewName = '';
   protected wsNewColor = '';
   protected wsIsExclusive = true;
+  protected wsNewDescription = '';
 
   ngOnInit(): void {
     this.newColor = this.getRandomPresetColor();
@@ -723,9 +757,11 @@ export class LabelManagerComponent implements OnInit {
       name: this.newName.trim(),
       color: `#${this.newColor}`.replace('##', '#'),
       isExclusive: this.isExclusive,
+      description: this.newDescription.trim() || null,
     });
     if (result) {
       this.newName = '';
+      this.newDescription = '';
       this.newColor = this.getRandomPresetColor();
       this.isExclusive = true;
       this.messageService.add({ severity: 'success', summary: 'Thành công', detail: 'Đã tạo label mới' });
@@ -739,6 +775,7 @@ export class LabelManagerComponent implements OnInit {
     this.editName = label.name;
     this.editColor = label.color.replace('#', '');
     this.editIsExclusive = label.isExclusive !== false;
+    this.editDescription = label.description ?? '';
   }
 
   protected async saveEdit(label: Label & { taskCount: number }): Promise<void> {
@@ -746,6 +783,7 @@ export class LabelManagerComponent implements OnInit {
       name: this.editName.trim() || label.name,
       color: `#${this.editColor}`.replace('##', '#'),
       isExclusive: this.editIsExclusive,
+      description: this.editDescription.trim() || null,
     });
     if (success) {
       this.editingId.set(null);
@@ -786,10 +824,12 @@ export class LabelManagerComponent implements OnInit {
       name: this.wsNewName.trim(),
       color: `#${this.wsNewColor}`.replace('##', '#'),
       isExclusive: this.wsIsExclusive,
+      description: this.wsNewDescription.trim() || null,
     });
     if (label) {
       this.wsLabels.update(prev => [...prev, { ...label, taskCount: 0 }]);
       this.wsNewName = '';
+      this.wsNewDescription = '';
       this.wsNewColor = this.getRandomPresetColor();
       this.wsIsExclusive = true;
       this.messageService.add({ severity: 'success', summary: 'Thành công', detail: 'Đã tạo workspace label' });
@@ -803,6 +843,7 @@ export class LabelManagerComponent implements OnInit {
     this.wsEditName = label.name;
     this.wsEditColor = label.color.replace('#', '');
     this.wsEditIsExclusive = label.isExclusive !== false;
+    this.wsEditDescription = label.description ?? '';
   }
 
   protected async saveWsEdit(label: Label & { taskCount: number }): Promise<void> {
@@ -813,12 +854,13 @@ export class LabelManagerComponent implements OnInit {
       name: newName,
       color: newColor,
       isExclusive: this.wsEditIsExclusive,
+      description: this.wsEditDescription.trim() || null,
     });
     if (success) {
       this.wsLabels.update(prev =>
         prev.map(l => {
           if (l.id === label.id) {
-            return { ...l, name: newName, color: newColor, isExclusive: this.wsEditIsExclusive };
+            return { ...l, name: newName, color: newColor, isExclusive: this.wsEditIsExclusive, description: this.wsEditDescription.trim() || null };
           }
           // Propagate isExclusive update to same-scope labels locally
           if (newName.includes('::') && l.name.includes('::') && l.name.split('::')[0].trim().toLowerCase() === newName.split('::')[0].trim().toLowerCase()) {

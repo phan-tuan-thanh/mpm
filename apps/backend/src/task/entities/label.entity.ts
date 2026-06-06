@@ -32,6 +32,9 @@ export class Label {
   @Column({ name: 'is_exclusive', type: 'boolean', default: true })
   isExclusive!: boolean;
 
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  description!: string | null;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 
