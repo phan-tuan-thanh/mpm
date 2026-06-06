@@ -13,7 +13,7 @@ import {
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { NgxTiptapModule } from 'ngx-tiptap';
+import { TiptapEditorDirective } from 'ngx-tiptap';
 import { Editor } from '@tiptap/core';
 import { Observable, take } from 'rxjs';
 import type { TiptapDoc } from '@mpm/shared-types';
@@ -24,7 +24,7 @@ import type { MentionItem } from './rte-mention';
 @Component({
   selector: 'app-rich-text-editor',
   standalone: true,
-  imports: [CommonModule, FormsModule, NgxTiptapModule],
+  imports: [CommonModule, FormsModule, TiptapEditorDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
     {
@@ -103,7 +103,7 @@ export class RichTextEditorComponent implements ControlValueAccessor, OnInit, On
     });
 
     if (this.pendingValue !== null) {
-      this.editor.commands.setContent(this.pendingValue, false);
+      this.editor.commands.setContent(this.pendingValue, { emitUpdate: false });
       this.pendingValue = null;
     }
   }
@@ -119,7 +119,7 @@ export class RichTextEditorComponent implements ControlValueAccessor, OnInit, On
     }
     const current = this.editor.isEmpty ? null : (this.editor.getJSON() as TiptapDoc);
     if (JSON.stringify(value) !== JSON.stringify(current)) {
-      this.editor.commands.setContent(value ?? '', false);
+      this.editor.commands.setContent(value ?? '', { emitUpdate: false });
     }
   }
 
@@ -141,17 +141,17 @@ export class RichTextEditorComponent implements ControlValueAccessor, OnInit, On
   toggleItalic(): void { this.editor.chain().focus().toggleItalic().run(); }
   toggleUnderline(): void { this.editor.chain().focus().toggleUnderline().run(); }
   toggleStrike(): void { this.editor.chain().focus().toggleStrike().run(); }
-  toggleHighlight(): void { this.editor.chain().focus().toggleHighlight().run(); }
-  toggleSubscript(): void { this.editor.chain().focus().toggleSubscript().run(); }
-  toggleSuperscript(): void { this.editor.chain().focus().toggleSuperscript().run(); }
+  toggleHighlight(): void { (this.editor.chain().focus() as any).toggleHighlight().run(); }
+  toggleSubscript(): void { (this.editor.chain().focus() as any).toggleSubscript().run(); }
+  toggleSuperscript(): void { (this.editor.chain().focus() as any).toggleSuperscript().run(); }
   setHeading(level: 1 | 2 | 3): void { this.editor.chain().focus().toggleHeading({ level }).run(); }
   toggleBulletList(): void { this.editor.chain().focus().toggleBulletList().run(); }
   toggleOrderedList(): void { this.editor.chain().focus().toggleOrderedList().run(); }
-  toggleTaskList(): void { this.editor.chain().focus().toggleTaskList().run(); }
+  toggleTaskList(): void { (this.editor.chain().focus() as any).toggleTaskList().run(); }
   toggleBlockquote(): void { this.editor.chain().focus().toggleBlockquote().run(); }
   toggleCodeBlock(): void { this.editor.chain().focus().toggleCodeBlock().run(); }
   setTextAlign(align: 'left' | 'center' | 'right' | 'justify'): void {
-    this.editor.chain().focus().setTextAlign(align).run();
+    (this.editor.chain().focus() as any).setTextAlign(align).run();
   }
   undo(): void { this.editor.chain().focus().undo().run(); }
   redo(): void { this.editor.chain().focus().redo().run(); }

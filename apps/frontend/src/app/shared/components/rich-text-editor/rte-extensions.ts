@@ -36,12 +36,12 @@ export function buildExtensions(
     StarterKit.configure({
       codeBlock: false,
       heading: f.headings !== false ? { levels: [1, 2, 3] } : false,
-      bulletList: f.bulletList !== false,
-      orderedList: f.orderedList !== false,
-      blockquote: f.blockquote !== false,
-      strike: f.strike !== false,
-      bold: f.bold !== false,
-      italic: f.italic !== false,
+      bulletList: f.bulletList !== false ? {} : false,
+      orderedList: f.orderedList !== false ? {} : false,
+      blockquote: f.blockquote !== false ? {} : false,
+      strike: f.strike !== false ? {} : false,
+      bold: f.bold !== false ? {} : false,
+      italic: f.italic !== false ? {} : false,
     }) as unknown as Extension,
     Placeholder.configure({ placeholder }) as unknown as Extension,
   ];
