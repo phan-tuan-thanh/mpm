@@ -14,13 +14,16 @@ import { ProjectMember } from './entities/project-member.entity';
 
 // Services
 import { AuthService } from './auth.service';
+import { AuthOAuthService } from './auth-oauth.service';
+import { AuthTokenService } from './auth-token.service';
 import { TokenService } from './token.service';
 import { SessionService } from './session.service';
 import { AuthentikService } from './authentik.service';
 import { UserProvisionService } from './user-provision.service';
 
-// Controller
+// Controllers
 import { AuthController } from './auth.controller';
+import { AuthSessionController } from './auth-session.controller';
 
 // Guards
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -75,10 +78,12 @@ import { AuditModule } from '../audit/audit.module';
     // Audit logging
     AuditModule,
   ],
-  controllers: [AuthController],
+  controllers: [AuthController, AuthSessionController],
   providers: [
     // Core services
     AuthService,
+    AuthOAuthService,
+    AuthTokenService,
     TokenService,
     SessionService,
     AuthentikService,

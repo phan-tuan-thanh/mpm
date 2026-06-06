@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppModule } from '../app.module';
 import { AuthService } from '../auth/auth.service';
+import { UserProvisionService } from '../auth/user-provision.service';
 import { AdminService } from './admin.service';
 import { ProjectMemberService } from '../project/members/project-member.service';
 import { ProjectService } from '../project/project.service';
@@ -24,6 +25,7 @@ import { ProjectRole } from '@mpm/shared-types';
 describe('Admin Management & Project Member Bootstrap Integration Tests (Epic D)', () => {
   let moduleRef: TestingModule;
   let authService: AuthService;
+  let userProvisionService: UserProvisionService;
   let adminService: AdminService;
   let projectMemberService: ProjectMemberService;
   let projectService: ProjectService;
@@ -45,6 +47,7 @@ describe('Admin Management & Project Member Bootstrap Integration Tests (Epic D)
     }).compile();
 
     authService = moduleRef.get<AuthService>(AuthService);
+    userProvisionService = moduleRef.get<UserProvisionService>(UserProvisionService);
     adminService = moduleRef.get<AdminService>(AdminService);
     projectMemberService = moduleRef.get<ProjectMemberService>(ProjectMemberService);
     projectService = moduleRef.get<ProjectService>(ProjectService);
@@ -124,7 +127,7 @@ describe('Admin Management & Project Member Bootstrap Integration Tests (Epic D)
       iat: Math.floor(Date.now() / 1000),
     };
 
-    const user = await authService['upsertUser'](claims);
+    const user = await userProvisionService['upsertUser'](claims);
     expect(user.systemRole).toBe('Admin');
 
     // Clean up
@@ -154,7 +157,7 @@ describe('Admin Management & Project Member Bootstrap Integration Tests (Epic D)
       iat: Math.floor(Date.now() / 1000),
     };
 
-    const user = await authService['upsertUser'](claims);
+    const user = await userProvisionService['upsertUser'](claims);
     expect(user.systemRole).toBe('User'); // Role remains 'User'
 
     // Clean up
@@ -177,7 +180,7 @@ describe('Admin Management & Project Member Bootstrap Integration Tests (Epic D)
       iat: Math.floor(Date.now() / 1000),
     };
 
-    const user = await authService['upsertUser'](claims);
+    const user = await userProvisionService['upsertUser'](claims);
     expect(user.systemRole).toBe('Admin');
 
     // Clean up
@@ -200,7 +203,7 @@ describe('Admin Management & Project Member Bootstrap Integration Tests (Epic D)
       iat: Math.floor(Date.now() / 1000),
     };
 
-    const user = await authService['upsertUser'](claims);
+    const user = await userProvisionService['upsertUser'](claims);
     expect(user.systemRole).toBe('User');
 
     // Clean up

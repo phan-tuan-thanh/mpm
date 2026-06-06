@@ -16,6 +16,12 @@ import {
   ProjectStateGrouped,
   StateGroup,
 } from '@mpm/shared-types';
+import {
+  assertStateExists,
+  assertNotDefaultState,
+  assertMinStatesCount,
+  assertStateNotInUse,
+} from './project-state-validation';
 
 @Injectable()
 export class ProjectStateService {
@@ -243,62 +249,20 @@ export class ProjectStateService {
       where: { id: stateId, projectId },
     });
 
-    if (!state) {
-      throw new NotFoundException({
-        statusCode: 404,
-        error: 'Not Found',
-        message: 'Project state not found',
-        errorCode: 'STATE_NOT_FOUND',
-        timestamp: new Date().toISOString(),
-      });
-    }
+    assertStateExists(state);
+    assertNotDefaultState(state);
 
-    // Check if default state
-    if (state.isDefault) {
-      throw new UnprocessableEntityException({
-        statusCode: 422,
-        error: 'Unprocessable Entity',
-        message: 'Cannot delete the default project state',
-        errorCode: 'DEFAULT_STATE',
-        timestamp: new Date().toISOString(),
-      });
-    }
-
-    // Check total states count in project (min 2)
+    // Check total states count in project (min 1)
     const count = await this.stateRepository.count({
       where: { projectId },
     });
-    if (count <= 2) {
-      // Wait, the spec says "Nếu project chỉ còn 1 state, không cho phép xóa"
-      // But the error code is `LAST_STATE`.
-      // Let's check if the count <= 1 or <= 2. The spec says:
-      // "Nếu project chỉ còn 1 state, không cho phép xóa state đó" (so count <= 1 is guarded, but wait: if they delete down to 1 state, is it allowed? Yes, but they can't delete the last state).
-      // Let's implement: if count <= 1, throw LAST_STATE.
-      if (count <= 1) {
-        throw new UnprocessableEntityException({
-          statusCode: 422,
-          error: 'Unprocessable Entity',
-          message: 'Project must have at least 1 state',
-          errorCode: 'LAST_STATE',
-          timestamp: new Date().toISOString(),
-        });
-      }
-    }
+    assertMinStatesCount(count);
 
     // Check if in use by tasks
     const tasksCount = await this.taskRepository.count({
       where: { stateId },
     });
-    if (tasksCount > 0) {
-      throw new UnprocessableEntityException({
-        statusCode: 422,
-        error: 'Unprocessable Entity',
-        message: 'State is in use by tasks. Please migrate tasks first.',
-        errorCode: 'STATE_IN_USE',
-        affectedCount: tasksCount,
-        timestamp: new Date().toISOString(),
-      });
-    }
+    assertStateNotInUse(tasksCount);
 
     await this.stateRepository.remove(state);
 
@@ -340,15 +304,7 @@ export class ProjectStateService {
       });
     }
 
-    if (fromState.isDefault) {
-      throw new UnprocessableEntityException({
-        statusCode: 422,
-        error: 'Unprocessable Entity',
-        message: 'Cannot migrate/delete the default state',
-        errorCode: 'DEFAULT_STATE',
-        timestamp: new Date().toISOString(),
-      });
-    }
+    assertNotDefaultState(fromState);
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();

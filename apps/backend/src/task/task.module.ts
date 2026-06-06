@@ -37,6 +37,8 @@ import { AttachmentService } from './attachment/attachment.service';
 import { LinkService } from './link/link.service';
 import { RelationService } from './relation/relation.service';
 import { ModuleService } from './module/module.service';
+import { ModuleQueryService } from './module/module-query.service';
+import { ModuleTaskService } from './module/module-task.service';
 
 import { AuthModule } from '../auth/auth.module';
 import { AuditModule } from '../audit/audit.module';
@@ -87,6 +89,8 @@ import { AuditModule } from '../audit/audit.module';
     LinkService,
     RelationService,
     ModuleService,
+    ModuleQueryService,
+    ModuleTaskService,
   ],
   exports: [TaskService, ActivityService, LabelService],
 })

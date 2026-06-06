@@ -1,9 +1,6 @@
 import {
   Controller,
-  Get,
   Post,
-  Delete,
-  Param,
   Body,
   Req,
   Res,
@@ -11,6 +8,7 @@ import {
   HttpStatus,
   UseGuards,
   UnauthorizedException,
+  Get,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Request, Response } from 'express';
@@ -31,12 +29,12 @@ const COOKIE_MAX_AGE_SECONDS = 604_800;
  * Auth Controller — REST endpoints cho authentication flow
  *
  * Endpoints:
- * - GET  /api/auth/login              — Redirect to Authentik authorize URL
- * - POST /api/auth/callback           — Exchange authorization code for tokens
- * - POST /api/auth/refresh            — Refresh token rotation
- * - POST /api/auth/logout             — Revoke current session
- * - GET  /api/auth/sessions           — List active sessions
- * - DELETE /api/auth/sessions/:sessionId — Revoke specific session
+ * - GET  /api/auth/login      — Redirect to Authentik authorize URL
+ * - POST /api/auth/callback   — Exchange authorization code for tokens
+ * - POST /api/auth/refresh    — Refresh token rotation
+ * - POST /api/auth/logout     — Revoke current session
+ *
+ * Session management endpoints được xử lý bởi AuthSessionController.
  */
 @Controller('api/auth')
 @UseGuards(RateLimitGuard)
@@ -107,7 +105,7 @@ export class AuthController {
    * 3. Set refreshToken vào httpOnly cookie
    * 4. Trả về accessToken trong response body
    *
-   * Cookie flags: httpOnly, Secure (prod), SameSite=Strict, Path=/api/auth/refresh, Max-Age=604800
+   * Cookie flags: httpOnly, Secure (prod), SameSite=lax, Path=/api/auth/refresh, Max-Age=604800
    */
   @Public()
   @RateLimit('login')
@@ -230,50 +228,6 @@ export class AuthController {
     return { message: 'Logged out successfully' };
   }
 
-  // ─── GET /api/auth/sessions ─────────────────────────────────────────────────
-
-  /**
-   * Liệt kê sessions đang hoạt động (tối đa 50)
-   *
-   * Trả về danh sách sessions với thông tin:
-   * - sessionId, deviceInfo, ipAddress, createdAt, lastActivity
-   * - isCurrent: đánh dấu session hiện tại (dựa trên refresh token cookie)
-   */
-  @Get('sessions')
-  async listSessions(
-    @CurrentUser() user: RequestUser,
-  ): Promise<{ sessions: SessionResponse[] }> {
-    const sessions = await this.sessionService.listSessions(user.id);
-
-    const sessionResponses: SessionResponse[] = sessions.map((session) => ({
-      sessionId: session.sessionId,
-      deviceInfo: session.deviceInfo,
-      ipAddress: session.ipAddress,
-      createdAt: session.createdAt,
-      lastActivity: session.lastActivity,
-    }));
-
-    return { sessions: sessionResponses };
-  }
-
-  // ─── DELETE /api/auth/sessions/:sessionId ───────────────────────────────────
-
-  /**
-   * Thu hồi session cụ thể
-   *
-   * Cho phép user revoke bất kỳ session nào của mình (ví dụ: session trên thiết bị khác)
-   */
-  @Delete('sessions/:sessionId')
-  @HttpCode(HttpStatus.OK)
-  async revokeSession(
-    @CurrentUser() user: RequestUser,
-    @Param('sessionId') sessionId: string,
-  ): Promise<{ message: string }> {
-    await this.sessionService.revokeSession(user.id, sessionId);
-
-    return { message: 'Session revoked successfully' };
-  }
-
   // ─── Private Helpers ────────────────────────────────────────────────────────
 
   /**
@@ -345,13 +299,3 @@ export class AuthController {
   }
 }
 
-// ─── Response Types ───────────────────────────────────────────────────────────
-
-/** Session info trả về cho client (không bao gồm refreshTokenHash) */
-interface SessionResponse {
-  sessionId: string;
-  deviceInfo: string;
-  ipAddress: string;
-  createdAt: string;
-  lastActivity: string;
-}
