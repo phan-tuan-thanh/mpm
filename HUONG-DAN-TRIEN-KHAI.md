@@ -157,13 +157,15 @@ mở trình duyệt tại **http://localhost:4200** — sẽ chuyển tới tran
 
 ```bash
 ./start.sh           # Khởi động toàn bộ (infra + backend + frontend)
-./start.sh infra     # Chỉ khởi động Docker (Postgres/Redis/Authentik) + verify blueprint
-./start.sh backend   # Chỉ khởi động backend (giả sử infra đã chạy)
+./start.sh infra     # Chỉ khởi động Docker (Postgres/Redis/Authentik)
+./start.sh backend   # Chỉ khởi động backend
 ./start.sh frontend  # Chỉ khởi động frontend
 ./start.sh stop      # Dừng tất cả (Docker + tiến trình nền)
+./clean.sh           # Dừng tất cả và xóa sạch toàn bộ dữ liệu (Database, Redis, Keys, Uploads)
 ```
 
 > **Luôn chạy `./start.sh stop` trước khi khởi động lại** để tránh lỗi cổng bị chiếm (xem mục Xử lý sự cố).
+> **Dùng `./clean.sh` khi muốn reset hoàn toàn dữ liệu** (reset Authentik, database/redis volumes và cặp khóa RSA JWT).
 
 ---
 
