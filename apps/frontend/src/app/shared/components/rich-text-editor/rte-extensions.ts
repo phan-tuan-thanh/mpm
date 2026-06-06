@@ -42,6 +42,10 @@ export function buildExtensions(
       strike: f.strike !== false ? {} : false,
       bold: f.bold !== false ? {} : false,
       italic: f.italic !== false ? {} : false,
+      // TipTap v3 StarterKit bundles Link & Underline by default — disable to
+      // avoid duplicates since we add them below with custom configuration.
+      link: false,
+      underline: false,
     }) as unknown as Extension,
     Placeholder.configure({ placeholder }) as unknown as Extension,
   ];
