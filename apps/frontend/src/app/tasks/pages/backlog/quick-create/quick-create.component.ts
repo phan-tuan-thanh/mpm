@@ -44,12 +44,14 @@ const VALID_CHILDREN: Partial<Record<TaskType, TaskType[]>> = {
   task:  ['subtask'],
 };
 
+import { DrawerModule } from 'primeng/drawer';
+
 @Component({
   standalone: true,
   selector: 'app-quick-create',
   imports: [
     CommonModule, FormsModule,
-    DialogModule, ButtonModule, InputTextModule, TextareaModule,
+    DialogModule, DrawerModule, ButtonModule, InputTextModule, TextareaModule,
     DatePickerModule, TooltipModule, ToggleSwitchModule, PopoverModule, InputNumberModule,
   ],
   templateUrl: './quick-create.component.html',
@@ -65,9 +67,11 @@ export class QuickCreateComponent implements OnChanges {
   @Input() parentId?: string;
   @Input() parentType?: TaskType;
   @Input() stateId?: string;
+  @Input() viewMode: 'right-pane' | 'full-page' | 'popup' = 'popup';
 
   @Output() create = new EventEmitter<CreateTaskDto>();
   @Output() cancel = new EventEmitter<void>();
+  @Output() viewModeChange = new EventEmitter<'right-pane' | 'full-page' | 'popup'>();
 
   @ViewChild('titleInput') titleInput?: ElementRef<HTMLInputElement>;
   @ViewChild('labelSearchInput') labelSearchInput?: ElementRef<HTMLInputElement>;

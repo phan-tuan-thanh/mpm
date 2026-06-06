@@ -199,6 +199,35 @@ import { DisplayProperties, DEFAULT_DISPLAY_PROPS } from '@mpm/shared-types';
           (ngModelChange)="orderByChange.emit($event)"
         />
       </div>
+
+      <!-- Divider -->
+      <hr class="border-gray-200 dark:border-surface-600" />
+
+      <!-- Task Creation View Mode -->
+      <div class="flex flex-col gap-1">
+        <label class="text-xs text-gray-500 dark:text-surface-400 uppercase tracking-wide">Task Creation Mode</label>
+        <p-select
+          [options]="creationModeOptions"
+          [ngModel]="displayProps.taskCreationViewMode || 'popup'"
+          optionLabel="label"
+          optionValue="value"
+          styleClass="w-full text-sm"
+          (ngModelChange)="onToggle('taskCreationViewMode', $event)"
+        />
+      </div>
+
+      <!-- Task Detail View Mode -->
+      <div class="flex flex-col gap-1">
+        <label class="text-xs text-gray-500 dark:text-surface-400 uppercase tracking-wide">Task Detail Mode</label>
+        <p-select
+          [options]="detailModeOptions"
+          [ngModel]="displayProps.taskDetailViewMode || 'right-pane'"
+          optionLabel="label"
+          optionValue="value"
+          styleClass="w-full text-sm"
+          (ngModelChange)="onToggle('taskDetailViewMode', $event)"
+        />
+      </div>
     </div>
   `,
 })
@@ -223,6 +252,18 @@ export class DisplayPropertiesPanelComponent {
     { label: 'Created date', value: 'created_at' },
     { label: 'Due date', value: 'due_date' },
     { label: 'Priority', value: 'priority' },
+  ];
+
+  readonly creationModeOptions = [
+    { label: 'Popup (Dialog)', value: 'popup' },
+    { label: 'Right Pane (Drawer)', value: 'right-pane' },
+    { label: 'Full Page', value: 'full-page' },
+  ];
+
+  readonly detailModeOptions = [
+    { label: 'Popup (Dialog)', value: 'popup' },
+    { label: 'Right Pane (Drawer)', value: 'right-pane' },
+    { label: 'Full Page', value: 'full-page' },
   ];
 
   onToggle(key: keyof DisplayProperties, value: boolean | string | number): void {

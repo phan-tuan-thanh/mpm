@@ -57,37 +57,64 @@ import { Subject, takeUntil } from 'rxjs';
         </div>
       }
 
-      <!-- Task list -->
+      <!-- Task list OR Full-page views -->
       <div class="flex-1 overflow-y-auto">
-        <app-task-list
-          [tasks]="taskStore.tasks()"
-          [states]="flatStates()"
-          [isLoading]="taskStore.isLoading()"
-          [orderBy]="selectedOrderBy"
-          [selectedIds]="taskStore.selectedTaskIds()"
-          [displayProps]="displayProps()"
-          (taskClick)="openDetail($event)"
-          (selectionToggle)="taskStore.toggleSelect($event)"
-          (reorder)="onReorder($event)"
-          (moveTask)="onMoveTask($event)"
-          (newTaskInState)="openQuickCreate($event)"
-        />
+        @if (showQuickCreate() && displayProps().taskCreationViewMode === 'full-page') {
+          <div class="h-full p-6 bg-gray-50 dark:bg-surface-950 flex justify-center items-start overflow-y-auto">
+            <app-quick-create
+              [visible]="showQuickCreate()"
+              [stateId]="quickCreateStateId()"
+              [viewMode]="'full-page'"
+              (create)="onQuickCreate($event)"
+              (cancel)="closeQuickCreate()"
+              (viewModeChange)="onCreationViewModeChange($event)"
+            />
+          </div>
+        } @else if (currentTaskId() && displayProps().taskDetailViewMode === 'full-page') {
+          <div class="h-full bg-white dark:bg-surface-900 overflow-y-auto">
+            <app-task-detail-panel
+              [viewMode]="'full-page'"
+              (viewModeChange)="onDetailViewModeChange($event)"
+            />
+          </div>
+        } @else {
+          <app-task-list
+            [tasks]="taskStore.tasks()"
+            [states]="flatStates()"
+            [isLoading]="taskStore.isLoading()"
+            [orderBy]="selectedOrderBy"
+            [selectedIds]="taskStore.selectedTaskIds()"
+            [displayProps]="displayProps()"
+            (taskClick)="openDetail($event)"
+            (selectionToggle)="taskStore.toggleSelect($event)"
+            (reorder)="onReorder($event)"
+            (moveTask)="onMoveTask($event)"
+            (newTaskInState)="openQuickCreate($event)"
+          />
+        }
       </div>
 
       <!-- Quick create bar -->
-      @if (showQuickCreate()) {
+      @if (showQuickCreate() && displayProps().taskCreationViewMode !== 'full-page') {
         <app-quick-create
           [visible]="showQuickCreate()"
           [stateId]="quickCreateStateId()"
+          [viewMode]="displayProps().taskCreationViewMode || 'popup'"
           (create)="onQuickCreate($event)"
           (cancel)="closeQuickCreate()"
+          (viewModeChange)="onCreationViewModeChange($event)"
         />
       }
     </div>
 
     <p-confirmDialog />
     <p-toast />
-    <app-task-detail-panel />
+    @if (!currentTaskId() || displayProps().taskDetailViewMode !== 'full-page') {
+      <app-task-detail-panel
+        [viewMode]="displayProps().taskDetailViewMode || 'right-pane'"
+        (viewModeChange)="onDetailViewModeChange($event)"
+      />
+    }
     <app-label-manager #labelManager [projectId]="projectId" [workspaceId]="workspaceId" />
   `,
 })
@@ -109,6 +136,7 @@ export class BacklogComponent implements OnInit, OnDestroy {
   protected quickCreateStateId = signal<string | undefined>(undefined);
   protected projectId = '';
   protected workspaceId = '';
+  protected currentTaskId = signal<string | null>(null);
 
   protected readonly displayProps = signal<DisplayProperties>(DEFAULT_DISPLAY_PROPS);
 
@@ -120,6 +148,10 @@ export class BacklogComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.layoutService.fullBleed.set(true);
+
+    this.route.queryParams.pipe(takeUntil(this.destroy$)).subscribe((params) => {
+      this.currentTaskId.set(params['taskId'] || null);
+    });
 
     this.route.parent?.params.pipe(takeUntil(this.destroy$)).subscribe(() => {
       const project = this.projectStore.currentProject();
@@ -220,6 +252,14 @@ export class BacklogComponent implements OnInit, OnDestroy {
 
   protected openLabelManager(): void {
     this.labelManager.open();
+  }
+
+  protected onCreationViewModeChange(mode: 'right-pane' | 'full-page' | 'popup'): void {
+    this.updateDisplayProps({ taskCreationViewMode: mode });
+  }
+
+  protected onDetailViewModeChange(mode: 'right-pane' | 'full-page' | 'popup'): void {
+    this.updateDisplayProps({ taskDetailViewMode: mode });
   }
 
   protected updateDisplayProps(patch: Partial<DisplayProperties>): void {

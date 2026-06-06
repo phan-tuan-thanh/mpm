@@ -1,28 +1,77 @@
-<p-dialog
-  [(visible)]="visible"
-  [modal]="true"
-  [closable]="false"
-  [showHeader]="false"
-  styleClass="qc-dialog"
-  [style]="{ width: '750px', padding: '0' }"
-  [contentStyle]="{ padding: '0', borderRadius: '14px', overflow: 'hidden' }"
-  [dismissableMask]="true"
-  (onHide)="onCancel()"
->
-  <div style="display: flex; flex-direction: column; background: var(--surface-0, #fff); border-radius: 14px; overflow: hidden">
+@if (viewMode === 'popup') {
+  <p-dialog
+    [(visible)]="visible"
+    [modal]="true"
+    [closable]="false"
+    [showHeader]="false"
+    styleClass="qc-dialog"
+    [style]="{ width: '750px', padding: '0' }"
+    [contentStyle]="{ padding: '0', borderRadius: '14px', overflow: 'hidden' }"
+    [dismissableMask]="true"
+    (onHide)="onCancel()"
+  >
+    <ng-container *ngTemplateOutlet="formTpl"></ng-container>
+  </p-dialog>
+} @else if (viewMode === 'right-pane') {
+  <p-drawer
+    [(visible)]="visible"
+    position="right"
+    [modal]="true"
+    [style]="{ width: '680px', padding: '0' }"
+    [dismissableMask]="true"
+    [showHeader]="false"
+    (onHide)="onCancel()"
+  >
+    <ng-container *ngTemplateOutlet="formTpl"></ng-container>
+  </p-drawer>
+} @else if (viewMode === 'full-page') {
+  <div class="w-full max-w-4xl bg-white dark:bg-surface-900 border border-gray-200 dark:border-surface-700 rounded-xl shadow-sm overflow-hidden flex flex-col">
+    <ng-container *ngTemplateOutlet="formTpl"></ng-container>
+  </div>
+}
+
+<ng-template #formTpl>
+  <div style="display: flex; flex-direction: column; background: var(--surface-0, #fff); height: 100%; width: 100%; overflow: hidden">
 
     <!-- ══ Header ══ -->
-    <div style="display: flex; align-items: center; gap: 8px; padding: 14px 18px 10px">
-      <!-- Type dropdown pill -->
-      <button class="type-pill" (click)="typePopover.toggle($event)">
-        <i [class]="selectedTypeConfig().icon" [style.color]="selectedTypeConfig().color" style="font-size: 11px"></i>
-        <span style="color: var(--text-color)">{{ selectedTypeConfig().label }}</span>
-        <i class="pi pi-chevron-down" style="font-size: 9px; color: var(--text-color-secondary)"></i>
-      </button>
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 18px 10px; border-bottom: 1px solid var(--surface-100, #f3f4f6)">
+      <div style="display: flex; align-items: center; gap: 8px">
+        <!-- Type dropdown pill -->
+        <button class="type-pill" (click)="typePopover.toggle($event)">
+          <i [class]="selectedTypeConfig().icon" [style.color]="selectedTypeConfig().color" style="font-size: 11px"></i>
+          <span style="color: var(--text-color)">{{ selectedTypeConfig().label }}</span>
+          <i class="pi pi-chevron-down" style="font-size: 9px; color: var(--text-color-secondary)"></i>
+        </button>
+      </div>
+
+      <!-- Layout Switching and Action Icons -->
+      <div style="display: flex; align-items: center; gap: 6px">
+        <!-- Slide-in (Drawer) Mode -->
+        <button pButton icon="pi pi-align-right" class="p-button-rounded p-button-text p-button-sm"
+          [severity]="viewMode === 'right-pane' ? 'primary' : 'secondary'"
+          pTooltip="Slide-in Drawer" (click)="viewModeChange.emit('right-pane')"></button>
+
+        <!-- Popup (Dialog) Mode -->
+        <button pButton icon="pi pi-clone" class="p-button-rounded p-button-text p-button-sm"
+          [severity]="viewMode === 'popup' ? 'primary' : 'secondary'"
+          pTooltip="Dialog Popup" (click)="viewModeChange.emit('popup')"></button>
+
+        <!-- Full Page Mode -->
+        <button pButton icon="pi pi-desktop" class="p-button-rounded p-button-text p-button-sm"
+          [severity]="viewMode === 'full-page' ? 'primary' : 'secondary'"
+          pTooltip="Full Page" (click)="viewModeChange.emit('full-page')"></button>
+
+        <div style="width: 1px; height: 16px; background: var(--surface-200); margin: 0 4px"></div>
+
+        <!-- Close / Cancel button -->
+        <button pButton [icon]="viewMode === 'full-page' ? 'pi pi-arrow-left' : 'pi pi-times'" 
+          class="p-button-rounded p-button-text p-button-sm" severity="secondary"
+          [pTooltip]="viewMode === 'full-page' ? 'Quay lại danh sách' : 'Đóng'" (click)="onCancel()"></button>
+      </div>
     </div>
 
     <!-- ══ Title ══ -->
-    <div style="padding: 0 18px 6px">
+    <div style="padding: 12px 18px 6px">
       <input
         #titleInput
         pInputText
@@ -168,7 +217,7 @@
       </div>
     </div>
   </div>
-</p-dialog>
+</ng-template>
 
 <!-- ═══ POPOVERS ════════════════════════════════════════════════════════ -->
 
