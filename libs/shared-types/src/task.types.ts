@@ -308,6 +308,8 @@ export interface DisplayProperties {
   labelMode: 'badge' | 'dot';
   maxLabels: number;   // 1–4
   maxModules: number;  // 1–3
+  taskCreationViewMode?: 'right-pane' | 'full-page' | 'popup';
+  taskDetailViewMode?: 'right-pane' | 'full-page' | 'popup';
 }
 
 export const DEFAULT_DISPLAY_PROPS: DisplayProperties = {
@@ -324,4 +326,6 @@ export const DEFAULT_DISPLAY_PROPS: DisplayProperties = {
   labelMode: 'badge',
   maxLabels: 2,
   maxModules: 1,
+  taskCreationViewMode: 'popup',
+  taskDetailViewMode: 'right-pane',
 };
