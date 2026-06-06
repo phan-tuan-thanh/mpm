@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C /Volumes/myssd/Working/github/mpm add apps/frontend/src/app/tasks/components/task-detail-panel/components/task-overview-tab.component.ts apps/frontend/src/app/projects/pages/project-settings/general-tab/general-tab.component.ts apps/frontend/src/app/tasks/pages/modules/module-form.component.ts)",
+      "Bash(git -C /Volumes/myssd/Working/github/mpm commit -m \"feat\\(rte\\): update callers with toolbarMode inputs\")",
+      "Bash(git -C /Volumes/myssd/Working/github/mpm log --oneline -8)",
+      "Bash(git -C /Volumes/myssd/Working/github/mpm remote -v)",
+      "Bash(git -C /Volumes/myssd/Working/github/mpm checkout -b feat/rte-extensions)",
+      "Bash(git -C /Volumes/myssd/Working/github/mpm push -u origin feat/rte-extensions)",
+      "Bash(git -C /Volumes/myssd/Working/github/mpm add apps/frontend/src/app/projects/pages/project-settings/general-tab/general-tab.component.ts)",
+      "Bash(git -C /Volumes/myssd/Working/github/mpm commit -m \"fix\\(rte\\): add name attribute to RTE inside general-tab form\")",
+      "Bash(git -C /Volumes/myssd/Working/github/mpm add apps/frontend/src/app/auth/pages/login/login.component.ts)",
+      "Bash(git -C /Volumes/myssd/Working/github/mpm commit -m \"fix\\(login\\): replace scientific notation in SVG path to fix browser parser warning\")",
+      "Bash(git -C /Volumes/myssd/Working/github/mpm commit -m \"fix\\(rte\\): disable StarterKit built-in link/underline to fix TipTap v3 duplicate extension crash\")",
+      "Bash(git -C /Volumes/myssd/Working/github/mpm push)",
+      "Bash(git -C /Volumes/myssd/Working/github/mpm add apps/frontend/package.json apps/frontend/package-lock.json)",
+      "Bash(git -C /Volumes/myssd/Working/github/mpm status --short)",
+      "Bash(git -C /Volumes/myssd/Working/github/mpm commit -m \"fix\\(rte\\): install tiptap extensions in frontend workspace to fix dual-instance crash\")",
+      "Bash(git -C /Volumes/myssd/Working/github/mpm add apps/frontend/src/app/shared/services/editor-preference.service.ts apps/frontend/src/app/shared/components/rich-text-editor/rich-text-editor.component.ts apps/frontend/src/app/shared/components/rich-text-editor/rich-text-editor.component.html apps/frontend/src/app/layout/app-shell/topbar/topbar.component.ts apps/frontend/src/app/tasks/components/task-detail-panel/components/task-overview-tab.component.ts apps/frontend/src/app/projects/pages/project-settings/general-tab/general-tab.component.ts apps/frontend/src/app/tasks/pages/modules/module-form.component.ts)",
+      "Bash(git -C /Volumes/myssd/Working/github/mpm commit -m \"feat\\(rte\\): add EditorPreferenceService — user picks toolbar mode globally via topbar dropdown\")"
+    ]
+  }
+}
