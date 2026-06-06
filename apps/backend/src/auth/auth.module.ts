@@ -16,6 +16,8 @@ import { ProjectMember } from './entities/project-member.entity';
 import { AuthService } from './auth.service';
 import { TokenService } from './token.service';
 import { SessionService } from './session.service';
+import { AuthentikService } from './authentik.service';
+import { UserProvisionService } from './user-provision.service';
 
 // Controller
 import { AuthController } from './auth.controller';
@@ -79,6 +81,8 @@ import { AuditModule } from '../audit/audit.module';
     AuthService,
     TokenService,
     SessionService,
+    AuthentikService,
+    UserProvisionService,
 
     // Guards registered as APP_GUARD — áp dụng globally
     // Thứ tự đăng ký quyết định thứ tự thực thi

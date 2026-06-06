@@ -9,7 +9,12 @@ import { User } from '../auth/entities/user.entity';
 import { Task } from '../task/entities/task.entity';
 
 import { ProjectController } from './project.controller';
+import { ProjectQueryController } from './project-query.controller';
 import { ProjectService } from './project.service';
+import { ProjectCreateService } from './project-create.service';
+import { ProjectQueryService } from './project-query.service';
+import { ProjectUpdateService } from './project-update.service';
+import { ProjectDeleteService } from './project-delete.service';
 
 import { ProjectMemberController } from './members/project-member.controller';
 import { ProjectMemberService } from './members/project-member.service';
@@ -45,6 +50,7 @@ import { AuditModule } from '../audit/audit.module';
   ],
   controllers: [
     ProjectController,
+    ProjectQueryController,
     ProjectMemberController,
     ProjectStateController,
     StateTemplateController,
@@ -53,6 +59,10 @@ import { AuditModule } from '../audit/audit.module';
   ],
   providers: [
     ProjectService,
+    ProjectCreateService,
+    ProjectQueryService,
+    ProjectUpdateService,
+    ProjectDeleteService,
     ProjectMemberService,
     ProjectStateService,
     StateTemplateService,
@@ -61,6 +71,10 @@ import { AuditModule } from '../audit/audit.module';
   ],
   exports: [
     ProjectService,
+    ProjectCreateService,
+    ProjectQueryService,
+    ProjectUpdateService,
+    ProjectDeleteService,
     ProjectMemberService,
     ProjectStateService,
     StateTemplateService,

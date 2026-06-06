@@ -16,6 +16,7 @@ import { Subject, Subscription, of } from 'rxjs';
 import { debounceTime, distinctUntilChanged, catchError, switchMap } from 'rxjs/operators';
 import { FormsModule } from '@angular/forms';
 import { ProjectNetwork, StateTemplate, WorkspaceStateTemplate } from '@mpm/shared-types';
+import { COMMON_EMOJIS, TIMEZONE_OPTIONS, suggestProjectKey } from './create-project.constants';
 
 @Component({
   standalone: true,
@@ -304,10 +305,7 @@ export class CreateProjectComponent implements OnInit, OnDestroy {
 
   // UI States
   showEmojiPicker = signal<boolean>(false);
-  readonly commonEmojis = [
-    '🚀', '💻', '🎨', '📝', '📊', '🔍', '⚙️', '📅', '👥', '🔔',
-    '📎', '🔒', '🌍', '💡', '🔥', '✨', '⚡️', '🛠️', '📦', '🎯',
-  ];
+  readonly commonEmojis = COMMON_EMOJIS;
 
   // Lead options computed (only current user for new projects)
   readonly leadOptions = computed(() => {
@@ -319,10 +317,7 @@ export class CreateProjectComponent implements OnInit, OnDestroy {
   });
 
   // Timezone options
-  readonly timezoneOptions = Intl.supportedValuesOf('timeZone').map((tz) => ({
-    label: tz,
-    value: tz,
-  }));
+  readonly timezoneOptions = TIMEZONE_OPTIONS;
 
   // Form States
   keyEditedByUser = false;
@@ -379,14 +374,7 @@ export class CreateProjectComponent implements OnInit, OnDestroy {
   onNameChange(val: string): void {
     if (!this.keyEditedByUser && val) {
       // Suggest key bằng các chữ cái in hoa đầu tiên của mỗi từ
-      const words = val.trim().split(/\s+/);
-      const suggested = words
-        .map((w) => w.charAt(0))
-        .join('')
-        .toUpperCase()
-        .replace(/[^A-Z]/g, '')
-        .substring(0, 5);
-
+      const suggested = suggestProjectKey(val);
       this.key = suggested;
       this.keyCheckSubject.next(suggested);
     }

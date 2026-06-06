@@ -1,6 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { ProjectService } from './project.service';
+import { ProjectCreateService } from './project-create.service';
+import { ProjectQueryService } from './project-query.service';
+import { ProjectUpdateService } from './project-update.service';
+import { ProjectDeleteService } from './project-delete.service';
 import { Project } from './entities/project.entity';
 import { ProjectMember } from '../auth/entities/project-member.entity';
 import { User } from '../auth/entities/user.entity';
@@ -40,6 +44,10 @@ describe('ProjectService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ProjectService,
+        ProjectCreateService,
+        ProjectQueryService,
+        ProjectUpdateService,
+        ProjectDeleteService,
         {
           provide: getRepositoryToken(Project),
           useValue: {

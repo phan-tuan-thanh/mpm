@@ -17,6 +17,7 @@ import { ProjectListItem, ProjectRole } from '@mpm/shared-types';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { FormsModule } from '@angular/forms';
+import { hasActiveFilters, buildQueryParams, parseQueryParams, formatProjectRole } from './project-filter.utils';
 
 @Component({
   standalone: true,
@@ -300,12 +301,13 @@ export class ProjectListComponent implements OnInit, OnDestroy {
 
     // 1. Đồng bộ filter state từ URL query params
     this.routeSubscription = this.route.queryParams.subscribe((params) => {
-      this.filterName = params['name'] || '';
-      this.selectedStatus = params['status'] || 'all';
-      this.selectedNetwork = params['network'] || 'all';
+      const filters = parseQueryParams(params as Record<string, string>);
+      this.filterName = filters.name ?? '';
+      this.selectedStatus = filters.status ?? 'all';
+      this.selectedNetwork = filters.network ?? 'all';
 
-      if (params['startDate'] && params['endDate']) {
-        this.dateRange = [new Date(params['startDate']), new Date(params['endDate'])];
+      if (filters.startDate && filters.endDate) {
+        this.dateRange = [new Date(filters.startDate), new Date(filters.endDate)];
       } else {
         this.dateRange = null;
       }
@@ -358,21 +360,23 @@ export class ProjectListComponent implements OnInit, OnDestroy {
   }
 
   hasActiveFilters(): boolean {
-    return !!this.filterName || this.selectedStatus !== 'all' || this.selectedNetwork !== 'all' || !!this.dateRange;
+    return hasActiveFilters({
+      name: this.filterName,
+      status: this.selectedStatus,
+      network: this.selectedNetwork,
+      startDate: this.dateRange?.[0]?.toISOString(),
+      endDate: this.dateRange?.[1]?.toISOString(),
+    });
   }
 
   updateUrlParams(): void {
-    const queryParams: any = {};
-
-    if (this.filterName) {
-      queryParams.name = this.filterName;
-    }
-    if (this.selectedStatus && this.selectedStatus !== 'all') {
-      queryParams.status = this.selectedStatus;
-    }
-    if (this.selectedNetwork && this.selectedNetwork !== 'all') {
-      queryParams.network = this.selectedNetwork;
-    }
+    const queryParams = buildQueryParams({
+      name: this.filterName,
+      status: this.selectedStatus,
+      network: this.selectedNetwork,
+      startDate: this.dateRange?.[0]?.toISOString().split('T')[0],
+      endDate: this.dateRange?.[1]?.toISOString().split('T')[0],
+    });
 
     void this.router.navigate([], {
       relativeTo: this.route,
@@ -424,19 +428,6 @@ export class ProjectListComponent implements OnInit, OnDestroy {
   }
 
   formatRole(role: ProjectRole): string {
-    switch (role) {
-      case 'Scrum_Master':
-        return 'Scrum Master';
-      case 'Product_Owner':
-        return 'Product Owner';
-      case 'Developer':
-        return 'Developer';
-      case 'QA':
-        return 'QA Engineer';
-      case 'Stakeholder':
-        return 'Stakeholder';
-      default:
-        return role || 'Non-member'; // If they joined public project but they aren't loaded or similar
-    }
+    return formatProjectRole(role);
   }
 }

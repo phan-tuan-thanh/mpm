@@ -14,6 +14,7 @@ import { FormsModule } from '@angular/forms';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { TooltipModule } from 'primeng/tooltip';
 import { StateGroup, ProjectState, WorkspaceStateTemplate } from '@mpm/shared-types';
+import { GROUP_ORDER, getGroupName, getGroupColor, getDefaultColor } from './states-tab.helpers';
 
 @Component({
   standalone: true,
@@ -307,13 +308,7 @@ export class StatesTabComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly messageService = inject(MessageService);
 
-  readonly groupOrder = [
-    StateGroup.BACKLOG,
-    StateGroup.UNSTARTED,
-    StateGroup.STARTED,
-    StateGroup.COMPLETED,
-    StateGroup.CANCELLED,
-  ];
+  readonly groupOrder = GROUP_ORDER;
 
   // Workspace templates (read-only section)
   readonly workspaceTemplates = signal<WorkspaceStateTemplate[]>([]);
@@ -450,56 +445,9 @@ export class StatesTabComponent implements OnInit {
     return this.statesForGroup(group).length;
   }
 
-  getGroupName(group: StateGroup): string {
-    switch (group) {
-      case StateGroup.BACKLOG:
-        return 'Backlog';
-      case StateGroup.UNSTARTED:
-        return 'Chưa bắt đầu';
-      case StateGroup.STARTED:
-        return 'Đang thực hiện';
-      case StateGroup.COMPLETED:
-        return 'Đã hoàn thành';
-      case StateGroup.CANCELLED:
-        return 'Đã hủy';
-      default:
-        return group;
-    }
-  }
-
-  getGroupColor(group: StateGroup): string {
-    switch (group) {
-      case StateGroup.BACKLOG:
-        return 'bg-gray-400';
-      case StateGroup.UNSTARTED:
-        return 'bg-amber-400';
-      case StateGroup.STARTED:
-        return 'bg-blue-500';
-      case StateGroup.COMPLETED:
-        return 'bg-green-500';
-      case StateGroup.CANCELLED:
-        return 'bg-red-400';
-      default:
-        return 'bg-gray-300';
-    }
-  }
-
-  getDefaultColor(group: StateGroup): string {
-    switch (group) {
-      case StateGroup.BACKLOG:
-        return '#9ca3af';
-      case StateGroup.UNSTARTED:
-        return '#fbbf24';
-      case StateGroup.STARTED:
-        return '#3b82f6';
-      case StateGroup.COMPLETED:
-        return '#22c55e';
-      case StateGroup.CANCELLED:
-        return '#f87171';
-      default:
-        return '#6b7280';
-    }
-  }
+  getGroupName = getGroupName;
+  getGroupColor = getGroupColor;
+  getDefaultColor = getDefaultColor;
 
   onDrop(event: CdkDragDrop<ProjectState[]>, group: StateGroup): void {
     if (event.previousIndex === event.currentIndex || this.isReadOnly()) return;

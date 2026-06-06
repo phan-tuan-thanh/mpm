@@ -15,12 +15,8 @@ import { CurrentUser, RequestUser } from '../../auth/decorators/current-user.dec
 import { ProjectRoles } from '../../auth/decorators/project-roles.decorator';
 import { Roles } from '../../auth/decorators/roles.decorator';
 import { Project } from '../../project/entities/project.entity';
-import {
-  ModuleService,
-  CreateModuleDto,
-  UpdateModuleDto,
-  ModuleQueryDto,
-} from './module.service';
+import { ModuleService } from './module.service';
+import type { CreateModuleDto, UpdateModuleDto, ModuleQueryDto } from './module.dto';
 
 // ─── Project-Scoped Module Controller ───────────────────────────────────────
 

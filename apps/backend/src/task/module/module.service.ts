@@ -8,45 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Module as ModuleEntity, ModuleScope, ModuleStatusType } from '../entities/module.entity';
 import { TaskModule } from '../entities/task-module.entity';
-
-export interface ModuleQueryDto {
-  status?: ModuleStatusType;
-  scope?: 'workspace' | 'project' | 'all';
-}
-
-export interface CreateModuleDto {
-  name: string;
-  description?: string | null;
-  status?: ModuleStatusType;
-  startDate?: string | null;
-  endDate?: string | null;
-}
-
-export interface UpdateModuleDto {
-  name?: string;
-  description?: string | null;
-  status?: ModuleStatusType;
-  startDate?: string | null;
-  endDate?: string | null;
-}
-
-export interface ModuleWithProgress {
-  id: string;
-  scope: ModuleScope;
-  workspaceId: string;
-  projectId: string | null;
-  name: string;
-  description: string | null;
-  status: ModuleStatusType;
-  startDate: string | null;
-  endDate: string | null;
-  createdBy: string;
-  createdAt: Date;
-  updatedAt: Date;
-  taskCount: number;
-  completedCount: number;
-  progress: number;
-}
+import type { ModuleQueryDto, CreateModuleDto, UpdateModuleDto, ModuleWithProgress } from './module.dto';
 
 @Injectable()
 export class ModuleService {
