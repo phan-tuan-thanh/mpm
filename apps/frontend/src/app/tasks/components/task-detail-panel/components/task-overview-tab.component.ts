@@ -160,7 +160,7 @@ const PRIORITY_OPTIONS = [
       </div>
       <div class="mt-4 px-2">
         <label class="text-xs text-gray-500 uppercase tracking-wide mb-2 block">Mô tả</label>
-        <app-rich-text-editor toolbarMode="bubble" [(ngModel)]="editDescription" placeholder="Thêm mô tả..."
+        <app-rich-text-editor [(ngModel)]="editDescription" placeholder="Thêm mô tả..."
           (blurEditor)="onBlurDescription()"></app-rich-text-editor>
       </div>
       <app-task-attachments [projectId]="projectId" [taskId]="taskVal.id" [attachments]="taskVal.attachments ?? []"

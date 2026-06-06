@@ -7,6 +7,7 @@ import {
   OnDestroy,
   ChangeDetectionStrategy,
   signal,
+  computed,
   forwardRef,
   NgZone,
   inject,
@@ -20,6 +21,7 @@ import type { TiptapDoc } from '@mpm/shared-types';
 import { type RteFeatures, type ToolbarMode, RTE_FULL } from './rte-features';
 import { buildExtensions } from './rte-extensions';
 import type { MentionItem } from './rte-mention';
+import { EditorPreferenceService } from '../../services/editor-preference.service';
 
 @Component({
   selector: 'app-rich-text-editor',
@@ -38,13 +40,17 @@ import type { MentionItem } from './rte-mention';
 })
 export class RichTextEditorComponent implements ControlValueAccessor, OnInit, OnDestroy {
   @Input() placeholder = '';
-  @Input() toolbarMode: ToolbarMode = 'full';
+  @Input() set toolbarMode(v: ToolbarMode | undefined) { this._toolbarOverride.set(v); }
   @Input() features: RteFeatures = RTE_FULL;
   @Input() uploadImage?: (file: File) => Observable<string>;
   @Input() mentionSearch?: (query: string) => Promise<MentionItem[]>;
   @Output() blurEditor = new EventEmitter<void>();
 
   editor!: Editor;
+
+  private readonly prefService = inject(EditorPreferenceService);
+  private readonly _toolbarOverride = signal<ToolbarMode | undefined>(undefined);
+  protected readonly effectiveMode = computed(() => this._toolbarOverride() ?? this.prefService.toolbarMode());
 
   protected readonly hasSelection = signal(false);
   protected readonly bubbleTop = signal(0);

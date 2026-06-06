@@ -1,6 +1,6 @@
 <div class="rte-wrapper">
   @if (editor) {
-    @switch (toolbarMode) {
+    @switch (effectiveMode()) {
 
       @case ('full') {
         <div class="rte-toolbar rte-toolbar--full">

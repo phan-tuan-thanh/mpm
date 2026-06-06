@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { LayoutService } from '../../services/layout.service';
 import { AuthService } from '../../../auth/services/auth.service';
+import { EditorPreferenceService } from '../../../shared/services/editor-preference.service';
+import type { ToolbarMode } from '../../../shared/components/rich-text-editor/rte-features';
 
 @Component({
   standalone: true,
@@ -67,6 +69,26 @@ import { AuthService } from '../../../auth/services/auth.service';
                 <p class="text-xs text-gray-400 dark:text-surface-400 mt-0.5">{{ userRole() }}</p>
               </div>
 
+              <!-- Editor toolbar preference -->
+              <div class="px-4 py-3 border-b border-[#f1f5f9] dark:border-surface-800">
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Kiểu soạn thảo</p>
+                <div class="flex gap-1">
+                  @for (opt of editorModes; track opt.mode) {
+                    <button
+                      type="button"
+                      (click)="setEditorMode(opt.mode)"
+                      [class]="editorPref.toolbarMode() === opt.mode
+                        ? 'flex-1 flex flex-col items-center gap-0.5 py-2 px-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300'
+                        : 'flex-1 flex flex-col items-center gap-0.5 py-2 px-1 rounded-lg border border-transparent hover:bg-gray-50 dark:hover:bg-surface-800 text-gray-500 dark:text-surface-400'"
+                      [title]="opt.desc"
+                    >
+                      <i [class]="opt.icon + ' text-base'"></i>
+                      <span class="text-[10px] font-medium leading-tight">{{ opt.label }}</span>
+                    </button>
+                  }
+                </div>
+              </div>
+
               <div class="py-1">
                 @if (authService.currentUser()?.systemRole === 'Admin') {
                   <button
@@ -105,7 +127,18 @@ import { AuthService } from '../../../auth/services/auth.service';
 export class TopbarComponent {
   readonly layoutService = inject(LayoutService);
   readonly authService = inject(AuthService);
+  readonly editorPref = inject(EditorPreferenceService);
   private readonly router = inject(Router);
+
+  readonly editorModes: { mode: ToolbarMode; label: string; icon: string; desc: string }[] = [
+    { mode: 'bubble', label: 'Bubble', icon: 'pi pi-comment', desc: 'Formatting hiện khi bôi chọn (Notion-like)' },
+    { mode: 'full',   label: 'Full',   icon: 'pi pi-bars',    desc: 'Toolbar đầy đủ cố định (Google Docs-like)' },
+    { mode: 'overflow', label: 'Compact', icon: 'pi pi-ellipsis-h', desc: 'Toolbar gọn, nút ít dùng ẩn vào "..."' },
+  ];
+
+  setEditorMode(mode: ToolbarMode): void {
+    this.editorPref.set(mode);
+  }
 
   readonly isProfileMenuOpen = signal<boolean>(false);
 
