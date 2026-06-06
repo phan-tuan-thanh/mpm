@@ -38,7 +38,11 @@ interface TaskNode { task: TaskListItem; children: TaskListItem[] }
     }
 
     ::ng-deep .cdk-drag-placeholder {
-      display: none !important;
+      position: absolute !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+      width: 100% !important;
+      height: 38px !important;
     }
 
     ::ng-deep .drag-placeholder-ghost {
@@ -163,8 +167,8 @@ interface TaskNode { task: TaskListItem; children: TaskListItem[] }
                     <span class="text-sm text-gray-800 dark:text-surface-100 font-medium truncate flex-1">{{ node.task.title }}</span>
                   </div>
 
-                  <!-- Custom drop placeholder (hidden) -->
-                  <div *cdkDragPlaceholder class="hidden"></div>
+                  <!-- Custom drop placeholder (hidden but absolute) -->
+                  <div *cdkDragPlaceholder></div>
                 </div>
               }
             </div>

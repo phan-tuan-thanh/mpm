@@ -14,6 +14,7 @@ import { CurrentUser, RequestUser } from '../../auth/decorators/current-user.dec
 import { ProjectRoles } from '../../auth/decorators/project-roles.decorator';
 import { LabelService } from './label.service';
 import { Project } from '../../project/entities/project.entity';
+import { resolveWorkspaceId } from './project-resolver.utils';
 
 @Controller('api/projects/:projectId/labels')
 export class LabelController {
@@ -23,21 +24,10 @@ export class LabelController {
     private readonly projectRepo: Repository<Project>,
   ) {}
 
-  /**
-   * Resolve workspaceId từ project entity
-   */
-  private async resolveWorkspaceId(projectId: string): Promise<string | null> {
-    const project = await this.projectRepo.findOne({
-      where: { id: projectId },
-      select: ['id', 'workspaceId'],
-    });
-    return project?.workspaceId ?? null;
-  }
-
   @Get()
   @ProjectRoles('Scrum_Master', 'Product_Owner', 'Developer', 'QA', 'Stakeholder')
   async findAll(@Param('projectId', ParseUUIDPipe) projectId: string) {
-    const workspaceId = await this.resolveWorkspaceId(projectId);
+    const workspaceId = await resolveWorkspaceId(this.projectRepo, projectId);
     if (workspaceId) {
       return this.labelService.findAllForProject(projectId, workspaceId);
     }
@@ -52,7 +42,7 @@ export class LabelController {
     @CurrentUser() user: RequestUser,
     @Body() body: { name: string; color: string; isExclusive?: boolean; description?: string | null },
   ) {
-    const workspaceId = await this.resolveWorkspaceId(projectId);
+    const workspaceId = await resolveWorkspaceId(this.projectRepo, projectId);
     return this.labelService.create(body, {
       scope: 'project',
       workspaceId,

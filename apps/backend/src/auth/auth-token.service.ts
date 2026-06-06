@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  Logger,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import type { JwtPayload } from '@mpm/shared-types';
@@ -12,27 +8,16 @@ import { UserProvisionService } from './user-provision.service';
 import { User } from './entities/user.entity';
 import { AuthEvent } from './constants/auth-events';
 import type { AuthResult } from './auth.service';
-
+import { logAuditEvent, handleTokenTheft, handleSecurityEvent } from './auth-token-operations.utils';
+import { verifyActiveSession, rotateSessionTokens, checkBlacklistedToken } from './auth-token-session.utils';
 /** TTL cho refresh token blacklist (7 ngày tính bằng giây) */
 const REFRESH_TOKEN_TTL_SECONDS = 604_800;
-
 /**
  * Auth Token Service — quản lý token refresh, theft detection và security events
- *
- * Chịu trách nhiệm:
- * - Token refresh: rotation, blacklist old token
- * - Token theft detection: full session invalidation
- * - Security event handling: forced-logout within 5 seconds
- *
- * Dependencies:
- * - TokenService: sign/verify JWT tokens
- * - SessionService: quản lý sessions trong Redis
- * - UserProvisionService: load project roles
  */
 @Injectable()
 export class AuthTokenService {
   private readonly logger = new Logger(AuthTokenService.name);
-
   constructor(
     private readonly tokenService: TokenService,
     private readonly sessionService: SessionService,
@@ -41,24 +26,8 @@ export class AuthTokenService {
     private readonly userRepository: Repository<User>,
   ) {}
 
-  // ─── Token Refresh ────────────────────────────────────────────────────────────
-
   /**
    * Refresh tokens — token rotation
-   *
-   * Flow:
-   * 1. Hash refresh token và check blacklist
-   * 2. Nếu token đã bị blacklist → token theft detected → full invalidation
-   * 3. Verify refresh token hợp lệ (tìm session chứa hash)
-   * 4. Generate new token pair
-   * 5. Blacklist old refresh token
-   * 6. Update session với new refresh token hash
-   *
-   * @param refreshToken - Refresh token từ httpOnly cookie
-   * @param ipAddress - IP address hiện tại
-   * @param deviceInfo - Device info hiện tại
-   * @returns AuthResult mới
-   * @throws UnauthorizedException nếu token không hợp lệ hoặc bị revoke
    */
   async refreshTokens(
     refreshToken: string,
@@ -67,118 +36,57 @@ export class AuthTokenService {
   ): Promise<AuthResult> {
     const tokenHash = this.tokenService.hashToken(refreshToken);
 
-    // Check blacklist — nếu token đã bị revoke → token theft
-    const isBlacklisted = await this.sessionService.isRefreshTokenBlacklisted(tokenHash);
-    if (isBlacklisted) {
-      this.logger.warn('Revoked refresh token reuse detected');
+    await checkBlacklistedToken(
+      this.sessionService,
+      tokenHash,
+      this.logger,
+      (userId) => this.handleTokenTheft(userId, ipAddress, deviceInfo),
+    );
 
-      const userId = await this.sessionService.findUserByRefreshTokenHash(tokenHash);
-      if (userId) {
-        await this.handleTokenTheft(userId, ipAddress, deviceInfo);
-      }
-
-      throw new UnauthorizedException('TOKEN_INVALID');
-    }
-
-    // Tìm session chứa refresh token hash này
-    const sessionInfo = await this.findSessionByRefreshTokenHash(tokenHash);
-    if (!sessionInfo) {
-      throw new UnauthorizedException('TOKEN_INVALID');
-    }
-
-    const { userId, sessionId } = sessionInfo;
-
-    // Check forced-logout
-    const isForceLoggedOut = await this.sessionService.isForceLoggedOut(userId);
-    if (isForceLoggedOut) {
-      throw new UnauthorizedException('SESSION_REVOKED');
-    }
-
-    // Load user data cho JWT payload
+    const { userId, sessionId } = await verifyActiveSession(this.sessionService, tokenHash);
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user || !user.isActive) {
       throw new UnauthorizedException('TOKEN_INVALID');
     }
-
-    // Load project roles
     const projectRoles = await this.userProvisionService.loadProjectRoles(userId);
-
-    // Generate new token pair
     const jwtPayload: Omit<JwtPayload, 'iat' | 'exp'> = {
       sub: user.id,
       email: user.email,
       systemRole: user.systemRole,
       projectRoles,
     };
-
-    const newAccessToken = this.tokenService.signAccessToken(jwtPayload);
-    const { token: newRefreshToken, hash: newRefreshTokenHash } =
-      this.tokenService.generateRefreshToken();
-
-    // Blacklist old refresh token
-    await this.sessionService.blacklistRefreshToken(tokenHash, REFRESH_TOKEN_TTL_SECONDS);
-
-    // Update session với new refresh token hash
-    await this.updateSessionRefreshToken(userId, sessionId, newRefreshTokenHash);
-
-    // Update last activity
-    await this.sessionService.updateLastActivity(userId, sessionId);
-
-    // Audit log
-    this.logAuditEvent(AuthEvent.TOKEN_REFRESH, userId, ipAddress, deviceInfo, {
+    const tokens = await rotateSessionTokens(
+      this.sessionService,
+      this.tokenService,
+      userId,
+      sessionId,
+      tokenHash,
+      jwtPayload,
+      REFRESH_TOKEN_TTL_SECONDS,
+    );
+    logAuditEvent(this.logger, AuthEvent.TOKEN_REFRESH, userId, ipAddress, deviceInfo, {
       sessionId,
     });
-
     return {
-      accessToken: newAccessToken,
-      refreshToken: newRefreshToken,
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
       sessionId,
     };
   }
 
-  // ─── Token Theft Handling ─────────────────────────────────────────────────────
-
   /**
    * Xử lý token theft — full session invalidation
-   *
-   * Khi phát hiện refresh token đã revoke bị reuse:
-   * 1. Revoke tất cả sessions của user
-   * 2. Thêm user vào forced-logout list
-   * 3. Ghi audit log
-   *
-   * @param userId - ID người dùng bị ảnh hưởng
-   * @param ipAddress - IP address của request gây ra detection
-   * @param deviceInfo - Device info
    */
   async handleTokenTheft(
     userId: string,
     ipAddress: string,
     deviceInfo: string,
   ): Promise<void> {
-    this.logger.warn(`Token theft detected for user ${userId}`);
-
-    await this.sessionService.revokeAllSessions(userId);
-    await this.sessionService.addToForcedLogout(userId);
-
-    this.logAuditEvent(AuthEvent.TOKEN_THEFT_DETECTED, userId, ipAddress, deviceInfo, {
-      action: 'full_session_invalidation',
-    });
+    await handleTokenTheft(this.sessionService, this.logger, userId, ipAddress, deviceInfo);
   }
-
-  // ─── Security Event Handling ──────────────────────────────────────────────────
 
   /**
    * Xử lý security event — full session invalidation within 5 seconds
-   *
-   * Triggered bởi:
-   * - Password change từ Authentik
-   * - Admin disable account
-   * - Bất kỳ security event nào yêu cầu invalidation
-   *
-   * @param userId - ID người dùng
-   * @param eventType - Loại event (từ AuthEvent constants)
-   * @param ipAddress - IP address (optional, có thể là system event)
-   * @param deviceInfo - Device info (optional)
    */
   async handleSecurityEvent(
     userId: string,
@@ -186,85 +94,6 @@ export class AuthTokenService {
     ipAddress: string = 'system',
     deviceInfo: string = 'system',
   ): Promise<void> {
-    this.logger.warn(
-      `Security event "${eventType}" for user ${userId} — initiating full invalidation`,
-    );
-
-    await this.sessionService.revokeAllSessions(userId);
-    await this.sessionService.addToForcedLogout(userId);
-
-    this.logAuditEvent(eventType, userId, ipAddress, deviceInfo, {
-      action: 'security_event_invalidation',
-      trigger: eventType,
-    });
-  }
-
-  // ─── Private Helpers ──────────────────────────────────────────────────────────
-
-  /**
-   * Tìm session chứa refresh token hash
-   *
-   * Scan tất cả sessions để tìm session có refreshTokenHash khớp.
-   * Trả về userId và sessionId nếu tìm thấy.
-   */
-  private async findSessionByRefreshTokenHash(
-    tokenHash: string,
-  ): Promise<{ userId: string; sessionId: string } | null> {
-    const userId = await this.sessionService.findUserByRefreshTokenHash(tokenHash);
-    if (!userId) {
-      return null;
-    }
-
-    const sessions = await this.sessionService.listSessions(userId);
-    const session = sessions.find((s) => s.refreshTokenHash === tokenHash);
-
-    if (!session) {
-      return null;
-    }
-
-    return { userId, sessionId: session.sessionId };
-  }
-
-  /**
-   * Update session với refresh token hash mới (sau rotation)
-   */
-  private async updateSessionRefreshToken(
-    userId: string,
-    sessionId: string,
-    newRefreshTokenHash: string,
-  ): Promise<void> {
-    const session = await this.sessionService.getSession(userId, sessionId);
-    if (session) {
-      await this.sessionService.updateRefreshTokenHash(
-        userId,
-        sessionId,
-        session.refreshTokenHash,
-        newRefreshTokenHash,
-      );
-    }
-  }
-
-  /**
-   * Ghi audit log event
-   *
-   * Non-blocking — sử dụng Logger thay vì AuditService (sẽ wire sau).
-   * Không throw exception nếu ghi log thất bại.
-   */
-  private logAuditEvent(
-    eventType: string,
-    userId: string,
-    ipAddress: string,
-    deviceInfo: string,
-    metadata: Record<string, unknown>,
-  ): void {
-    this.logger.log({
-      message: `[AUDIT] ${eventType}`,
-      eventType,
-      userId,
-      ipAddress,
-      userAgent: deviceInfo,
-      timestamp: new Date().toISOString(),
-      metadata,
-    });
+    await handleSecurityEvent(this.sessionService, this.logger, userId, eventType, ipAddress, deviceInfo);
   }
 }

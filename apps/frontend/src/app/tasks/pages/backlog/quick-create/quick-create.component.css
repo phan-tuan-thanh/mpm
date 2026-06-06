@@ -1,0 +1,102 @@
+/* ── Dialog overrides ── */
+:host ::ng-deep .qc-dialog .p-dialog-content {
+  padding: 0 !important;
+  border-radius: 14px !important;
+  overflow: hidden !important;
+}
+:host ::ng-deep .qc-dialog .p-dialog {
+  border-radius: 14px !important;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.15) !important;
+}
+
+/* ── Pill buttons ── */
+.meta-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  border: 1px solid var(--surface-200, #e5e7eb);
+  border-radius: 6px;
+  padding: 4px 9px;
+  cursor: pointer;
+  user-select: none;
+  background: transparent;
+  color: var(--text-color-secondary, #6b7280);
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+  white-space: nowrap;
+}
+.meta-pill:hover {
+  background: var(--surface-50, #f9fafb);
+  border-color: var(--surface-300, #d1d5db);
+  color: var(--text-color, #374151);
+}
+.meta-pill.active {
+  background: var(--surface-50, #f9fafb);
+  border-color: var(--surface-300, #d1d5db);
+  color: var(--text-color, #374151);
+}
+
+/* ── Type pill (in header) ── */
+.type-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid var(--surface-200, #e5e7eb);
+  border-radius: 6px;
+  padding: 3px 8px;
+  cursor: pointer;
+  user-select: none;
+  background: var(--surface-50, #f9fafb);
+  transition: background 0.12s;
+}
+.type-pill:hover { background: var(--surface-100, #f3f4f6); }
+
+/* ── Assignee avatar ── */
+.avatar-xs {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #6366f1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  color: #fff;
+  font-weight: 700;
+  flex-shrink: 0;
+  border: 1.5px solid #fff;
+}
+
+/* ── Popover items ── */
+.pop-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 12px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--text-color);
+  transition: background 0.12s;
+  text-align: left;
+}
+.pop-item:hover { background: var(--surface-50, #f9fafb); }
+.pop-item.selected { background: #eef2ff; color: #4f46e5; }
+
+/* ── Metadata separator ── */
+.meta-divider {
+  width: 1px;
+  height: 14px;
+  background: var(--surface-200, #e5e7eb);
+  flex-shrink: 0;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }

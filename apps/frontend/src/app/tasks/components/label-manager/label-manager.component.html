@@ -1,0 +1,419 @@
+<p-dialog
+  [(visible)]="visible"
+  header="Quản lý Labels"
+  [modal]="true"
+  [style]="{ width: '550px' }"
+  (onHide)="visible = false"
+>
+  <p-tabs [value]="'project'" class="label-manager-tabs">
+    <p-tablist>
+      <p-tab value="workspace">
+        <i class="pi pi-globe mr-1.5"></i> Workspace
+      </p-tab>
+      <p-tab value="project">
+        <i class="pi pi-folder mr-1.5"></i> Project
+      </p-tab>
+    </p-tablist>
+
+    <p-tabpanels>
+
+      <!-- ════ Workspace Labels Tab ════ -->
+      <p-tabpanel value="workspace">
+        <div class="pt-3">
+          <!-- List -->
+          <div class="list-scroll mb-4">
+            @if (workspaceLabels().length === 0) {
+              <div class="empty-state">
+                <i class="pi pi-globe" style="font-size: 28px; opacity: 0.25"></i>
+                <span style="font-size: 13px">Chưa có workspace label nào</span>
+                @if (isAdmin()) {
+                  <span style="font-size: 12px; opacity: 0.6">Tạo label bên dưới để bắt đầu</span>
+                }
+              </div>
+            }
+            @for (label of workspaceLabels(); track label.id) {
+              <div class="label-row">
+                <i class="pi pi-globe" style="font-size: 11px; color: #6366f1; flex-shrink: 0"></i>
+
+                @if (isAdmin() && wsEditingId() === label.id) {
+                  <!-- Inline edit -->
+                  <div class="inline-edit-group flex-wrap gap-y-2">
+                    <div class="color-preview-swatch" [style.background]="'#' + wsEditColor" (click)="wsColorPicker.toggle($event)"></div>
+                    <p-colorpicker #wsColorPicker [(ngModel)]="wsEditColor" [inline]="false" appendTo="body" />
+                    <input pInputText class="flex-1" style="height: 30px; font-size: 13px; padding: 0 8px"
+                      [(ngModel)]="wsEditName"
+                      (keydown.enter)="saveWsEdit(label)"
+                      (keydown.escape)="cancelWsEdit()"
+                      placeholder="Tên label..." />
+                    @if (isScoped(wsEditName)) {
+                      <div class="flex items-center gap-1.5 ml-2 select-none">
+                        <p-checkbox [(ngModel)]="wsEditIsExclusive" [binary]="true" id="wsEditExclusiveCheck" />
+                        <label for="wsEditExclusiveCheck" class="text-xs text-gray-500 font-medium cursor-pointer">Exclusive</label>
+                      </div>
+                    }
+                    <div class="w-full mt-1.5">
+                      <input pInputText style="height: 28px; font-size: 12px; padding: 0 8px; width: 100%"
+                        [(ngModel)]="wsEditDescription"
+                        placeholder="Mô tả nhãn (tùy chọn)..."
+                        (keydown.enter)="saveWsEdit(label)"
+                        (keydown.escape)="cancelWsEdit()" />
+                    </div>
+                  </div>
+                  <button class="icon-btn success" pTooltip="Lưu" (click)="saveWsEdit(label)">
+                    <i class="pi pi-check"></i>
+                  </button>
+                  <button class="icon-btn" pTooltip="Hủy" (click)="cancelWsEdit()">
+                    <i class="pi pi-times"></i>
+                  </button>
+                } @else {
+                  <!-- Display mode -->
+                  <div class="flex-1 flex items-center min-w-0 mr-2">
+                    @if (isScoped(label.name)) {
+                      <span class="inline-flex items-center text-xs rounded-full overflow-hidden border border-surface-200 dark:border-surface-700 font-medium"
+                            [pTooltip]="label.description ? label.description + ' (' + (label.isExclusive !== false ? 'Exclusive' : 'Multi-select') + ')' : (label.isExclusive !== false ? 'Exclusive' : 'Multi-select')">
+                        <span class="px-2 py-0.5" 
+                              [style.background]="layoutService.getAdaptiveColor(getScopeColor(label.name, label.color))" 
+                              [style.color]="layoutService.getTextColor(layoutService.getAdaptiveColor(getScopeColor(label.name, label.color)))">
+                          {{ getScope(label.name) }}
+                        </span>
+                        <span class="px-2 py-0.5" 
+                              [style.background]="layoutService.getAdaptiveColor(label.color) + '18'" 
+                              [style.color]="layoutService.getAdaptiveColor(label.color)">
+                          {{ getValue(label.name) }}
+                        </span>
+                        @if (label.isExclusive === false) {
+                          <i class="pi pi-clone text-[9px] px-1 text-gray-400" pTooltip="Multi-select allowed"></i>
+                        }
+                      </span>
+                    } @else {
+                      <span class="text-xs px-2 py-0.5 rounded-full font-medium"
+                            [style.background]="layoutService.getAdaptiveColor(label.color) + '22'" 
+                            [style.color]="layoutService.getAdaptiveColor(label.color)"
+                            [pTooltip]="label.description || label.name">
+                        {{ label.name }}
+                      </span>
+                    }
+                  </div>
+                  <span class="label-count">{{ label.taskCount }} tasks</span>
+                  @if (isAdmin()) {
+                    <button class="icon-btn" pTooltip="Sửa" (click)="startWsEdit(label)">
+                      <i class="pi pi-pencil"></i>
+                    </button>
+                    <button class="icon-btn danger" pTooltip="Xóa" (click)="confirmDeleteWsLabel(label)">
+                      <i class="pi pi-trash"></i>
+                    </button>
+                  }
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Create (admin only) -->
+          @if (isAdmin()) {
+            <div class="mt-4">
+              <div class="section-label">Thêm workspace label</div>
+              
+              <div class="flex flex-col gap-2 mb-2.5">
+                @if (isScoped(wsNewName)) {
+                  <!-- Checkbox for Exclusive -->
+                  <div class="flex items-center gap-2 select-none mb-1">
+                    <p-checkbox [(ngModel)]="wsIsExclusive" [binary]="true" id="wsNewExclusiveCheck" />
+                    <label for="wsNewExclusiveCheck" class="text-xs text-gray-600 font-medium cursor-pointer">
+                      Chỉ cho phép chọn 1 label trong scope này trên mỗi task
+                    </label>
+                  </div>
+
+                  <!-- Theme Selector -->
+                  <div class="flex items-center gap-1.5 select-none mb-1">
+                    <span class="text-[11px] text-gray-400 font-bold mr-1 uppercase">Bộ Preset:</span>
+                    @for (theme of themes; track theme.id) {
+                      <button 
+                        class="text-[10px] px-2 py-0.5 rounded border transition-colors cursor-pointer font-medium"
+                        [class.bg-indigo-50]="selectedThemeId() === theme.id"
+                        [class.border-indigo-600]="selectedThemeId() === theme.id"
+                        [class.text-indigo-700]="selectedThemeId() === theme.id"
+                        [class.bg-white]="selectedThemeId() !== theme.id"
+                        [class.border-gray-200]="selectedThemeId() !== theme.id"
+                        [class.text-gray-600]="selectedThemeId() !== theme.id"
+                        [class.dark:bg-surface-800]="selectedThemeId() !== theme.id"
+                        (click)="selectedThemeId.set(theme.id)"
+                      >
+                        {{ theme.name }}
+                      </button>
+                    }
+                  </div>
+
+                  <!-- Color Pair Presets -->
+                  <div class="flex items-center gap-2 flex-wrap">
+                    @for (pair of currentPresets(); track pair.label) {
+                      <button
+                        class="w-12 h-6 rounded-full border transition-all duration-150 flex overflow-hidden cursor-pointer hover:scale-105"
+                        [style.border-color]="isPairSelected(pair, true) ? 'var(--primary-color, #4f46e5)' : 'rgba(0,0,0,0.08)'"
+                        [style.box-shadow]="isPairSelected(pair, true) ? '0 0 0 2px rgba(79, 70, 229, 0.2)' : 'none'"
+                        (click)="selectColorPair(pair, true)"
+                        [pTooltip]="pair.label"
+                      >
+                        <span class="w-1/2 h-full" [style.background-color]="'#' + pair.scope"></span>
+                        <span class="w-1/2 h-full" [style.background-color]="'#' + pair.value"></span>
+                      </button>
+                    }
+                    <div class="w-px h-4 bg-gray-200 mx-1"></div>
+                    <!-- Custom picker trigger -->
+                    <div class="w-6 h-6 rounded-full border border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:bg-gray-50 relative"
+                      pTooltip="Màu tùy chỉnh" (click)="wsNewColorPicker.toggle($event)">
+                      <i class="pi pi-palette text-[11px] text-gray-500"></i>
+                      <p-colorpicker #wsNewColorPicker [(ngModel)]="wsNewColor" [inline]="false" appendTo="body" />
+                    </div>
+                  </div>
+                } @else {
+                  <!-- Color Presets -->
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    @for (color of colorPresets; track color) {
+                      <button
+                        class="w-6 h-6 rounded-full border transition-all duration-150 flex items-center justify-center cursor-pointer hover:scale-110"
+                        [style.background-color]="'#' + color"
+                        [style.border-color]="color === wsNewColor ? 'var(--primary-color, #4f46e5)' : 'rgba(0,0,0,0.08)'"
+                        [style.box-shadow]="color === wsNewColor ? '0 0 0 2px rgba(79, 70, 229, 0.2)' : 'none'"
+                        (click)="wsNewColor = color"
+                        pTooltip="Chọn màu"
+                      >
+                        @if (color === wsNewColor) {
+                          <i class="pi pi-check text-[10px] text-white"></i>
+                        }
+                      </button>
+                    }
+                    <div class="w-px h-4 bg-gray-200 mx-1"></div>
+                    <!-- Custom picker trigger -->
+                    <div class="w-6 h-6 rounded-full border border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:bg-gray-50 relative"
+                      pTooltip="Màu tùy chỉnh" (click)="wsNewColorPicker.toggle($event)">
+                      <i class="pi pi-palette text-[11px] text-gray-500"></i>
+                      <p-colorpicker #wsNewColorPicker [(ngModel)]="wsNewColor" [inline]="false" appendTo="body" />
+                    </div>
+                  </div>
+                }
+              </div>
+
+              <div class="flex flex-col gap-2 mt-2">
+                <div class="create-form">
+                  <div class="color-preview-swatch" [style.background]="'#' + wsNewColor" pTooltip="Màu đang chọn"></div>
+                  <input pInputText class="flex-1" style="height: 32px; font-size: 13px; padding: 0 8px; background: transparent; border: none; box-shadow: none"
+                    placeholder="Tên label..."
+                    [(ngModel)]="wsNewName"
+                    (keydown.enter)="wsNewName.trim() && createWsLabel()"
+                  />
+                  <button pButton label="Thêm" size="small"
+                    (click)="createWsLabel()"
+                    [disabled]="!wsNewName.trim()"
+                    style="height: 30px; font-size: 12px; padding: 0 14px"
+                  ></button>
+                </div>
+                <input pInputText style="height: 28px; font-size: 12px; padding: 0 8px; border-radius: 6px"
+                  placeholder="Mô tả nhãn (tùy chọn)..."
+                  [(ngModel)]="wsNewDescription"
+                  (keydown.enter)="wsNewName.trim() && createWsLabel()"
+                />
+              </div>
+            </div>
+          }
+        </div>
+      </p-tabpanel>
+
+      <!-- ════ Project Labels Tab ════ -->
+      <p-tabpanel value="project">
+        <div class="pt-3">
+          <!-- List -->
+          <div class="list-scroll mb-4">
+            @if (projectLabels().length === 0) {
+              <div class="empty-state">
+                <i class="pi pi-folder" style="font-size: 28px; opacity: 0.25"></i>
+                <span style="font-size: 13px">Chưa có project label nào</span>
+                <span style="font-size: 12px; opacity: 0.6">Tạo label bên dưới để bắt đầu</span>
+              </div>
+            }
+            @for (label of projectLabels(); track label.id) {
+              <div class="label-row">
+                @if (editingId() === label.id) {
+                  <!-- Inline edit -->
+                  <div class="inline-edit-group flex-wrap gap-y-2">
+                    <div class="color-preview-swatch" [style.background]="'#' + editColor" (click)="editColorPicker.toggle($event)"></div>
+                    <p-colorpicker #editColorPicker [(ngModel)]="editColor" [inline]="false" appendTo="body" />
+                    <input pInputText class="flex-1" style="height: 30px; font-size: 13px; padding: 0 8px"
+                      [(ngModel)]="editName"
+                      (keydown.enter)="saveEdit(label)"
+                      (keydown.escape)="cancelEdit()"
+                      placeholder="Tên label..." />
+                    @if (isScoped(editName)) {
+                      <div class="flex items-center gap-1.5 ml-2 select-none">
+                        <p-checkbox [(ngModel)]="editIsExclusive" [binary]="true" id="editExclusiveCheck" />
+                        <label for="editExclusiveCheck" class="text-xs text-gray-500 font-medium cursor-pointer">Exclusive</label>
+                      </div>
+                    }
+                    <div class="w-full mt-1.5">
+                      <input pInputText style="height: 28px; font-size: 12px; padding: 0 8px; width: 100%"
+                        [(ngModel)]="editDescription"
+                        placeholder="Mô tả nhãn (tùy chọn)..."
+                        (keydown.enter)="saveEdit(label)"
+                        (keydown.escape)="cancelEdit()" />
+                    </div>
+                  </div>
+                  <button class="icon-btn success" pTooltip="Lưu" (click)="saveEdit(label)">
+                    <i class="pi pi-check"></i>
+                  </button>
+                  <button class="icon-btn" pTooltip="Hủy" (click)="cancelEdit()">
+                    <i class="pi pi-times"></i>
+                  </button>
+                } @else {
+                  <!-- Display mode -->
+                  <div class="flex-1 flex items-center min-w-0 mr-2">
+                    @if (isScoped(label.name)) {
+                      <span class="inline-flex items-center text-xs rounded-full overflow-hidden border border-surface-200 dark:border-surface-700 font-medium"
+                            [pTooltip]="label.description ? label.description + ' (' + (label.isExclusive !== false ? 'Exclusive' : 'Multi-select') + ')' : (label.isExclusive !== false ? 'Exclusive' : 'Multi-select')">
+                        <span class="px-2 py-0.5" 
+                              [style.background]="layoutService.getAdaptiveColor(getScopeColor(label.name, label.color))" 
+                              [style.color]="layoutService.getTextColor(layoutService.getAdaptiveColor(getScopeColor(label.name, label.color)))">
+                          {{ getScope(label.name) }}
+                        </span>
+                        <span class="px-2 py-0.5" 
+                              [style.background]="layoutService.getAdaptiveColor(label.color) + '18'" 
+                              [style.color]="layoutService.getAdaptiveColor(label.color)">
+                          {{ getValue(label.name) }}
+                        </span>
+                        @if (label.isExclusive === false) {
+                          <i class="pi pi-clone text-[9px] px-1 text-gray-400" pTooltip="Multi-select allowed"></i>
+                        }
+                      </span>
+                    } @else {
+                      <span class="text-xs px-2 py-0.5 rounded-full font-medium"
+                            [style.background]="layoutService.getAdaptiveColor(label.color) + '22'" 
+                            [style.color]="layoutService.getAdaptiveColor(label.color)"
+                            [pTooltip]="label.description || label.name">
+                        {{ label.name }}
+                      </span>
+                    }
+                  </div>
+                  <span class="label-count">{{ label.taskCount }} tasks</span>
+                  <button class="icon-btn" pTooltip="Sửa" (click)="startEdit(label)">
+                    <i class="pi pi-pencil"></i>
+                  </button>
+                  <button class="icon-btn danger" pTooltip="Xóa" (click)="confirmDelete(label)">
+                    <i class="pi pi-trash"></i>
+                  </button>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Create -->
+          <div class="mt-4">
+            <div class="section-label">Tạo label mới</div>
+            
+            <div class="flex flex-col gap-2 mb-2.5">
+              @if (isScoped(newName)) {
+                <!-- Checkbox for Exclusive -->
+                <div class="flex items-center gap-2 select-none mb-1">
+                  <p-checkbox [(ngModel)]="isExclusive" [binary]="true" id="newExclusiveCheck" />
+                  <label for="newExclusiveCheck" class="text-xs text-gray-600 font-medium cursor-pointer">
+                    Chỉ cho phép chọn 1 label trong scope này trên mỗi task
+                  </label>
+                </div>
+
+                <!-- Theme Selector -->
+                <div class="flex items-center gap-1.5 select-none mb-1">
+                  <span class="text-[11px] text-gray-400 font-bold mr-1 uppercase">Bộ Preset:</span>
+                  @for (theme of themes; track theme.id) {
+                    <button 
+                      class="text-[10px] px-2 py-0.5 rounded border transition-colors cursor-pointer font-medium"
+                      [class.bg-indigo-50]="selectedThemeId() === theme.id"
+                      [class.border-indigo-600]="selectedThemeId() === theme.id"
+                      [class.text-indigo-700]="selectedThemeId() === theme.id"
+                      [class.bg-white]="selectedThemeId() !== theme.id"
+                      [class.border-gray-200]="selectedThemeId() !== theme.id"
+                      [class.text-gray-600]="selectedThemeId() !== theme.id"
+                      [class.dark:bg-surface-800]="selectedThemeId() !== theme.id"
+                      (click)="selectedThemeId.set(theme.id)"
+                    >
+                      {{ theme.name }}
+                    </button>
+                  }
+                </div>
+
+                <!-- Color Pair Presets -->
+                <div class="flex items-center gap-2 flex-wrap">
+                  @for (pair of currentPresets(); track pair.label) {
+                    <button
+                      class="w-12 h-6 rounded-full border transition-all duration-150 flex overflow-hidden cursor-pointer hover:scale-105"
+                      [style.border-color]="isPairSelected(pair, false) ? 'var(--primary-color, #4f46e5)' : 'rgba(0,0,0,0.08)'"
+                      [style.box-shadow]="isPairSelected(pair, false) ? '0 0 0 2px rgba(79, 70, 229, 0.2)' : 'none'"
+                      (click)="selectColorPair(pair, false)"
+                      [pTooltip]="pair.label"
+                    >
+                      <span class="w-1/2 h-full" [style.background-color]="'#' + pair.scope"></span>
+                      <span class="w-1/2 h-full" [style.background-color]="'#' + pair.value"></span>
+                    </button>
+                  }
+                  <div class="w-px h-4 bg-gray-200 mx-1"></div>
+                  <!-- Custom picker trigger -->
+                  <div class="w-6 h-6 rounded-full border border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:bg-gray-50 relative"
+                    pTooltip="Màu tùy chỉnh" (click)="newColorPicker.toggle($event)">
+                    <i class="pi pi-palette text-[11px] text-gray-500"></i>
+                    <p-colorpicker #newColorPicker [(ngModel)]="newColor" [inline]="false" appendTo="body" />
+                  </div>
+                </div>
+              } @else {
+                <!-- Color Presets -->
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  @for (color of colorPresets; track color) {
+                    <button
+                      class="w-6 h-6 rounded-full border transition-all duration-150 flex items-center justify-center cursor-pointer hover:scale-110"
+                      [style.background-color]="'#' + color"
+                      [style.border-color]="color === newColor ? 'var(--primary-color, #4f46e5)' : 'rgba(0,0,0,0.08)'"
+                      [style.box-shadow]="color === newColor ? '0 0 0 2px rgba(79, 70, 229, 0.2)' : 'none'"
+                      (click)="newColor = color"
+                      pTooltip="Chọn màu"
+                    >
+                      @if (color === newColor) {
+                        <i class="pi pi-check text-[10px] text-white"></i>
+                      }
+                    </button>
+                  }
+                  <div class="w-px h-4 bg-gray-200 mx-1"></div>
+                  <!-- Custom picker trigger -->
+                  <div class="w-6 h-6 rounded-full border border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:bg-gray-50 relative"
+                    pTooltip="Màu tùy chỉnh" (click)="newColorPicker.toggle($event)">
+                    <i class="pi pi-palette text-[11px] text-gray-500"></i>
+                    <p-colorpicker #newColorPicker [(ngModel)]="newColor" [inline]="false" appendTo="body" />
+                  </div>
+                </div>
+              }
+            </div>
+
+            <div class="flex flex-col gap-2 mt-2">
+              <div class="create-form">
+                <div class="color-preview-swatch" [style.background]="'#' + newColor" pTooltip="Màu đang chọn"></div>
+                <input pInputText class="flex-1" style="height: 32px; font-size: 13px; padding: 0 8px; background: transparent; border: none; box-shadow: none"
+                  placeholder="Tên label..."
+                  [(ngModel)]="newName"
+                  (keydown.enter)="newName.trim() && createLabel()"
+                />
+                <button pButton label="Thêm" size="small"
+                  (click)="createLabel()"
+                  [disabled]="!newName.trim()"
+                  style="height: 30px; font-size: 12px; padding: 0 14px"
+                ></button>
+              </div>
+              <input pInputText style="height: 28px; font-size: 12px; padding: 0 8px; border-radius: 6px"
+                placeholder="Mô tả nhãn (tùy chọn)..."
+                [(ngModel)]="newDescription"
+                (keydown.enter)="newName.trim() && createLabel()"
+              />
+            </div>
+          </div>
+        </div>
+      </p-tabpanel>
+
+    </p-tabpanels>
+  </p-tabs>
+</p-dialog>
+
+<p-toast />
+<p-confirmDialog />
