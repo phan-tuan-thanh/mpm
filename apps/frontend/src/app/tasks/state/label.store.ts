@@ -38,26 +38,45 @@ export class LabelStore {
     });
   }
 
-  updateLabel(projectId: string, labelId: string, dto: UpdateLabelDto): void {
-    this.labelService
-      .updateLabel(projectId, labelId, dto)
-      .pipe(catchError(() => of(null)))
-      .subscribe((updated) => {
-        if (updated) {
-          this.labels.update((prev) =>
-            prev.map((l) => (l.id === labelId ? { ...l, ...updated } : l)),
-          );
-        }
-      });
+  updateLabel(projectId: string, labelId: string, dto: UpdateLabelDto): Promise<Label | null> {
+    return new Promise((resolve) => {
+      this.labelService
+        .updateLabel(projectId, labelId, dto)
+        .pipe(catchError(() => of(null)))
+        .subscribe((updated) => {
+          if (updated) {
+            this.labels.update((prev) => {
+              const scopeName = updated.name.includes('::') ? updated.name.split('::')[0].trim().toLowerCase() : null;
+              return prev.map((l) => {
+                if (l.id === labelId) {
+                  return { ...l, ...updated };
+                }
+                if (scopeName && l.name.includes('::') && l.name.split('::')[0].trim().toLowerCase() === scopeName) {
+                  return { ...l, isExclusive: updated.isExclusive };
+                }
+                return l;
+              });
+            });
+          }
+          resolve(updated);
+        });
+    });
   }
 
-  deleteLabel(projectId: string, labelId: string): void {
-    this.labelService
-      .deleteLabel(projectId, labelId)
-      .pipe(catchError(() => of(null)))
-      .subscribe(() => {
-        this.labels.update((prev) => prev.filter((l) => l.id !== labelId));
-      });
+  deleteLabel(projectId: string, labelId: string): Promise<boolean> {
+    return new Promise((resolve) => {
+      this.labelService
+        .deleteLabel(projectId, labelId)
+        .pipe(catchError(() => of(false)))
+        .subscribe((res) => {
+          if (res !== false) {
+            this.labels.update((prev) => prev.filter((l) => l.id !== labelId));
+            resolve(true);
+          } else {
+            resolve(false);
+          }
+        });
+    });
   }
 
   // --- Workspace-scoped label operations ---
@@ -87,27 +106,44 @@ export class LabelStore {
     });
   }
 
-  updateWorkspaceLabel(workspaceId: string, labelId: string, dto: UpdateLabelDto): void {
-    this.labelService
-      .updateWorkspaceLabel(workspaceId, labelId, dto)
-      .pipe(catchError(() => of(null)))
-      .subscribe((updated) => {
-        if (updated) {
-          this.labels.update((prev) =>
-            prev.map((l) => (l.id === labelId ? { ...l, ...updated } : l)),
-          );
-        }
-      });
+  updateWorkspaceLabel(workspaceId: string, labelId: string, dto: UpdateLabelDto): Promise<Label | null> {
+    return new Promise((resolve) => {
+      this.labelService
+        .updateWorkspaceLabel(workspaceId, labelId, dto)
+        .pipe(catchError(() => of(null)))
+        .subscribe((updated) => {
+          if (updated) {
+            this.labels.update((prev) => {
+              const scopeName = updated.name.includes('::') ? updated.name.split('::')[0].trim().toLowerCase() : null;
+              return prev.map((l) => {
+                if (l.id === labelId) {
+                  return { ...l, ...updated };
+                }
+                if (scopeName && l.name.includes('::') && l.name.split('::')[0].trim().toLowerCase() === scopeName) {
+                  return { ...l, isExclusive: updated.isExclusive };
+                }
+                return l;
+              });
+            });
+          }
+          resolve(updated);
+        });
+    });
   }
 
-  deleteWorkspaceLabel(workspaceId: string, labelId: string): void {
-    this.labelService
-      .deleteWorkspaceLabel(workspaceId, labelId)
-      .pipe(catchError(() => of(null)))
-      .subscribe((response) => {
-        if (response) {
-          this.labels.update((prev) => prev.filter((l) => l.id !== labelId));
-        }
-      });
+  deleteWorkspaceLabel(workspaceId: string, labelId: string): Promise<boolean> {
+    return new Promise((resolve) => {
+      this.labelService
+        .deleteWorkspaceLabel(workspaceId, labelId)
+        .pipe(catchError(() => of(null)))
+        .subscribe((response) => {
+          if (response) {
+            this.labels.update((prev) => prev.filter((l) => l.id !== labelId));
+            resolve(true);
+          } else {
+            resolve(false);
+          }
+        });
+    });
   }
 }

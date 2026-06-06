@@ -55,7 +55,7 @@ import { TaskOverviewTabComponent, TaskSubitemsTabComponent, TaskRelationsTabCom
               <p-tab value="activity">Activity</p-tab>
             </p-tablist>
             <p-tabpanels class="flex-1 overflow-y-auto">
-              <p-tabpanel value="overview"><app-task-overview-tab [projectId]="projectId()" [task]="task()" [stateOptions]="stateOptions()" [memberOptions]="memberOptions()" [moduleGroupOptions]="moduleGroupOptions()" (changeModules)="onModulesChange($event)" (saveField)="saveField($event.field, $event.value)" (saveDescription)="saveDescription($event)" (uploadAttachment)="onFileUpload($event)" (deleteAttachment)="deleteAttachment($event)" (addLink)="addLink($event)" (deleteLink)="deleteLink($event)" /></p-tabpanel>
+              <p-tabpanel value="overview"><app-task-overview-tab [projectId]="projectId()" [task]="task()" [stateOptions]="stateOptions()" [memberOptions]="memberOptions()" [moduleGroupOptions]="moduleGroupOptions()" [labelOptions]="labelOptions()" (changeModules)="onModulesChange($event)" (saveField)="saveField($event.field, $event.value)" (saveDescription)="saveDescription($event)" (uploadAttachment)="onFileUpload($event)" (deleteAttachment)="deleteAttachment($event)" (addLink)="addLink($event)" (deleteLink)="deleteLink($event)" /></p-tabpanel>
               <p-tabpanel value="subitems"><app-task-subitems-tab [task]="task()" (openChild)="openChildTask($event)" (addSubItem)="addSubItem($event)" /></p-tabpanel>
               <p-tabpanel value="relations"><app-task-relations-tab [task]="task()" (addRelation)="addRelation($event)" (deleteRelation)="deleteRelation($event)" /></p-tabpanel>
               <p-tabpanel value="activity"><app-task-activity-tab [activity]="activity()" [currentUserId]="currentUserId()" (submitComment)="submitComment($event)" (editComment)="editComment($event)" (deleteComment)="deleteComment($event)" /></p-tabpanel>
@@ -88,6 +88,7 @@ export class TaskDetailPanelComponent implements OnInit, OnDestroy {
 
   protected readonly stateOptions = computed(() => this.projectStore.currentProjectStates() ? Object.values(this.projectStore.currentProjectStates()!).flat() : []);
   protected readonly memberOptions = computed(() => this.projectStore.members());
+  protected readonly labelOptions = computed(() => this.taskStore.labels());
   protected projectId = computed(() => this.projectStore.currentProject()?.id ?? '');
 
   protected readonly moduleGroupOptions = computed(() => {
@@ -120,6 +121,7 @@ export class TaskDetailPanelComponent implements OnInit, OnDestroy {
         this.taskStore.loadTask(projectId, taskId);
         if (!this.projectStore.members().length) this.projectStore.loadMembers(projectId);
         if (!this.moduleStore.modules().length) this.moduleStore.loadModules(projectId);
+        this.taskStore.loadLabels(projectId);
       } else this.isVisible.set(false);
     });
   }

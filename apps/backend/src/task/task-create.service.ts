@@ -7,6 +7,7 @@ import { ActivityService } from './activity/activity.service';
 import { AuditService } from '../audit/audit.service';
 import { AuthEvent } from '../auth/constants/auth-events';
 import { validateHierarchy, validateDates, validateAssignees, validateLabels } from './task-validation';
+import { TaskQueryService } from './task-query.service';
 
 @Injectable()
 export class TaskCreateService {
@@ -14,6 +15,7 @@ export class TaskCreateService {
     private readonly dataSource: DataSource,
     private readonly activityService: ActivityService,
     private readonly auditService: AuditService,
+    private readonly queryService: TaskQueryService,
   ) {}
 
   async create(
@@ -104,6 +106,6 @@ export class TaskCreateService {
     await this.activityService.log(result.id, reporterId, 'created');
     this.auditService.log(AuthEvent.TASK_CREATED, reporterId, 'internal', 'system', { projectId, taskId: result.taskId });
 
-    return result;
+    return this.queryService.findById(projectId, result.id);
   }
 }

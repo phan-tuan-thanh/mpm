@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DragDropModule } from '@angular/cdk/drag-drop';
@@ -6,6 +6,8 @@ import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { TooltipModule } from 'primeng/tooltip';
 import { TaskListItem, TaskType, TaskPriority, DisplayProperties, DEFAULT_DISPLAY_PROPS, Label } from '@mpm/shared-types';
+import { LayoutService } from '../../../../layout/services/layout.service';
+import { TaskStore } from '../../../state/task.store';
 
 const PRIORITY_CONFIG = {
   urgent: { icon: 'pi pi-angle-double-up', color: '#EF4444', label: 'Urgent' },
@@ -44,7 +46,7 @@ const AVATAR_PALETTE = [
     @if (depth === 1) {
       <span class="flex-shrink-0" style="width:20px; padding-left:4px"><span class="block w-3 h-px bg-gray-200"></span></span>
     } @else {
-      <i cdkDragHandle class="show-on-hover opacity-0 pi pi-bars text-[10px] text-gray-300 hover:text-gray-500 cursor-grab flex-shrink-0 mr-1" style="width:12px" (click)="$event.stopPropagation()"></i>
+      <i class="show-on-hover opacity-0 pi pi-bars text-[10px] text-gray-300 hover:text-gray-500 flex-shrink-0 mr-1" style="width:12px" (click)="$event.stopPropagation()"></i>
     }
     @if (childCount > 0) {
       <button class="flex items-center justify-center flex-shrink-0 w-4 h-4 rounded hover:bg-gray-200 mr-1" (click)="$event.stopPropagation(); toggleExpand.emit(task.id)">
@@ -61,21 +63,49 @@ const AVATAR_PALETTE = [
       </span>
     }
     @if (displayProps.showLabels && task.labels?.length) {
-      <div class="flex items-center gap-1 flex-shrink-0 mr-2">
-        @for (label of task.labels.slice(0, displayProps.maxLabels); track label.id) {
-          <span class="text-xs px-1.5 py-px rounded-full font-medium max-w-[72px] truncate cursor-default"
-                [style.background]="label.color + '22'" [style.color]="label.color"
-                [pTooltip]="label.name">
-            {{ label.name }}
-          </span>
-        }
-        @if (task.labels.length > displayProps.maxLabels) {
-          <span class="inline-flex items-center text-xs text-gray-500 font-medium px-1 py-px rounded-full bg-gray-100 border border-gray-200 flex-shrink-0 cursor-default"
-                [pTooltip]="hiddenLabelsTooltip(task.labels, displayProps.maxLabels)">
-            +{{ task.labels.length - displayProps.maxLabels }}
-          </span>
-        }
-      </div>
+      @if (displayProps.labelMode === 'dot') {
+        <div class="flex items-center -space-x-1 flex-shrink-0 mr-2 select-none cursor-default">
+          @for (label of task.labels.slice(0, 4); track label.id) {
+            <span class="w-2.5 h-2.5 rounded-full border border-white dark:border-surface-900 flex-shrink-0"
+                  [style.background]="layoutService.getAdaptiveColor(label.color)"
+                  [pTooltip]="label.name"></span>
+          }
+          @if (task.labels.length > 4) {
+            <span class="text-[10px] text-gray-500 font-medium pl-1.5"
+                  [pTooltip]="hiddenLabelsTooltip(task.labels, 4)">
+              +{{ task.labels.length - 4 }}
+            </span>
+          }
+        </div>
+      } @else {
+        <div class="flex items-center gap-1 flex-shrink-0 mr-2">
+          @for (label of task.labels.slice(0, displayProps.maxLabels); track label.id) {
+            @if (isScoped(label.name)) {
+              <span class="inline-flex items-center text-[10px] rounded-full overflow-hidden border border-gray-200 dark:border-surface-700 font-medium select-none cursor-default" [pTooltip]="label.name">
+                <span class="px-1.5 py-0.5" 
+                      [style.background]="layoutService.getAdaptiveColor(getScopeColor(label.name, label.color))" 
+                      [style.color]="layoutService.getTextColor(layoutService.getAdaptiveColor(getScopeColor(label.name, label.color)))">{{ getScope(label.name) }}</span>
+                <span class="px-1.5 py-0.5" 
+                      [style.background]="layoutService.getAdaptiveColor(label.color) + '18'" 
+                      [style.color]="layoutService.getAdaptiveColor(label.color)">{{ getValue(label.name) }}</span>
+              </span>
+            } @else {
+              <span class="text-[10px] px-2 py-0.5 rounded-full font-medium select-none cursor-default"
+                    [style.background]="layoutService.getAdaptiveColor(label.color) + '22'" 
+                    [style.color]="layoutService.getAdaptiveColor(label.color)"
+                    [pTooltip]="label.name">
+                {{ label.name }}
+              </span>
+            }
+          }
+          @if (task.labels.length > displayProps.maxLabels) {
+            <span class="inline-flex items-center text-[10px] text-gray-500 font-medium px-1 py-0.5 rounded-full bg-gray-100 border border-gray-200 flex-shrink-0 cursor-default"
+                  [pTooltip]="hiddenLabelsTooltip(task.labels, displayProps.maxLabels)">
+              +{{ task.labels.length - displayProps.maxLabels }}
+            </span>
+          }
+        </div>
+      }
     }
     @if (displayProps.showModules && task.modules?.length) {
       <div class="flex items-center gap-1 flex-shrink-0 mr-2">
@@ -117,6 +147,9 @@ const AVATAR_PALETTE = [
   `
 })
 export class TaskRowComponent {
+  protected readonly layoutService = inject(LayoutService);
+  private readonly taskStore = inject(TaskStore);
+
   @Input({ required: true }) task!: TaskListItem;
   @Input() depth = 0;
   @Input() childCount = 0;
@@ -143,6 +176,29 @@ export class TaskRowComponent {
   }
   protected avatarBg(n: string): string { return AVATAR_PALETTE[n.charCodeAt(0) % AVATAR_PALETTE.length][0]; }
   protected avatarFg(n: string): string { return AVATAR_PALETTE[n.charCodeAt(0) % AVATAR_PALETTE.length][1]; }
+
+  protected isScoped(name: string): boolean { return name.includes('::'); }
+  protected getScope(name: string): string { return name.split('::')[0].trim(); }
+  protected getValue(name: string): string { return name.split('::').slice(1).join('::').trim(); }
+
+  protected getScopeColor(name: string, fallbackColor: string): string {
+    if (!this.isScoped(name)) return fallbackColor;
+    const scope = this.getScope(name).toLowerCase();
+    const allLabels = this.taskStore.labels();
+    const match = allLabels.find(l => l.name.includes('::') && l.name.split('::')[0].trim().toLowerCase() === scope);
+    return match ? match.color : fallbackColor;
+  }
+
+  protected getTextColor(bgColor: string): string {
+    if (!bgColor) return '#ffffff';
+    const color = bgColor.replace('#', '');
+    if (color.length !== 6) return '#ffffff';
+    const r = parseInt(color.substring(0, 2), 16);
+    const g = parseInt(color.substring(2, 4), 16);
+    const b = parseInt(color.substring(4, 6), 16);
+    const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+    return yiq >= 128 ? '#1f2937' : '#ffffff';
+  }
 
   protected hiddenLabelsTooltip(labels: Label[], maxLabels: number): string {
     return labels.slice(maxLabels).map(l => l.name).join(', ');

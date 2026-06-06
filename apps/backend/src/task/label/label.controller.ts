@@ -26,12 +26,12 @@ export class LabelController {
   /**
    * Resolve workspaceId từ project entity
    */
-  private async resolveWorkspaceId(projectId: string): Promise<string> {
+  private async resolveWorkspaceId(projectId: string): Promise<string | null> {
     const project = await this.projectRepo.findOne({
       where: { id: projectId },
       select: ['id', 'workspaceId'],
     });
-    return project?.workspaceId ?? '';
+    return project?.workspaceId ?? null;
   }
 
   @Get()
@@ -50,7 +50,7 @@ export class LabelController {
   async create(
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @CurrentUser() user: RequestUser,
-    @Body() body: { name: string; color: string },
+    @Body() body: { name: string; color: string; isExclusive?: boolean },
   ) {
     const workspaceId = await this.resolveWorkspaceId(projectId);
     return this.labelService.create(body, {
@@ -67,7 +67,7 @@ export class LabelController {
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @Param('labelId', ParseUUIDPipe) labelId: string,
     @CurrentUser() user: RequestUser,
-    @Body() body: { name?: string; color?: string },
+    @Body() body: { name?: string; color?: string; isExclusive?: boolean },
   ) {
     return this.labelService.update(labelId, body, {
       projectId,

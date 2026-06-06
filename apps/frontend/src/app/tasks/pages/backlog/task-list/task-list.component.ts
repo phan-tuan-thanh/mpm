@@ -54,7 +54,7 @@ interface TaskNode { task: TaskListItem; children: TaskListItem[] }
                 <div class="h-12 flex items-center px-10 text-xs text-gray-300 border-b border-dashed border-gray-100 select-none">Kéo task vào đây</div>
               }
               @for (node of group.rootTasks; track node.task.id) {
-                <div cdkDrag class="row-hover flex items-center border-b border-gray-50 cursor-pointer" style="height:38px" [class.bg-indigo-50]="selectedIds.has(node.task.id)" (click)="taskClick.emit(node.task)">
+                <div cdkDrag class="row-hover flex items-center border-b border-gray-50 cursor-grab active:cursor-grabbing" style="height:38px" [class.bg-indigo-50]="selectedIds.has(node.task.id)" (click)="taskClick.emit(node.task)">
                   <app-task-row [task]="node.task" [depth]="0" [childCount]="node.children.length" [isSelected]="selectedIds.has(node.task.id)" [isExpanded]="expandedTasks().has(node.task.id)" [displayProps]="displayProps" (selectionToggle)="selectionToggle.emit($event)" (toggleExpand)="toggleExpand($event)" (taskMenuClick)="taskMenuClick.emit($event)" />
                 </div>
                 @if (expandedTasks().has(node.task.id)) {

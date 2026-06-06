@@ -2,7 +2,7 @@ import { Injectable, inject, signal, computed } from '@angular/core';
 import { catchError, finalize } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { TaskService } from '../services/task.service';
-import { LabelService } from '../services/label.service';
+import { LabelStore } from './label.store';
 import type {
   Task,
   TaskListItem,
@@ -17,13 +17,13 @@ import type {
 @Injectable({ providedIn: 'root' })
 export class TaskStore {
   private readonly taskService = inject(TaskService);
-  private readonly labelService = inject(LabelService);
+  private readonly labelStore = inject(LabelStore);
 
   // ─── Signals ────────────────────────────────────────────────────────────
   readonly tasks = signal<TaskListItem[]>([]);
   readonly currentTask = signal<Task | null>(null);
   readonly activity = signal<TaskActivity[]>([]);
-  readonly labels = signal<Array<Label & { taskCount: number }>>([]);
+  readonly labels = this.labelStore.labels;
   readonly isLoading = signal(false);
   readonly isSaving = signal(false);
   readonly saveStatus = signal<'idle' | 'saving' | 'saved' | 'error'>('idle');
@@ -200,9 +200,6 @@ export class TaskStore {
   }
 
   loadLabels(projectId: string): void {
-    this.labelService
-      .getLabels(projectId)
-      .pipe(catchError(() => of([])))
-      .subscribe((data) => this.labels.set(data));
+    this.labelStore.loadLabels(projectId);
   }
 }

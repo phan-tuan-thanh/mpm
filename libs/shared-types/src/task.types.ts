@@ -50,6 +50,7 @@ export interface Label {
   scope?: LabelScope;
   workspaceId?: string;
   taskCount?: number;
+  isExclusive?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -216,11 +217,13 @@ export interface BulkDeleteTasksDto {
 export interface CreateLabelDto {
   name: string;
   color: string;
+  isExclusive?: boolean;
 }
 
 export interface UpdateLabelDto {
   name?: string;
   color?: string;
+  isExclusive?: boolean;
 }
 
 export interface CreateLinkDto {

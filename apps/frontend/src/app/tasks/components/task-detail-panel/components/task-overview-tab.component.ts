@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SelectModule } from 'primeng/select';
@@ -8,6 +8,7 @@ import { MultiSelectModule } from 'primeng/multiselect';
 import { TextareaModule } from 'primeng/textarea';
 import { TaskAttachmentsComponent } from './task-attachments.component';
 import { TaskLinksComponent } from './task-links.component';
+import { LayoutService } from '../../../../layout/services/layout.service';
 import type { Task, TaskAttachment, TaskLink } from '@mpm/shared-types';
 
 const PRIORITY_OPTIONS = [
@@ -40,6 +41,70 @@ const PRIORITY_OPTIONS = [
           <label class="text-xs text-gray-500 uppercase tracking-wide mb-1 block">Assignees</label>
           <p-multiselect [options]="memberOptions" [(ngModel)]="editAssigneeIds" optionLabel="displayName" optionValue="userId"
             placeholder="Thêm assignee" styleClass="w-full text-sm" (ngModelChange)="saveField.emit({ field: 'assigneeIds', value: $event })" />
+        </div>
+        <div class="col-span-2">
+          <label class="text-xs text-gray-500 uppercase tracking-wide mb-1 block">Nhãn (Labels)</label>
+          <p-multiselect
+            [options]="labelOptions"
+            [ngModel]="editLabelIds"
+            optionLabel="name"
+            optionValue="id"
+            placeholder="Chọn nhãn..."
+            styleClass="w-full text-sm"
+            (ngModelChange)="onLabelsChange($event)"
+          >
+            <!-- Custom dropdown item template -->
+            <ng-template let-label pTemplate="item">
+              <div class="flex items-center gap-2">
+                @if (isScoped(label.name)) {
+                  <span class="inline-flex items-center text-xs rounded-full overflow-hidden border border-gray-200 dark:border-surface-700 font-medium bg-white dark:bg-surface-800">
+                    <span class="px-1.5 py-px text-white" 
+                          [style.background]="layoutService.getAdaptiveColor(getScopeColor(label.name, label.color))" 
+                          [style.color]="layoutService.getTextColor(layoutService.getAdaptiveColor(getScopeColor(label.name, label.color)))">{{ getScope(label.name) }}</span>
+                    <span class="px-1.5 py-px" 
+                          [style.background]="layoutService.getAdaptiveColor(label.color) + '18'" 
+                          [style.color]="layoutService.getAdaptiveColor(label.color)">{{ getValue(label.name) }}</span>
+                  </span>
+                } @else {
+                  <span class="text-xs px-2 py-0.5 rounded-full font-medium" 
+                        [style.background]="layoutService.getAdaptiveColor(label.color) + '22'" 
+                        [style.color]="layoutService.getAdaptiveColor(label.color)">
+                    {{ label.name }}
+                  </span>
+                }
+              </div>
+            </ng-template>
+
+            <!-- Custom selected items chip template -->
+            <ng-template pTemplate="selectedItems">
+              <div class="flex flex-wrap gap-1">
+                @for (valId of editLabelIds; track valId) {
+                  @let label = getLabelById(valId);
+                  @if (label) {
+                    @if (isScoped(label.name)) {
+                      <span class="inline-flex items-center text-[10px] rounded-full overflow-hidden border border-gray-200 dark:border-surface-700 font-medium bg-white dark:bg-surface-800">
+                        <span class="px-1.5 py-px text-white" 
+                              [style.background]="layoutService.getAdaptiveColor(getScopeColor(label.name, label.color))" 
+                              [style.color]="layoutService.getTextColor(layoutService.getAdaptiveColor(getScopeColor(label.name, label.color)))">{{ getScope(label.name) }}</span>
+                        <span class="px-1.5 py-px" 
+                              [style.background]="layoutService.getAdaptiveColor(label.color) + '18'" 
+                              [style.color]="layoutService.getAdaptiveColor(label.color)">{{ getValue(label.name) }}</span>
+                      </span>
+                    } @else {
+                      <span class="text-[10px] px-2 py-px rounded-full font-medium bg-white dark:bg-surface-800 border" 
+                            [style.border-color]="layoutService.getAdaptiveColor(label.color)" 
+                            [style.color]="layoutService.getAdaptiveColor(label.color)">
+                        {{ label.name }}
+                      </span>
+                    }
+                  }
+                }
+                @if (!editLabelIds || editLabelIds.length === 0) {
+                  <span class="text-gray-400 text-xs">Chọn nhãn...</span>
+                }
+              </div>
+            </ng-template>
+          </p-multiselect>
         </div>
         <div>
           <label class="text-xs text-gray-500 uppercase tracking-wide mb-1 block">Estimate</label>
@@ -103,10 +168,13 @@ const PRIORITY_OPTIONS = [
   `,
 })
 export class TaskOverviewTabComponent {
+  protected readonly layoutService = inject(LayoutService);
+
   @Input() projectId = '';
   @Input() stateOptions: any[] = [];
   @Input() memberOptions: any[] = [];
   @Input() moduleGroupOptions: any[] = [];
+  @Input() labelOptions: any[] = [];
   taskVal: Task | null = null;
 
   @Input() set task(v: Task | null) {
@@ -114,14 +182,34 @@ export class TaskOverviewTabComponent {
     if (v) {
       this.editStateId = v.stateId;
       this.editPriority = v.priority;
-      // Backend returns User[] (field: .id), shared type declares TaskAssignee (field: .userId)
-      this.editAssigneeIds = v.assignees?.map((a: any) => a.userId ?? a.id) ?? [];
+      
+      const newAssigneeIds = v.assignees?.map((a: any) => a.userId ?? a.id) ?? [];
+      if (!this.areArraysEqual(this.editAssigneeIds, newAssigneeIds)) {
+        this.editAssigneeIds = newAssigneeIds;
+      }
+      
       this.editEstimate = v.estimateValue;
       this.editStartDate = v.startDate ? new Date(v.startDate) : null;
       this.editDueDate = v.dueDate ? new Date(v.dueDate) : null;
       this.editDescription = v.description ?? '';
-      this.editModuleIds = v.modules?.map((m) => m.id) ?? [];
+      
+      const newModuleIds = v.modules?.map((m) => m.id) ?? [];
+      if (!this.areArraysEqual(this.editModuleIds, newModuleIds)) {
+        this.editModuleIds = newModuleIds;
+      }
+      
+      const newLabelIds = v.labels?.map((l) => l.id) ?? [];
+      if (!this.areArraysEqual(this.editLabelIds, newLabelIds)) {
+        this.editLabelIds = newLabelIds;
+      }
     }
+  }
+
+  private areArraysEqual(a: string[], b: string[]): boolean {
+    if (!a || !b) return false;
+    if (a.length !== b.length) return false;
+    const setA = new Set(a);
+    return b.every(val => setA.has(val));
   }
 
   @Output() saveField = new EventEmitter<{ field: string; value: any }>();
@@ -135,6 +223,7 @@ export class TaskOverviewTabComponent {
   protected editStateId = '';
   protected editPriority = '';
   protected editAssigneeIds: string[] = [];
+  protected editLabelIds: string[] = [];
   protected editEstimate: number | null = null;
   protected editStartDate: Date | null = null;
   protected editDueDate: Date | null = null;
@@ -154,5 +243,59 @@ export class TaskOverviewTabComponent {
     if (this.taskVal && this.editDescription !== this.taskVal.description) {
       this.saveDescription.emit(this.editDescription);
     }
+  }
+
+  protected onLabelsChange(newLabelIds: string[]): void {
+    let filteredIds: string[] = [];
+    const previousIds = this.editLabelIds;
+    const addedId = newLabelIds.find(id => !previousIds.includes(id));
+
+    if (addedId) {
+      const addedLabel = this.labelOptions.find(l => l.id === addedId);
+      if (addedLabel && addedLabel.name.includes('::') && addedLabel.isExclusive !== false) {
+        const scope = addedLabel.name.split('::')[0].trim().toLowerCase();
+        filteredIds = newLabelIds.filter(id => {
+          if (id === addedId) return true;
+          const label = this.labelOptions.find(l => l.id === id);
+          if (label && label.name.includes('::') && label.isExclusive !== false) {
+            return label.name.split('::')[0].trim().toLowerCase() !== scope;
+          }
+          return true;
+        });
+      } else {
+        filteredIds = newLabelIds;
+      }
+    } else {
+      filteredIds = newLabelIds;
+    }
+
+    this.editLabelIds = filteredIds;
+    this.saveField.emit({ field: 'labelIds', value: filteredIds });
+  }
+
+  protected isScoped(name: string): boolean { return name.includes('::'); }
+  protected getScope(name: string): string { return name.split('::')[0].trim(); }
+  protected getValue(name: string): string { return name.split('::').slice(1).join('::').trim(); }
+
+  protected getScopeColor(name: string, fallbackColor: string): string {
+    if (!this.isScoped(name)) return fallbackColor;
+    const scope = this.getScope(name).toLowerCase();
+    const match = this.labelOptions.find(l => l.name.includes('::') && l.name.split('::')[0].trim().toLowerCase() === scope);
+    return match ? match.color : fallbackColor;
+  }
+
+  protected getTextColor(bgColor: string): string {
+    if (!bgColor) return '#ffffff';
+    const color = bgColor.replace('#', '');
+    if (color.length !== 6) return '#ffffff';
+    const r = parseInt(color.substring(0, 2), 16);
+    const g = parseInt(color.substring(2, 4), 16);
+    const b = parseInt(color.substring(4, 6), 16);
+    const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+    return yiq >= 128 ? '#1f2937' : '#ffffff';
+  }
+
+  protected getLabelById(id: string): any {
+    return this.labelOptions.find(l => l.id === id);
   }
 }

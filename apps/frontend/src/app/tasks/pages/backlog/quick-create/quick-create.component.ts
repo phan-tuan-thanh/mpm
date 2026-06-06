@@ -4,6 +4,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { LayoutService } from '../../../../layout/services/layout.service';
 
 import { DialogModule } from 'primeng/dialog';
 import { ButtonModule } from 'primeng/button';
@@ -42,9 +43,6 @@ const VALID_CHILDREN: Partial<Record<TaskType, TaskType[]>> = {
   task:  ['subtask'],
 };
 
-// ─── CSS class shared by every metadata pill ────────────────────────────────
-const PILL = 'inline-flex items-center gap-1.5 text-xs border border-gray-200 dark:border-surface-600 rounded-md px-2 py-1 cursor-pointer select-none hover:bg-gray-50 dark:hover:bg-surface-700 transition-colors';
-
 @Component({
   standalone: true,
   selector: 'app-quick-create',
@@ -53,34 +51,140 @@ const PILL = 'inline-flex items-center gap-1.5 text-xs border border-gray-200 da
     DialogModule, ButtonModule, InputTextModule, TextareaModule,
     DatePickerModule, TooltipModule, ToggleSwitchModule, PopoverModule, InputNumberModule,
   ],
+  styles: [`
+    /* ── Dialog overrides ── */
+    :host ::ng-deep .qc-dialog .p-dialog-content {
+      padding: 0 !important;
+      border-radius: 14px !important;
+      overflow: hidden !important;
+    }
+    :host ::ng-deep .qc-dialog .p-dialog {
+      border-radius: 14px !important;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.15) !important;
+    }
+
+    /* ── Pill buttons ── */
+    .meta-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+      border: 1px solid var(--surface-200, #e5e7eb);
+      border-radius: 6px;
+      padding: 4px 9px;
+      cursor: pointer;
+      user-select: none;
+      background: transparent;
+      color: var(--text-color-secondary, #6b7280);
+      transition: background 0.12s, border-color 0.12s, color 0.12s;
+      white-space: nowrap;
+    }
+    .meta-pill:hover {
+      background: var(--surface-50, #f9fafb);
+      border-color: var(--surface-300, #d1d5db);
+      color: var(--text-color, #374151);
+    }
+    .meta-pill.active {
+      background: var(--surface-50, #f9fafb);
+      border-color: var(--surface-300, #d1d5db);
+      color: var(--text-color, #374151);
+    }
+
+    /* ── Type pill (in header) ── */
+    .type-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid var(--surface-200, #e5e7eb);
+      border-radius: 6px;
+      padding: 3px 8px;
+      cursor: pointer;
+      user-select: none;
+      background: var(--surface-50, #f9fafb);
+      transition: background 0.12s;
+    }
+    .type-pill:hover { background: var(--surface-100, #f3f4f6); }
+
+    /* ── Assignee avatar ── */
+    .avatar-xs {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #6366f1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      color: #fff;
+      font-weight: 700;
+      flex-shrink: 0;
+      border: 1.5px solid #fff;
+    }
+
+    /* ── Popover items ── */
+    .pop-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      padding: 7px 12px;
+      border: none;
+      background: transparent;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      color: var(--text-color);
+      transition: background 0.12s;
+      text-align: left;
+    }
+    .pop-item:hover { background: var(--surface-50, #f9fafb); }
+    .pop-item.selected { background: #eef2ff; color: #4f46e5; }
+
+    /* ── Metadata separator ── */
+    .meta-divider {
+      width: 1px;
+      height: 14px;
+      background: var(--surface-200, #e5e7eb);
+      flex-shrink: 0;
+    }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
+  `],
   template: `
     <p-dialog
       [(visible)]="visible"
       [modal]="true"
       [closable]="false"
       [showHeader]="false"
-      [style]="{ width: '620px', padding: '0' }"
-      [contentStyle]="{ padding: '0', borderRadius: '12px', overflow: 'hidden' }"
+      styleClass="qc-dialog"
+      [style]="{ width: '600px', padding: '0' }"
+      [contentStyle]="{ padding: '0', borderRadius: '14px', overflow: 'hidden' }"
       [dismissableMask]="true"
       (onHide)="onCancel()"
     >
-      <div class="flex flex-col bg-white dark:bg-surface-800 rounded-xl shadow-xl">
+      <div style="display: flex; flex-direction: column; background: var(--surface-0, #fff); border-radius: 14px; overflow: hidden">
 
-        <!-- ── Header: Type pill ── -->
-        <div class="flex items-center gap-2 px-5 pt-4 pb-2">
-          <button [class]="pill" (click)="typePopover.toggle($event)">
-            <i class="text-[11px]" [class]="selectedTypeConfig().icon" [style.color]="selectedTypeConfig().color"></i>
-            <span class="text-gray-600 dark:text-surface-200 font-medium">{{ selectedTypeConfig().label }}</span>
-            <i class="pi pi-chevron-down text-[9px] text-gray-400"></i>
+        <!-- ══ Header ══ -->
+        <div style="display: flex; align-items: center; gap: 8px; padding: 14px 18px 10px">
+          <!-- Type dropdown pill -->
+          <button class="type-pill" (click)="typePopover.toggle($event)">
+            <i [class]="selectedTypeConfig().icon" [style.color]="selectedTypeConfig().color" style="font-size: 11px"></i>
+            <span style="color: var(--text-color)">{{ selectedTypeConfig().label }}</span>
+            <i class="pi pi-chevron-down" style="font-size: 9px; color: var(--text-color-secondary)"></i>
           </button>
         </div>
 
-        <!-- ── Title ── -->
-        <div class="px-5 pb-1">
+        <!-- ══ Title ══ -->
+        <div style="padding: 0 18px 6px">
           <input
             #titleInput
             pInputText
-            class="w-full text-[15px] font-semibold !border-none !shadow-none !ring-0 !bg-transparent !p-0 placeholder:text-gray-300 dark:placeholder:text-surface-500"
+            style="width: 100%; font-size: 15px; font-weight: 600; border: none; box-shadow: none; background: transparent; padding: 0; outline: none; color: var(--text-color)"
             placeholder="Tên task"
             [(ngModel)]="title"
             (keydown.escape)="onCancel()"
@@ -88,104 +192,125 @@ const PILL = 'inline-flex items-center gap-1.5 text-xs border border-gray-200 da
           />
         </div>
 
-        <!-- ── Description ── -->
-        <div class="px-5 pb-3">
+        <!-- ══ Description ══ -->
+        <div style="padding: 0 18px 12px">
           <textarea
             pTextarea
-            class="w-full text-sm text-gray-500 !border-none !shadow-none !ring-0 !bg-transparent !p-0 resize-none placeholder:text-gray-300 dark:placeholder:text-surface-500"
+            style="width: 100%; font-size: 13px; color: var(--text-color-secondary); border: none; box-shadow: none; background: transparent; padding: 0; resize: none; outline: none"
             placeholder="Mô tả (tùy chọn)"
-            rows="2"
+            [rows]="2"
             [(ngModel)]="description"
           ></textarea>
         </div>
 
-        <!-- ── Separator ── -->
-        <div class="border-t border-gray-100 dark:border-surface-700 mx-5"></div>
+        <!-- ══ Divider ══ -->
+        <div style="height: 1px; background: var(--surface-100, #f3f4f6); margin: 0 18px"></div>
 
-        <!-- ── Metadata row: all consistent pill buttons ── -->
-        <div class="flex items-center gap-1.5 px-5 py-3 flex-wrap">
+        <!-- ══ Metadata row ══ -->
+        <div style="display: flex; align-items: center; gap: 6px; padding: 10px 18px; flex-wrap: wrap">
 
           <!-- State -->
-          <button [class]="pill" (click)="statePopover.toggle($event)">
-            <span class="w-2.5 h-2.5 rounded-sm flex-shrink-0" [style.background]="selectedStateColor()"></span>
-            <span class="text-gray-600 dark:text-surface-200">{{ selectedStateName() }}</span>
+          <button class="meta-pill" [class.active]="!!selectedStateId()" (click)="statePopover.toggle($event)">
+            <span style="width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; display: inline-block"
+              [style.background]="selectedStateColor()"></span>
+            <span>{{ selectedStateName() }}</span>
           </button>
+
+          <div class="meta-divider"></div>
 
           <!-- Priority -->
-          <button [class]="pill" (click)="priorityPopover.toggle($event)">
-            <i class="text-[11px]" [class]="selectedPriorityConfig().icon" [style.color]="selectedPriorityConfig().color"></i>
-            <span class="text-gray-600 dark:text-surface-200">{{ selectedPriorityConfig().label }}</span>
+          <button class="meta-pill" [class.active]="selectedPriority() !== 'none'" (click)="priorityPopover.toggle($event)">
+            <i [class]="selectedPriorityConfig().icon" [style.color]="selectedPriorityConfig().color" style="font-size: 11px"></i>
+            <span>{{ selectedPriorityConfig().label }}</span>
           </button>
 
+          <div class="meta-divider"></div>
+
           <!-- Assignees -->
-          <button [class]="pill" (click)="assigneePopover.toggle($event)">
+          <button class="meta-pill" [class.active]="selectedAssigneeIds.length > 0" (click)="assigneePopover.toggle($event)">
             @if (selectedAssigneeIds.length) {
-              <div class="flex items-center -space-x-1">
+              <div style="display: flex; align-items: center; gap: -2px">
                 @for (id of selectedAssigneeIds.slice(0, 3); track id) {
-                  <div class="w-4 h-4 rounded-full bg-indigo-500 flex items-center justify-center text-[9px] text-white ring-1 ring-white">
-                    {{ getMemberInitial(id) }}
-                  </div>
+                  <div class="avatar-xs" style="margin-right: -4px">{{ getMemberInitial(id) }}</div>
                 }
               </div>
-              <span class="text-gray-600 dark:text-surface-200">
+              <span style="margin-left: 6px">
                 {{ selectedAssigneeIds.length === 1 ? getMemberName(selectedAssigneeIds[0]) : selectedAssigneeIds.length + ' người' }}
               </span>
             } @else {
-              <i class="pi pi-user text-[11px] text-gray-300"></i>
-              <span class="text-gray-300 dark:text-surface-500">Assignees</span>
+              <i class="pi pi-user" style="font-size: 11px"></i>
+              <span>Assignees</span>
             }
           </button>
 
           <!-- Labels -->
-          <button [class]="pill" (click)="labelPopover.toggle($event)">
+          <button class="meta-pill" [class.active]="selectedLabelIds.length > 0" (click)="labelPopover.toggle($event)">
+            <i class="pi pi-tag" style="font-size: 11px"></i>
             @if (selectedLabelIds.length) {
-              <div class="flex gap-0.5">
-                @for (id of selectedLabelIds.slice(0, 3); track id) {
-                  <span class="w-2.5 h-2.5 rounded-full" [style.background]="getLabelColor(id)"></span>
+              <div class="flex items-center gap-1">
+                @for (id of selectedLabelIds.slice(0, 2); track id) {
+                  @if (isScoped(getLabelName(id))) {
+                    <span class="inline-flex items-center text-[10px] rounded-full overflow-hidden border border-gray-200 bg-white font-medium">
+                      <span class="px-1.5 py-px text-white" 
+                            [style.background]="layoutService.getAdaptiveColor(getScopeColor(getLabelName(id), getLabelColor(id)))" 
+                            [style.color]="layoutService.getTextColor(layoutService.getAdaptiveColor(getScopeColor(getLabelName(id), getLabelColor(id))))">{{ getScope(getLabelName(id)) }}</span>
+                      <span class="px-1.5 py-px" 
+                            [style.background]="layoutService.getAdaptiveColor(getLabelColor(id)) + '18'" 
+                            [style.color]="layoutService.getAdaptiveColor(getLabelColor(id))">{{ getValue(getLabelName(id)) }}</span>
+                    </span>
+                  } @else {
+                    <span class="text-[10px] px-1 py-px rounded-full font-medium bg-white border" 
+                          [style.border-color]="layoutService.getAdaptiveColor(getLabelColor(id))"
+                          [style.color]="layoutService.getAdaptiveColor(getLabelColor(id))">
+                      {{ getLabelName(id) }}
+                    </span>
+                  }
+                }
+                @if (selectedLabelIds.length > 2) {
+                  <span class="text-[10px] font-medium text-gray-400">+{{ selectedLabelIds.length - 2 }}</span>
                 }
               </div>
-              <span class="text-gray-600 dark:text-surface-200">
-                {{ selectedLabelIds.length === 1 ? getLabelName(selectedLabelIds[0]) : selectedLabelIds.length + ' nhãn' }}
-              </span>
             } @else {
-              <i class="pi pi-tag text-[11px] text-gray-300"></i>
-              <span class="text-gray-300 dark:text-surface-500">Labels</span>
+              <span>Labels</span>
             }
           </button>
 
+          <div class="meta-divider"></div>
+
           <!-- Start date -->
-          <button [class]="pill" (click)="startDatePopover.toggle($event)">
-            <i class="pi pi-calendar text-[11px]" [class.text-gray-300]="!startDate" [class.text-gray-600]="startDate"></i>
-            <span [class.text-gray-300]="!startDate" [class.text-gray-600]="startDate">
+          <button class="meta-pill" [class.active]="!!startDate" (click)="startDatePopover.toggle($event)">
+            <i class="pi pi-calendar" style="font-size: 11px" [style.color]="startDate ? '#6366f1' : undefined"></i>
+            <span [style.color]="startDate ? '#6366f1' : undefined">
               {{ startDate ? (startDate | date:'dd/MM/yy') : 'Bắt đầu' }}
             </span>
           </button>
 
           <!-- Due date -->
-          <button [class]="pill" (click)="dueDatePopover.toggle($event)">
-            <i class="pi pi-calendar text-[11px]" [class.text-gray-300]="!dueDate" [class.text-gray-600]="dueDate" [class.text-red-500]="isOverdue()"></i>
-            <span [class.text-gray-300]="!dueDate" [class.text-gray-600]="dueDate && !isOverdue()" [class.text-red-500]="isOverdue()">
+          <button class="meta-pill" [class.active]="!!dueDate" (click)="dueDatePopover.toggle($event)">
+            <i class="pi pi-calendar" style="font-size: 11px"
+              [style.color]="isOverdue() ? '#ef4444' : dueDate ? '#6366f1' : undefined"></i>
+            <span [style.color]="isOverdue() ? '#ef4444' : dueDate ? '#6366f1' : undefined">
               {{ dueDate ? (dueDate | date:'dd/MM/yy') : 'Hết hạn' }}
             </span>
           </button>
 
           <!-- Estimate -->
-          <button [class]="pill" (click)="estimatePopover.toggle($event)">
-            <i class="pi pi-stopwatch text-[11px]" [class.text-gray-300]="estimateValue === null" [class.text-gray-600]="estimateValue !== null"></i>
-            <span [class.text-gray-300]="estimateValue === null" [class.text-gray-600]="estimateValue !== null">
-              {{ estimateValue !== null ? estimateValue : 'Estimate' }}
+          <button class="meta-pill" [class.active]="estimateValue !== null" (click)="estimatePopover.toggle($event)">
+            <i class="pi pi-stopwatch" style="font-size: 11px" [style.color]="estimateValue !== null ? '#6366f1' : undefined"></i>
+            <span [style.color]="estimateValue !== null ? '#6366f1' : undefined">
+              {{ estimateValue !== null ? estimateValue + ' pts' : 'Estimate' }}
             </span>
           </button>
 
         </div>
 
-        <!-- ── Footer ── -->
-        <div class="flex items-center justify-between px-5 py-3 border-t border-gray-100 dark:border-surface-700 bg-gray-50/60 dark:bg-surface-900 rounded-b-xl">
-          <div class="flex items-center gap-2">
-            <p-toggleswitch [(ngModel)]="createMore" [style]="{ transform: 'scale(0.75)', transformOrigin: 'left center' }" />
-            <span class="text-xs text-gray-500 dark:text-surface-400">Tạo tiếp</span>
+        <!-- ══ Footer ══ -->
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 18px 14px; border-top: 1px solid var(--surface-100, #f3f4f6)">
+          <div style="display: flex; align-items: center; gap: 8px">
+            <p-toggleswitch [(ngModel)]="createMore" [style]="{ transform: 'scale(0.8)', transformOrigin: 'left center' }" />
+            <span style="font-size: 12px; color: var(--text-color-secondary)">Tạo tiếp</span>
           </div>
-          <div class="flex items-center gap-2">
+          <div style="display: flex; align-items: center; gap: 8px">
             <button pButton label="Hủy" severity="secondary" [text]="true" size="small" (click)="onCancel()"></button>
             <button pButton label="Lưu" size="small" [disabled]="!title.trim()" (click)="onSubmit()"></button>
           </div>
@@ -193,17 +318,19 @@ const PILL = 'inline-flex items-center gap-1.5 text-xs border border-gray-200 da
       </div>
     </p-dialog>
 
-    <!-- ═══ POPOVERS ═══════════════════════════════════════════════════════ -->
+    <!-- ═══ POPOVERS ════════════════════════════════════════════════════════ -->
 
     <!-- Type -->
     <p-popover #typePopover>
-      <div class="w-36 py-1">
+      <div style="min-width: 140px; padding: 4px">
         @for (t of availableTypes(); track t.value) {
-          <button class="flex items-center gap-2 w-full px-3 py-1.5 text-sm rounded hover:bg-gray-50 dark:hover:bg-surface-700 transition-colors"
-            [class.bg-indigo-50]="selectedType() === t.value"
+          <button class="pop-item" [class.selected]="selectedType() === t.value"
             (click)="selectedType.set(t.value); typePopover.hide()">
             <i [class]="t.icon" [style.color]="t.color"></i>
-            <span class="text-gray-700 dark:text-surface-100">{{ t.label }}</span>
+            <span>{{ t.label }}</span>
+            @if (selectedType() === t.value) {
+              <i class="pi pi-check" style="margin-left: auto; font-size: 11px"></i>
+            }
           </button>
         }
       </div>
@@ -211,13 +338,17 @@ const PILL = 'inline-flex items-center gap-1.5 text-xs border border-gray-200 da
 
     <!-- State -->
     <p-popover #statePopover>
-      <div class="w-44 py-1">
+      <div style="min-width: 176px; padding: 4px">
+        <div style="font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-color-secondary); padding: 4px 12px 6px">Trạng thái</div>
         @for (s of stateOptions(); track s.id) {
-          <button class="flex items-center gap-2 w-full px-3 py-1.5 text-sm rounded hover:bg-gray-50 dark:hover:bg-surface-700 transition-colors"
-            [class.bg-indigo-50]="selectedStateId() === s.id"
+          <button class="pop-item" [class.selected]="selectedStateId() === s.id"
             (click)="selectedStateId.set(s.id); statePopover.hide()">
-            <span class="w-3 h-3 rounded-sm flex-shrink-0 border border-black/10" [style.background]="s.color"></span>
-            <span class="text-gray-700 dark:text-surface-100">{{ s.name }}</span>
+            <span style="width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; border: 1px solid rgba(0,0,0,0.08)"
+              [style.background]="s.color"></span>
+            <span>{{ s.name }}</span>
+            @if (selectedStateId() === s.id) {
+              <i class="pi pi-check" style="margin-left: auto; font-size: 11px"></i>
+            }
           </button>
         }
       </div>
@@ -225,13 +356,16 @@ const PILL = 'inline-flex items-center gap-1.5 text-xs border border-gray-200 da
 
     <!-- Priority -->
     <p-popover #priorityPopover>
-      <div class="w-36 py-1">
+      <div style="min-width: 140px; padding: 4px">
+        <div style="font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-color-secondary); padding: 4px 12px 6px">Mức ưu tiên</div>
         @for (p of priorityOptions; track p.value) {
-          <button class="flex items-center gap-2 w-full px-3 py-1.5 text-sm rounded hover:bg-gray-50 dark:hover:bg-surface-700 transition-colors"
-            [class.bg-indigo-50]="selectedPriority() === p.value"
+          <button class="pop-item" [class.selected]="selectedPriority() === p.value"
             (click)="selectedPriority.set(p.value); priorityPopover.hide()">
             <i [class]="p.icon" [style.color]="p.color"></i>
-            <span class="text-gray-700 dark:text-surface-100">{{ p.label }}</span>
+            <span>{{ p.label }}</span>
+            @if (selectedPriority() === p.value) {
+              <i class="pi pi-check" style="margin-left: auto; font-size: 11px"></i>
+            }
           </button>
         }
       </div>
@@ -239,20 +373,20 @@ const PILL = 'inline-flex items-center gap-1.5 text-xs border border-gray-200 da
 
     <!-- Assignees -->
     <p-popover #assigneePopover>
-      <div class="w-56 py-1">
-        <div class="px-3 pb-1.5 text-[10px] uppercase tracking-wide text-gray-400 font-semibold">Thành viên dự án</div>
+      <div style="min-width: 220px; padding: 4px">
+        <div style="font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-color-secondary); padding: 4px 12px 6px">Thành viên dự án</div>
         @if (!memberOptions().length) {
-          <p class="px-3 py-2 text-xs text-gray-400">Chưa có thành viên</p>
+          <p style="padding: 8px 12px; font-size: 12px; color: var(--text-color-secondary)">Chưa có thành viên</p>
         }
         @for (m of memberOptions(); track m.userId) {
-          <button class="flex items-center gap-2.5 w-full px-3 py-1.5 text-sm hover:bg-gray-50 dark:hover:bg-surface-700 transition-colors"
+          <button class="pop-item" [class.selected]="selectedAssigneeIds.includes(m.userId)"
             (click)="toggleAssignee(m.userId)">
-            <div class="w-5 h-5 rounded-full bg-indigo-500 flex items-center justify-center text-[10px] text-white flex-shrink-0">
+            <div class="avatar-xs" style="margin: 0; width: 22px; height: 22px; font-size: 10px">
               {{ m.displayName[0]?.toUpperCase() }}
             </div>
-            <span class="flex-1 text-gray-700 dark:text-surface-100 truncate">{{ m.displayName }}</span>
+            <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ m.displayName }}</span>
             @if (selectedAssigneeIds.includes(m.userId)) {
-              <i class="pi pi-check text-indigo-500 text-xs"></i>
+              <i class="pi pi-check" style="font-size: 11px; color: #6366f1"></i>
             }
           </button>
         }
@@ -261,21 +395,51 @@ const PILL = 'inline-flex items-center gap-1.5 text-xs border border-gray-200 da
 
     <!-- Labels -->
     <p-popover #labelPopover>
-      <div class="w-52 py-1">
-        <div class="px-3 pb-1.5 text-[10px] uppercase tracking-wide text-gray-400 font-semibold">Nhãn</div>
-        @if (!labelOptions().length) {
-          <p class="px-3 py-2 text-xs text-gray-400">Chưa có nhãn — tạo nhãn trong "Quản lý Labels"</p>
-        }
-        @for (l of labelOptions(); track l.id) {
-          <button class="flex items-center gap-2.5 w-full px-3 py-1.5 text-sm hover:bg-gray-50 dark:hover:bg-surface-700 transition-colors"
-            (click)="toggleLabel(l.id)">
-            <span class="w-3 h-3 rounded-full flex-shrink-0" [style.background]="l.color"></span>
-            <span class="flex-1 text-gray-700 dark:text-surface-100 truncate">{{ l.name }}</span>
-            @if (selectedLabelIds.includes(l.id)) {
-              <i class="pi pi-check text-indigo-500 text-xs"></i>
-            }
-          </button>
-        }
+      <div style="min-width: 220px; max-width: 285px; padding: 4px; display: flex; flex-direction: column; gap: 4px">
+        <div style="font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-color-secondary); padding: 4px 8px 2px">Nhãn</div>
+        <div style="padding: 2px 4px 6px">
+          <input pInputText type="text"
+            style="width: 100%; height: 28px; font-size: 12px; padding: 0 8px; border-radius: 6px"
+            placeholder="Tìm kiếm nhãn..."
+            [ngModel]="labelSearch()"
+            (ngModelChange)="labelSearch.set($event)"
+            (click)="$event.stopPropagation()"
+          />
+        </div>
+        <div style="max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px">
+          @if (!filteredLabels().length) {
+            <p style="padding: 8px; font-size: 12px; color: var(--text-color-secondary); text-align: center">
+              {{ labelOptions().length ? 'Không tìm thấy nhãn' : 'Chưa có nhãn' }}
+            </p>
+          }
+          @for (l of filteredLabels(); track l.id) {
+            <button class="pop-item" style="display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; border-radius: 6px"
+              [class.selected]="selectedLabelIds.includes(l.id)"
+              (click)="toggleLabel(l.id)">
+              <div style="display: flex; align-items: center; gap: 8px; overflow: hidden">
+                @if (isScoped(l.name)) {
+                  <span class="inline-flex items-center text-xs rounded-full overflow-hidden border border-gray-200 dark:border-surface-700 font-medium bg-white dark:bg-surface-800">
+                    <span class="px-1.5 py-px text-white" 
+                          [style.background]="layoutService.getAdaptiveColor(getScopeColor(l.name, l.color))" 
+                          [style.color]="layoutService.getTextColor(layoutService.getAdaptiveColor(getScopeColor(l.name, l.color)))">{{ getScope(l.name) }}</span>
+                    <span class="px-1.5 py-px" 
+                          [style.background]="layoutService.getAdaptiveColor(l.color) + '18'" 
+                          [style.color]="layoutService.getAdaptiveColor(l.color)">{{ getValue(l.name) }}</span>
+                  </span>
+                } @else {
+                  <span class="text-xs px-2 py-px rounded-full font-medium" 
+                        [style.background]="layoutService.getAdaptiveColor(l.color) + '22'" 
+                        [style.color]="layoutService.getAdaptiveColor(l.color)">
+                    {{ l.name }}
+                  </span>
+                }
+              </div>
+              @if (selectedLabelIds.includes(l.id)) {
+                <i class="pi pi-check" style="font-size: 11px; color: #6366f1; flex-shrink: 0"></i>
+              }
+            </button>
+          }
+        </div>
       </div>
     </p-popover>
 
@@ -284,7 +448,7 @@ const PILL = 'inline-flex items-center gap-1.5 text-xs border border-gray-200 da
       <p-datepicker [(ngModel)]="startDate" [inline]="true" dateFormat="dd/mm/yy"
         (ngModelChange)="startDatePopover.hide()" />
       @if (startDate) {
-        <div class="flex justify-center py-1">
+        <div style="display: flex; justify-content: center; padding: 4px 0 8px">
           <button pButton label="Xóa ngày" severity="secondary" [text]="true" size="small"
             (click)="startDate = null; startDatePopover.hide()"></button>
         </div>
@@ -296,7 +460,7 @@ const PILL = 'inline-flex items-center gap-1.5 text-xs border border-gray-200 da
       <p-datepicker [(ngModel)]="dueDate" [inline]="true" dateFormat="dd/mm/yy"
         (ngModelChange)="dueDatePopover.hide()" />
       @if (dueDate) {
-        <div class="flex justify-center py-1">
+        <div style="display: flex; justify-content: center; padding: 4px 0 8px">
           <button pButton label="Xóa ngày" severity="secondary" [text]="true" size="small"
             (click)="dueDate = null; dueDatePopover.hide()"></button>
         </div>
@@ -305,12 +469,12 @@ const PILL = 'inline-flex items-center gap-1.5 text-xs border border-gray-200 da
 
     <!-- Estimate -->
     <p-popover #estimatePopover>
-      <div class="p-3 flex flex-col gap-2 w-44">
-        <label class="text-xs text-gray-500 font-medium">Estimate (story points)</label>
+      <div style="padding: 12px; display: flex; flex-direction: column; gap: 10px; width: 180px">
+        <label style="font-size: 12px; color: var(--text-color-secondary); font-weight: 600">Story points</label>
         <p-inputnumber [(ngModel)]="estimateValue" [min]="0" [maxFractionDigits]="1"
           styleClass="w-full" inputStyleClass="text-sm" placeholder="0" [autofocus]="true" />
-        <div class="flex gap-1.5">
-          <button pButton label="Xong" size="small" class="flex-1" (click)="estimatePopover.hide()"></button>
+        <div style="display: flex; gap: 6px">
+          <button pButton label="Xong" size="small" style="flex: 1" (click)="estimatePopover.hide()"></button>
           @if (estimateValue !== null) {
             <button pButton icon="pi pi-times" severity="secondary" [text]="true" size="small"
               pTooltip="Xóa" (click)="estimateValue = null; estimatePopover.hide()"></button>
@@ -323,6 +487,7 @@ const PILL = 'inline-flex items-center gap-1.5 text-xs border border-gray-200 da
 export class QuickCreateComponent implements OnChanges {
   private readonly projectStore = inject(ProjectStore);
   private readonly taskStore = inject(TaskStore);
+  protected readonly layoutService = inject(LayoutService);
 
   @Input() visible = false;
   @Input() parentId?: string;
@@ -334,9 +499,6 @@ export class QuickCreateComponent implements OnChanges {
 
   @ViewChild('titleInput') titleInput?: ElementRef<HTMLInputElement>;
 
-  // ─── CSS constant exposed to template ───────────────────────────────────
-  protected readonly pill = 'inline-flex items-center gap-1.5 text-xs border border-gray-200 dark:border-surface-600 rounded-md px-2 py-1 cursor-pointer select-none hover:bg-gray-50 dark:hover:bg-surface-700 transition-colors';
-
   // ─── Plain form fields ───────────────────────────────────────────────────
   protected title = '';
   protected description = '';
@@ -347,7 +509,7 @@ export class QuickCreateComponent implements OnChanges {
   protected estimateValue: number | null = null;
   protected createMore = false;
 
-  // ─── Signals (must be signals so computed() re-evaluates) ───────────────
+  // ─── Signals ─────────────────────────────────────────────────────────────
   protected readonly selectedType = signal<TaskType>('task');
   protected readonly selectedPriority = signal<TaskPriority>('none');
   protected readonly selectedStateId = signal('');
@@ -372,7 +534,7 @@ export class QuickCreateComponent implements OnChanges {
   protected readonly memberOptions = computed(() => this.projectStore.members());
 
   protected readonly labelOptions = computed(() =>
-    this.taskStore.labels().map((l) => ({ id: l.id, name: l.name, color: l.color })),
+    this.taskStore.labels().map((l) => ({ id: l.id, name: l.name, color: l.color, isExclusive: l.isExclusive })),
   );
 
   // ─── Computed display values ─────────────────────────────────────────────
@@ -392,7 +554,39 @@ export class QuickCreateComponent implements OnChanges {
     TYPE_OPTIONS.find((t) => t.value === this.selectedType()) ?? TYPE_OPTIONS[2],
   );
 
-  // ─── Assignee/Label helpers ──────────────────────────────────────────────
+  // ─── Helpers ─────────────────────────────────────────────────────────────
+  protected readonly labelSearch = signal('');
+
+  protected readonly filteredLabels = computed(() => {
+    const query = this.labelSearch().trim().toLowerCase();
+    const allLabels = this.labelOptions();
+    if (!query) return allLabels;
+    return allLabels.filter(l => l.name.toLowerCase().includes(query));
+  });
+
+  protected isScoped(name: string): boolean {
+    return name.includes('::');
+  }
+
+  protected getScope(name: string): string {
+    return name.split('::')[0].trim();
+  }
+
+  protected getValue(name: string): string {
+    return name.split('::').slice(1).join('::').trim();
+  }
+
+  protected getTextColor(bgColor: string): string {
+    if (!bgColor) return '#ffffff';
+    const color = bgColor.replace('#', '');
+    if (color.length !== 6) return '#ffffff';
+    const r = parseInt(color.substring(0, 2), 16);
+    const g = parseInt(color.substring(2, 4), 16);
+    const b = parseInt(color.substring(4, 6), 16);
+    const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+    return yiq >= 128 ? '#1f2937' : '#ffffff';
+  }
+
   protected getMemberInitial(userId: string): string {
     return this.memberOptions().find((m) => m.userId === userId)?.displayName[0]?.toUpperCase() ?? '?';
   }
@@ -416,9 +610,37 @@ export class QuickCreateComponent implements OnChanges {
   }
 
   protected toggleLabel(labelId: string): void {
-    this.selectedLabelIds = this.selectedLabelIds.includes(labelId)
-      ? this.selectedLabelIds.filter((id) => id !== labelId)
-      : [...this.selectedLabelIds, labelId];
+    const label = this.labelOptions().find(l => l.id === labelId);
+    if (!label) return;
+
+    const isScoped = label.name.includes('::');
+    if (isScoped && label.isExclusive !== false) {
+      const scope = label.name.split('::')[0].trim().toLowerCase();
+      const isCurrentlySelected = this.selectedLabelIds.includes(labelId);
+
+      if (isCurrentlySelected) {
+        this.selectedLabelIds = this.selectedLabelIds.filter(id => id !== labelId);
+      } else {
+        // Deselect other labels of the same scope ONLY if they/it is exclusive!
+        const otherSameScopeIds = this.labelOptions()
+          .filter(l => l.id !== labelId && l.name.includes('::') && l.name.split('::')[0].trim().toLowerCase() === scope && l.isExclusive !== false)
+          .map(l => l.id);
+        this.selectedLabelIds = this.selectedLabelIds.filter(id => !otherSameScopeIds.includes(id));
+        this.selectedLabelIds = [...this.selectedLabelIds, labelId];
+      }
+    } else {
+      this.selectedLabelIds = this.selectedLabelIds.includes(labelId)
+        ? this.selectedLabelIds.filter((id) => id !== labelId)
+        : [...this.selectedLabelIds, labelId];
+    }
+  }
+
+  protected getScopeColor(name: string, fallbackColor: string): string {
+    if (!this.isScoped(name)) return fallbackColor;
+    const scope = this.getScope(name).toLowerCase();
+    const allLabels = this.labelOptions();
+    const match = allLabels.find(l => l.name.includes('::') && l.name.split('::')[0].trim().toLowerCase() === scope);
+    return match ? match.color : fallbackColor;
   }
 
   protected isOverdue(): boolean {
@@ -495,5 +717,6 @@ export class QuickCreateComponent implements OnChanges {
     this.startDate = null;
     this.estimateValue = null;
     this.createMore = false;
+    this.labelSearch.set('');
   }
 }

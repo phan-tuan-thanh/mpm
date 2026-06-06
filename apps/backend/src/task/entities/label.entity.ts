@@ -29,6 +29,9 @@ export class Label {
   @Column({ type: 'char', length: 7, default: '#6B7280' })
   color!: string;
 
+  @Column({ name: 'is_exclusive', type: 'boolean', default: true })
+  isExclusive!: boolean;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 

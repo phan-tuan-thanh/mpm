@@ -100,6 +100,7 @@ export class BacklogComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly confirmService = inject(ConfirmationService);
+  private readonly messageService = inject(MessageService);
   private readonly destroy$ = new Subject<void>();
 
   protected selectedGroupBy = 'state';
@@ -192,8 +193,13 @@ export class BacklogComponent implements OnInit, OnDestroy {
 
   protected async onQuickCreate(dto: CreateTaskDto): Promise<void> {
     if (!this.projectId) return;
-    await this.taskStore.createTask(this.projectId, dto);
-    this.closeQuickCreate();
+    const result = await this.taskStore.createTask(this.projectId, dto);
+    if (result) {
+      this.messageService.add({ severity: 'success', summary: 'Thành công', detail: 'Đã tạo task mới' });
+      this.closeQuickCreate();
+    } else {
+      this.messageService.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tạo task. Vui lòng thử lại.' });
+    }
     this.taskStore.loadBacklog(this.projectId);
   }
 

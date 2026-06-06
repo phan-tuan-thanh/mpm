@@ -6,6 +6,7 @@ import { ActivityService } from './activity/activity.service';
 import { AuditService } from '../audit/audit.service';
 import { AuthEvent } from '../auth/constants/auth-events';
 import { validateHierarchy, validateDates, validateAssignees, validateLabels } from './task-validation';
+import { TaskQueryService } from './task-query.service';
 
 @Injectable()
 export class TaskUpdateService {
@@ -13,6 +14,7 @@ export class TaskUpdateService {
     private readonly dataSource: DataSource,
     private readonly activityService: ActivityService,
     private readonly auditService: AuditService,
+    private readonly queryService: TaskQueryService,
   ) {}
 
   async update(
@@ -108,6 +110,6 @@ export class TaskUpdateService {
     }
     this.auditService.log(AuthEvent.TASK_UPDATED, userId, 'internal', 'system', { projectId, fields: capturedChanges.map((c) => c.field) });
 
-    return result;
+    return this.queryService.findById(projectId, taskId);
   }
 }

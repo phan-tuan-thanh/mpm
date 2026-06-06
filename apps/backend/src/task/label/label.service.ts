@@ -46,10 +46,22 @@ export class LabelService {
       .addOrderBy('l.name', 'ASC')
       .getRawMany<Label & { taskCount: string }>();
 
-    return rows.map((r) => ({
-      ...r,
-      taskCount: parseInt(r.taskCount as unknown as string, 10),
-    }));
+    return rows.map((r) => this.mapRawToLabel(r));
+  }
+
+  private mapRawToLabel(r: any): Label & { taskCount: number } {
+    return {
+      id: r.id,
+      scope: r.scope,
+      workspaceId: r.workspace_id ?? r.workspaceId ?? null,
+      projectId: r.project_id ?? r.projectId ?? null,
+      name: r.name,
+      color: r.color,
+      isExclusive: r.is_exclusive ?? r.isExclusive ?? true,
+      createdAt: r.created_at ?? r.createdAt,
+      updatedAt: r.updated_at ?? r.updatedAt,
+      taskCount: parseInt(r.taskCount as unknown as string, 10) || 0,
+    } as any;
   }
 
   /**
@@ -58,10 +70,10 @@ export class LabelService {
    * - scope='project': tạo project-level label (project_id required)
    */
   async create(
-    dto: { name: string; color: string },
+    dto: { name: string; color: string; isExclusive?: boolean },
     opts: {
       scope: 'workspace' | 'project';
-      workspaceId: string;
+      workspaceId: string | null;
       projectId?: string | null;
       userId: string;
     },
@@ -72,6 +84,9 @@ export class LabelService {
 
     // Validate uniqueness theo scope
     if (opts.scope === 'workspace') {
+      if (!opts.workspaceId) {
+        throw new ConflictException('Workspace ID is required for workspace labels');
+      }
       const existing = await this.labelRepo.findOne({
         where: { scope: 'workspace', workspaceId: opts.workspaceId, name: dto.name },
       });
@@ -87,12 +102,36 @@ export class LabelService {
       }
     }
 
+    let isExclusive = dto.isExclusive ?? true;
+    if (dto.name.includes('::')) {
+      const scopeName = dto.name.split('::')[0].trim().toLowerCase();
+      const scopePattern = `${scopeName}::%`;
+      const existing = await this.labelRepo.createQueryBuilder('l')
+        .where(
+          opts.scope === 'workspace'
+            ? 'l.scope = :ws AND l.workspace_id = :wid'
+            : 'l.scope = :proj AND l.project_id = :pid',
+          {
+            ws: 'workspace',
+            wid: opts.workspaceId,
+            proj: 'project',
+            pid: opts.projectId,
+          },
+        )
+        .andWhere('l.name ILIKE :pattern', { pattern: scopePattern })
+        .getOne();
+      if (existing) {
+        isExclusive = existing.isExclusive;
+      }
+    }
+
     const label = this.labelRepo.create({
       scope: opts.scope,
-      workspaceId: opts.scope === 'workspace' ? opts.workspaceId : opts.workspaceId,
+      workspaceId: opts.scope === 'workspace' ? opts.workspaceId : (opts.workspaceId ?? null),
       projectId: opts.scope === 'project' ? opts.projectId : null,
       name: dto.name,
       color: dto.color,
+      isExclusive,
     });
 
     const saved = await this.labelRepo.save(label);
@@ -114,7 +153,7 @@ export class LabelService {
    */
   async update(
     labelId: string,
-    dto: { name?: string; color?: string },
+    dto: { name?: string; color?: string; isExclusive?: boolean },
     opts: {
       workspaceId?: string;
       projectId?: string;
@@ -161,6 +200,34 @@ export class LabelService {
 
     if (dto.name !== undefined) label.name = dto.name;
     if (dto.color !== undefined) label.color = dto.color;
+    if (dto.isExclusive !== undefined) {
+      label.isExclusive = dto.isExclusive;
+      if (label.name.includes('::')) {
+        const scopeName = label.name.split('::')[0].trim().toLowerCase();
+        const scopePattern = `${scopeName}::%`;
+        if (label.scope === 'project') {
+          await this.labelRepo.createQueryBuilder()
+            .update(Label)
+            .set({ isExclusive: dto.isExclusive })
+            .where('project_id = :projectId AND scope = :scope AND name ILIKE :pattern', {
+              projectId: label.projectId,
+              scope: 'project',
+              pattern: scopePattern
+            })
+            .execute();
+        } else {
+          await this.labelRepo.createQueryBuilder()
+            .update(Label)
+            .set({ isExclusive: dto.isExclusive })
+            .where('workspace_id = :workspaceId AND scope = :scope AND name ILIKE :pattern', {
+              workspaceId: label.workspaceId,
+              scope: 'workspace',
+              pattern: scopePattern
+            })
+            .execute();
+        }
+      }
+    }
 
     return this.labelRepo.save(label);
   }
@@ -241,10 +308,7 @@ export class LabelService {
       .orderBy('l.name', 'ASC')
       .getRawMany<Label & { taskCount: string }>();
 
-    return rows.map((r) => ({
-      ...r,
-      taskCount: parseInt(r.taskCount as unknown as string, 10),
-    }));
+    return rows.map((r) => this.mapRawToLabel(r));
   }
 
   /**
@@ -262,6 +326,6 @@ export class LabelService {
       .orderBy('l.name', 'ASC')
       .getRawMany<Label & { taskCount: string }>();
 
-    return rows.map((r) => ({ ...r, taskCount: parseInt(r.taskCount as unknown as string, 10) }));
+    return rows.map((r) => this.mapRawToLabel(r));
   }
 }
