@@ -1,0 +1,67 @@
+{
+  "version": "2.0",
+  "agent": "Antigravity",
+  "servers": [
+    {
+      "name": "filesystem",
+      "type": "local",
+      "description": "Đọc/ghi file trong project",
+      "enabled": true,
+      "config": {
+        "root": ".",
+        "allowWrite": true,
+        "watchPatterns": ["**/*.md", "**/*.json", "**/*.sh"]
+      }
+    },
+    {
+      "name": "memory-store",
+      "type": "local",
+      "description": "Shared context memory + Steering data",
+      "enabled": true,
+      "config": {
+        "path": ".antigravity/memory",
+        "autoLoad": true,
+        "autoSave": true
+      }
+    },
+    {
+      "name": "document-manager",
+      "type": "local",
+      "description": "Quản lý tài liệu 3-phase (requirements, design, tasks)",
+      "enabled": true,
+      "config": {
+        "requirements_path": ".antigravity/context",
+        "design_path": ".antigravity/plans",
+        "tasks_path": ".antigravity/plans",
+        "requireApproval": true
+      }
+    }
+  ],
+  "middleware": {
+    "requirementsGate": {
+      "enabled": true,
+      "requireUserStories": true,
+      "requireAcceptanceCriteria": true,
+      "blockOnUnapproved": true,
+      "description": "Chặn nếu requirements chưa có User Stories + AC hoặc chưa approved"
+    },
+    "designGate": {
+      "enabled": true,
+      "requireArchitectureOverview": true,
+      "requireFileMap": true,
+      "blockOnUnapproved": true,
+      "description": "Chặn nếu design chưa có Architecture Overview + File Map hoặc chưa approved"
+    },
+    "tasksGate": {
+      "enabled": true,
+      "requireTaskBreakdown": true,
+      "requireLinkToUserStory": true,
+      "blockOnUnapproved": true,
+      "description": "Chặn nếu tasks chưa có task breakdown hoặc chưa approved"
+    },
+    "auditLog": {
+      "enabled": true,
+      "path": ".antigravity/logs/agent.log"
+    }
+  }
+}

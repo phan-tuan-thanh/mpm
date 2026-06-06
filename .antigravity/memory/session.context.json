@@ -1,0 +1,13 @@
+{
+  "_description": "Context phiên làm việc hiện tại — tự động cập nhật",
+  "session_id": "",
+  "started_at": "",
+  "current_task": "",
+  "current_phase": "",
+  "requirements_file": "",
+  "design_file": "",
+  "tasks_file": "",
+  "completed_steps": [],
+  "pending_steps": [],
+  "notes": []
+}
