@@ -40,8 +40,11 @@ export class Task {
   @Column({ type: 'varchar', length: 255 })
   title!: string;
 
-  @Column({ type: 'text', nullable: true })
-  description!: string | null;
+  @Column({ type: 'jsonb', nullable: true })
+  description!: Record<string, any> | null;
+
+  @Column({ name: 'description_plain', type: 'text', nullable: true })
+  descriptionPlain!: string | null;
 
   @Column({ type: 'enum', enum: ['urgent', 'high', 'medium', 'low', 'none'], enumName: 'task_priority_enum', default: 'none' })
   priority!: TaskPriority;

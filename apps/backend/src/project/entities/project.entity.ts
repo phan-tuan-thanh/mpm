@@ -23,8 +23,11 @@ export class Project {
   @Column({ type: 'varchar', length: 100 })
   name!: string;
 
-  @Column({ type: 'varchar', length: 2000, nullable: true })
-  description!: string | null;
+  @Column({ type: 'jsonb', nullable: true })
+  description!: Record<string, any> | null;
+
+  @Column({ name: 'description_plain', type: 'text', nullable: true })
+  descriptionPlain!: string | null;
 
   @Column({ type: 'varchar', length: 5, unique: true })
   key!: string;
