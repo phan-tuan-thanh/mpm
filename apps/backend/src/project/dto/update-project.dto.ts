@@ -1,4 +1,4 @@
-import { IsString, Length, IsOptional, MaxLength, IsEnum, IsUUID } from 'class-validator';
+import { IsString, Length, IsOptional, IsEnum, IsUUID, MaxLength } from 'class-validator';
 import { ProjectNetwork } from '@mpm/shared-types';
 
 export class UpdateProjectDto {
@@ -8,9 +8,7 @@ export class UpdateProjectDto {
   name?: string;
 
   @IsOptional()
-  @IsString()
-  @MaxLength(2000)
-  description?: string | null;
+  description?: Record<string, any> | null;
 
   @IsOptional()
   @IsString()

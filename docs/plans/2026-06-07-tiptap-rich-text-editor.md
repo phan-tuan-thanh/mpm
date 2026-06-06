@@ -4,29 +4,33 @@
 
 **Goal:** Replace tất cả `<textarea>` cho nội dung dài bằng một `RichTextEditorComponent` dùng chung, hỗ trợ checklist, mention, bảng, ảnh và tìm kiếm toàn văn qua PostgreSQL FTS.
 
-**Architecture:** Một shared Angular standalone component (`RichTextEditorComponent`) implement `ControlValueAccessor`, wraps TipTap qua `ngx-tiptap`. Backend lưu TipTap JSON vào cột `description` (jsonb) và extract plain text sang `description_plain` (text) để đánh GIN index cho PostgreSQL FTS. Data cũ (plain text) được migrate sang TipTap paragraph JSON.
+**Architecture:** Một shared Angular standalone component (`RichTextEditorComponent`) implement `ControlValueAccessor`, wraps TipTap qua `ngx-tiptap`. Backend lưu TipTap JSON vào cột `description` (đổi type sang `jsonb`) và extract plain text sang `description_plain` (text) để đánh GIN index cho PostgreSQL FTS. Field name `description` giữ nguyên trong toàn bộ API — chỉ value type thay đổi từ string sang JSON object.
 
 **Tech Stack:** Angular 21 · `ngx-tiptap` · `@tiptap/starter-kit` + extensions · NestJS · TypeORM · PostgreSQL JSONB + GIN index
 
 ---
 
-## Tổng quan các thay đổi
+## Các file thay đổi
 
-| Layer | Files bị ảnh hưởng |
+| Layer | File |
 |---|---|
 | Frontend shared | `apps/frontend/src/app/shared/components/rich-text-editor/` (tạo mới) |
-| Frontend pages | `task-overview-tab`, `general-tab`, `create-project`, `module-form` |
+| Frontend tasks | `task-overview-tab.component.ts`, `task-detail-panel.component.ts` |
+| Frontend projects | `general-tab.component.ts`, `create-project.component.ts` |
+| Frontend modules | `module-form.component.ts` |
 | Shared types | `libs/shared-types/src/task.types.ts`, `project.types.ts` |
-| Backend entities | `task.entity.ts`, `project.entity.ts`, `module.entity.ts` |
-| Backend services | `task-update.service.ts`, `project-update.service.ts`, `module.service.ts` |
-| DB migration | 1 migration file mới |
+| Backend entities | `task.entity.ts`, `module.entity.ts`, `project.entity.ts` |
+| Backend DTOs | `update-project.dto.ts`, `create-project.dto.ts`, `module.dto.ts` |
+| Backend create | `task-create.service.ts`, `project-create.service.ts`, `module-create.utils.ts` |
+| Backend update | `task-update.service.ts`, `project-update.service.ts`, `module-update.utils.ts` |
+| Backend search | `task-query.service.ts` (extend existing FTS) |
+| DB | `migrations/1749040000000-RichTextDescriptionColumns.ts` |
 
 ---
 
-## Task 1: Cài đặt TipTap dependencies (Frontend)
+## Task 1: Cài đặt TipTap dependencies
 
-**Files:**
-- Modify: `apps/frontend/package.json`
+**Files:** `apps/frontend/package.json`
 
 **Step 1: Cài packages**
 
@@ -45,18 +49,16 @@ cd apps/frontend && npm install \
   @tiptap/extension-text-style \
   @tiptap/extension-task-list \
   @tiptap/extension-task-item \
-  @tiptap/extension-mention \
   @tiptap/extension-placeholder \
-  @tiptap/extension-character-count \
   ngx-tiptap
 ```
 
-**Step 2: Kiểm tra cài đặt**
+**Step 2: Verify**
 
 ```bash
-cd apps/frontend && grep "@tiptap/core\|ngx-tiptap" package.json
+grep -E '"@tiptap|ngx-tiptap"' apps/frontend/package.json | wc -l
+# Expected: 13
 ```
-Expected: 2 dòng xuất hiện với version numbers.
 
 **Step 3: Commit**
 
@@ -84,9 +86,7 @@ mkdir -p apps/frontend/src/app/shared/components/rich-text-editor
 File: `apps/frontend/src/app/shared/components/rich-text-editor/rich-text-editor.component.ts`
 
 ```typescript
-import {
-  Component, forwardRef, OnDestroy, Input, OnInit, ChangeDetectionStrategy
-} from '@angular/core';
+import { Component, forwardRef, OnDestroy, Input, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { Editor } from '@tiptap/core';
@@ -105,6 +105,8 @@ import { TaskItem } from '@tiptap/extension-task-item';
 import { Placeholder } from '@tiptap/extension-placeholder';
 import { NgxTiptapModule } from 'ngx-tiptap';
 
+export type TiptapDoc = Record<string, any>;
+
 @Component({
   selector: 'app-rich-text-editor',
   standalone: true,
@@ -118,51 +120,45 @@ import { NgxTiptapModule } from 'ngx-tiptap';
   styleUrls: ['./rich-text-editor.component.css'],
   template: `
     <div class="rte-wrapper border border-surface-200 dark:border-surface-700 rounded-lg overflow-hidden"
-         [class.opacity-50]="isDisabled" [class.pointer-events-none]="isDisabled">
+         [class.opacity-60]="isDisabled" [class.pointer-events-none]="isDisabled">
       <!-- Toolbar -->
       <div class="rte-toolbar flex flex-wrap gap-1 p-2 border-b border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800">
         <button type="button" class="rte-btn" (click)="editor.chain().focus().toggleBold().run()"
-                [class.active]="editor.isActive('bold')" title="Bold">
-          <i class="pi pi-bold text-xs"></i>
-        </button>
+                [class.active]="editor.isActive('bold')" title="Bold"><b>B</b></button>
         <button type="button" class="rte-btn" (click)="editor.chain().focus().toggleItalic().run()"
-                [class.active]="editor.isActive('italic')" title="Italic">
-          <i class="pi pi-italic text-xs"></i>
-        </button>
+                [class.active]="editor.isActive('italic')" title="Italic"><i>I</i></button>
         <button type="button" class="rte-btn" (click)="editor.chain().focus().toggleUnderline().run()"
-                [class.active]="editor.isActive('underline')" title="Underline">
-          <i class="pi pi-underline text-xs"></i>
-        </button>
-        <div class="w-px bg-surface-300 dark:bg-surface-600 mx-1"></div>
+                [class.active]="editor.isActive('underline')" title="Underline"><u>U</u></button>
+        <div class="rte-sep"></div>
         <button type="button" class="rte-btn" (click)="editor.chain().focus().toggleHeading({ level: 1 }).run()"
-                [class.active]="editor.isActive('heading', { level: 1 })" title="Heading 1">H1</button>
+                [class.active]="editor.isActive('heading', { level: 1 })">H1</button>
         <button type="button" class="rte-btn" (click)="editor.chain().focus().toggleHeading({ level: 2 }).run()"
-                [class.active]="editor.isActive('heading', { level: 2 })" title="Heading 2">H2</button>
+                [class.active]="editor.isActive('heading', { level: 2 })">H2</button>
         <button type="button" class="rte-btn" (click)="editor.chain().focus().toggleHeading({ level: 3 }).run()"
-                [class.active]="editor.isActive('heading', { level: 3 })" title="Heading 3">H3</button>
-        <div class="w-px bg-surface-300 dark:bg-surface-600 mx-1"></div>
+                [class.active]="editor.isActive('heading', { level: 3 })">H3</button>
+        <div class="rte-sep"></div>
         <button type="button" class="rte-btn" (click)="editor.chain().focus().toggleBulletList().run()"
-                [class.active]="editor.isActive('bulletList')" title="Bullet List">
+                [class.active]="editor.isActive('bulletList')" title="Bullet list">
           <i class="pi pi-list text-xs"></i>
         </button>
         <button type="button" class="rte-btn" (click)="editor.chain().focus().toggleOrderedList().run()"
-                [class.active]="editor.isActive('orderedList')" title="Ordered List">
+                [class.active]="editor.isActive('orderedList')" title="Ordered list">
           <i class="pi pi-sort-amount-down text-xs"></i>
         </button>
         <button type="button" class="rte-btn" (click)="editor.chain().focus().toggleTaskList().run()"
                 [class.active]="editor.isActive('taskList')" title="Checklist">
           <i class="pi pi-check-square text-xs"></i>
         </button>
-        <div class="w-px bg-surface-300 dark:bg-surface-600 mx-1"></div>
+        <div class="rte-sep"></div>
         <button type="button" class="rte-btn" (click)="editor.chain().focus().toggleBlockquote().run()"
                 [class.active]="editor.isActive('blockquote')" title="Blockquote">
           <i class="pi pi-comment text-xs"></i>
         </button>
         <button type="button" class="rte-btn" (click)="editor.chain().focus().toggleCodeBlock().run()"
-                [class.active]="editor.isActive('codeBlock')" title="Code Block">
+                [class.active]="editor.isActive('codeBlock')" title="Code block">
           <i class="pi pi-code text-xs"></i>
         </button>
-        <button type="button" class="rte-btn" (click)="insertTable()" title="Insert Table">
+        <button type="button" class="rte-btn" (click)="insertTable()" title="Insert table">
           <i class="pi pi-table text-xs"></i>
         </button>
       </div>
@@ -173,10 +169,9 @@ import { NgxTiptapModule } from 'ngx-tiptap';
 })
 export class RichTextEditorComponent implements ControlValueAccessor, OnDestroy {
   @Input() placeholder = 'Nhập nội dung...';
-  @Input() minHeight = '120px';
 
   isDisabled = false;
-  private onChange: (val: Record<string, any> | null) => void = () => {};
+  private onChange: (val: TiptapDoc | null) => void = () => {};
   private onTouched: () => void = () => {};
 
   editor = new Editor({
@@ -196,27 +191,26 @@ export class RichTextEditorComponent implements ControlValueAccessor, OnDestroy 
       Placeholder.configure({ placeholder: this.placeholder }),
     ],
     onUpdate: ({ editor }) => {
-      const json = editor.isEmpty ? null : editor.getJSON();
-      this.onChange(json);
+      this.onChange(editor.isEmpty ? null : editor.getJSON());
     },
     onBlur: () => { this.onTouched(); },
   });
 
-  writeValue(value: Record<string, any> | null): void {
+  writeValue(value: TiptapDoc | string | null): void {
     if (value && typeof value === 'object') {
       this.editor.commands.setContent(value, false);
     } else if (typeof value === 'string' && value) {
-      // Backward compat: plain text từ DB cũ
+      // Backward compat: plain text từ DB cũ chưa migrate
       this.editor.commands.setContent(
         { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: value }] }] },
-        false
+        false,
       );
     } else {
       this.editor.commands.clearContent(false);
     }
   }
 
-  registerOnChange(fn: (val: Record<string, any> | null) => void): void { this.onChange = fn; }
+  registerOnChange(fn: (val: TiptapDoc | null) => void): void { this.onChange = fn; }
   registerOnTouched(fn: () => void): void { this.onTouched = fn; }
   setDisabledState(isDisabled: boolean): void { this.isDisabled = isDisabled; }
 
@@ -236,14 +230,17 @@ File: `apps/frontend/src/app/shared/components/rich-text-editor/rich-text-editor
 .rte-btn {
   @apply px-2 py-1 text-xs rounded hover:bg-surface-200 dark:hover:bg-surface-600
          text-surface-600 dark:text-surface-300 transition-colors cursor-pointer
-         border-0 bg-transparent font-medium;
+         border-0 bg-transparent font-medium min-w-[28px];
 }
 .rte-btn.active {
   @apply bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300;
 }
-:host ::ng-deep .tiptap {
-  outline: none;
+.rte-sep {
+  @apply w-px bg-surface-300 dark:bg-surface-600 mx-1 self-stretch;
 }
+
+:host ::ng-deep .tiptap { outline: none; }
+
 :host ::ng-deep .tiptap p.is-editor-empty:first-child::before {
   color: #9ca3af;
   content: attr(data-placeholder);
@@ -251,41 +248,38 @@ File: `apps/frontend/src/app/shared/components/rich-text-editor/rich-text-editor
   height: 0;
   pointer-events: none;
 }
-:host ::ng-deep .tiptap ul[data-type="taskList"] {
-  list-style: none;
-  padding: 0;
-}
+
+:host ::ng-deep .tiptap ul[data-type="taskList"] { list-style: none; padding: 0; }
 :host ::ng-deep .tiptap ul[data-type="taskList"] li {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
+  display: flex; align-items: flex-start; gap: 0.5rem;
 }
-:host ::ng-deep .tiptap ul[data-type="taskList"] li > label {
-  margin-top: 2px;
-}
+:host ::ng-deep .tiptap ul[data-type="taskList"] li > label { margin-top: 2px; }
+
+:host ::ng-deep .tiptap h1 { @apply text-2xl font-bold mt-3 mb-1; }
+:host ::ng-deep .tiptap h2 { @apply text-xl font-bold mt-3 mb-1; }
+:host ::ng-deep .tiptap h3 { @apply text-lg font-semibold mt-2 mb-1; }
+:host ::ng-deep .tiptap ul, :host ::ng-deep .tiptap ol { @apply pl-5 my-1; }
+:host ::ng-deep .tiptap li { @apply my-0.5; }
+:host ::ng-deep .tiptap blockquote { @apply border-l-4 border-surface-300 pl-3 text-surface-500 my-2; }
+:host ::ng-deep .tiptap code { @apply bg-surface-100 dark:bg-surface-800 px-1 rounded text-xs font-mono; }
+:host ::ng-deep .tiptap pre { @apply bg-surface-100 dark:bg-surface-800 p-3 rounded my-2; }
+
 :host ::ng-deep .tiptap table {
-  border-collapse: collapse;
-  width: 100%;
-  margin: 0.5rem 0;
+  border-collapse: collapse; width: 100%; margin: 0.5rem 0;
 }
 :host ::ng-deep .tiptap table td,
 :host ::ng-deep .tiptap table th {
-  border: 1px solid #e5e7eb;
-  padding: 4px 8px;
-  min-width: 80px;
+  border: 1px solid #e5e7eb; padding: 4px 8px; min-width: 80px; vertical-align: top;
 }
-:host ::ng-deep .tiptap table th {
-  background: #f9fafb;
-  font-weight: 600;
-}
+:host ::ng-deep .tiptap table th { background: #f9fafb; font-weight: 600; }
 ```
 
 **Step 4: Build check**
 
 ```bash
-cd apps/frontend && npx ng build --configuration development 2>&1 | tail -20
+cd apps/frontend && npx ng build --configuration development 2>&1 | grep -E "ERROR|error TS" | head -20
+# Expected: không có lỗi
 ```
-Expected: Build thành công, không có lỗi TypeScript liên quan tới RichTextEditorComponent.
 
 **Step 5: Commit**
 
@@ -296,12 +290,12 @@ git commit -m "feat: add shared RichTextEditorComponent with TipTap"
 
 ---
 
-## Task 3: DB Migration — Thêm description_plain + chuyển description sang jsonb
+## Task 3: DB Migration — Chuyển description sang jsonb + thêm description_plain
 
 **Files:**
 - Create: `migrations/1749040000000-RichTextDescriptionColumns.ts`
 
-**Step 1: Tạo migration file**
+**Step 1: Tạo migration**
 
 ```typescript
 import { MigrationInterface, QueryRunner } from 'typeorm';
@@ -310,22 +304,30 @@ export class RichTextDescriptionColumns1749040000000 implements MigrationInterfa
   name = 'RichTextDescriptionColumns1749040000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    // 1. Thêm cột description_plain (text) cho FTS
+    // 1. Thêm cột description_plain (text) cho FTS — làm trước khi đổi type
     await queryRunner.query(`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS description_plain text`);
     await queryRunner.query(`ALTER TABLE modules ADD COLUMN IF NOT EXISTS description_plain text`);
     await queryRunner.query(`ALTER TABLE projects ADD COLUMN IF NOT EXISTS description_plain text`);
 
-    // 2. Thêm cột description_content (jsonb) — lưu TipTap JSON
-    await queryRunner.query(`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS description_content jsonb`);
-    await queryRunner.query(`ALTER TABLE modules ADD COLUMN IF NOT EXISTS description_content jsonb`);
-    await queryRunner.query(`ALTER TABLE projects ADD COLUMN IF NOT EXISTS description_content jsonb`);
-
-    // 3. Migrate plain text cũ sang TipTap paragraph JSON trong description_content
-    //    và copy sang description_plain
+    // 2. Copy plain text cũ sang description_plain trước khi ALTER TYPE
     await queryRunner.query(`
-      UPDATE tasks
-      SET
-        description_content = jsonb_build_object(
+      UPDATE tasks SET description_plain = description
+      WHERE description IS NOT NULL AND description != ''
+    `);
+    await queryRunner.query(`
+      UPDATE modules SET description_plain = description
+      WHERE description IS NOT NULL AND description != ''
+    `);
+    await queryRunner.query(`
+      UPDATE projects SET description_plain = description
+      WHERE description IS NOT NULL AND description != ''
+    `);
+
+    // 3. Đổi description từ text/varchar → jsonb (wrap plain text trong TipTap paragraph JSON)
+    const wrapToTiptap = `
+      CASE
+        WHEN description IS NULL OR description = '' THEN NULL
+        ELSE jsonb_build_object(
           'type', 'doc',
           'content', jsonb_build_array(
             jsonb_build_object(
@@ -335,48 +337,21 @@ export class RichTextDescriptionColumns1749040000000 implements MigrationInterfa
               )
             )
           )
-        ),
-        description_plain = description
-      WHERE description IS NOT NULL AND description != ''
-    `);
-
+        )
+      END
+    `;
     await queryRunner.query(`
-      UPDATE modules
-      SET
-        description_content = jsonb_build_object(
-          'type', 'doc',
-          'content', jsonb_build_array(
-            jsonb_build_object(
-              'type', 'paragraph',
-              'content', jsonb_build_array(
-                jsonb_build_object('type', 'text', 'text', description)
-              )
-            )
-          )
-        ),
-        description_plain = description
-      WHERE description IS NOT NULL AND description != ''
+      ALTER TABLE tasks ALTER COLUMN description TYPE jsonb USING (${wrapToTiptap})
     `);
-
     await queryRunner.query(`
-      UPDATE projects
-      SET
-        description_content = jsonb_build_object(
-          'type', 'doc',
-          'content', jsonb_build_array(
-            jsonb_build_object(
-              'type', 'paragraph',
-              'content', jsonb_build_array(
-                jsonb_build_object('type', 'text', 'text', description)
-              )
-            )
-          )
-        ),
-        description_plain = description
-      WHERE description IS NOT NULL AND description != ''
+      ALTER TABLE modules ALTER COLUMN description TYPE jsonb USING (${wrapToTiptap})
+    `);
+    // projects.description là varchar(2000) — cần USING tương tự
+    await queryRunner.query(`
+      ALTER TABLE projects ALTER COLUMN description TYPE jsonb USING (${wrapToTiptap})
     `);
 
-    // 4. GIN index cho FTS trên description_plain
+    // 4. GIN index trên description_plain để FTS
     await queryRunner.query(`
       CREATE INDEX IF NOT EXISTS idx_tasks_description_fts
       ON tasks USING GIN (to_tsvector('simple', coalesce(description_plain, '')))
@@ -395,11 +370,23 @@ export class RichTextDescriptionColumns1749040000000 implements MigrationInterfa
     await queryRunner.query(`DROP INDEX IF EXISTS idx_tasks_description_fts`);
     await queryRunner.query(`DROP INDEX IF EXISTS idx_modules_description_fts`);
     await queryRunner.query(`DROP INDEX IF EXISTS idx_projects_description_fts`);
-    await queryRunner.query(`ALTER TABLE tasks DROP COLUMN IF EXISTS description_content`);
+
+    // Rollback description về text (lấy plain text từ description_plain)
+    await queryRunner.query(`
+      ALTER TABLE tasks ALTER COLUMN description TYPE text
+      USING coalesce(description_plain, '')
+    `);
+    await queryRunner.query(`
+      ALTER TABLE modules ALTER COLUMN description TYPE text
+      USING coalesce(description_plain, '')
+    `);
+    await queryRunner.query(`
+      ALTER TABLE projects ALTER COLUMN description TYPE varchar(2000)
+      USING coalesce(description_plain, '')
+    `);
+
     await queryRunner.query(`ALTER TABLE tasks DROP COLUMN IF EXISTS description_plain`);
-    await queryRunner.query(`ALTER TABLE modules DROP COLUMN IF EXISTS description_content`);
     await queryRunner.query(`ALTER TABLE modules DROP COLUMN IF EXISTS description_plain`);
-    await queryRunner.query(`ALTER TABLE projects DROP COLUMN IF EXISTS description_content`);
     await queryRunner.query(`ALTER TABLE projects DROP COLUMN IF EXISTS description_plain`);
   }
 }
@@ -409,31 +396,24 @@ export class RichTextDescriptionColumns1749040000000 implements MigrationInterfa
 
 ```bash
 cd apps/backend && npm run migration:run
+# Expected: RichTextDescriptionColumns1749040000000 has been executed successfully.
 ```
-Expected: `RichTextDescriptionColumns1749040000000 has been executed successfully.`
 
-**Step 3: Verify**
+**Step 3: Verify trên DB**
 
 ```bash
-cd apps/backend && npx ts-node -e "
-const { DataSource } = require('typeorm');
-// hoặc dùng psql trực tiếp
-"
-```
-
-Hoặc kiểm tra qua psql:
-```sql
-\d tasks
--- Expected: thấy cột description_content (jsonb) và description_plain (text)
-SELECT count(*) FROM tasks WHERE description_content IS NOT NULL;
--- Expected: bằng số task có description cũ
+# Dùng psql hoặc bất kỳ DB client nào
+# Kiểm tra schema
+# \d tasks → thấy description (jsonb), description_plain (text)
+# Kiểm tra data migrate
+# SELECT description, description_plain FROM tasks WHERE description IS NOT NULL LIMIT 2;
 ```
 
 **Step 4: Commit**
 
 ```bash
 git add migrations/1749040000000-RichTextDescriptionColumns.ts
-git commit -m "feat: add description_content jsonb + description_plain FTS columns"
+git commit -m "feat: migrate description columns to jsonb + add description_plain for FTS"
 ```
 
 ---
@@ -445,39 +425,52 @@ git commit -m "feat: add description_content jsonb + description_plain FTS colum
 - Modify: `apps/backend/src/task/entities/module.entity.ts`
 - Modify: `apps/backend/src/project/entities/project.entity.ts`
 
-**Step 1: Cập nhật Task entity**
+**Step 1: task.entity.ts**
 
-Trong `task.entity.ts`, thêm 2 cột mới sau cột `description` hiện có (giữ nguyên `description` để backward compat đọc DB cũ):
-
+Tìm dòng (line 43-44):
 ```typescript
-// Sau dòng:  @Column({ type: 'text', nullable: true }) description!: string | null;
+@Column({ type: 'text', nullable: true })
+description!: string | null;
+```
 
-@Column({ name: 'description_content', type: 'jsonb', nullable: true })
-descriptionContent!: Record<string, any> | null;
+Thay bằng:
+```typescript
+@Column({ type: 'jsonb', nullable: true })
+description!: Record<string, any> | null;
 
 @Column({ name: 'description_plain', type: 'text', nullable: true })
 descriptionPlain!: string | null;
 ```
 
-**Step 2: Cập nhật Module entity**
+**Step 2: module.entity.ts**
 
-Tương tự trong `module.entity.ts`, sau `description`:
-
+Tìm dòng (line 33-34):
 ```typescript
-@Column({ name: 'description_content', type: 'jsonb', nullable: true })
-descriptionContent!: Record<string, any> | null;
+@Column({ type: 'text', nullable: true })
+description!: string | null;
+```
+
+Thay bằng:
+```typescript
+@Column({ type: 'jsonb', nullable: true })
+description!: Record<string, any> | null;
 
 @Column({ name: 'description_plain', type: 'text', nullable: true })
 descriptionPlain!: string | null;
 ```
 
-**Step 3: Cập nhật Project entity**
+**Step 3: project.entity.ts**
 
-Tương tự trong `project.entity.ts`, sau `description`:
-
+Tìm dòng (line 26-27):
 ```typescript
-@Column({ name: 'description_content', type: 'jsonb', nullable: true })
-descriptionContent!: Record<string, any> | null;
+@Column({ type: 'varchar', length: 2000, nullable: true })
+description!: string | null;
+```
+
+Thay bằng:
+```typescript
+@Column({ type: 'jsonb', nullable: true })
+description!: Record<string, any> | null;
 
 @Column({ name: 'description_plain', type: 'text', nullable: true })
 descriptionPlain!: string | null;
@@ -486,9 +479,9 @@ descriptionPlain!: string | null;
 **Step 4: Build check**
 
 ```bash
-cd apps/backend && npx tsc --noEmit 2>&1 | head -20
+cd apps/backend && npx tsc --noEmit 2>&1 | head -30
+# Expected: không có lỗi
 ```
-Expected: Không có lỗi TypeScript.
 
 **Step 5: Commit**
 
@@ -496,7 +489,7 @@ Expected: Không có lỗi TypeScript.
 git add apps/backend/src/task/entities/task.entity.ts \
         apps/backend/src/task/entities/module.entity.ts \
         apps/backend/src/project/entities/project.entity.ts
-git commit -m "feat: add descriptionContent and descriptionPlain fields to entities"
+git commit -m "feat: change description column type to jsonb in TypeORM entities"
 ```
 
 ---
@@ -507,53 +500,70 @@ git commit -m "feat: add descriptionContent and descriptionPlain fields to entit
 - Modify: `libs/shared-types/src/task.types.ts`
 - Modify: `libs/shared-types/src/project.types.ts`
 
-**Step 1: Thêm TiptapDocument type và cập nhật description fields**
+**Step 1: task.types.ts — Thêm TiptapDoc type và cập nhật description fields**
 
-Trong `libs/shared-types/src/task.types.ts`, thêm ở đầu file:
-
+Thêm ở đầu file (sau các `export type`):
 ```typescript
-export type TiptapDocument = Record<string, any>;
+export type TiptapDoc = Record<string, any>;
 ```
 
-Sau đó tìm tất cả interface có `description: string | null` hoặc `description?: string` và thêm field mới bên cạnh (giữ nguyên `description` string cho backward compat):
-
+Tìm interface `Task` (extends TaskListItem):
 ```typescript
-// Thêm vào interface Task, TaskDetail, v.v.:
-descriptionContent?: TiptapDocument | null;
-descriptionPlain?: string | null;
+export interface Task extends TaskListItem {
+  description: string | null;
 ```
+Thay `description: string | null` → `description: TiptapDoc | null`.
 
-Tương tự với DTOs cho create/update — thêm:
+Tìm interface `ProjectModule`:
 ```typescript
-// CreateTaskDto, UpdateTaskDto:
-descriptionContent?: TiptapDocument | null;
+description: string | null;
 ```
+Thay → `description: TiptapDoc | null`.
 
-**Step 2: Cập nhật project.types.ts**
-
-Thêm `TiptapDocument` import hoặc khai báo lại, và thêm field tương tự vào `Project`, `CreateProjectDto`, `UpdateProjectDto`.
-
-Thêm vào `Module` interface:
+Tìm `CreateTaskDto`:
 ```typescript
-descriptionContent?: TiptapDocument | null;
+description?: string;
 ```
+Thay → `description?: TiptapDoc`.
 
-**Step 3: Build check shared types**
+Tìm `UpdateTaskDto`:
+```typescript
+description?: string | null;
+```
+Thay → `description?: TiptapDoc | null`.
+
+**Step 2: project.types.ts — Cập nhật Project description**
+
+Tìm interface `Project`:
+```typescript
+description: string | null;
+```
+Thay → `description: TiptapDoc | null`.
+
+Tìm `CreateProjectDto` và `UpdateProjectDto`:
+```typescript
+description?: string;
+description?: string | null;
+```
+Thay lần lượt → `description?: TiptapDoc` và `description?: TiptapDoc | null`.
+
+**Step 3: Build check**
 
 ```bash
 cd libs/shared-types && npx tsc --noEmit 2>&1 | head -20
+# Expected: không có lỗi
 ```
 
 **Step 4: Commit**
 
 ```bash
 git add libs/shared-types/src/
-git commit -m "feat: add TiptapDocument type and descriptionContent fields to shared types"
+git commit -m "feat: add TiptapDoc type and update description fields in shared types"
 ```
 
 ---
 
-## Task 6: Backend — TipTap plain text extractor utility
+## Task 6: Backend — Tạo TipTap plain text extractor
 
 **Files:**
 - Create: `apps/backend/src/common/tiptap-extractor.ts`
@@ -561,218 +571,467 @@ git commit -m "feat: add TiptapDocument type and descriptionContent fields to sh
 **Step 1: Tạo utility**
 
 ```typescript
-/**
- * Recursively extract plain text from a TipTap JSON document.
- * Used to populate description_plain for full-text search.
- */
-export function extractPlainText(doc: Record<string, any> | null | undefined): string {
+export type TiptapDoc = Record<string, any>;
+
+export function extractPlainText(doc: TiptapDoc | null | undefined): string {
   if (!doc) return '';
-  return extractFromNode(doc).trim();
+  return collectText(doc).replace(/\s+/g, ' ').trim();
 }
 
-function extractFromNode(node: Record<string, any>): string {
+function collectText(node: Record<string, any>): string {
   if (node.type === 'text') return node.text ?? '';
-  if (!node.content || !Array.isArray(node.content)) return '';
-  return node.content.map((child: Record<string, any>) => extractFromNode(child)).join(' ');
+  if (!Array.isArray(node.content)) return '';
+  return node.content
+    .map((child: Record<string, any>) => collectText(child))
+    .join(' ');
 }
 ```
 
-**Step 2: Unit test (không dùng framework, chạy với ts-node)**
+**Step 2: Verify với ts-node**
 
-Tạo test inline để verify:
 ```bash
-cd apps/backend && npx ts-node -e "
+cd apps/backend && npx ts-node --transpile-only -e "
 const { extractPlainText } = require('./src/common/tiptap-extractor');
-const doc = {
-  type: 'doc',
-  content: [{
-    type: 'paragraph',
-    content: [{ type: 'text', text: 'Hello world' }]
-  }, {
-    type: 'taskList',
-    content: [{ type: 'taskItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Checklist item' }] }] }]
-  }]
-};
+const doc = { type: 'doc', content: [
+  { type: 'paragraph', content: [{ type: 'text', text: 'Hello world' }] },
+  { type: 'taskList', content: [
+    { type: 'taskItem', content: [
+      { type: 'paragraph', content: [{ type: 'text', text: 'Checklist item' }] }
+    ]}
+  ]}
+]};
 const result = extractPlainText(doc);
-console.assert(result.includes('Hello world'), 'Should extract paragraph text');
-console.assert(result.includes('Checklist item'), 'Should extract task list text');
+console.assert(result.includes('Hello world'), 'FAIL: paragraph text missing');
+console.assert(result.includes('Checklist item'), 'FAIL: task item text missing');
 console.log('PASS:', result);
 "
+# Expected: PASS: Hello world Checklist item
 ```
-Expected: `PASS: Hello world Checklist item`
 
 **Step 3: Commit**
 
 ```bash
 git add apps/backend/src/common/tiptap-extractor.ts
-git commit -m "feat: add TipTap plain text extractor for FTS"
+git commit -m "feat: add TipTap plain text extractor utility for FTS"
 ```
 
 ---
 
-## Task 7: Backend — Cập nhật save services để populate description_plain
+## Task 7: Backend — Cập nhật NestJS DTOs (validators)
 
 **Files:**
-- Modify: `apps/backend/src/task/task-update.service.ts` (line 28, 61)
-- Modify: `apps/backend/src/project/project-update.service.ts` (line 33)
-- Modify: `apps/backend/src/task/module/module.service.ts` (line 126, 202)
+- Modify: `apps/backend/src/project/dto/update-project.dto.ts`
+- Modify: `apps/backend/src/project/dto/create-project.dto.ts`
+- Modify: `apps/backend/src/task/module/module.dto.ts`
 
-**Step 1: Cập nhật task-update.service.ts**
+**Step 1: update-project.dto.ts**
 
-Import extractor ở đầu file:
+Tìm block description:
 ```typescript
-import { extractPlainText } from '../common/tiptap-extractor';
+@IsOptional()
+@IsString()
+@MaxLength(2000)
+description?: string | null;
+```
+Thay bằng (chấp nhận object JSON — không cần validator phức tạp vì frontend kiểm soát):
+```typescript
+@IsOptional()
+description?: Record<string, any> | null;
 ```
 
-Trong DTO type (line 28), thêm:
+Xóa `IsString` và `MaxLength` khỏi import nếu không còn dùng ở nơi khác.
+
+**Step 2: create-project.dto.ts**
+
+Tìm block description:
 ```typescript
-descriptionContent?: Record<string, any> | null;
+@IsOptional()
+@IsString()
+@MaxLength(2000)
+description?: string;
+```
+Thay bằng:
+```typescript
+@IsOptional()
+description?: Record<string, any>;
 ```
 
-Trong fields array (line 61), thêm `descriptionContent` vào list. Sau đó thêm logic sau vòng lặp fields, trước khi save:
+**Step 3: module.dto.ts**
 
+Tìm `CreateModuleDto`:
 ```typescript
-// Sau phần xử lý fields thông thường
-if (dto.descriptionContent !== undefined) {
-  task.descriptionContent = dto.descriptionContent;
-  task.descriptionPlain = extractPlainText(dto.descriptionContent);
-}
+description?: string | null;
 ```
+Thay → `description?: Record<string, any> | null`.
 
-**Step 2: Cập nhật project-update.service.ts**
-
-Import extractor. Tại line 33, thêm bên cạnh xử lý description:
-
+Tìm `UpdateModuleDto`:
 ```typescript
-if (dto.descriptionContent !== undefined) {
-  project.descriptionContent = dto.descriptionContent ?? null;
-  project.descriptionPlain = extractPlainText(dto.descriptionContent);
-}
+description?: string | null;
 ```
+Thay → `description?: Record<string, any> | null`.
 
-**Step 3: Cập nhật module.service.ts**
-
-Import extractor. Tại line 126 (create) và 202 (update):
-
+Tìm `ModuleWithProgress`:
 ```typescript
-// Create (line ~126):
-description_content: dto.descriptionContent ?? null,
-description_plain: extractPlainText(dto.descriptionContent),
-
-// Update (line ~202):
-if (dto.descriptionContent !== undefined) {
-  module.descriptionContent = dto.descriptionContent ?? null;
-  module.descriptionPlain = extractPlainText(dto.descriptionContent);
-}
+description: string | null;
 ```
+Thay → `description: Record<string, any> | null`.
 
-**Step 4: Đảm bảo API response trả về descriptionContent**
-
-Kiểm tra các query service / controller để đảm bảo `descriptionContent` được select và trả về trong response. Tìm các `select` hoặc `findOne` trong:
-- `apps/backend/src/task/task-query.service.ts`
-- `apps/backend/src/project/project-query.service.ts` (nếu tồn tại)
-- `apps/backend/src/task/module/module-query.service.ts`
-
-Nếu dùng `getRepository().find({ select: [...] })`, thêm `descriptionContent` vào select list.
-
-**Step 5: Build check**
+**Step 4: Build check**
 
 ```bash
 cd apps/backend && npx tsc --noEmit 2>&1 | head -30
 ```
-Expected: Không có lỗi.
 
-**Step 6: Commit**
+**Step 5: Commit**
 
 ```bash
-git add apps/backend/src/task/task-update.service.ts \
-        apps/backend/src/project/project-update.service.ts \
-        apps/backend/src/task/module/module.service.ts
-git commit -m "feat: populate description_plain from tiptap JSON in save services"
+git add apps/backend/src/project/dto/ apps/backend/src/task/module/module.dto.ts
+git commit -m "feat: update DTOs to accept TipTap JSON for description fields"
 ```
 
 ---
 
-## Task 8: Frontend — Thay textarea task description
+## Task 8: Backend — Cập nhật task create + update services
+
+**Files:**
+- Modify: `apps/backend/src/task/task-create.service.ts`
+- Modify: `apps/backend/src/task/task-update.service.ts`
+
+**Step 1: task-create.service.ts**
+
+Thêm import ở đầu file:
+```typescript
+import { extractPlainText } from '../common/tiptap-extractor';
+```
+
+Đổi kiểu `dto.description` tại line 28:
+```typescript
+description?: Record<string, any>;
+```
+
+Tại line ~80, sau khi gán description, thêm `descriptionPlain`:
+```typescript
+description: dto.description ?? null,
+descriptionPlain: extractPlainText(dto.description),
+```
+
+**Step 2: task-update.service.ts**
+
+Thêm import:
+```typescript
+import { extractPlainText } from '../common/tiptap-extractor';
+```
+
+Đổi kiểu `dto.description` tại line 28:
+```typescript
+description?: Record<string, any> | null;
+```
+
+Tại line ~61, thêm `'descriptionPlain'` vào `fields` array KHÔNG làm được vì `descriptionPlain` cần được compute từ `description`. Thay vào đó, sau vòng lặp `for (const field of fields)`, thêm xử lý riêng:
+
+Tìm đoạn trong vòng lặp fields (line ~64-69):
+```typescript
+for (const field of fields) {
+  if (dto[field] !== undefined && dto[field] !== taskAny[field]) {
+    changes.push({ field, oldValue: String(taskAny[field] ?? ''), newValue: String(dto[field] ?? '') });
+    taskAny[field] = dto[field] === undefined ? null : dto[field];
+  }
+}
+```
+
+Sau vòng lặp này, thêm:
+```typescript
+// Khi description thay đổi, cập nhật description_plain cho FTS
+if (dto.description !== undefined) {
+  task.descriptionPlain = extractPlainText(dto.description ?? undefined);
+}
+```
+
+**Step 3: Build check**
+
+```bash
+cd apps/backend && npx tsc --noEmit 2>&1 | head -20
+```
+
+**Step 4: Commit**
+
+```bash
+git add apps/backend/src/task/task-create.service.ts \
+        apps/backend/src/task/task-update.service.ts
+git commit -m "feat: extract description_plain from TipTap JSON in task create/update"
+```
+
+---
+
+## Task 9: Backend — Cập nhật project create + update services
+
+**Files:**
+- Modify: `apps/backend/src/project/project-create.service.ts`
+- Modify: `apps/backend/src/project/project-update.service.ts`
+
+**Step 1: project-create.service.ts**
+
+Thêm import:
+```typescript
+import { extractPlainText } from '../common/tiptap-extractor';
+```
+
+Tại line ~56, tìm:
+```typescript
+name: dto.name, key, description: dto.description ?? null, status: 'active',
+```
+Thêm `descriptionPlain`:
+```typescript
+name: dto.name, key, description: dto.description ?? null,
+descriptionPlain: extractPlainText(dto.description),
+status: 'active',
+```
+
+**Step 2: project-update.service.ts**
+
+Thêm import:
+```typescript
+import { extractPlainText } from '../common/tiptap-extractor';
+```
+
+Tại line ~33, tìm:
+```typescript
+if (dto.description !== undefined) project.description = dto.description ?? null;
+```
+Thay bằng:
+```typescript
+if (dto.description !== undefined) {
+  project.description = dto.description ?? null;
+  project.descriptionPlain = extractPlainText(dto.description ?? undefined);
+}
+```
+
+**Step 3: Build check**
+
+```bash
+cd apps/backend && npx tsc --noEmit 2>&1 | head -20
+```
+
+**Step 4: Commit**
+
+```bash
+git add apps/backend/src/project/project-create.service.ts \
+        apps/backend/src/project/project-update.service.ts
+git commit -m "feat: extract description_plain from TipTap JSON in project create/update"
+```
+
+---
+
+## Task 10: Backend — Cập nhật module create + update utils
+
+**Files:**
+- Modify: `apps/backend/src/task/module/module-create.utils.ts`
+- Modify: `apps/backend/src/task/module/module-update.utils.ts`
+
+**Step 1: module-create.utils.ts**
+
+Thêm import:
+```typescript
+import { extractPlainText } from '../../common/tiptap-extractor';
+```
+
+Tìm phần `moduleRepo.create({...})`, thêm `descriptionPlain` bên cạnh `description`:
+```typescript
+description: dto.description ?? null,
+descriptionPlain: extractPlainText(dto.description ?? undefined),
+```
+
+**Step 2: module-update.utils.ts**
+
+Thêm import:
+```typescript
+import { extractPlainText } from '../../common/tiptap-extractor';
+```
+
+Tìm dòng:
+```typescript
+if (dto.description !== undefined) module.description = dto.description;
+```
+Thay bằng:
+```typescript
+if (dto.description !== undefined) {
+  module.description = dto.description ?? null;
+  module.descriptionPlain = extractPlainText(dto.description ?? undefined);
+}
+```
+
+**Step 3: Build check**
+
+```bash
+cd apps/backend && npx tsc --noEmit 2>&1 | head -20
+```
+
+**Step 4: Commit**
+
+```bash
+git add apps/backend/src/task/module/module-create.utils.ts \
+        apps/backend/src/task/module/module-update.utils.ts
+git commit -m "feat: extract description_plain from TipTap JSON in module create/update"
+```
+
+---
+
+## Task 11: Backend — Mở rộng FTS trong task-query.service.ts
+
+**Files:**
+- Modify: `apps/backend/src/task/task-query.service.ts`
+
+**Step 1: Mở rộng `findAll` search filter (line ~89-93)**
+
+Tìm:
+```typescript
+if (query.search?.trim()) {
+  qb.andWhere(
+    `(to_tsvector('simple', t.title) @@ plainto_tsquery('simple', :search) OR t.taskId ILIKE :taskIdSearch)`,
+    { search: query.search.trim(), taskIdSearch: `%${query.search.trim()}%` },
+  );
+}
+```
+Thay bằng (thêm `description_plain` vào FTS):
+```typescript
+if (query.search?.trim()) {
+  qb.andWhere(
+    `(
+      to_tsvector('simple', t.title) @@ plainto_tsquery('simple', :search)
+      OR to_tsvector('simple', coalesce(t.description_plain, '')) @@ plainto_tsquery('simple', :search)
+      OR t.taskId ILIKE :taskIdSearch
+    )`,
+    { search: query.search.trim(), taskIdSearch: `%${query.search.trim()}%` },
+  );
+}
+```
+
+**Step 2: Mở rộng `search()` method (line ~130-148)**
+
+Tìm:
+```typescript
+.andWhere(
+  `(to_tsvector('simple', t.title) @@ plainto_tsquery('simple', :q) OR t.taskId ILIKE :like)`,
+  { q: query, like: `%${query}%` },
+)
+```
+Thay bằng:
+```typescript
+.andWhere(
+  `(
+    to_tsvector('simple', t.title) @@ plainto_tsquery('simple', :q)
+    OR to_tsvector('simple', coalesce(t.description_plain, '')) @@ plainto_tsquery('simple', :q)
+    OR t.taskId ILIKE :like
+  )`,
+  { q: query, like: `%${query}%` },
+)
+```
+
+**Step 3: Build check**
+
+```bash
+cd apps/backend && npx tsc --noEmit 2>&1 | head -20
+```
+
+**Step 4: Commit**
+
+```bash
+git add apps/backend/src/task/task-query.service.ts
+git commit -m "feat: extend task FTS to include description_plain"
+```
+
+---
+
+## Task 12: Frontend — Thay textarea task description
 
 **Files:**
 - Modify: `apps/frontend/src/app/tasks/components/task-detail-panel/components/task-overview-tab.component.ts`
+- Modify: `apps/frontend/src/app/tasks/components/task-detail-panel/task-detail-panel.component.ts`
 
-**Step 1: Xác định vị trí thay thế**
+**Step 1: task-overview-tab.component.ts**
 
-Hiện tại tại line 163-164:
-```html
-<textarea pTextarea class="w-full text-sm resize-none" rows="6" placeholder="Thêm mô tả..."
-  [(ngModel)]="editDescription" (blur)="onBlurDescription()"></textarea>
-```
-
-**Step 2: Thay bằng RichTextEditorComponent**
-
-Trong imports array, thay `TextareaModule` bằng:
+Thêm import `RichTextEditorComponent`:
 ```typescript
 import { RichTextEditorComponent } from '../../../../shared/components/rich-text-editor/rich-text-editor.component';
+import type { TiptapDoc } from '../../../../shared/components/rich-text-editor/rich-text-editor.component';
 ```
 
-Xóa `TextareaModule` khỏi imports array (nếu không dùng ở nơi khác trong file). Thêm `RichTextEditorComponent`.
+Trong `imports` array: xóa `TextareaModule`, thêm `RichTextEditorComponent`.
 
-Trong template, thay textarea bằng:
-```html
-<app-rich-text-editor [(ngModel)]="editDescription"
-  placeholder="Thêm mô tả..." (ngModelChange)="onDescriptionChange($event)">
-</app-rich-text-editor>
-```
-
-**Step 3: Cập nhật TypeScript logic**
-
-Đổi kiểu `editDescription` từ `string` sang `Record<string, any> | null`:
+Đổi kiểu `editDescription` (line ~232):
 ```typescript
-protected editDescription: Record<string, any> | null = null;
+protected editDescription: TiptapDoc | null = null;
 ```
 
-Cập nhật `set task()` input setter (line 196):
+Trong `set task()` setter, đổi line ~196:
 ```typescript
-this.editDescription = v.descriptionContent ?? null;
+this.editDescription = v.description ?? null;
+```
+(không cần thay đổi gì vì `v.description` giờ đã là `TiptapDoc | null`)
+
+Đổi `saveDescription` EventEmitter type (line ~218):
+```typescript
+@Output() saveDescription = new EventEmitter<TiptapDoc | null>();
 ```
 
-Cập nhật `onBlurDescription()` → đổi thành `onDescriptionChange()`:
+Đổi `onBlurDescription()` thành `onDescriptionChange()`:
 ```typescript
-protected onDescriptionChange(value: Record<string, any> | null): void {
-  if (this.taskVal) {
+protected onDescriptionChange(value: TiptapDoc | null): void {
+  if (this.taskVal && JSON.stringify(value) !== JSON.stringify(this.taskVal.description)) {
     this.saveDescription.emit(value);
   }
 }
 ```
 
-Cập nhật `saveDescription` EventEmitter type:
-```typescript
-@Output() saveDescription = new EventEmitter<Record<string, any> | null>();
+Trong template, thay (line ~163-164):
+```html
+<textarea pTextarea class="w-full text-sm resize-none" rows="6" placeholder="Thêm mô tả..."
+  [(ngModel)]="editDescription" (blur)="onBlurDescription()"></textarea>
+```
+Bằng:
+```html
+<app-rich-text-editor
+  [(ngModel)]="editDescription"
+  placeholder="Thêm mô tả..."
+  (ngModelChange)="onDescriptionChange($event)">
+</app-rich-text-editor>
 ```
 
-**Step 4: Cập nhật parent component (task-detail-panel) để gửi đúng field**
+**Step 2: task-detail-panel.component.ts**
 
-Tìm trong `task-detail-panel.component.ts` chỗ handle `saveDescription` emit và đảm bảo gửi `descriptionContent` thay vì `description`.
+Tìm line ~134:
+```typescript
+protected saveDescription(desc: string): void { const t = this.task(); if (t) this.taskStore.updateTask(this.projectId(), t.id, { description: desc }); }
+```
+Thay bằng:
+```typescript
+protected saveDescription(desc: Record<string, any> | null): void {
+  const t = this.task();
+  if (t) this.taskStore.updateTask(this.projectId(), t.id, { description: desc });
+}
+```
 
-**Step 5: Build + manual test**
+**Step 3: Build + manual test**
 
 ```bash
 cd apps/frontend && npx ng serve --port 4200
 ```
-Mở trình duyệt, mở task detail panel, kiểm tra:
-- Editor hiển thị đúng
+Mở browser → task detail panel → kiểm tra:
+- Editor hiển thị thay vì textarea
 - Có thể tạo checklist (click icon ✓)
-- Bold/Italic/Heading hoạt động
-- Nội dung save được khi navigate đi và quay lại
+- Bold/Italic hoạt động
+- Nội dung tự lưu khi chỉnh sửa
 
-**Step 6: Commit**
+**Step 4: Commit**
 
 ```bash
 git add apps/frontend/src/app/tasks/components/task-detail-panel/
-git commit -m "feat: replace task description textarea with RichTextEditor"
+git commit -m "feat: replace task description textarea with TipTap editor"
 ```
 
 ---
 
-## Task 9: Frontend — Thay textarea project description
+## Task 13: Frontend — Thay textarea project description (2 forms)
 
 **Files:**
 - Modify: `apps/frontend/src/app/projects/pages/project-settings/general-tab/general-tab.component.ts`
@@ -780,209 +1039,146 @@ git commit -m "feat: replace task description textarea with RichTextEditor"
 
 **Step 1: general-tab.component.ts**
 
-Import `RichTextEditorComponent`. Xóa `TextareaModule` import nếu chỉ dùng cho description.
-
-Đổi kiểu `description` property từ `string` sang `Record<string, any> | null`:
+Thêm import:
 ```typescript
-description: Record<string, any> | null = null;
+import { RichTextEditorComponent } from '../../../../shared/components/rich-text-editor/rich-text-editor.component';
+import type { TiptapDoc } from '../../../../shared/components/rich-text-editor/rich-text-editor.component';
 ```
 
-Tìm chỗ load dữ liệu (line ~318: `this.description = project.description || ''`) và đổi thành:
+Trong `imports` array: xóa `TextareaModule`, thêm `RichTextEditorComponent`.
+
+Đổi `description = ''` (line ~262) → `description: TiptapDoc | null = null`.
+
+Tại line ~318, đổi:
 ```typescript
-this.description = project.descriptionContent ?? null;
+this.description = project.description || '';
+```
+Thành:
+```typescript
+this.description = project.description ?? null;
 ```
 
-Tìm chỗ save (line ~412: `description: this.description || null`) và đổi thành:
+Tại line ~412 trong `onSubmit()`, đổi:
 ```typescript
-descriptionContent: this.description,
+description: this.description || null,
+```
+Thành:
+```typescript
+description: this.description,
 ```
 
-Trong template, thay `<textarea ... [(ngModel)]="description">` bằng:
+Trong template, thay block textarea (line ~151-160):
 ```html
-<app-rich-text-editor [(ngModel)]="description" placeholder="Mô tả dự án...">
+<textarea id="description" name="description" [rows]="4" pTextarea
+  [(ngModel)]="description" [disabled]="isReadOnly() || isSubmitting()"
+  maxlength="2000" placeholder="Không có mô tả cho dự án này."></textarea>
+```
+Bằng:
+```html
+<app-rich-text-editor
+  [(ngModel)]="description"
+  placeholder="Không có mô tả cho dự án này."
+  [class.opacity-60]="isReadOnly() || isSubmitting()">
 </app-rich-text-editor>
 ```
 
 **Step 2: create-project.component.ts**
 
-Tương tự general-tab:
-- Đổi `description = ''` → `description: Record<string, any> | null = null`
-- Thay textarea bằng `<app-rich-text-editor>`
-- Đổi payload: `description: this.description || undefined` → `descriptionContent: this.description`
+Thêm import (tương tự). Trong `imports` array thay `TextareaModule` bằng `RichTextEditorComponent`.
 
-**Step 3: Build + manual test**
+Đổi `description = ''` (line ~295) → `description: TiptapDoc | null = null`.
 
-Kiểm tra create project form và project settings general tab.
-
-**Step 4: Commit**
-
-```bash
-git add apps/frontend/src/app/projects/
-git commit -m "feat: replace project description textarea with RichTextEditor"
-```
-
----
-
-## Task 10: Frontend — Thay textarea module description
-
-**Files:**
-- Modify: `apps/frontend/src/app/tasks/pages/modules/module-form.component.ts`
-
-**Step 1: Xác định vị trí**
-
-Hiện tại line 14: `description: string | null` trong formData, line 66-73: textarea trong template.
-
-**Step 2: Thay thế**
-
-Import `RichTextEditorComponent`. Đổi `formData.description` type sang `Record<string, any> | null`.
-
-Tìm chỗ load edit data (line ~165: `description: this.editModule.description`) và đổi thành:
+Tại line ~400 trong submit payload:
 ```typescript
-description: this.editModule.descriptionContent ?? null,
+description: this.description || undefined,
+```
+Thành:
+```typescript
+description: this.description ?? undefined,
 ```
 
-Tìm chỗ submit (payload đi kèm formData), đảm bảo gửi `descriptionContent: this.formData.description`.
-
-Trong template, thay `<textarea ... [(ngModel)]="formData.description">` bằng:
+Trong template, thay textarea bằng:
 ```html
-<app-rich-text-editor [(ngModel)]="formData.description" placeholder="Mô tả module...">
+<app-rich-text-editor [(ngModel)]="description" placeholder="Mô tả dự án (không bắt buộc)...">
 </app-rich-text-editor>
 ```
 
 **Step 3: Build + manual test**
 
-Kiểm tra module create/edit form.
+Kiểm tra create project form và project settings general tab hoạt động đúng.
 
 **Step 4: Commit**
 
 ```bash
-git add apps/frontend/src/app/tasks/pages/modules/module-form.component.ts
-git commit -m "feat: replace module description textarea with RichTextEditor"
+git add apps/frontend/src/app/projects/
+git commit -m "feat: replace project description textarea with TipTap editor"
 ```
 
 ---
 
-## Task 11: Backend — Search endpoint dùng PostgreSQL FTS
+## Task 14: Frontend — Thay textarea module description
 
 **Files:**
-- Create: `apps/backend/src/search/search.controller.ts`
-- Create: `apps/backend/src/search/search.service.ts`
-- Create: `apps/backend/src/search/search.module.ts`
-- Modify: `apps/backend/src/app.module.ts`
+- Modify: `apps/frontend/src/app/tasks/pages/modules/module-form.component.ts`
 
-**Step 1: Tạo SearchService**
+**Step 1: module-form.component.ts**
 
+Thêm import:
 ```typescript
-// apps/backend/src/search/search.service.ts
-import { Injectable } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { RichTextEditorComponent } from '../../../shared/components/rich-text-editor/rich-text-editor.component';
+import type { TiptapDoc } from '../../../shared/components/rich-text-editor/rich-text-editor.component';
+```
 
-@Injectable()
-export class SearchService {
-  constructor(private readonly dataSource: DataSource) {}
+Trong `imports` array: xóa `TextareaModule`, thêm `RichTextEditorComponent`.
 
-  async search(query: string, projectId?: string): Promise<{
-    tasks: any[];
-    projects: any[];
-    modules: any[];
-  }> {
-    const q = query.trim();
-    if (!q) return { tasks: [], projects: [], modules: [] };
-
-    // Tìm kiếm cả title/name lẫn description_plain
-    const [tasks, projects, modules] = await Promise.all([
-      this.dataSource.query(`
-        SELECT id, task_id as "taskId", title, description_plain as "descriptionPlain", project_id as "projectId"
-        FROM tasks
-        WHERE (
-          to_tsvector('simple', coalesce(title, '')) ||
-          to_tsvector('simple', coalesce(description_plain, ''))
-        ) @@ plainto_tsquery('simple', $1)
-        ${projectId ? "AND project_id = $2" : ""}
-        LIMIT 20
-      `, projectId ? [q, projectId] : [q]),
-
-      this.dataSource.query(`
-        SELECT id, name, description_plain as "descriptionPlain"
-        FROM projects
-        WHERE (
-          to_tsvector('simple', coalesce(name, '')) ||
-          to_tsvector('simple', coalesce(description_plain, ''))
-        ) @@ plainto_tsquery('simple', $1)
-        LIMIT 10
-      `, [q]),
-
-      this.dataSource.query(`
-        SELECT id, name, description_plain as "descriptionPlain", project_id as "projectId"
-        FROM modules
-        WHERE (
-          to_tsvector('simple', coalesce(name, '')) ||
-          to_tsvector('simple', coalesce(description_plain, ''))
-        ) @@ plainto_tsquery('simple', $1)
-        ${projectId ? "AND project_id = $2" : ""}
-        LIMIT 10
-      `, projectId ? [q, projectId] : [q]),
-    ]);
-
-    return { tasks, projects, modules };
-  }
+Đổi `ModuleFormData` interface:
+```typescript
+export interface ModuleFormData {
+  name: string;
+  description: TiptapDoc | null;   // đổi từ string | null
+  status: ModuleStatus;
+  startDate: string | null;
+  endDate: string | null;
 }
 ```
 
-**Step 2: Tạo SearchController**
-
+Tại line ~139 (initial formData):
 ```typescript
-// apps/backend/src/search/search.controller.ts
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
-import { SearchService } from './search.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-
-@Controller('search')
-@UseGuards(JwtAuthGuard)
-export class SearchController {
-  constructor(private readonly searchService: SearchService) {}
-
-  @Get()
-  search(@Query('q') q: string, @Query('projectId') projectId?: string) {
-    return this.searchService.search(q, projectId);
-  }
-}
+formData: ModuleFormData = {
+  name: '',
+  description: null,   // giữ nguyên null
+  ...
 ```
 
-**Step 3: Tạo SearchModule và đăng ký vào AppModule**
-
+Tại line ~165 (load editModule):
 ```typescript
-// apps/backend/src/search/search.module.ts
-import { Module } from '@nestjs/common';
-import { SearchController } from './search.controller';
-import { SearchService } from './search.service';
-
-@Module({
-  controllers: [SearchController],
-  providers: [SearchService],
-})
-export class SearchModule {}
+description: this.editModule.description,   // giờ đã là TiptapDoc | null
 ```
 
-Thêm `SearchModule` vào `imports` của `AppModule`.
+Trong template, thay (line ~66-73):
+```html
+<textarea id="module-desc" pTextarea [(ngModel)]="formData.description"
+  [rows]="4" [autoResize]="true" placeholder="Mô tả ngắn gọn cho module..."></textarea>
+```
+Bằng:
+```html
+<app-rich-text-editor
+  [(ngModel)]="formData.description"
+  placeholder="Mô tả ngắn gọn cho module...">
+</app-rich-text-editor>
+```
 
-**Step 4: Test endpoint**
+Label của module-desc cũng cần cập nhật từ `"Mô tả (Markdown)"` → `"Mô tả"`.
+
+**Step 2: Build + manual test**
+
+Kiểm tra module create/edit dialog.
+
+**Step 3: Commit**
 
 ```bash
-# Start server
-cd apps/backend && npm run start:dev
-
-# Test (thay TOKEN bằng JWT hợp lệ)
-curl -H "Authorization: Bearer TOKEN" \
-  "http://localhost:3000/search?q=checklist"
-```
-Expected: JSON response có `{ tasks: [...], projects: [...], modules: [...] }`.
-
-**Step 5: Commit**
-
-```bash
-git add apps/backend/src/search/ apps/backend/src/app.module.ts
-git commit -m "feat: add full-text search endpoint using PostgreSQL FTS"
+git add apps/frontend/src/app/tasks/pages/modules/module-form.component.ts
+git commit -m "feat: replace module description textarea with TipTap editor"
 ```
 
 ---
@@ -990,23 +1186,30 @@ git commit -m "feat: add full-text search endpoint using PostgreSQL FTS"
 ## Checklist hoàn thành
 
 - [ ] Task 1: TipTap packages installed
-- [ ] Task 2: RichTextEditorComponent created
-- [ ] Task 3: DB migration ran, columns và GIN index tồn tại
-- [ ] Task 4: TypeORM entities updated
-- [ ] Task 5: Shared types updated
-- [ ] Task 6: tiptap-extractor utility created và tested
-- [ ] Task 7: Backend save services updated
-- [ ] Task 8: Task description replaced
-- [ ] Task 9: Project description replaced (2 forms)
-- [ ] Task 10: Module description replaced
-- [ ] Task 11: Search endpoint working
+- [ ] Task 2: RichTextEditorComponent created (component + CSS)
+- [ ] Task 3: Migration ran — `description` (jsonb) + `description_plain` (text) + GIN index
+- [ ] Task 4: TypeORM entities updated (description: jsonb, descriptionPlain: text)
+- [ ] Task 5: Shared types updated (TiptapDoc type + description fields)
+- [ ] Task 6: tiptap-extractor utility created + tested
+- [ ] Task 7: Backend DTOs updated (validators removed/changed)
+- [ ] Task 8: task-create.service + task-update.service populate descriptionPlain
+- [ ] Task 9: project-create.service + project-update.service populate descriptionPlain
+- [ ] Task 10: module-create.utils + module-update.utils populate descriptionPlain
+- [ ] Task 11: task-query.service FTS extended to include description_plain
+- [ ] Task 12: task-overview-tab + task-detail-panel updated
+- [ ] Task 13: general-tab + create-project updated
+- [ ] Task 14: module-form updated
+
+---
 
 ## Lưu ý quan trọng
 
-1. **Backward compat**: Giữ nguyên cột `description` (text/varchar) trong DB — không drop. Các endpoint cũ vẫn đọc được. Frontend mới sẽ ưu tiên `descriptionContent`.
+1. **Không drop cột `description` cũ**: Migration đổi type in-place với USING clause. Rollback khả dụng.
 
-2. **Empty check**: TipTap empty document vẫn có `{ type: 'doc', content: [{ type: 'paragraph' }] }`. Backend cần check `editor.isEmpty` phía frontend hoặc check `descriptionPlain === ''` phía backend trước khi lưu — save `null` nếu rỗng.
+2. **Empty TipTap doc**: `editor.isEmpty` trả về `true` khi chỉ có `<p></p>`. Component đã xử lý: emit `null` khi empty thay vì emit JSON rỗng.
 
-3. **Auth Guard**: `SearchController` phải dùng cùng guard với các controller khác trong project. Kiểm tra tên guard trong `apps/backend/src/auth/guards/`.
+3. **`task-detail-panel.component.ts` line 134**: Hàm `saveDescription` nhận `Record<string, any> | null` thay vì `string`. Đây là điểm duy nhất trong parent component cần cập nhật.
 
-4. **ngx-tiptap version**: Đảm bảo cài đúng version tương thích với `@tiptap/core` đang dùng. Kiểm tra `ngx-tiptap` changelog nếu gặp lỗi peer dependency.
+4. **Search hoạt động thông qua `description_plain`**: Sau migration, dữ liệu cũ đã được copy vào `description_plain`. Dữ liệu mới sẽ được extract qua `extractPlainText()` trong backend services. FTS trên jsonb column không hoạt động — phải dùng `description_plain`.
+
+5. **Không cần SearchModule mới**: Tích hợp FTS vào `task-query.service.ts` sẵn có — tránh tạo infra thừa.

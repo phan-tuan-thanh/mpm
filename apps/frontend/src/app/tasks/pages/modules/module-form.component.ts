@@ -4,14 +4,14 @@ import { FormsModule } from '@angular/forms';
 import { DialogModule } from 'primeng/dialog';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
-import { TextareaModule } from 'primeng/textarea';
 import { SelectModule } from 'primeng/select';
 import { DatePickerModule } from 'primeng/datepicker';
-import type { ProjectModule, ModuleStatus } from '@mpm/shared-types';
+import type { ProjectModule, ModuleStatus, TiptapDoc } from '@mpm/shared-types';
+import { RichTextEditorComponent } from '../../../shared/components/rich-text-editor/rich-text-editor.component';
 
 export interface ModuleFormData {
   name: string;
-  description: string | null;
+  description: TiptapDoc | null;
   status: ModuleStatus;
   startDate: string | null;
   endDate: string | null;
@@ -26,9 +26,9 @@ export interface ModuleFormData {
     DialogModule,
     ButtonModule,
     InputTextModule,
-    TextareaModule,
     SelectModule,
     DatePickerModule,
+    RichTextEditorComponent,
   ],
   template: `
     <p-dialog
@@ -60,17 +60,8 @@ export interface ModuleFormData {
 
         <!-- Description -->
         <div class="flex flex-col gap-1">
-          <label for="module-desc" class="text-sm font-medium text-gray-700 dark:text-surface-300">
-            Mô tả (Markdown)
-          </label>
-          <textarea
-            id="module-desc"
-            pTextarea
-            [(ngModel)]="formData.description"
-            [rows]="4"
-            [autoResize]="true"
-            placeholder="Mô tả ngắn gọn cho module..."
-          ></textarea>
+          <label class="text-sm font-medium text-gray-700 dark:text-surface-300">Mô tả</label>
+          <app-rich-text-editor [(ngModel)]="formData.description" placeholder="Mô tả ngắn gọn cho module..."></app-rich-text-editor>
         </div>
 
         <!-- Status -->

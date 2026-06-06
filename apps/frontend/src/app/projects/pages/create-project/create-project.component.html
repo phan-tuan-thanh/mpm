@@ -109,16 +109,8 @@
 
       <!-- Description -->
       <div class="flex flex-col gap-2">
-        <label for="description" class="text-sm font-semibold text-gray-700">Mô tả (Không bắt buộc)</label>
-        <textarea
-          id="description"
-          name="description"
-          [rows]="3"
-          pTextarea
-          [(ngModel)]="description"
-          maxlength="2000"
-          placeholder="Mô tả tóm tắt mục tiêu dự án..."
-        ></textarea>
+        <label class="text-sm font-semibold text-gray-700">Mô tả (Không bắt buộc)</label>
+        <app-rich-text-editor [(ngModel)]="description" placeholder="Mô tả tóm tắt mục tiêu dự án..."></app-rich-text-editor>
       </div>
 
       <!-- State Template Selection (chỉ hiện nếu workspace có templates) -->

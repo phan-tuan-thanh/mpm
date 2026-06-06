@@ -7,6 +7,7 @@ import { AuditService } from '../audit/audit.service';
 import { AuthEvent } from '../auth/constants/auth-events';
 import { validateHierarchy, validateDates, validateAssignees, validateLabels } from './task-validation';
 import { TaskQueryService } from './task-query.service';
+import { extractPlainText } from '../common/tiptap-extractor';
 
 @Injectable()
 export class TaskUpdateService {
@@ -25,7 +26,7 @@ export class TaskUpdateService {
       title?: string;
       type?: TaskType;
       priority?: TaskPriority;
-      description?: string | null;
+      description?: Record<string, any> | null;
       stateId?: string;
       assigneeIds?: string[];
       labelIds?: string[];
@@ -66,6 +67,10 @@ export class TaskUpdateService {
           changes.push({ field, oldValue: String(taskAny[field] ?? ''), newValue: String(dto[field] ?? '') });
           taskAny[field] = dto[field] === undefined ? null : dto[field];
         }
+      }
+
+      if (dto.description !== undefined) {
+        task.descriptionPlain = extractPlainText(dto.description);
       }
 
       if (dto.stateId !== undefined && dto.stateId !== task.stateId) {

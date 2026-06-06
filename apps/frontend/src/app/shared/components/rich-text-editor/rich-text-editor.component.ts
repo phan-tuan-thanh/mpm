@@ -1,4 +1,4 @@
-import { Component, forwardRef, OnDestroy, Input, ChangeDetectionStrategy } from '@angular/core';
+import { Component, forwardRef, OnDestroy, Input, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { Editor } from '@tiptap/core';
@@ -79,6 +79,7 @@ export type TiptapDoc = Record<string, any>;
 })
 export class RichTextEditorComponent implements ControlValueAccessor, OnDestroy {
   @Input() placeholder = 'Nhập nội dung...';
+  @Output() blurEditor = new EventEmitter<void>();
 
   isDisabled = false;
   private onChange: (val: TiptapDoc | null) => void = () => {};
@@ -103,7 +104,7 @@ export class RichTextEditorComponent implements ControlValueAccessor, OnDestroy 
     onUpdate: ({ editor }) => {
       this.onChange(editor.isEmpty ? null : editor.getJSON());
     },
-    onBlur: () => { this.onTouched(); },
+    onBlur: () => { this.onTouched(); this.blurEditor.emit(); },
   });
 
   writeValue(value: TiptapDoc | string | null): void {

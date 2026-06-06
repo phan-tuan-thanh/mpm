@@ -8,6 +8,7 @@ import { AuditService } from '../audit/audit.service';
 import { AuthEvent } from '../auth/constants/auth-events';
 import { validateHierarchy, validateDates, validateAssignees, validateLabels } from './task-validation';
 import { TaskQueryService } from './task-query.service';
+import { extractPlainText } from '../common/tiptap-extractor';
 
 @Injectable()
 export class TaskCreateService {
@@ -25,7 +26,7 @@ export class TaskCreateService {
       title: string;
       type?: TaskType;
       priority?: TaskPriority;
-      description?: string;
+      description?: Record<string, any>;
       stateId?: string;
       assigneeIds?: string[];
       labelIds?: string[];
@@ -78,6 +79,7 @@ export class TaskCreateService {
         type: dto.type ?? 'task',
         title: dto.title,
         description: dto.description ?? null,
+        descriptionPlain: extractPlainText(dto.description ?? null),
         priority: dto.priority ?? 'none',
         stateId,
         estimateValue: dto.estimateValue ?? null,

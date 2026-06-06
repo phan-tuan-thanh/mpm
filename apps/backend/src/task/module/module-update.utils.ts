@@ -4,6 +4,7 @@ import { Module as ModuleEntity } from '../entities/module.entity';
 import { UpdateModuleDto } from './module.dto';
 import { validateModuleRole } from './module-validation.utils';
 import { validateUpdateNameUniqueness } from './module-uniqueness.utils';
+import { extractPlainText } from '../../common/tiptap-extractor';
 
 export async function updateModule(
   moduleRepo: Repository<ModuleEntity>,
@@ -29,7 +30,10 @@ export async function updateModule(
     module.name = dto.name;
   }
 
-  if (dto.description !== undefined) module.description = dto.description;
+  if (dto.description !== undefined) {
+    module.description = dto.description;
+    module.descriptionPlain = extractPlainText(dto.description);
+  }
   if (dto.status !== undefined) module.status = dto.status;
   if (dto.startDate !== undefined) module.startDate = dto.startDate;
   if (dto.endDate !== undefined) module.endDate = dto.endDate;

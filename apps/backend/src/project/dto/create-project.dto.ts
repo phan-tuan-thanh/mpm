@@ -1,4 +1,5 @@
 import { IsString, Length, Matches, IsOptional, MaxLength, IsEnum, IsUUID, IsIn } from 'class-validator';
+
 import { ProjectNetwork } from '@mpm/shared-types';
 
 export class CreateProjectDto {
@@ -13,9 +14,7 @@ export class CreateProjectDto {
   key!: string;
 
   @IsOptional()
-  @IsString()
-  @MaxLength(2000)
-  description?: string;
+  description?: Record<string, any>;
 
   @IsOptional()
   @IsString()

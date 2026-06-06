@@ -5,12 +5,12 @@ import { SelectModule } from 'primeng/select';
 import { DatePickerModule } from 'primeng/datepicker';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { MultiSelectModule } from 'primeng/multiselect';
-import { TextareaModule } from 'primeng/textarea';
 import { TooltipModule } from 'primeng/tooltip';
 import { TaskAttachmentsComponent } from './task-attachments.component';
 import { TaskLinksComponent } from './task-links.component';
 import { LayoutService } from '../../../../layout/services/layout.service';
-import type { Task, TaskAttachment, TaskLink } from '@mpm/shared-types';
+import { RichTextEditorComponent } from '../../../../shared/components/rich-text-editor/rich-text-editor.component';
+import type { Task, TaskAttachment, TaskLink, TiptapDoc } from '@mpm/shared-types';
 
 const PRIORITY_OPTIONS = [
   { label: '🔴 Urgent', value: 'urgent' }, { label: '🟠 High', value: 'high' },
@@ -23,7 +23,7 @@ const PRIORITY_OPTIONS = [
   selector: 'app-task-overview-tab',
   imports: [
     CommonModule, FormsModule, SelectModule, DatePickerModule, InputNumberModule,
-    MultiSelectModule, TextareaModule, TooltipModule, TaskAttachmentsComponent, TaskLinksComponent,
+    MultiSelectModule, TooltipModule, TaskAttachmentsComponent, TaskLinksComponent, RichTextEditorComponent,
   ],
   template: `
     @if (taskVal) {
@@ -160,8 +160,8 @@ const PRIORITY_OPTIONS = [
       </div>
       <div class="mt-4 px-2">
         <label class="text-xs text-gray-500 uppercase tracking-wide mb-2 block">Mô tả</label>
-        <textarea pTextarea class="w-full text-sm resize-none" rows="6" placeholder="Thêm mô tả..."
-          [(ngModel)]="editDescription" (blur)="onBlurDescription()"></textarea>
+        <app-rich-text-editor [(ngModel)]="editDescription" placeholder="Thêm mô tả..."
+          (blurEditor)="onBlurDescription()"></app-rich-text-editor>
       </div>
       <app-task-attachments [projectId]="projectId" [taskId]="taskVal.id" [attachments]="taskVal.attachments ?? []"
         (upload)="uploadAttachment.emit($event)" (delete)="deleteAttachment.emit($event)" />
@@ -193,7 +193,7 @@ export class TaskOverviewTabComponent {
       this.editEstimate = v.estimateValue;
       this.editStartDate = v.startDate ? new Date(v.startDate) : null;
       this.editDueDate = v.dueDate ? new Date(v.dueDate) : null;
-      this.editDescription = v.description ?? '';
+      this.editDescription = v.description ?? null;
       
       const newModuleIds = v.modules?.map((m) => m.id) ?? [];
       if (!this.areArraysEqual(this.editModuleIds, newModuleIds)) {
@@ -215,7 +215,7 @@ export class TaskOverviewTabComponent {
   }
 
   @Output() saveField = new EventEmitter<{ field: string; value: any }>();
-  @Output() saveDescription = new EventEmitter<string>();
+  @Output() saveDescription = new EventEmitter<TiptapDoc | null>();
   @Output() changeModules = new EventEmitter<string[]>();
   @Output() uploadAttachment = new EventEmitter<FileList>();
   @Output() deleteAttachment = new EventEmitter<TaskAttachment>();
@@ -229,7 +229,7 @@ export class TaskOverviewTabComponent {
   protected editEstimate: number | null = null;
   protected editStartDate: Date | null = null;
   protected editDueDate: Date | null = null;
-  protected editDescription = '';
+  protected editDescription: TiptapDoc | null = null;
   protected editModuleIds: string[] = [];
   protected readonly priorityOptions = PRIORITY_OPTIONS;
 
@@ -242,7 +242,7 @@ export class TaskOverviewTabComponent {
   }
 
   protected onBlurDescription(): void {
-    if (this.taskVal && this.editDescription !== this.taskVal.description) {
+    if (this.taskVal && JSON.stringify(this.editDescription) !== JSON.stringify(this.taskVal.description)) {
       this.saveDescription.emit(this.editDescription);
     }
   }

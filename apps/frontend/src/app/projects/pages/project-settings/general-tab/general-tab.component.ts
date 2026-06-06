@@ -4,7 +4,6 @@ import { ProjectService } from '../../../services/project.service';
 import { AuthService } from '../../../../auth/services/auth.service';
 import { CommonModule } from '@angular/common';
 import { InputTextModule } from 'primeng/inputtext';
-import { TextareaModule } from 'primeng/textarea';
 import { ButtonModule } from 'primeng/button';
 import { FluidModule } from 'primeng/fluid';
 import { ChipModule } from 'primeng/chip';
@@ -12,6 +11,8 @@ import { SelectModule } from 'primeng/select';
 import { MessageService } from 'primeng/api';
 import { FormsModule } from '@angular/forms';
 import { ProjectNetwork } from '@mpm/shared-types';
+import type { TiptapDoc } from '@mpm/shared-types';
+import { RichTextEditorComponent } from '../../../../shared/components/rich-text-editor/rich-text-editor.component';
 
 @Component({
   standalone: true,
@@ -19,12 +20,12 @@ import { ProjectNetwork } from '@mpm/shared-types';
   imports: [
     CommonModule,
     InputTextModule,
-    TextareaModule,
     ButtonModule,
     FluidModule,
     ChipModule,
     SelectModule,
     FormsModule,
+    RichTextEditorComponent,
   ],
   template: `
     <div class="bg-white rounded-xl border border-gray-100 p-6 shadow-sm max-w-xl space-y-6">
@@ -147,17 +148,8 @@ import { ProjectNetwork } from '@mpm/shared-types';
 
           <!-- Description -->
           <div class="flex flex-col gap-2">
-            <label for="description" class="text-sm font-semibold text-gray-700">Mô tả</label>
-            <textarea
-              id="description"
-              name="description"
-              [rows]="4"
-              pTextarea
-              [(ngModel)]="description"
-              [disabled]="isReadOnly() || isSubmitting()"
-              maxlength="2000"
-              placeholder="Không có mô tả cho dự án này."
-            ></textarea>
+            <label class="text-sm font-semibold text-gray-700">Mô tả</label>
+            <app-rich-text-editor [(ngModel)]="description" placeholder="Không có mô tả cho dự án này."></app-rich-text-editor>
           </div>
 
           <!-- Network (Quyền riêng tư) -->
@@ -259,7 +251,7 @@ export class GeneralTabComponent implements OnInit {
 
   // States
   name = '';
-  description = '';
+  description: TiptapDoc | null = null;
   emoji = '🚀';
   network = ProjectNetwork.SECRET;
   leadId: string | null = null;
@@ -315,7 +307,7 @@ export class GeneralTabComponent implements OnInit {
     const project = this.projectStore.currentProject();
     if (project) {
       this.name = project.name;
-      this.description = project.description || '';
+      this.description = project.description ?? null;
       this.emoji = project.emoji || '🚀';
       this.network = project.network || ProjectNetwork.SECRET;
       this.leadId = project.lead?.userId || null;
@@ -409,7 +401,7 @@ export class GeneralTabComponent implements OnInit {
     this.projectService
       .updateProject(project.id, {
         name: this.name,
-        description: this.description || null,
+        description: this.description ?? null,
         emoji: this.emoji,
         network: this.network,
         leadId: this.leadId,

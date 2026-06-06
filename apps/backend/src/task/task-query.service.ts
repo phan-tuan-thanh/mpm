@@ -88,7 +88,9 @@ export class TaskQueryService {
 
     if (query.search?.trim()) {
       qb.andWhere(
-        `(to_tsvector('simple', t.title) @@ plainto_tsquery('simple', :search) OR t.taskId ILIKE :taskIdSearch)`,
+        `(to_tsvector('simple', t.title) @@ plainto_tsquery('simple', :search)
+          OR t.taskId ILIKE :taskIdSearch
+          OR (t.description_plain IS NOT NULL AND to_tsvector('simple', t.description_plain) @@ plainto_tsquery('simple', :search)))`,
         { search: query.search.trim(), taskIdSearch: `%${query.search.trim()}%` },
       );
     }
@@ -133,7 +135,9 @@ export class TaskQueryService {
       .leftJoinAndSelect('t.state', 'state')
       .where('t.projectId = :projectId', { projectId })
       .andWhere(
-        `(to_tsvector('simple', t.title) @@ plainto_tsquery('simple', :q) OR t.taskId ILIKE :like)`,
+        `(to_tsvector('simple', t.title) @@ plainto_tsquery('simple', :q)
+          OR t.taskId ILIKE :like
+          OR (t.description_plain IS NOT NULL AND to_tsvector('simple', t.description_plain) @@ plainto_tsquery('simple', :q)))`,
         { q: query, like: `%${query}%` },
       )
       .orderBy('t.backlogOrder', 'ASC')

@@ -329,7 +329,9 @@ export class QuickCreateComponent implements OnChanges {
       title: t,
       type: this.selectedType(),
       priority: this.selectedPriority() !== 'none' ? this.selectedPriority() : undefined,
-      description: this.description.trim() || undefined,
+      description: this.description.trim()
+        ? { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: this.description.trim() }] }] }
+        : undefined,
       stateId: this.selectedStateId() || undefined,
       assigneeIds: this.selectedAssigneeIds.length ? this.selectedAssigneeIds : undefined,
       labelIds: this.selectedLabelIds.length ? this.selectedLabelIds : undefined,

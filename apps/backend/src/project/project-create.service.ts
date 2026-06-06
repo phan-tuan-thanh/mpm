@@ -13,6 +13,7 @@ import { CreateProjectDto } from './dto';
 import { ProjectNetwork, EstimateType, StateGroup } from '@mpm/shared-types';
 import { validateEmoji, validateTimezone } from './project.validation';
 import { DEFAULT_STATES } from './project.constants';
+import { extractPlainText } from '../common/tiptap-extractor';
 
 @Injectable()
 export class ProjectCreateService {
@@ -53,7 +54,8 @@ export class ProjectCreateService {
 
     try {
       const project = queryRunner.manager.create(Project, {
-        name: dto.name, key, description: dto.description ?? null, status: 'active',
+        name: dto.name, key, description: dto.description ?? null,
+        descriptionPlain: extractPlainText(dto.description ?? null), status: 'active',
         ownerId: userId, taskCounter: 0, emoji: dto.emoji ?? null, network: dto.network ?? ProjectNetwork.SECRET,
         leadId: dto.leadId ?? null, timezone: dto.timezone ?? 'Asia/Ho_Chi_Minh',
       });

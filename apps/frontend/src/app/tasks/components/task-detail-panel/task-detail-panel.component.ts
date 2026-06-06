@@ -16,7 +16,7 @@ import { TaskService } from '../../services/task.service';
 import { AttachmentService } from '../../services/attachment.service';
 import { LinkService } from '../../services/link.service';
 import { RelationService } from '../../services/relation.service';
-import type { TaskActivity, TaskAttachment, TaskLink } from '@mpm/shared-types';
+import type { TaskActivity, TaskAttachment, TaskLink, TiptapDoc } from '@mpm/shared-types';
 import { Subject, takeUntil } from 'rxjs';
 import { TaskOverviewTabComponent, TaskSubitemsTabComponent, TaskRelationsTabComponent, TaskActivityTabComponent } from './components';
 
@@ -131,7 +131,7 @@ export class TaskDetailPanelComponent implements OnInit, OnDestroy {
   protected copyTaskId(taskId: string): void { navigator.clipboard.writeText(taskId); this.messageService.add({ severity: 'success', summary: 'Đã sao chép', life: 1500 }); }
   protected saveTitle(): void { const t = this.task(); if (t && this.editTitle !== t.title) this.taskStore.updateTask(this.projectId(), t.id, { title: this.editTitle }); }
   protected saveField(field: string, value: unknown): void { const t = this.task(); if (t) this.taskStore.updateTask(this.projectId(), t.id, { [field]: value } as any); }
-  protected saveDescription(desc: string): void { const t = this.task(); if (t) this.taskStore.updateTask(this.projectId(), t.id, { description: desc }); }
+  protected saveDescription(desc: TiptapDoc | null): void { const t = this.task(); if (t) this.taskStore.updateTask(this.projectId(), t.id, { description: desc }); }
   protected openChildTask(taskId: string): void { this.router.navigate([], { relativeTo: this.route, queryParams: { taskId }, queryParamsHandling: 'merge' }); }
   protected deleteAttachment(att: TaskAttachment): void { const t = this.task(); if (t) this.attachmentService.delete(this.projectId(), t.id, att.id).subscribe(() => this.taskStore.loadTask(this.projectId(), t.taskId)); }
   protected deleteLink(link: TaskLink): void { const t = this.task(); if (t) this.linkService.deleteLink(this.projectId(), t.id, link.id).subscribe(() => this.taskStore.loadTask(this.projectId(), t.taskId)); }

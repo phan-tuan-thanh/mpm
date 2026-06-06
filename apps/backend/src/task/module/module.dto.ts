@@ -13,7 +13,7 @@ export interface ModuleQueryDto {
 /** DTO tạo module mới */
 export interface CreateModuleDto {
   name: string;
-  description?: string | null;
+  description?: Record<string, any> | null;
   status?: ModuleStatusType;
   startDate?: string | null;
   endDate?: string | null;
@@ -22,7 +22,7 @@ export interface CreateModuleDto {
 /** DTO cập nhật module (partial update) */
 export interface UpdateModuleDto {
   name?: string;
-  description?: string | null;
+  description?: Record<string, any> | null;
   status?: ModuleStatusType;
   startDate?: string | null;
   endDate?: string | null;
@@ -35,7 +35,7 @@ export interface ModuleWithProgress {
   workspaceId: string;
   projectId: string | null;
   name: string;
-  description: string | null;
+  description: Record<string, any> | null;
   status: ModuleStatusType;
   startDate: string | null;
   endDate: string | null;

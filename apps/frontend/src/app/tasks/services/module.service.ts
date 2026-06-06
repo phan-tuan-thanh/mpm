@@ -1,11 +1,11 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import type { ProjectModule, ModuleStatus } from '@mpm/shared-types';
+import type { ProjectModule, ModuleStatus, TiptapDoc } from '@mpm/shared-types';
 
 export interface CreateModuleDto {
   name: string;
-  description?: string | null;
+  description?: TiptapDoc | null;
   status?: ModuleStatus;
   startDate?: string | null;
   endDate?: string | null;
@@ -13,7 +13,7 @@ export interface CreateModuleDto {
 
 export interface UpdateModuleDto {
   name?: string;
-  description?: string | null;
+  description?: TiptapDoc | null;
   status?: ModuleStatus;
   startDate?: string | null;
   endDate?: string | null;

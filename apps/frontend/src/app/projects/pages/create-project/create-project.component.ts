@@ -6,7 +6,6 @@ import { ProjectStore } from '../../state/project.store';
 import { AuthService } from '../../../auth/services/auth.service';
 import { CommonModule } from '@angular/common';
 import { InputTextModule } from 'primeng/inputtext';
-import { TextareaModule } from 'primeng/textarea';
 import { ButtonModule } from 'primeng/button';
 import { SelectModule } from 'primeng/select';
 import { FluidModule } from 'primeng/fluid';
@@ -16,6 +15,8 @@ import { Subject, Subscription, of } from 'rxjs';
 import { debounceTime, distinctUntilChanged, catchError, switchMap } from 'rxjs/operators';
 import { FormsModule } from '@angular/forms';
 import { ProjectNetwork, StateTemplate, WorkspaceStateTemplate } from '@mpm/shared-types';
+import type { TiptapDoc } from '@mpm/shared-types';
+import { RichTextEditorComponent } from '../../../shared/components/rich-text-editor/rich-text-editor.component';
 import { COMMON_EMOJIS, TIMEZONE_OPTIONS, suggestProjectKey } from './create-project.constants';
 
 @Component({
@@ -25,12 +26,12 @@ import { COMMON_EMOJIS, TIMEZONE_OPTIONS, suggestProjectKey } from './create-pro
     CommonModule,
     RouterLink,
     InputTextModule,
-    TextareaModule,
     ButtonModule,
     SelectModule,
     FluidModule,
     RadioButtonModule,
     FormsModule,
+    RichTextEditorComponent,
   ],
   templateUrl: './create-project.component.html',
 })
@@ -47,7 +48,7 @@ export class CreateProjectComponent implements OnInit, OnDestroy {
   // Form Fields
   name = '';
   key = '';
-  description = '';
+  description: TiptapDoc | null = null;
   emoji = '🚀';
   network: ProjectNetwork = ProjectNetwork.SECRET;
   leadId: string | null = null;
@@ -152,7 +153,7 @@ export class CreateProjectComponent implements OnInit, OnDestroy {
       .createProject({
         name: this.name,
         key: this.key,
-        description: this.description || undefined,
+        description: this.description ?? undefined,
         emoji: this.emoji,
         network: this.network,
         leadId: this.leadId || undefined,

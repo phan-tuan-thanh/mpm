@@ -11,6 +11,7 @@ export {
 } from './auth.types';
 
 export {
+  TiptapDoc,
   TaskType,
   TaskPriority,
   TaskRelationType,

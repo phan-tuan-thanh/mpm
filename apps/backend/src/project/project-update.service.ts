@@ -8,6 +8,7 @@ import { ProjectQueryService } from './project-query.service';
 import { UpdateProjectDto } from './dto';
 import { ProjectFeatures, ProjectNetwork, ProjectRole, UpdateFeaturesDto } from '@mpm/shared-types';
 import { validateEmoji, validateTimezone } from './project.validation';
+import { extractPlainText } from '../common/tiptap-extractor';
 
 @Injectable()
 export class ProjectUpdateService {
@@ -30,7 +31,10 @@ export class ProjectUpdateService {
     }
 
     if (dto.name !== undefined) project.name = dto.name;
-    if (dto.description !== undefined) project.description = dto.description ?? null;
+    if (dto.description !== undefined) {
+      project.description = dto.description ?? null;
+      project.descriptionPlain = extractPlainText(project.description);
+    }
     if (dto.emoji !== undefined) {
       validateEmoji(dto.emoji);
       project.emoji = dto.emoji ?? null;
