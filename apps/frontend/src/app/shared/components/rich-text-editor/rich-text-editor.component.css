@@ -1,0 +1,171 @@
+.rte-wrapper {
+  border: 1px solid var(--p-surface-200, #e5e7eb);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.dark .rte-wrapper {
+  border-color: var(--p-surface-700, #374151);
+}
+
+.rte-disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.rte-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--p-surface-200, #e5e7eb);
+  background: var(--p-surface-50, #f9fafb);
+}
+
+.dark .rte-toolbar {
+  border-color: var(--p-surface-700, #374151);
+  background: var(--p-surface-800, #1f2937);
+}
+
+.rte-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 26px;
+  padding: 0 6px;
+  font-size: 12px;
+  font-weight: 500;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--p-surface-600, #4b5563);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.rte-btn:hover {
+  background: var(--p-surface-200, #e5e7eb);
+}
+
+.dark .rte-btn {
+  color: var(--p-surface-300, #d1d5db);
+}
+
+.dark .rte-btn:hover {
+  background: var(--p-surface-600, #4b5563);
+}
+
+.rte-btn.rte-active {
+  background: color-mix(in srgb, var(--p-primary-500, #6366f1) 15%, transparent);
+  color: var(--p-primary-700, #4338ca);
+}
+
+.dark .rte-btn.rte-active {
+  color: var(--p-primary-300, #a5b4fc);
+}
+
+.rte-italic { font-style: italic; }
+.rte-underline { text-decoration: underline; }
+
+.rte-sep {
+  width: 1px;
+  align-self: stretch;
+  background: var(--p-surface-300, #d1d5db);
+  margin: 0 4px;
+}
+
+.dark .rte-sep {
+  background: var(--p-surface-600, #4b5563);
+}
+
+/* Editor content area */
+:host ::ng-deep .rte-content {
+  display: block;
+  min-height: 120px;
+}
+
+:host ::ng-deep .rte-content .tiptap {
+  outline: none;
+  padding: 10px 12px;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  min-height: 120px;
+}
+
+/* Placeholder */
+:host ::ng-deep .tiptap p.is-editor-empty:first-child::before {
+  color: #9ca3af;
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+/* Headings */
+:host ::ng-deep .tiptap h1 { font-size: 1.5rem; font-weight: 700; margin: 0.75rem 0 0.25rem; }
+:host ::ng-deep .tiptap h2 { font-size: 1.25rem; font-weight: 700; margin: 0.75rem 0 0.25rem; }
+:host ::ng-deep .tiptap h3 { font-size: 1.1rem; font-weight: 600; margin: 0.5rem 0 0.25rem; }
+
+/* Lists */
+:host ::ng-deep .tiptap ul, :host ::ng-deep .tiptap ol { padding-left: 1.25rem; margin: 0.25rem 0; }
+:host ::ng-deep .tiptap li { margin: 2px 0; }
+
+/* Task list (checklist) */
+:host ::ng-deep .tiptap ul[data-type="taskList"] { list-style: none; padding: 0; }
+:host ::ng-deep .tiptap ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+:host ::ng-deep .tiptap ul[data-type="taskList"] li > label { margin-top: 2px; cursor: pointer; }
+:host ::ng-deep .tiptap ul[data-type="taskList"] li[data-checked="true"] > div {
+  text-decoration: line-through;
+  color: #9ca3af;
+}
+
+/* Blockquote */
+:host ::ng-deep .tiptap blockquote {
+  border-left: 3px solid #d1d5db;
+  padding-left: 0.75rem;
+  color: #6b7280;
+  margin: 0.5rem 0;
+}
+
+/* Code */
+:host ::ng-deep .tiptap code {
+  background: #f3f4f6;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 0.8em;
+  font-family: ui-monospace, monospace;
+}
+
+:host ::ng-deep .tiptap pre {
+  background: #f3f4f6;
+  padding: 10px 12px;
+  border-radius: 6px;
+  margin: 0.5rem 0;
+  overflow-x: auto;
+}
+
+:host ::ng-deep .tiptap pre code { background: none; padding: 0; font-size: 0.85em; }
+
+/* Table */
+:host ::ng-deep .tiptap table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.5rem 0;
+}
+:host ::ng-deep .tiptap table td,
+:host ::ng-deep .tiptap table th {
+  border: 1px solid #e5e7eb;
+  padding: 4px 8px;
+  min-width: 80px;
+  vertical-align: top;
+}
+:host ::ng-deep .tiptap table th {
+  background: #f9fafb;
+  font-weight: 600;
+}
+:host ::ng-deep .tiptap table .selectedCell { background: #ede9fe; }
