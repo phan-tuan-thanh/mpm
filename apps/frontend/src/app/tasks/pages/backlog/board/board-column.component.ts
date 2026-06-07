@@ -10,9 +10,9 @@ import type { TaskListItem, ProjectState, DisplayProperties } from '@mpm/shared-
   selector: 'app-board-column',
   imports: [CommonModule, DragDropModule, TooltipModule, BoardCardComponent],
   template: `
-    <div class="flex flex-col h-full min-w-[260px] max-w-[320px] w-72 flex-shrink-0">
+    <div class="flex flex-col h-full min-w-[260px] max-w-[320px] w-72 flex-shrink-0 bg-gray-100 dark:bg-surface-800 rounded-xl p-3">
       <!-- Column header -->
-      <div class="flex items-center gap-2 px-3 py-2.5 mb-2 rounded-lg bg-gray-50 dark:bg-surface-800 flex-shrink-0">
+      <div class="flex items-center gap-2 px-1 py-1 mb-3 flex-shrink-0">
         <span class="w-3 h-3 rounded-full flex-shrink-0 border-2"
               [style.border-color]="state.color"
               [style.background]="isFilledGroup ? state.color : 'transparent'">
@@ -20,7 +20,7 @@ import type { TaskListItem, ProjectState, DisplayProperties } from '@mpm/shared-
         <span class="text-sm font-semibold text-gray-700 dark:text-surface-100 flex-1 truncate">
           {{ state.name }}
         </span>
-        <span class="text-xs text-gray-400 bg-gray-200 dark:bg-surface-700 rounded px-1.5 font-medium min-w-[1.25rem] text-center leading-5">
+        <span class="text-xs text-gray-500 bg-gray-200 dark:bg-surface-700 rounded-full px-1.5 font-medium min-w-[1.25rem] text-center leading-5">
           {{ tasks.length }}
         </span>
       </div>
@@ -32,8 +32,8 @@ import type { TaskListItem, ProjectState, DisplayProperties } from '@mpm/shared-
         [cdkDropListData]="tasks"
         [cdkDropListConnectedTo]="connectedTo"
         (cdkDropListDropped)="onDrop($event)"
-        class="flex flex-col gap-2 flex-1 overflow-y-auto px-0.5 pb-2 rounded-lg transition-colors"
-        [class.bg-indigo-50]="isDragOver"
+        class="flex flex-col gap-2 flex-1 overflow-y-auto rounded-lg transition-colors"
+        [class.bg-indigo-100]="isDragOver"
         [class.dark:bg-indigo-950]="isDragOver"
         (cdkDropListEntered)="isDragOver = true"
         (cdkDropListExited)="isDragOver = false"
@@ -58,8 +58,8 @@ import type { TaskListItem, ProjectState, DisplayProperties } from '@mpm/shared-
         }
 
         @if (tasks.length === 0) {
-          <div class="flex flex-col items-center justify-center py-6 text-gray-300 dark:text-surface-600 text-xs gap-1 rounded-lg">
-            <i class="pi pi-inbox text-2xl"></i>
+          <div class="flex flex-col items-center justify-center py-8 text-gray-400 dark:text-surface-500 text-xs gap-2">
+            <i class="pi pi-inbox text-xl opacity-50"></i>
             <span>Không có task</span>
           </div>
         }

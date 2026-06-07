@@ -12,7 +12,7 @@ const STATE_GROUP_ORDER = ['backlog', 'unstarted', 'started', 'completed', 'canc
   selector: 'app-board',
   imports: [CommonModule, BoardColumnComponent],
   template: `
-    <div class="flex gap-4 h-full overflow-x-auto px-4 py-4">
+    <div class="flex gap-3 h-full overflow-x-auto px-4 pt-5 pb-4">
       @for (col of columns(); track col.state.id) {
         <app-board-column
           [state]="col.state"
