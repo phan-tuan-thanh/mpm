@@ -83,17 +83,17 @@ const AVATAR_PALETTE = [
         <div class="flex items-center gap-1 flex-shrink-0 mr-2">
           @for (label of task.labels.slice(0, displayProps.maxLabels); track label.id) {
             @if (isScoped(label.name)) {
-              <span class="inline-flex items-center text-[10px] rounded-full overflow-hidden border border-gray-200 dark:border-surface-700 font-medium select-none cursor-default" [pTooltip]="label.description ? label.name + ': ' + label.description : label.name">
-                <span class="px-1.5 py-0.5" 
-                      [style.background]="layoutService.getAdaptiveColor(getScopeColor(label.name, label.color))" 
+              <span class="inline-flex items-center text-[10px] rounded-full overflow-hidden border border-gray-300 dark:border-surface-600 font-medium select-none cursor-default" [pTooltip]="label.description ? label.name + ': ' + label.description : label.name">
+                <span class="px-1.5 py-0.5"
+                      [style.background]="layoutService.getAdaptiveColor(getScopeColor(label.name, label.color))"
                       [style.color]="layoutService.getTextColor(layoutService.getAdaptiveColor(getScopeColor(label.name, label.color)))">{{ getScope(label.name) }}</span>
-                <span class="px-1.5 py-0.5" 
-                      [style.background]="layoutService.getAdaptiveColor(label.color) + '18'" 
+                <span class="px-1.5 py-0.5"
+                      [style.background]="layoutService.getAdaptiveColor(label.color) + '28'"
                       [style.color]="layoutService.getAdaptiveColor(label.color)">{{ getValue(label.name) }}</span>
               </span>
             } @else {
-              <span class="text-[10px] px-2 py-0.5 rounded-full font-medium select-none cursor-default"
-                    [style.background]="layoutService.getAdaptiveColor(label.color) + '22'" 
+              <span class="text-[10px] px-2 py-0.5 rounded-full font-medium border border-gray-300 dark:border-surface-600 select-none cursor-default"
+                    [style.background]="layoutService.getAdaptiveColor(label.color) + '22'"
                     [style.color]="layoutService.getAdaptiveColor(label.color)"
                     [pTooltip]="label.description ? label.name + ': ' + label.description : label.name">
                 {{ label.name }}
