@@ -60,7 +60,7 @@ const PRIORITY_CONFIG: Record<string, { icon: string; color: string }> = {
             <div class="flex flex-wrap gap-1">
               @for (label of task.labels.slice(0, displayProps.maxLabels); track label.id) {
                 @if (isScoped(label.name)) {
-                  <span class="inline-flex items-center text-[10px] rounded-full overflow-hidden border border-gray-200 dark:border-surface-700 font-medium"
+                  <span class="inline-flex items-center text-[10px] rounded-full overflow-hidden border border-gray-300 dark:border-surface-600 font-medium"
                         [pTooltip]="label.description ? label.name + ': ' + label.description : label.name">
                     <span class="px-1.5 py-0.5"
                           [style.background]="ls.getAdaptiveColor(getScopeColor(label))"
@@ -68,13 +68,13 @@ const PRIORITY_CONFIG: Record<string, { icon: string; color: string }> = {
                       {{ getScope(label.name) }}
                     </span>
                     <span class="px-1.5 py-0.5"
-                          [style.background]="ls.getAdaptiveColor(label.color) + '18'"
+                          [style.background]="ls.getAdaptiveColor(label.color) + '28'"
                           [style.color]="ls.getAdaptiveColor(label.color)">
                       {{ getValue(label.name) }}
                     </span>
                   </span>
                 } @else {
-                  <span class="text-[10px] px-2 py-0.5 rounded-full font-medium"
+                  <span class="text-[10px] px-2 py-0.5 rounded-full font-medium border border-gray-300 dark:border-surface-600"
                         [style.background]="ls.getAdaptiveColor(label.color) + '22'"
                         [style.color]="ls.getAdaptiveColor(label.color)"
                         [pTooltip]="label.description ? label.name + ': ' + label.description : label.name">
@@ -83,7 +83,7 @@ const PRIORITY_CONFIG: Record<string, { icon: string; color: string }> = {
                 }
               }
               @if (task.labels.length > displayProps.maxLabels) {
-                <span class="text-[10px] text-gray-500 font-medium px-1 py-0.5 rounded-full bg-gray-100 border border-gray-200 cursor-default"
+                <span class="text-[10px] text-gray-500 font-medium px-1 py-0.5 rounded-full bg-gray-100 border border-gray-300 cursor-default"
                       [pTooltip]="hiddenLabelsTooltip(task.labels)">
                   +{{ task.labels.length - displayProps.maxLabels }}
                 </span>
