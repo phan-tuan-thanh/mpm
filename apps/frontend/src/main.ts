@@ -57,11 +57,7 @@ const routes = [
         children: [
           {
             path: 'board',
-            loadComponent: () =>
-              import('./app/projects/pages/board-placeholder.component').then(
-                (m) => m.BoardPlaceholderComponent
-              ),
-            title: 'Board — Agile PM',
+            redirectTo: 'backlog?view=board',
           },
           {
             path: 'backlog',

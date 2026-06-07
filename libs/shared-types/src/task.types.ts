@@ -136,6 +136,7 @@ export interface TaskListItem {
   completedAt: Date | null;
   backlogOrder: number;
   parentId: string | null;
+  parent?: TaskParentRef | null;
   reporterId: string;
   cycleId: string | null;
   subItemCount: number;
@@ -302,6 +303,7 @@ export interface DisplayProperties {
   showLabels: boolean;
   showEstimate: boolean;
   showSubItemCount: boolean;
+  showParent: boolean;
   showState: boolean;
   showModules: boolean;
   alwaysShowLabels: boolean;
@@ -320,6 +322,7 @@ export const DEFAULT_DISPLAY_PROPS: DisplayProperties = {
   showLabels: true,
   showEstimate: true,
   showSubItemCount: true,
+  showParent: true,
   showState: true,
   showModules: true,
   alwaysShowLabels: false,

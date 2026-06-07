@@ -12,6 +12,7 @@ import { ProjectStore } from '../../../projects/state/project.store';
 import { LayoutService } from '../../../layout/services/layout.service';
 import { BacklogToolbarComponent, BacklogFilter } from './backlog-toolbar/backlog-toolbar.component';
 import { TaskListComponent } from './task-list/task-list.component';
+import { BoardComponent } from './board/board.component';
 import { QuickCreateComponent } from './quick-create/quick-create.component';
 import { TaskDetailPanelComponent } from '../../components/task-detail-panel/task-detail-panel.component';
 import { LabelManagerComponent } from '../../components/label-manager/label-manager.component';
@@ -25,7 +26,7 @@ import { Subject, takeUntil } from 'rxjs';
   imports: [
     CommonModule,
     ButtonModule, ConfirmDialogModule, ToastModule,
-    BacklogToolbarComponent, TaskListComponent, QuickCreateComponent,
+    BacklogToolbarComponent, TaskListComponent, BoardComponent, QuickCreateComponent,
     TaskDetailPanelComponent, LabelManagerComponent,
   ],
   providers: [ConfirmationService, MessageService],
@@ -36,12 +37,14 @@ import { Subject, takeUntil } from 'rxjs';
         [displayProps]="displayProps()"
         [selectedGroupBy]="selectedGroupBy"
         [selectedOrderBy]="selectedOrderBy"
+        [viewMode]="viewMode()"
         (filterChange)="onFilterChange($event)"
         (groupByChange)="onGroupByChange($event)"
         (orderByChange)="onOrderByChange($event)"
         (displayPropsChange)="updateDisplayProps($event)"
         (newTaskClick)="openQuickCreate()"
         (labelManagerClick)="openLabelManager()"
+        (viewModeChange)="onViewModeChange($event)"
       />
 
       <!-- Bulk actions bar -->
@@ -57,8 +60,8 @@ import { Subject, takeUntil } from 'rxjs';
         </div>
       }
 
-      <!-- Task list OR Full-page views -->
-      <div class="flex-1 overflow-y-auto">
+      <!-- Task list / Board / Full-page views -->
+      <div class="flex-1 overflow-hidden">
         @if (showQuickCreate() && displayProps().taskCreationViewMode === 'full-page') {
           <div class="h-full p-6 bg-gray-50 dark:bg-surface-950 flex justify-center items-start overflow-y-auto">
             <app-quick-create
@@ -77,20 +80,30 @@ import { Subject, takeUntil } from 'rxjs';
               (viewModeChange)="onDetailViewModeChange($event)"
             />
           </div>
-        } @else {
-          <app-task-list
+        } @else if (viewMode() === 'board') {
+          <app-board
             [tasks]="taskStore.tasks()"
             [states]="flatStates()"
-            [isLoading]="taskStore.isLoading()"
-            [orderBy]="selectedOrderBy"
-            [selectedIds]="taskStore.selectedTaskIds()"
             [displayProps]="displayProps()"
+            [projectId]="projectId"
             (taskClick)="openDetail($event)"
-            (selectionToggle)="taskStore.toggleSelect($event)"
-            (reorder)="onReorder($event)"
-            (moveTask)="onMoveTask($event)"
-            (newTaskInState)="openQuickCreate($event)"
           />
+        } @else {
+          <div class="h-full overflow-y-auto">
+            <app-task-list
+              [tasks]="taskStore.tasks()"
+              [states]="flatStates()"
+              [isLoading]="taskStore.isLoading()"
+              [orderBy]="selectedOrderBy"
+              [selectedIds]="taskStore.selectedTaskIds()"
+              [displayProps]="displayProps()"
+              (taskClick)="openDetail($event)"
+              (selectionToggle)="taskStore.toggleSelect($event)"
+              (reorder)="onReorder($event)"
+              (moveTask)="onMoveTask($event)"
+              (newTaskInState)="openQuickCreate($event)"
+            />
+          </div>
         }
       </div>
 
@@ -137,6 +150,7 @@ export class BacklogComponent implements OnInit, OnDestroy {
   protected projectId = '';
   protected workspaceId = '';
   protected currentTaskId = signal<string | null>(null);
+  protected viewMode = signal<'list' | 'board'>('list');
 
   protected readonly displayProps = signal<DisplayProperties>(DEFAULT_DISPLAY_PROPS);
 
@@ -151,6 +165,10 @@ export class BacklogComponent implements OnInit, OnDestroy {
 
     this.route.queryParams.pipe(takeUntil(this.destroy$)).subscribe((params) => {
       this.currentTaskId.set(params['taskId'] || null);
+      const view = params['view'];
+      if (view === 'board' || view === 'list') {
+        this.viewMode.set(view);
+      }
     });
 
     this.route.parent?.params.pipe(takeUntil(this.destroy$)).subscribe(() => {
@@ -178,6 +196,15 @@ export class BacklogComponent implements OnInit, OnDestroy {
     this.layoutService.fullBleed.set(false);
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  protected onViewModeChange(mode: 'list' | 'board'): void {
+    this.viewMode.set(mode);
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { view: mode },
+      queryParamsHandling: 'merge',
+    });
   }
 
   protected openQuickCreate(stateId?: string): void {

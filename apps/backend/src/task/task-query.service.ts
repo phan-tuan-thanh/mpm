@@ -41,6 +41,7 @@ export class TaskQueryService {
     const qb = this.taskRepo
       .createQueryBuilder('t')
       .leftJoinAndSelect('t.state', 'state')
+      .leftJoinAndSelect('t.parent', 'parent')
       .leftJoinAndSelect('t.assignees', 'assignee')
       .leftJoinAndSelect('t.labels', 'label')
       .leftJoin(

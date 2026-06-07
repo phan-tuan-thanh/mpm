@@ -7,6 +7,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { PopoverModule, Popover } from 'primeng/popover';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { ProjectStore } from '../../../../projects/state/project.store';
 import { DisplayPropertiesPanelComponent } from './display-properties-panel.component';
@@ -25,7 +26,7 @@ export interface BacklogFilter {
 @Component({
   standalone: true,
   selector: 'app-backlog-toolbar',
-  imports: [CommonModule, FormsModule, ButtonModule, InputTextModule, SelectModule, MultiSelectModule, PopoverModule, DisplayPropertiesPanelComponent],
+  imports: [CommonModule, FormsModule, ButtonModule, InputTextModule, SelectModule, MultiSelectModule, PopoverModule, TooltipModule, DisplayPropertiesPanelComponent],
   template: `
     <div class="flex items-center gap-3 px-4 py-3 border-b border-gray-200 dark:border-surface-700 bg-white dark:bg-surface-900 flex-shrink-0 flex-wrap">
       <h1 class="text-lg font-semibold text-gray-900 dark:text-surface-0 mr-2">Backlog</h1>
@@ -119,6 +120,30 @@ export interface BacklogFilter {
 
       <div class="flex-1"></div>
 
+      <!-- View mode toggle: List / Board -->
+      <div class="flex items-center border border-gray-200 dark:border-surface-700 rounded overflow-hidden">
+        <button
+          class="flex items-center justify-center w-8 h-7 transition-colors"
+          [class.bg-indigo-600]="viewMode === 'list'"
+          [class.text-white]="viewMode === 'list'"
+          [class.text-gray-500]="viewMode !== 'list'"
+          [class.hover:bg-gray-100]="viewMode !== 'list'"
+          pTooltip="List view"
+          (click)="viewModeChange.emit('list')">
+          <i class="pi pi-list text-xs"></i>
+        </button>
+        <button
+          class="flex items-center justify-center w-8 h-7 transition-colors border-l border-gray-200 dark:border-surface-700"
+          [class.bg-indigo-600]="viewMode === 'board'"
+          [class.text-white]="viewMode === 'board'"
+          [class.text-gray-500]="viewMode !== 'board'"
+          [class.hover:bg-gray-100]="viewMode !== 'board'"
+          pTooltip="Board view"
+          (click)="viewModeChange.emit('board')">
+          <i class="pi pi-th-large text-xs"></i>
+        </button>
+      </div>
+
       <!-- Label manager (SM/PO only) -->
       <button pButton label="Quản lý Labels" icon="pi pi-tags" severity="secondary" size="small" text
         (click)="labelManagerClick.emit()"></button>
@@ -135,12 +160,14 @@ export class BacklogToolbarComponent {
   @Input() displayProps: DisplayProperties = DEFAULT_DISPLAY_PROPS;
   @Input() selectedGroupBy = 'none';
   @Input() selectedOrderBy = 'rank';
+  @Input() viewMode: 'list' | 'board' = 'list';
   @Output() filterChange = new EventEmitter<BacklogFilter>();
   @Output() groupByChange = new EventEmitter<string>();
   @Output() orderByChange = new EventEmitter<string>();
   @Output() newTaskClick = new EventEmitter<void>();
   @Output() labelManagerClick = new EventEmitter<void>();
   @Output() displayPropsChange = new EventEmitter<Partial<DisplayProperties>>();
+  @Output() viewModeChange = new EventEmitter<'list' | 'board'>();
 
   @ViewChild('displayPopover') private readonly displayPopover!: Popover;
 
