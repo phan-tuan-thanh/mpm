@@ -1,14 +1,13 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DragDropModule, CdkDragDrop } from '@angular/cdk/drag-drop';
-import { TooltipModule } from 'primeng/tooltip';
 import { BoardCardComponent } from './board-card.component';
 import type { TaskListItem, ProjectState, DisplayProperties } from '@mpm/shared-types';
 
 @Component({
   standalone: true,
   selector: 'app-board-column',
-  imports: [CommonModule, DragDropModule, TooltipModule, BoardCardComponent],
+  imports: [CommonModule, DragDropModule, BoardCardComponent],
   template: `
     <div class="flex flex-col h-full min-w-[260px] max-w-[320px] w-72 flex-shrink-0 bg-gray-100 dark:bg-surface-800 rounded-xl p-3">
       <!-- Column header -->
@@ -44,9 +43,7 @@ import type { TaskListItem, ProjectState, DisplayProperties } from '@mpm/shared-
             <app-board-card
               [task]="task"
               [displayProps]="displayProps"
-              [hoveredGroupId]="hoveredGroupId"
               (cardClick)="cardClick.emit($event)"
-              (groupHover)="groupHover.emit($event)"
             />
             <!-- Custom drag preview -->
             <div *cdkDragPreview class="bg-white dark:bg-surface-800 border border-indigo-300 rounded-lg p-3 shadow-xl w-64 pointer-events-none">
@@ -72,10 +69,8 @@ export class BoardColumnComponent {
   @Input() tasks: TaskListItem[] = [];
   @Input() connectedTo: string[] = [];
   @Input() displayProps!: DisplayProperties;
-  @Input() hoveredGroupId: string | null = null;
 
   @Output() cardClick = new EventEmitter<TaskListItem>();
-  @Output() groupHover = new EventEmitter<string | null>();
   @Output() cardDropped = new EventEmitter<{ event: CdkDragDrop<TaskListItem[]>; stateId: string }>();
 
   protected isDragOver = false;

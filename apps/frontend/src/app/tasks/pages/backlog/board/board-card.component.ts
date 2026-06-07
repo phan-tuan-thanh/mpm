@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, inject, computed, signal } from '@angular/core';
+import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TooltipModule } from 'primeng/tooltip';
 import type { TaskListItem, DisplayProperties } from '@mpm/shared-types';
@@ -17,15 +17,14 @@ const PRIORITY_ICON: Record<string, string> = {
   imports: [CommonModule, TooltipModule],
   template: `
     <div
-      class="bg-white dark:bg-surface-800 border border-gray-200 dark:border-surface-700 rounded-lg p-3 cursor-pointer select-none transition-all duration-150 ease-in-out"
-      [class.ring-2]="isHighlighted()"
-      [class.ring-indigo-400]="isHighlighted()"
-      [class.scale-[1.01]]="isHighlighted()"
-      [class.shadow-md]="isHighlighted()"
-      [class.opacity-40]="isDimmed()"
+      class="bg-white dark:bg-surface-800 border rounded-lg p-3 cursor-pointer select-none transition-all duration-150 ease-in-out"
+      [class.border-gray-200]="!hovered"
+      [class.dark:border-surface-700]="!hovered"
+      [class.border-indigo-400]="hovered"
+      [class.shadow-md]="hovered"
       (click)="cardClick.emit(task)"
-      (mouseenter)="onMouseEnter()"
-      (mouseleave)="onMouseLeave()">
+      (mouseenter)="hovered = true"
+      (mouseleave)="hovered = false">
 
       <!-- identifier -->
       <div class="text-[10px] font-mono text-gray-400 mb-1">{{ task.taskId }}</div>
@@ -57,16 +56,19 @@ const PRIORITY_ICON: Record<string, string> = {
         </div>
       }
 
-      <!-- meta row 2: assignee + due date -->
-      @if ((displayProps.showAssignee && task.assignees.length) || (displayProps.showDueDate && task.dueDate)) {
+      <!-- meta row 2: assignee + due date + sub-item count -->
+      @if ((displayProps.showAssignee && task.assignees.length) || (displayProps.showDueDate && task.dueDate) || (displayProps.showSubItemCount && task.subItemCount > 0)) {
         <div class="flex items-center gap-2 mt-1">
           @if (displayProps.showAssignee && task.assignees.length) {
             <div class="flex items-center gap-0.5">
               @for (assignee of task.assignees.slice(0, 2); track assignee.userId) {
                 @if (assignee.avatarUrl) {
-                  <img [src]="assignee.avatarUrl" [alt]="assignee.displayName" class="w-4 h-4 rounded-full border border-white dark:border-surface-800" [pTooltip]="assignee.displayName" />
+                  <img [src]="assignee.avatarUrl" [alt]="assignee.displayName"
+                       class="w-4 h-4 rounded-full border border-white dark:border-surface-800"
+                       [pTooltip]="assignee.displayName" />
                 } @else {
-                  <span class="w-4 h-4 rounded-full bg-indigo-500 text-white text-[8px] flex items-center justify-center border border-white dark:border-surface-800" [pTooltip]="assignee.displayName">
+                  <span class="w-4 h-4 rounded-full bg-indigo-500 text-white text-[8px] flex items-center justify-center border border-white dark:border-surface-800"
+                        [pTooltip]="assignee.displayName">
                     {{ assignee.displayName.charAt(0).toUpperCase() }}
                   </span>
                 }
@@ -102,9 +104,9 @@ const PRIORITY_ICON: Record<string, string> = {
 export class BoardCardComponent {
   @Input({ required: true }) task!: TaskListItem;
   @Input() displayProps!: DisplayProperties;
-  @Input() hoveredGroupId: string | null = null;
   @Output() cardClick = new EventEmitter<TaskListItem>();
-  @Output() groupHover = new EventEmitter<string | null>();
+
+  protected hovered = false;
 
   protected get priorityIcon(): string {
     return PRIORITY_ICON[this.task.priority] ?? '⚪';
@@ -112,25 +114,6 @@ export class BoardCardComponent {
 
   protected get visibleLabels() {
     return this.task.labels.slice(0, this.displayProps.maxLabels ?? 2);
-  }
-
-  protected isHighlighted(): boolean {
-    if (!this.hoveredGroupId) return false;
-    return this.task.id === this.hoveredGroupId || this.task.parentId === this.hoveredGroupId;
-  }
-
-  protected isDimmed(): boolean {
-    if (!this.hoveredGroupId) return false;
-    return !this.isHighlighted();
-  }
-
-  protected onMouseEnter(): void {
-    const groupId = this.task.parentId ?? this.task.id;
-    this.groupHover.emit(groupId);
-  }
-
-  protected onMouseLeave(): void {
-    this.groupHover.emit(null);
   }
 
   protected formatDate(dateStr: string): string {

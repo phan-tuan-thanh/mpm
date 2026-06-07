@@ -19,9 +19,7 @@ const STATE_GROUP_ORDER = ['backlog', 'unstarted', 'started', 'completed', 'canc
           [tasks]="col.tasks"
           [connectedTo]="columnIds()"
           [displayProps]="displayProps"
-          [hoveredGroupId]="hoveredGroupId()"
           (cardClick)="taskClick.emit($event)"
-          (groupHover)="hoveredGroupId.set($event)"
           (cardDropped)="onCardDropped($event)"
         />
       }
@@ -40,8 +38,6 @@ export class BoardComponent {
   @Input() projectId = '';
 
   @Output() taskClick = new EventEmitter<TaskListItem>();
-
-  protected hoveredGroupId = signal<string | null>(null);
 
   protected readonly columns = computed(() => {
     const tasks = this._tasks();
