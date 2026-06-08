@@ -1,7 +1,10 @@
 import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { StyleClassModule } from 'primeng/styleclass';
+import { ButtonModule } from 'primeng/button';
 import { LayoutService } from '../../services/layout.service';
+import { ThemeConfigComponent } from '../../theme-config/theme-config.component';
 import { AuthService } from '../../../auth/services/auth.service';
 import { EditorPreferenceService } from '../../../shared/services/editor-preference.service';
 import type { ToolbarMode } from '../../../shared/components/rich-text-editor/rte-features';
@@ -9,7 +12,7 @@ import type { ToolbarMode } from '../../../shared/components/rich-text-editor/rt
 @Component({
   standalone: true,
   selector: 'app-topbar',
-  imports: [CommonModule],
+  imports: [CommonModule, StyleClassModule, ButtonModule, ThemeConfigComponent],
   template: `
     <header class="w-full h-16 bg-white dark:bg-surface-900 border-b border-[#e2e8f0] dark:border-surface-800 flex items-center justify-between px-4 sm:px-6 transition-colors duration-200">
       <!-- Left side: Hamburger + Logo -->
@@ -34,7 +37,8 @@ import type { ToolbarMode } from '../../../shared/components/rich-text-editor/rt
 
       <!-- Right side: Actions & Profile -->
       <div class="flex items-center gap-3">
-        <!-- Theme Toggle -->
+
+        <!-- Dark Mode Toggle -->
         <button
           (click)="layoutService.toggleDarkMode()"
           class="flex h-10 w-10 items-center justify-center rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-surface-800 transition duration-200 cursor-pointer"
@@ -42,6 +46,23 @@ import type { ToolbarMode } from '../../../shared/components/rich-text-editor/rt
         >
           <i [class]="layoutService.isDarkMode() ? 'pi pi-sun text-lg text-yellow-500' : 'pi pi-moon text-lg'"></i>
         </button>
+
+        <!-- Theme Config Button + Panel -->
+        <div class="relative">
+          <p-button
+            icon="pi pi-palette"
+            pStyleClass="@next"
+            enterFromClass="hidden"
+            enterActiveClass="animate-scalein"
+            leaveToClass="hidden"
+            leaveActiveClass="animate-fadeout"
+            [hideOnOutsideClick]="true"
+            [rounded]="true"
+            severity="secondary"
+            size="small"
+          />
+          <app-theme-config />
+        </div>
 
         <!-- Divider -->
         <div class="h-6 w-px bg-gray-200 dark:bg-surface-800"></div>
@@ -59,7 +80,7 @@ import type { ToolbarMode } from '../../../shared/components/rich-text-editor/rt
 
           <!-- Dropdown Menu -->
           @if (isProfileMenuOpen()) {
-            <div 
+            <div
               class="absolute right-0 mt-2 w-64 bg-white dark:bg-surface-900 border border-[#e2e8f0] dark:border-surface-800 rounded-xl shadow-xl py-2 z-50 animate-fadein"
               (click)="$event.stopPropagation()"
             >
@@ -131,8 +152,8 @@ export class TopbarComponent {
   private readonly router = inject(Router);
 
   readonly editorModes: { mode: ToolbarMode; label: string; icon: string; desc: string }[] = [
-    { mode: 'bubble', label: 'Bubble', icon: 'pi pi-comment', desc: 'Formatting hiện khi bôi chọn (Notion-like)' },
-    { mode: 'full',   label: 'Full',   icon: 'pi pi-bars',    desc: 'Toolbar đầy đủ cố định (Google Docs-like)' },
+    { mode: 'bubble',   label: 'Bubble',  icon: 'pi pi-comment',    desc: 'Formatting hiện khi bôi chọn (Notion-like)' },
+    { mode: 'full',     label: 'Full',    icon: 'pi pi-bars',       desc: 'Toolbar đầy đủ cố định (Google Docs-like)' },
     { mode: 'overflow', label: 'Compact', icon: 'pi pi-ellipsis-h', desc: 'Toolbar gọn, nút ít dùng ẩn vào "..."' },
   ];
 
@@ -142,37 +163,28 @@ export class TopbarComponent {
 
   readonly isProfileMenuOpen = signal<boolean>(false);
 
-  readonly userEmail = computed(() => {
-    return this.authService.currentUser()?.email || 'user';
-  });
-
-  readonly userRole = computed(() => {
-    return this.authService.currentUser()?.systemRole || 'User';
-  });
-
+  readonly userEmail = computed(() => this.authService.currentUser()?.email || 'user');
+  readonly userRole  = computed(() => this.authService.currentUser()?.systemRole || 'User');
   readonly userInitials = computed(() => {
     const email = this.userEmail();
     return email ? email.substring(0, 2).toUpperCase() : 'US';
   });
 
   constructor() {
-    // Close profile menu on document click
-    document.addEventListener('click', () => {
-      this.isProfileMenuOpen.set(false);
-    });
+    document.addEventListener('click', () => this.isProfileMenuOpen.set(false));
   }
 
-  toggleProfileMenu(event: MouseEvent) {
+  toggleProfileMenu(event: MouseEvent): void {
     event.stopPropagation();
     this.isProfileMenuOpen.set(!this.isProfileMenuOpen());
   }
 
-  goToAdminPanel() {
+  goToAdminPanel(): void {
     this.isProfileMenuOpen.set(false);
     void this.router.navigate(['/admin/users']);
   }
 
-  logout() {
+  logout(): void {
     this.isProfileMenuOpen.set(false);
     void this.authService.logout();
   }

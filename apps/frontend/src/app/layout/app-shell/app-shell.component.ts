@@ -46,8 +46,30 @@ import { filter } from 'rxjs/operators';
             </div>
           </div>
         } @else {
-          <!-- Sidebar and Content View -->
-          <app-sidebar class="flex-shrink-0 h-full" />
+          <!-- Static sidebar: flex-child that pushes content -->
+          @if (layoutService.menuMode() === 'static') {
+            <app-sidebar class="flex-shrink-0 h-full" />
+          }
+
+          <!-- Overlay sidebar: absolute, on top of content -->
+          @if (layoutService.menuMode() === 'overlay') {
+            <!-- Backdrop -->
+            @if (layoutService.isOverlayOpen()) {
+              <div
+                class="absolute inset-0 z-40 bg-black/30"
+                (click)="layoutService.closeOverlayMenu()"
+              ></div>
+            }
+            <!-- Sidebar panel -->
+            <div
+              class="absolute left-0 top-0 h-full z-50 transition-transform duration-300"
+              [class.-translate-x-full]="!layoutService.isOverlayOpen()"
+              [class.translate-x-0]="layoutService.isOverlayOpen()"
+            >
+              <app-sidebar />
+            </div>
+          }
+
           <main
             class="flex-1 min-w-0 bg-surface-50 dark:bg-surface-950"
             [class.overflow-hidden]="layoutService.fullBleed()"

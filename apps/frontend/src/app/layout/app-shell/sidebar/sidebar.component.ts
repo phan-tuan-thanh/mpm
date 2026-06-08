@@ -14,13 +14,13 @@ import { ProjectListItem } from '@mpm/shared-types';
   imports: [CommonModule, RouterLink, RouterLinkActive, SelectModule, FormsModule],
   template: `
     <div
-      [class.w-64]="!layoutService.isCollapsed()"
-      [class.w-16]="layoutService.isCollapsed()"
+      [class.w-64]="layoutService.menuMode() === 'overlay' || isExpanded()"
+      [class.w-16]="layoutService.menuMode() === 'static' && !isExpanded()"
       class="flex h-full flex-col border-r border-[#e2e8f0] dark:border-surface-800 bg-white dark:bg-surface-900 text-gray-800 dark:text-surface-100 transition-all duration-300 ease-in-out select-none shadow-sm"
     >
       <!-- Project Switcher -->
       <div class="p-3 border-b border-[#f1f5f9] dark:border-surface-800 overflow-visible">
-        @if (!layoutService.isCollapsed()) {
+        @if (isExpanded()) {
           <span class="block text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-surface-400 mb-2 px-1">Dự án</span>
           <p-select
             [options]="projectStore.projects()"
@@ -83,10 +83,10 @@ import { ProjectListItem } from '@mpm/shared-types';
           routerLinkActive="bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 font-semibold border-l-4 border-indigo-600"
           [routerLinkActiveOptions]="{ exact: true }"
           class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 dark:text-surface-400 hover:bg-gray-50 dark:hover:bg-surface-800 hover:text-gray-900 dark:hover:text-surface-100 transition duration-200"
-          [title]="layoutService.isCollapsed() ? 'Danh sách dự án' : ''"
+          [title]="!isExpanded() ? 'Danh sách dự án' : ''"
         >
           <i class="pi pi-list text-base"></i>
-          @if (!layoutService.isCollapsed()) {
+          @if (isExpanded()) {
             <span>Danh sách dự án</span>
           }
         </a>
@@ -97,10 +97,10 @@ import { ProjectListItem } from '@mpm/shared-types';
             routerLinkActive="bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 font-semibold border-l-4 border-indigo-600"
             [routerLinkActiveOptions]="{ exact: false }"
             class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 dark:text-surface-400 hover:bg-gray-50 dark:hover:bg-surface-800 hover:text-gray-900 dark:hover:text-surface-100 transition duration-200"
-            [title]="layoutService.isCollapsed() ? 'Quản trị hệ thống' : ''"
+            [title]="!isExpanded() ? 'Quản trị hệ thống' : ''"
           >
             <i class="pi pi-shield text-base"></i>
-            @if (!layoutService.isCollapsed()) {
+            @if (isExpanded()) {
               <span>Quản trị</span>
             }
           </a>
@@ -116,10 +116,10 @@ import { ProjectListItem } from '@mpm/shared-types';
             routerLinkActive="bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 font-semibold border-l-4 border-indigo-600"
             [routerLinkActiveOptions]="{ exact: false }"
             class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 dark:text-surface-400 hover:bg-gray-50 dark:hover:bg-surface-800 hover:text-gray-900 dark:hover:text-surface-100 transition duration-200"
-            [title]="layoutService.isCollapsed() ? 'Board' : ''"
+            [title]="!isExpanded() ? 'Board' : ''"
           >
             <i class="pi pi-table text-base"></i>
-            @if (!layoutService.isCollapsed()) {
+            @if (isExpanded()) {
               <span>Kanban Board</span>
             }
           </a>
@@ -130,10 +130,10 @@ import { ProjectListItem } from '@mpm/shared-types';
             routerLinkActive="bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 font-semibold border-l-4 border-indigo-600"
             [routerLinkActiveOptions]="{ exact: false }"
             class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 dark:text-surface-400 hover:bg-gray-50 dark:hover:bg-surface-800 hover:text-gray-900 dark:hover:text-surface-100 transition duration-200"
-            [title]="layoutService.isCollapsed() ? 'Backlog' : ''"
+            [title]="!isExpanded() ? 'Backlog' : ''"
           >
             <i class="pi pi-align-left text-base"></i>
-            @if (!layoutService.isCollapsed()) {
+            @if (isExpanded()) {
               <span>Backlog</span>
             }
           </a>
@@ -145,10 +145,10 @@ import { ProjectListItem } from '@mpm/shared-types';
               routerLinkActive="bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 font-semibold border-l-4 border-indigo-600"
               [routerLinkActiveOptions]="{ exact: false }"
               class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 dark:text-surface-400 hover:bg-gray-50 dark:hover:bg-surface-800 hover:text-gray-900 dark:hover:text-surface-100 transition duration-200"
-              [title]="layoutService.isCollapsed() ? 'Sprints/Cycles' : ''"
+              [title]="!isExpanded() ? 'Sprints/Cycles' : ''"
             >
               <i class="pi pi-sync text-base"></i>
-              @if (!layoutService.isCollapsed()) {
+              @if (isExpanded()) {
                 <span>Sprints/Cycles</span>
               }
             </a>
@@ -161,10 +161,10 @@ import { ProjectListItem } from '@mpm/shared-types';
               routerLinkActive="bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 font-semibold border-l-4 border-indigo-600"
               [routerLinkActiveOptions]="{ exact: false }"
               class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 dark:text-surface-400 hover:bg-gray-50 dark:hover:bg-surface-800 hover:text-gray-900 dark:hover:text-surface-100 transition duration-200"
-              [title]="layoutService.isCollapsed() ? 'Modules' : ''"
+              [title]="!isExpanded() ? 'Modules' : ''"
             >
               <i class="pi pi-box text-base"></i>
-              @if (!layoutService.isCollapsed()) {
+              @if (isExpanded()) {
                 <span>Modules</span>
               }
             </a>
@@ -177,10 +177,10 @@ import { ProjectListItem } from '@mpm/shared-types';
               routerLinkActive="bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 font-semibold border-l-4 border-indigo-600"
               [routerLinkActiveOptions]="{ exact: false }"
               class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 dark:text-surface-400 hover:bg-gray-50 dark:hover:bg-surface-800 hover:text-gray-900 dark:hover:text-surface-100 transition duration-200"
-              [title]="layoutService.isCollapsed() ? 'Custom Views' : ''"
+              [title]="!isExpanded() ? 'Custom Views' : ''"
             >
               <i class="pi pi-filter text-base"></i>
-              @if (!layoutService.isCollapsed()) {
+              @if (isExpanded()) {
                 <span>Custom Views</span>
               }
             </a>
@@ -193,10 +193,10 @@ import { ProjectListItem } from '@mpm/shared-types';
               routerLinkActive="bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 font-semibold border-l-4 border-indigo-600"
               [routerLinkActiveOptions]="{ exact: false }"
               class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 dark:text-surface-400 hover:bg-gray-50 dark:hover:bg-surface-800 hover:text-gray-900 dark:hover:text-surface-100 transition duration-200"
-              [title]="layoutService.isCollapsed() ? 'Pages' : ''"
+              [title]="!isExpanded() ? 'Pages' : ''"
             >
               <i class="pi pi-file text-base"></i>
-              @if (!layoutService.isCollapsed()) {
+              @if (isExpanded()) {
                 <span>Pages (Tài liệu)</span>
               }
             </a>
@@ -209,10 +209,10 @@ import { ProjectListItem } from '@mpm/shared-types';
               routerLinkActive="bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 font-semibold border-l-4 border-indigo-600"
               [routerLinkActiveOptions]="{ exact: false }"
               class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 dark:text-surface-400 hover:bg-gray-50 dark:hover:bg-surface-800 hover:text-gray-900 dark:hover:text-surface-100 transition duration-200"
-              [title]="layoutService.isCollapsed() ? 'Intake' : ''"
+              [title]="!isExpanded() ? 'Intake' : ''"
             >
               <i class="pi pi-inbox text-base"></i>
-              @if (!layoutService.isCollapsed()) {
+              @if (isExpanded()) {
                 <span>Intake (Yêu cầu)</span>
               }
             </a>
@@ -224,10 +224,10 @@ import { ProjectListItem } from '@mpm/shared-types';
             routerLinkActive="bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 font-semibold border-l-4 border-indigo-600"
             [routerLinkActiveOptions]="{ exact: false }"
             class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 dark:text-surface-400 hover:bg-gray-50 dark:hover:bg-surface-800 hover:text-gray-900 dark:hover:text-surface-100 transition duration-200"
-            [title]="layoutService.isCollapsed() ? 'Settings' : ''"
+            [title]="!isExpanded() ? 'Settings' : ''"
           >
             <i class="pi pi-cog text-base"></i>
-            @if (!layoutService.isCollapsed()) {
+            @if (isExpanded()) {
               <span>Cấu hình</span>
             }
           </a>
@@ -241,6 +241,11 @@ export class SidebarComponent implements OnInit {
   readonly layoutService = inject(LayoutService);
   readonly authStore = inject(AuthStore);
   private readonly router = inject(Router);
+
+  // In overlay mode the sidebar is always fully expanded; in static mode it respects isCollapsed
+  readonly isExpanded = computed(
+    () => this.layoutService.menuMode() === 'overlay' || !this.!isExpanded()
+  );
 
   readonly selectedProject = computed<ProjectListItem | null>(() => {
     const current = this.projectStore.currentProject();

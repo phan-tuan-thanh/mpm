@@ -1,6 +1,7 @@
 @layer theme, base, primeng, utilities;
 
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 @source "./app/**/*.ts";
 @source "./app/**/*.html";
 @import "primeicons/primeicons.css";
