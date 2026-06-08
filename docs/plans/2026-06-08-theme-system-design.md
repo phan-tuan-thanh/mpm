@@ -8,6 +8,7 @@
 | Tính năng | sakai-ng | apps/frontend |
 |---|---|---|
 | Dark mode toggle | ✅ `.app-dark` | ✅ `.dark` |
+| **Tailwind `dark:` variant đúng** | ✅ | ❌ **BUG** |
 | Preset (Aura/Lara/Nora) | ✅ | ❌ |
 | Primary color picker | ✅ | ❌ |
 | Surface color picker | ✅ | ❌ |
@@ -16,6 +17,38 @@
 | Persist to localStorage | ✅ | chỉ có dark_mode |
 
 **Điểm khác biệt quan trọng:** `apps/frontend` dùng `.dark` (Tailwind standard), `main.ts` đã có `darkModeSelector: '.dark'` → không cần đổi.
+
+---
+
+## BUG QUAN TRỌNG: Tailwind dark mode không hoạt động
+
+### Triệu chứng
+
+Trong `apps/frontend`, khi user click nút toggle dark mode:
+- ✅ PrimeNG components chuyển sang dark (vì `darkModeSelector: '.dark'` trong `main.ts`)
+- ❌ Tailwind `dark:` classes (54 trong layout, 117 trong tasks) **không phản ứng** với `.dark` class
+
+### Nguyên nhân gốc rễ
+
+**Tailwind v4 mặc định dùng `@media (prefers-color-scheme: dark)` cho variant `dark:`**, không phải class-based. `styles.css` thiếu khai báo custom variant:
+
+```css
+/* THIẾU dòng này trong styles.css */
+@custom-variant dark (&:where(.dark, .dark *));
+```
+
+Hệ quả: toàn bộ `dark:bg-*`, `dark:text-*`, `dark:border-*` trong app phản ứng theo **OS setting**, không theo nút toggle của app.
+
+### Fix
+
+Thêm vào **đầu** `apps/frontend/src/styles.css`, ngay sau `@import "tailwindcss"`:
+
+```css
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));  ← THÊM DÒNG NÀY
+```
+
+Đây là **bước đầu tiên phải làm** trước tất cả các bước khác.
 
 ---
 
@@ -110,11 +143,12 @@ Thêm signal/input phản ứng với `menuMode`:
 
 ## Thứ tự implementation
 
-1. Nâng cấp `LayoutService` — thêm signals + theme apply logic
-2. Tạo `ThemeConfigComponent`
-3. Cập nhật `TopbarComponent` — thêm palette button
-4. Cập nhật `AppShellComponent` + `SidebarComponent` — menu mode behavior
-5. Kiểm tra dark mode + all presets hoạt động đúng
+1. **[BUG FIX]** `styles.css` — thêm `@custom-variant dark` → fix Tailwind dark mode
+2. Nâng cấp `LayoutService` — thêm signals + theme apply logic
+3. Tạo `ThemeConfigComponent`
+4. Cập nhật `TopbarComponent` — thêm palette button
+5. Cập nhật `AppShellComponent` + `SidebarComponent` — menu mode behavior
+6. Kiểm tra dark mode + all presets hoạt động đúng
 
 ---
 
