@@ -65,19 +65,22 @@ export class BoardComponent {
     this.columns().map(c => 'col-' + c.state.id)
   );
 
-  protected onCardDropped({ event, stateId }: { event: CdkDragDrop<TaskListItem[]>; stateId: string }): void {
+  protected onCardDropped({ event, stateId, hoveredTaskId }: { event: CdkDragDrop<TaskListItem[]>; stateId: string; hoveredTaskId: string | null }): void {
     const task: TaskListItem = event.item.data;
 
-    if (event.previousContainer === event.container) {
-      // Reorder within same column — just visual, backlogOrder stays
-      moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
-    } else {
-      // Move to different column — optimistic update + API call
-      transferArrayItem(event.previousContainer.data, event.container.data, event.previousIndex, event.currentIndex);
+    // Calculate drop index from hoveredTaskId (line indicator position) instead of event.currentIndex
+    // which may be unreliable when cdkDropListSortingDisabled is true.
+    const destTasks = event.container.data.filter(t => t.id !== task.id);
+    const insertBeforeIdx = hoveredTaskId ? destTasks.findIndex(t => t.id === hoveredTaskId) : -1;
+    const dropIdx = insertBeforeIdx >= 0 ? insertBeforeIdx : destTasks.length;
 
-      const destTasks = event.container.data;
-      const prevTask = destTasks[event.currentIndex - 1];
-      const nextTask = destTasks[event.currentIndex + 1];
+    if (event.previousContainer === event.container) {
+      moveItemInArray(event.container.data, event.previousIndex, dropIdx);
+    } else {
+      transferArrayItem(event.previousContainer.data, event.container.data, event.previousIndex, dropIdx);
+
+      const prevTask = destTasks[dropIdx - 1];
+      const nextTask = destTasks[dropIdx];
       const prevOrder = prevTask ? prevTask.backlogOrder : (nextTask ? nextTask.backlogOrder - 2000 : 0);
       const nextOrder = nextTask ? nextTask.backlogOrder : (prevTask ? prevTask.backlogOrder + 2000 : 2000);
       const newOrder = (prevOrder + nextOrder) / 2;

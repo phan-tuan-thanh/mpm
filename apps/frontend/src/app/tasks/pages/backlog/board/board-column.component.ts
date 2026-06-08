@@ -8,6 +8,11 @@ import type { TaskListItem, ProjectState, DisplayProperties } from '@mpm/shared-
   standalone: true,
   selector: 'app-board-column',
   imports: [CommonModule, DragDropModule, BoardCardComponent],
+  styles: [`
+    ::ng-deep .cdk-drop-list-dragging .cdk-drag {
+      transition: none !important;
+    }
+  `],
   template: `
     <div class="flex flex-col h-full min-w-[260px] max-w-[320px] w-72 flex-shrink-0 bg-gray-100 dark:bg-surface-800 rounded-xl p-3">
       <!-- Column header -->
@@ -30,32 +35,68 @@ import type { TaskListItem, ProjectState, DisplayProperties } from '@mpm/shared-
         [id]="'col-' + state.id"
         [cdkDropListData]="tasks"
         [cdkDropListConnectedTo]="connectedTo"
+        [cdkDropListSortingDisabled]="true"
         (cdkDropListDropped)="onDrop($event)"
         class="flex flex-col gap-2 flex-1 overflow-y-auto rounded-lg transition-colors"
-        [class.bg-indigo-100]="isDragOver"
-        [class.dark:bg-indigo-950]="isDragOver"
         (cdkDropListEntered)="isDragOver = true"
-        (cdkDropListExited)="isDragOver = false"
+        (cdkDropListExited)="isDragOver = false; hoveredTaskId = null"
         style="min-height: 80px;">
 
         @for (task of tasks; track task.id) {
-          <div cdkDrag [cdkDragData]="task" class="cursor-grab active:cursor-grabbing">
+          <!-- Ghost at original position: stays in source column while dragging.
+               Must be OUTSIDE cdkDrag so CDK doesn't move it to destination. -->
+          @if (draggedTaskId === task.id) {
+            <div class="opacity-25 pointer-events-none rounded-lg">
+              <app-board-card [task]="task" [displayProps]="displayProps" />
+            </div>
+          }
+
+          <div cdkDrag [cdkDragData]="task"
+               class="cursor-grab active:cursor-grabbing relative"
+               (cdkDragStarted)="draggedTaskId = task.id"
+               (cdkDragEnded)="onDragEnd()"
+               (mouseenter)="hoveredTaskId = task.id"
+               (mouseleave)="hoveredTaskId === task.id ? hoveredTaskId = null : null">
+
+            <!-- Line Indicator: same-column drag OR cross-column drag (isDragOver) -->
+            @if ((draggedTaskId || isDragOver) && hoveredTaskId === task.id) {
+              <div class="h-0.5 bg-indigo-600 dark:bg-indigo-500 w-full absolute top-0 left-0 right-0 z-20"></div>
+            }
+
             <app-board-card
               [task]="task"
               [displayProps]="displayProps"
+              [class.pointer-events-none]="!!(draggedTaskId || isDragOver)"
               (cardClick)="cardClick.emit($event)"
             />
-            <!-- Custom drag preview -->
-            <div *cdkDragPreview class="bg-white dark:bg-surface-800 border border-indigo-300 rounded-lg p-3 shadow-xl w-64 pointer-events-none">
-              <div class="text-[10px] font-mono text-gray-400 mb-1">{{ task.taskId }}</div>
-              <div class="text-sm text-gray-800 dark:text-surface-100 font-medium line-clamp-2">{{ task.title }}</div>
+            <!-- Compact drag preview follows cursor -->
+            <div *cdkDragPreview
+                 class="flex items-center gap-2 bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 shadow-xl rounded-lg px-3 pointer-events-none select-none"
+                 style="min-width:200px;max-width:280px;height:40px;">
+              <span class="text-[10px] font-mono text-gray-400 flex-shrink-0">{{ task.taskId }}</span>
+              <span class="text-sm text-gray-800 dark:text-surface-100 font-medium truncate">{{ task.title }}</span>
             </div>
-            <div *cdkDragPlaceholder class="h-20 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 border-2 border-dashed border-indigo-300 dark:border-indigo-700"></div>
+            <!-- Empty placeholder: CDK anchor in destination, no visual -->
+            <div *cdkDragPlaceholder></div>
+          </div>
+        }
+
+        <!-- End drop zone: shows line indicator when dragging below all cards -->
+        @if (tasks.length > 0) {
+          <div class="relative flex-shrink-0" style="min-height: 24px;"
+               (mouseenter)="hoveredTaskId = 'end'"
+               (mouseleave)="hoveredTaskId === 'end' ? hoveredTaskId = null : null">
+            @if ((draggedTaskId || isDragOver) && hoveredTaskId === 'end') {
+              <div class="h-0.5 bg-indigo-600 dark:bg-indigo-500 w-full absolute top-0 left-0 right-0 rounded-full"></div>
+            }
           </div>
         }
 
         @if (tasks.length === 0) {
-          <div class="flex flex-col items-center justify-center py-8 text-gray-400 dark:text-surface-500 text-xs gap-2">
+          <div class="relative flex flex-col items-center justify-center py-8 text-gray-400 dark:text-surface-500 text-xs gap-2">
+            @if (isDragOver) {
+              <div class="h-0.5 bg-indigo-600 dark:bg-indigo-500 w-full absolute top-0 left-0 right-0 rounded-full"></div>
+            }
             <i class="pi pi-inbox text-xl opacity-50"></i>
             <span>Không có task</span>
           </div>
@@ -71,16 +112,28 @@ export class BoardColumnComponent {
   @Input() displayProps!: DisplayProperties;
 
   @Output() cardClick = new EventEmitter<TaskListItem>();
-  @Output() cardDropped = new EventEmitter<{ event: CdkDragDrop<TaskListItem[]>; stateId: string }>();
+  @Output() cardDropped = new EventEmitter<{ event: CdkDragDrop<TaskListItem[]>; stateId: string; hoveredTaskId: string | null }>();
 
   protected isDragOver = false;
+  protected draggedTaskId: string | null = null;
+  protected hoveredTaskId: string | null = null;
 
   protected get isFilledGroup(): boolean {
     return this.state.group === 'started' || this.state.group === 'completed';
   }
 
+  protected onDragEnd(): void {
+    setTimeout(() => {
+      this.draggedTaskId = null;
+      this.hoveredTaskId = null;
+    }, 100);
+  }
+
   protected onDrop(event: CdkDragDrop<TaskListItem[]>): void {
+    const hoveredId = this.hoveredTaskId;
     this.isDragOver = false;
-    this.cardDropped.emit({ event, stateId: this.state.id });
+    this.draggedTaskId = null;
+    this.hoveredTaskId = null;
+    this.cardDropped.emit({ event, stateId: this.state.id, hoveredTaskId: hoveredId });
   }
 }
