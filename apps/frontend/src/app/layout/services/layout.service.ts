@@ -137,7 +137,8 @@ export class LayoutService {
   });
 
   // ── Semantic preset extension (matches sakai-ng logic) ────────────────────
-  buildPresetExt(presetName: PresetName, primaryName: string): object {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  buildPresetExt(presetName: PresetName, primaryName: string): any {
     const color = this.primaryColors().find(c => c.name === primaryName) ?? {};
 
     if (primaryName === 'noir') {

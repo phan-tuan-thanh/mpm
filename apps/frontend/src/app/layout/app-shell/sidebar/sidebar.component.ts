@@ -244,7 +244,7 @@ export class SidebarComponent implements OnInit {
 
   // In overlay mode the sidebar is always fully expanded; in static mode it respects isCollapsed
   readonly isExpanded = computed(
-    () => this.layoutService.menuMode() === 'overlay' || !this.!isExpanded()
+    () => this.layoutService.menuMode() === 'overlay' || !this.layoutService.isCollapsed()
   );
 
   readonly selectedProject = computed<ProjectListItem | null>(() => {
