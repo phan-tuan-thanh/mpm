@@ -28,222 +28,172 @@ import { RichTextEditorComponent } from '../../../../shared/components/rich-text
     RichTextEditorComponent,
   ],
   template: `
-    <div class="bg-white rounded-xl border border-gray-100 p-6 shadow-sm max-w-xl space-y-6">
-      <h2 class="text-lg font-bold text-gray-900 mb-4 border-b border-gray-50 pb-2">
-        Thông tin chung
-      </h2>
+    <form (submit)="onSubmit($event)">
 
-      <!-- Cover Image Section -->
-      <div class="flex flex-col gap-2">
-        <label class="text-sm font-semibold text-gray-700">Ảnh bìa dự án</label>
-        <div class="relative group rounded-xl overflow-hidden border border-gray-200 bg-gray-50 h-36 flex items-center justify-center">
-          @if (coverImageUrl()) {
-            <img [src]="coverImageUrl()" class="w-full h-full object-cover" />
-            @if (!isReadOnly()) {
-              <div class="absolute inset-0 bg-black/45 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition duration-200">
-                <button
-                  pButton
-                  type="button"
-                  icon="pi pi-trash"
-                  severity="danger"
-                  size="small"
-                  label="Xóa ảnh bìa"
-                  (click)="onDeleteCover()"
-                ></button>
+      <!-- Read-only banner -->
+      @if (isReadOnly()) {
+        <div class="rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 p-3 flex gap-2 text-xs text-amber-700 dark:text-amber-400 font-medium mb-5">
+          <i class="pi pi-lock text-sm mt-0.5"></i>
+          <span>Chế độ xem. Chỉ Scrum Master hoặc Admin mới có thể chỉnh sửa.</span>
+        </div>
+      }
+
+      <!-- 2-column layout: main content left, metadata right -->
+      <div class="flex flex-col xl:flex-row gap-5 items-start">
+
+        <!-- Left: cover + name + description -->
+        <div class="flex-1 min-w-0 space-y-5">
+
+          <!-- Card: Nhận diện dự án -->
+          <div class="bg-surface-0 dark:bg-surface-900 rounded-xl border border-surface-100 dark:border-surface-800 shadow-sm overflow-hidden">
+            <div class="px-5 py-3.5 border-b border-surface-100 dark:border-surface-800">
+              <h2 class="text-sm font-bold text-gray-900 dark:text-surface-0">Nhận diện dự án</h2>
+              <p class="text-xs text-gray-400 dark:text-surface-500 mt-0.5">Tên, biểu tượng và ảnh bìa hiển thị cho toàn bộ thành viên.</p>
+            </div>
+            <div class="p-5 space-y-4">
+
+              <!-- Cover image -->
+              <div class="flex flex-col gap-2">
+                <div class="relative group rounded-lg overflow-hidden border border-gray-200 dark:border-surface-700 bg-gray-50 dark:bg-surface-800 h-32 flex items-center justify-center">
+                  @if (coverImageUrl()) {
+                    <img [src]="coverImageUrl()" class="w-full h-full object-cover" />
+                    @if (!isReadOnly()) {
+                      <div class="absolute inset-0 bg-black/45 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition duration-200">
+                        <button pButton type="button" icon="pi pi-trash" severity="danger" size="small" label="Xóa ảnh bìa" [fluid]="false" (click)="onDeleteCover()"></button>
+                      </div>
+                    }
+                  } @else {
+                    <div class="flex flex-col items-center gap-1">
+                      <i class="pi pi-image text-2xl text-gray-300 dark:text-surface-600"></i>
+                      <p class="text-xs text-gray-400 dark:text-surface-500">Không có ảnh bìa</p>
+                    </div>
+                  }
+                </div>
+                @if (!isReadOnly()) {
+                  <div class="flex items-center gap-2">
+                    <input type="file" #coverInput accept="image/png, image/jpeg, image/webp" class="hidden" (change)="onCoverFileSelected($event)" />
+                    <button pButton type="button" icon="pi pi-upload" label="Tải lên ảnh bìa" severity="secondary" size="small" [outlined]="true" [fluid]="false" (click)="coverInput.click()" [disabled]="isUploadingCover()"></button>
+                    <span class="text-xs text-gray-400 dark:text-surface-500">JPG, PNG, WEBP · tối đa 5MB</span>
+                  </div>
+                }
               </div>
-            }
-          } @else {
-            <div class="text-center p-4">
-              <i class="pi pi-image text-3xl text-gray-400 mb-1"></i>
-              <p class="text-xs text-gray-450">Không có ảnh bìa</p>
+
+              <!-- Emoji + Name -->
+              <div class="flex gap-3 items-end">
+                <div class="flex-shrink-0 flex flex-col gap-1.5 relative">
+                  <label class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wider">Icon</label>
+                  <button
+                    pButton type="button"
+                    [label]="emoji || '🚀'"
+                    [disabled]="isReadOnly() || isSubmitting()"
+                    (click)="showEmojiPicker.set(!showEmojiPicker())"
+                    class="h-10 w-12 text-lg flex items-center justify-center p-0 border border-gray-200 dark:border-surface-700 bg-white dark:bg-surface-800"
+                  ></button>
+                  @if (showEmojiPicker()) {
+                    <div class="absolute left-0 top-16 bg-white dark:bg-surface-800 border border-gray-200 dark:border-surface-700 rounded-xl shadow-xl p-3 z-50 w-64">
+                      <div class="grid grid-cols-5 gap-2 max-h-48 overflow-y-auto">
+                        @for (e of commonEmojis; track e) {
+                          <button type="button" class="h-8 w-8 text-lg rounded hover:bg-gray-100 dark:hover:bg-surface-700 transition flex items-center justify-center cursor-pointer border-none bg-transparent" (click)="selectEmoji(e)">{{ e }}</button>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+                <div class="flex-1 flex flex-col gap-1.5 max-w-lg">
+                  <label for="name" class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wider">Tên dự án <span class="text-red-500 normal-case">*</span></label>
+                  <input id="name" name="name" type="text" pInputText [(ngModel)]="name" [disabled]="isReadOnly() || isSubmitting()" required maxlength="100" />
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Card: Mô tả -->
+          <div class="bg-surface-0 dark:bg-surface-900 rounded-xl border border-surface-100 dark:border-surface-800 shadow-sm overflow-hidden">
+            <div class="px-5 py-3.5 border-b border-surface-100 dark:border-surface-800">
+              <h2 class="text-sm font-bold text-gray-900 dark:text-surface-0">Mô tả</h2>
+              <p class="text-xs text-gray-400 dark:text-surface-500 mt-0.5">Giới thiệu ngắn về mục tiêu và phạm vi dự án.</p>
+            </div>
+            <div class="p-5">
+              <app-rich-text-editor name="description" [(ngModel)]="description" placeholder="Không có mô tả cho dự án này."></app-rich-text-editor>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Right: metadata card (sticky) -->
+        <div class="w-full xl:w-72 flex-shrink-0 xl:sticky xl:top-4 space-y-4">
+
+          <!-- Card: Thông tin dự án -->
+          <div class="bg-surface-0 dark:bg-surface-900 rounded-xl border border-surface-100 dark:border-surface-800 shadow-sm overflow-hidden">
+            <div class="px-4 py-3 border-b border-surface-100 dark:border-surface-800">
+              <h2 class="text-sm font-bold text-gray-900 dark:text-surface-0">Thông tin dự án</h2>
+            </div>
+            <div class="p-4 space-y-4">
+
+              <!-- Key -->
+              <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wider">Mã dự án (Key)</label>
+                <div class="flex items-center gap-2">
+                  <p-chip [label]="projectKey()" class="font-bold text-indigo-700 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-800 rounded px-2.5 py-1 text-xs"></p-chip>
+                  <span class="text-xs text-gray-400 dark:text-surface-500"><i class="pi pi-lock text-[10px] mr-0.5"></i>Cố định</span>
+                </div>
+              </div>
+
+              <!-- Privacy -->
+              <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wider">Quyền riêng tư</label>
+                <div class="flex gap-1.5">
+                  @for (opt of privacyOptions; track opt.value) {
+                    <button type="button"
+                      class="px-3 py-1.5 text-xs font-medium rounded-lg border transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
+                      [ngClass]="network === opt.value
+                        ? 'text-white border-transparent'
+                        : 'bg-transparent text-gray-600 dark:text-surface-300 border-gray-300 dark:border-surface-600 hover:border-gray-400 dark:hover:border-surface-500'"
+                      [style.background]="network === opt.value ? 'var(--p-primary-color)' : null"
+                      [disabled]="isReadOnly() || isSubmitting()"
+                      (click)="network = opt.value"
+                    >{{ opt.label }}</button>
+                  }
+                </div>
+              </div>
+
+              <div class="border-t border-surface-100 dark:border-surface-800"></div>
+
+              <!-- Lead -->
+              <div class="flex flex-col gap-1.5">
+                <label for="leadId" class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wider">Người phụ trách</label>
+                <p-select id="leadId" [options]="leadOptions()" [(ngModel)]="leadId" name="leadId" optionLabel="label" optionValue="value" [disabled]="isReadOnly() || isSubmitting()" placeholder="Chọn người phụ trách" styleClass="w-full"></p-select>
+              </div>
+
+              <!-- Timezone -->
+              <div class="flex flex-col gap-1.5">
+                <label for="timezone" class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wider">Múi giờ</label>
+                <p-select id="timezone" [options]="timezoneOptions" [(ngModel)]="timezone" name="timezone" optionLabel="label" optionValue="value" [filter]="true" [disabled]="isReadOnly() || isSubmitting()" placeholder="Chọn múi giờ" styleClass="w-full"></p-select>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Save button -->
+          @if (!isReadOnly()) {
+            <div class="flex justify-end">
+              <button pButton type="submit" label="Lưu thay đổi" [disabled]="isSubmitting() || !name" [fluid]="false"></button>
             </div>
           }
+
         </div>
-        @if (!isReadOnly()) {
-          <div class="flex items-center gap-2 mt-1">
-            <input
-              type="file"
-              #coverInput
-              accept="image/png, image/jpeg, image/webp"
-              class="hidden"
-              (change)="onCoverFileSelected($event)"
-            />
-            <button
-              pButton
-              type="button"
-              icon="pi pi-upload"
-              label="Tải lên ảnh bìa"
-              severity="secondary"
-              size="small"
-              [outlined]="true"
-              (click)="coverInput.click()"
-              [disabled]="isUploadingCover()"
-            ></button>
-            <span class="text-xs text-gray-400 font-medium">Hỗ trợ JPG, PNG, WEBP tối đa 5MB</span>
-          </div>
-        }
       </div>
 
-      <form (submit)="onSubmit($event)">
-        <p-fluid class="block space-y-5">
-          <!-- Project Emoji and Name -->
-          <div class="flex gap-4">
-            <!-- Emoji Select -->
-            <div class="flex-shrink-0 flex flex-col gap-2 relative">
-              <label class="text-sm font-semibold text-gray-700">Emoji</label>
-              <button
-                pButton
-                type="button"
-                [label]="emoji || '🚀'"
-                [disabled]="isReadOnly() || isSubmitting()"
-                (click)="showEmojiPicker.set(!showEmojiPicker())"
-                class="h-10 w-12 text-lg flex items-center justify-center p-0 border border-gray-200 bg-white"
-              ></button>
-              @if (showEmojiPicker()) {
-                <div class="absolute left-0 top-20 bg-white border border-gray-200 rounded-xl shadow-xl p-3 z-50 w-64">
-                  <div class="grid grid-cols-5 gap-2 max-h-48 overflow-y-auto">
-                    @for (e of commonEmojis; track e) {
-                      <button
-                        type="button"
-                        class="h-8 w-8 text-lg rounded hover:bg-gray-150 transition flex items-center justify-center cursor-pointer border-none bg-transparent"
-                        (click)="selectEmoji(e)"
-                      >
-                        {{ e }}
-                      </button>
-                    }
-                  </div>
-                </div>
-              }
-            </div>
-
-            <!-- Project Name -->
-            <div class="flex-1 flex flex-col gap-2">
-              <label for="name" class="text-sm font-semibold text-gray-700">Tên dự án <span class="text-red-500">*</span></label>
-              <input
-                id="name"
-                name="name"
-                type="text"
-                pInputText
-                [(ngModel)]="name"
-                [disabled]="isReadOnly() || isSubmitting()"
-                required
-                maxlength="100"
-              />
-            </div>
-          </div>
-
-          <!-- Project Key (Read-Only) -->
-          <div class="flex flex-col gap-2">
-            <label class="text-sm font-semibold text-gray-700">Mã dự án (Key)</label>
-            <div class="flex items-center gap-2">
-              <p-chip
-                [label]="projectKey()"
-                class="font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 rounded px-2.5 py-1 text-xs"
-              ></p-chip>
-              <span class="text-xs text-gray-400 font-medium">
-                <i class="pi pi-lock text-[10px] mr-1"></i> Không thể thay đổi sau khi tạo
-              </span>
-            </div>
-          </div>
-
-          <!-- Description -->
-          <div class="flex flex-col gap-2">
-            <label class="text-sm font-semibold text-gray-700">Mô tả</label>
-            <app-rich-text-editor name="description" [(ngModel)]="description" placeholder="Không có mô tả cho dự án này."></app-rich-text-editor>
-          </div>
-
-          <!-- Network (Quyền riêng tư) -->
-          <div class="flex flex-col gap-2">
-            <label class="text-sm font-semibold text-gray-700">Quyền riêng tư</label>
-            <div class="flex gap-2">
-              <button
-                type="button"
-                pButton
-                [label]="'Bảo mật (Secret)'"
-                [severity]="network === ProjectNetwork.SECRET ? 'primary' : 'secondary'"
-                [outlined]="network !== ProjectNetwork.SECRET"
-                [disabled]="isReadOnly() || isSubmitting()"
-                class="flex-1 text-xs py-2"
-                (click)="network = ProjectNetwork.SECRET"
-              ></button>
-              <button
-                type="button"
-                pButton
-                [label]="'Công khai (Public)'"
-                [severity]="network === ProjectNetwork.PUBLIC ? 'primary' : 'secondary'"
-                [outlined]="network !== ProjectNetwork.PUBLIC"
-                [disabled]="isReadOnly() || isSubmitting()"
-                class="flex-1 text-xs py-2"
-                (click)="network = ProjectNetwork.PUBLIC"
-              ></button>
-            </div>
-            <span class="text-[11px] text-gray-450 font-medium px-1">
-              @if (network === ProjectNetwork.SECRET) {
-                Chỉ thành viên được mời mới có thể truy cập dự án này.
-              } @else {
-                Tất cả mọi người trong workspace đều có thể tìm thấy và tự tham gia dự án này.
-              }
-            </span>
-          </div>
-
-          <!-- Lead & Timezone -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <!-- Lead -->
-            <div class="flex flex-col gap-2">
-              <label for="leadId" class="text-sm font-semibold text-gray-700">Người phụ trách (Lead)</label>
-              <p-select
-                id="leadId"
-                [options]="leadOptions()"
-                [(ngModel)]="leadId"
-                name="leadId"
-                optionLabel="label"
-                optionValue="value"
-                [disabled]="isReadOnly() || isSubmitting()"
-                placeholder="Chọn người phụ trách"
-              ></p-select>
-            </div>
-
-            <!-- Timezone -->
-            <div class="flex flex-col gap-2">
-              <label for="timezone" class="text-sm font-semibold text-gray-700">Múi giờ</label>
-              <p-select
-                id="timezone"
-                [options]="timezoneOptions"
-                [(ngModel)]="timezone"
-                name="timezone"
-                optionLabel="label"
-                optionValue="value"
-                [filter]="true"
-                [disabled]="isReadOnly() || isSubmitting()"
-                placeholder="Chọn múi giờ"
-              ></p-select>
-            </div>
-          </div>
-
-          <!-- Submit Buttons -->
-          @if (!isReadOnly()) {
-            <div class="flex justify-end pt-3 border-t border-gray-50">
-              <button
-                pButton
-                type="submit"
-                label="Lưu thay đổi"
-                [disabled]="isSubmitting() || !name"
-                [fluid]="false"
-              ></button>
-            </div>
-          } @else {
-            <div class="rounded-lg bg-gray-50 p-3 flex gap-2 text-xs text-gray-500 font-medium">
-              <i class="pi pi-info-circle text-gray-400 mt-0.5"></i>
-              <span>Bạn đang ở chế độ xem. Chỉ Scrum Master hoặc Admin hệ thống mới có thể chỉnh sửa cấu hình dự án.</span>
-            </div>
-          }
-        </p-fluid>
-      </form>
-    </div>
+    </form>
   `,
 })
 export class GeneralTabComponent implements OnInit {
   readonly ProjectNetwork = ProjectNetwork;
+  readonly privacyOptions = [
+    { label: 'Bảo mật', value: ProjectNetwork.SECRET },
+    { label: 'Công khai', value: ProjectNetwork.PUBLIC },
+  ];
   readonly projectStore = inject(ProjectStore);
   private readonly projectService = inject(ProjectService);
   private readonly authService = inject(AuthService);

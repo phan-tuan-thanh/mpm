@@ -1,19 +1,19 @@
 <div class="space-y-6">
-  <div class="flex justify-between items-center pb-2 border-b border-gray-150">
+  <div class="flex justify-between items-center">
     <div>
-      <h2 class="text-lg font-bold text-gray-900">Quy trình làm việc (States)</h2>
-      <p class="text-xs text-gray-500">Cấu hình trạng thái công việc cho dự án của bạn (tối đa 20 trạng thái).</p>
+      <h2 class="text-base font-bold text-gray-900 dark:text-surface-0">Trạng thái (States)</h2>
+      <p class="text-xs text-gray-400 dark:text-surface-500 mt-0.5">Cấu hình quy trình làm việc cho dự án (tối đa 20 trạng thái).</p>
     </div>
   </div>
 
   <!-- Workspace Template Section (Read-only) -->
   @if (workspaceTemplates().length > 0) {
-    <div class="bg-gray-50 rounded-xl border border-gray-200 p-5 space-y-4">
-      <div class="flex justify-between items-center pb-2 border-b border-gray-200">
+    <div class="bg-gray-50 dark:bg-surface-800 rounded-xl border border-gray-200 dark:border-surface-700 p-5 space-y-4">
+      <div class="flex justify-between items-center pb-2 border-b border-gray-200 dark:border-surface-700">
         <div class="flex items-center gap-2">
           <i class="pi pi-globe text-sm text-indigo-500"></i>
-          <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wider">Workspace Template</h3>
-          <span class="text-xs text-gray-400 font-semibold">({{ workspaceTemplates().length }})</span>
+          <h3 class="text-sm font-bold text-gray-700 dark:text-surface-200 uppercase tracking-wider">Workspace Template</h3>
+          <span class="text-xs text-gray-400 dark:text-surface-500 font-semibold">({{ workspaceTemplates().length }})</span>
         </div>
         @if (isAdmin()) {
           <button
@@ -28,20 +28,20 @@
         }
       </div>
 
-      <p class="text-xs text-gray-500 italic">Danh sách template tham khảo (read-only). States được tạo từ template sẽ hiển thị icon <i class="pi pi-link text-xs"></i>.</p>
+      <p class="text-xs text-gray-500 dark:text-surface-400 italic">Danh sách template tham khảo (read-only). States được tạo từ template sẽ hiển thị icon <i class="pi pi-link text-xs"></i>.</p>
 
       <!-- Template States List -->
       <div class="space-y-2">
         @for (tpl of workspaceTemplates(); track tpl.id) {
-          <div class="flex items-center gap-3 p-2.5 rounded-lg border border-gray-150 bg-white">
+          <div class="flex items-center gap-3 p-2.5 rounded-lg border border-gray-200 dark:border-surface-700 bg-white dark:bg-surface-900">
             <span
-              class="w-5 h-5 rounded-full flex-shrink-0 border border-gray-200"
+              class="w-5 h-5 rounded-full flex-shrink-0 border border-gray-200 dark:border-surface-700"
               [style.background-color]="tpl.color"
             ></span>
-            <span class="text-sm font-medium text-gray-700">{{ tpl.name }}</span>
-            <span class="text-[11px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">{{ getGroupName(tpl.group) }}</span>
+            <span class="text-sm font-medium text-gray-700 dark:text-surface-200">{{ tpl.name }}</span>
+            <span class="text-[11px] text-gray-400 dark:text-surface-500 bg-gray-100 dark:bg-surface-700 px-1.5 py-0.5 rounded">{{ getGroupName(tpl.group) }}</span>
             @if (tpl.isDefault) {
-              <span class="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-full">Mặc định</span>
+              <span class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 px-1.5 py-0.5 rounded-full">Mặc định</span>
             }
           </div>
         }
@@ -52,12 +52,12 @@
   <!-- Project States Section (Editable) -->
   <div class="grid grid-cols-1 gap-6">
     @for (group of groupOrder; track group) {
-      <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-4">
-        <div class="flex justify-between items-center pb-2 border-b border-gray-50">
+      <div class="bg-white dark:bg-surface-900 rounded-xl border border-gray-100 dark:border-surface-800 shadow-sm p-5 space-y-4">
+        <div class="flex justify-between items-center pb-2 border-b border-gray-50 dark:border-surface-800">
           <div class="flex items-center gap-2">
             <span class="w-2.5 h-2.5 rounded-full" [ngClass]="getGroupColor(group)"></span>
-            <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wider">{{ getGroupName(group) }}</h3>
-            <span class="text-xs text-gray-400 font-semibold">({{ getStatesCount(group) }})</span>
+            <h3 class="text-sm font-bold text-gray-800 dark:text-surface-100 uppercase tracking-wider">{{ getGroupName(group) }}</h3>
+            <span class="text-xs text-gray-400 dark:text-surface-500 font-semibold">({{ getStatesCount(group) }})</span>
           </div>
           @if (!isReadOnly() && getStatesCount(group) < 20) {
             <button
@@ -82,12 +82,12 @@
             <div
               cdkDrag
               [cdkDragDisabled]="isReadOnly()"
-              class="flex items-center justify-between p-3 rounded-lg border border-gray-100 hover:border-gray-200 bg-white shadow-sm transition group"
+              class="flex items-center justify-between p-3 rounded-lg border border-gray-100 dark:border-surface-800 hover:border-gray-200 dark:hover:border-surface-700 bg-white dark:bg-surface-900 shadow-sm transition group"
             >
               <div class="flex items-center gap-3 flex-1 min-w-0">
                 <!-- Drag handle -->
                 @if (!isReadOnly()) {
-                  <div cdkDragHandle class="cursor-grab text-gray-400 hover:text-gray-600 px-1">
+                  <div cdkDragHandle class="cursor-grab text-gray-400 dark:text-surface-500 hover:text-gray-600 dark:hover:text-surface-300 px-1">
                     <i class="pi pi-bars text-sm"></i>
                   </div>
                 }
@@ -111,7 +111,7 @@
                   (blur)="onUpdateName(state, $any($event.target).value)"
                   (keydown.enter)="onUpdateName(state, $any($event.target).value); $any($event.target).blur()"
                   [disabled]="isReadOnly()"
-                  class="bg-transparent border-none focus:bg-gray-50 focus:ring-1 focus:ring-indigo-500 rounded px-2 py-0.5 text-sm font-semibold text-gray-800 hover:bg-gray-50 transition w-full max-w-xs"
+                  class="bg-transparent border-none focus:bg-gray-50 dark:focus:bg-surface-800 focus:ring-1 focus:ring-indigo-500 rounded px-2 py-0.5 text-sm font-semibold text-gray-800 dark:text-surface-100 hover:bg-gray-50 dark:hover:bg-surface-800 transition w-full max-w-xs"
                 />
 
                 <!-- Template origin icon -->
@@ -125,7 +125,7 @@
 
                 <!-- Default indicator -->
                 @if (state.isDefault) {
-                  <span class="flex items-center gap-1 text-[11px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full">
+                  <span class="flex items-center gap-1 text-[11px] font-bold text-indigo-700 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-800 px-2 py-0.5 rounded-full">
                     <i class="pi pi-star-fill text-[9px]"></i> Mặc định
                   </span>
                 } @else if (!isReadOnly()) {
@@ -152,12 +152,28 @@
                   (click)="onDeleteState(state)"
                 ></button>
               }
+
+              <!-- Drag preview: lightweight ghost following the cursor -->
+              <div *cdkDragPreview
+                class="flex items-center gap-3 px-3 rounded-lg border border-gray-200 dark:border-surface-700 bg-white dark:bg-surface-800 shadow-xl pointer-events-none select-none"
+                style="min-width: 280px; height: 50px; box-sizing: border-box;"
+              >
+                <i class="pi pi-bars text-gray-300 dark:text-surface-600 text-sm flex-shrink-0"></i>
+                <span class="w-5 h-5 rounded-full flex-shrink-0 border border-gray-200 dark:border-surface-700" [style.background-color]="state.color"></span>
+                <span class="text-sm font-semibold text-gray-800 dark:text-surface-100 flex-1 truncate">{{ state.name }}</span>
+              </div>
+
+              <!-- Placeholder shown in the list while item is being dragged -->
+              <div *cdkDragPlaceholder
+                class="rounded-lg border-2 border-dashed border-indigo-300 dark:border-indigo-700 bg-indigo-50/40 dark:bg-indigo-950/20"
+                style="height: 50px; box-sizing: border-box;"
+              ></div>
             </div>
           }
 
           <!-- Add State Inline Form -->
           @if (showAddForm[group]) {
-            <div class="flex items-center gap-3 p-3 rounded-lg border border-indigo-100 bg-indigo-50/10 shadow-sm transition">
+            <div class="flex items-center gap-3 p-3 rounded-lg border border-indigo-100 dark:border-indigo-800 bg-indigo-50/10 dark:bg-indigo-950/10 shadow-sm transition">
               <input
                 type="color"
                 [(ngModel)]="newColors[group]"
@@ -206,8 +222,8 @@
     [draggable]="false"
     [resizable]="false"
   >
-    <div class="space-y-4 py-2 text-xs text-gray-600">
-      <div class="rounded-lg bg-amber-50 border border-amber-100 p-3 text-amber-800 flex gap-2">
+    <div class="space-y-4 py-2 text-xs text-gray-600 dark:text-surface-300">
+      <div class="rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-800 p-3 text-amber-800 dark:text-amber-400 flex gap-2">
         <i class="pi pi-info-circle text-base mt-0.5"></i>
         <div>
           <p class="font-bold">Trạng thái này đang được sử dụng!</p>
@@ -215,7 +231,7 @@
         </div>
       </div>
 
-      <p class="font-medium text-sm text-gray-700">
+      <p class="font-medium text-sm text-gray-700 dark:text-surface-200">
         Chọn trạng thái thay thế:
       </p>
 

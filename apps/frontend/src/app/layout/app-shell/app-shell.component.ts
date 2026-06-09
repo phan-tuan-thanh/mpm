@@ -12,7 +12,7 @@ import { filter } from 'rxjs/operators';
   selector: 'app-app-shell',
   imports: [CommonModule, RouterOutlet, SidebarComponent, TopbarComponent],
   template: `
-    <div class="flex flex-col h-screen w-screen overflow-hidden bg-[#fafbfe] dark:bg-surface-950 font-sans antialiased text-[#2d3748] dark:text-surface-100 transition-colors duration-200">
+    <div class="flex flex-col h-screen w-screen overflow-hidden bg-surface-50 dark:bg-surface-950 font-sans antialiased text-[#2d3748] dark:text-surface-100 transition-colors duration-200">
       <!-- Top Header Bar matching Sakai template -->
       <app-topbar class="flex-shrink-0" />
 
@@ -46,8 +46,30 @@ import { filter } from 'rxjs/operators';
             </div>
           </div>
         } @else {
-          <!-- Sidebar and Content View -->
-          <app-sidebar class="flex-shrink-0 h-full" />
+          <!-- Static sidebar: flex-child that pushes content -->
+          @if (layoutService.effectiveMenuMode() === 'static') {
+            <app-sidebar class="flex-shrink-0 h-full" />
+          }
+
+          <!-- Overlay sidebar: absolute, on top of content -->
+          @if (layoutService.effectiveMenuMode() === 'overlay') {
+            <!-- Backdrop -->
+            @if (layoutService.isOverlayOpen()) {
+              <div
+                class="absolute inset-0 z-40 bg-black/30"
+                (click)="layoutService.closeOverlayMenu()"
+              ></div>
+            }
+            <!-- Sidebar panel -->
+            <div
+              class="absolute left-0 top-0 h-full z-50 transition-transform duration-300"
+              [class.-translate-x-full]="!layoutService.isOverlayOpen()"
+              [class.translate-x-0]="layoutService.isOverlayOpen()"
+            >
+              <app-sidebar />
+            </div>
+          }
+
           <main
             class="flex-1 min-w-0 bg-surface-50 dark:bg-surface-950"
             [class.overflow-hidden]="layoutService.fullBleed()"
@@ -71,11 +93,14 @@ export class AppShellComponent implements OnInit {
   readonly isOnProjectDetail = signal<boolean>(false);
 
   ngOnInit(): void {
-    // Lắng nghe params thay đổi khi chuyển route
     this.router.events
       .pipe(filter((event) => event instanceof NavigationEnd))
       .subscribe(() => {
         this.updateCurrentProjectFromRoute();
+        // Close overlay sidebar on every navigation (critical for mobile)
+        if (this.layoutService.effectiveMenuMode() === 'overlay') {
+          this.layoutService.closeOverlayMenu();
+        }
       });
 
     // Chạy lần đầu khi load trang

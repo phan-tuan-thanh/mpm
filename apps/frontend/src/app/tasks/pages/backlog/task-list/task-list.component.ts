@@ -21,7 +21,6 @@ interface TaskNode { task: TaskListItem; children: TaskListItem[] }
   ],
   styles: [`
     :host { display: block; }
-    .row-hover:hover { background: var(--surface-hover, #f9fafb); }
     .row-hover:hover ::ng-deep .show-on-hover { opacity: 1 !important; }
     ::ng-deep .show-on-hover {
       transition: opacity 120ms ease-in-out !important;
@@ -66,15 +65,15 @@ interface TaskNode { task: TaskListItem; children: TaskListItem[] }
         @for (i of [1,2,3,4,5]; track i) { <p-skeleton height="2.25rem" borderRadius="4px" /> }
       </div>
     } @else if (_states().length === 0) {
-      <div class="flex flex-col items-center justify-center h-64 text-gray-400">
-        <i class="pi pi-inbox text-5xl mb-4 text-gray-200"></i>
-        <p class="text-sm font-medium text-gray-500">Backlog trống</p>
+      <div class="flex flex-col items-center justify-center h-64 text-gray-400 dark:text-surface-500">
+        <i class="pi pi-inbox text-5xl mb-4 text-gray-200 dark:text-surface-700"></i>
+        <p class="text-sm font-medium text-gray-500 dark:text-surface-400">Backlog trống</p>
       </div>
     } @else {
       <div cdkDropListGroup>
       @for (group of sortedGroups(); track group.state.id) {
         <div>
-          <div class="row-hover sticky top-0 z-10 flex items-center bg-gray-50 dark:bg-surface-950 border-b border-gray-100 dark:border-surface-800 select-none" style="height:36px">
+          <div class="row-hover sticky top-0 z-10 flex items-center bg-gray-50 dark:bg-surface-950 hover:bg-gray-100 dark:hover:bg-surface-800 border-b border-gray-100 dark:border-surface-800 select-none" style="height:36px">
             <div class="flex items-center justify-center flex-shrink-0" style="width:40px" (click)="$event.stopPropagation()">
               <p-checkbox 
                 [class.show-on-hover]="!isGroupAnySelected(group.rootTasks)" 
@@ -128,8 +127,8 @@ interface TaskNode { task: TaskListItem; children: TaskListItem[] }
                 <div cdkDrag 
                      (cdkDragStarted)="onDragStart(node.task.id)"
                      (cdkDragEnded)="onDragEnd()"
-                     class="flex flex-col border-b border-gray-50 dark:border-surface-800 relative" 
-                     [class.bg-indigo-50]="selectedIds.has(node.task.id)">
+                     class="flex flex-col border-b border-gray-50 dark:border-surface-800 relative"
+                     [ngClass]="selectedIds.has(node.task.id) ? 'bg-indigo-50 dark:bg-indigo-950/30' : ''">
                   
                   <!-- Drop Line Indicator -->
                   @if (draggedTaskId && hoveredTaskId === node.task.id && draggedTaskId !== node.task.id) {
@@ -137,8 +136,8 @@ interface TaskNode { task: TaskListItem; children: TaskListItem[] }
                   }
 
                   <!-- Dòng cha -->
-                  <div class="row-hover flex items-center cursor-grab active:cursor-grabbing" 
-                       style="height:38px" 
+                  <div class="row-hover flex items-center cursor-grab active:cursor-grabbing hover:bg-gray-50 dark:hover:bg-surface-800"
+                       style="height:38px"
                        (click)="taskClick.emit(node.task)"
                        (mouseenter)="hoveredTaskId = node.task.id; hoveredStateId = group.state.id"
                        (mouseleave)="hoveredTaskId === node.task.id ? hoveredTaskId = null : null">
@@ -149,9 +148,9 @@ interface TaskNode { task: TaskListItem; children: TaskListItem[] }
                   @if (expandedTasks().has(node.task.id)) {
                     <div class="flex flex-col bg-gray-50/10 dark:bg-surface-900/10">
                       @for (child of node.children; track child.id) {
-                        <div class="row-hover flex items-center border-t border-gray-50 dark:border-surface-800 cursor-pointer" 
-                             style="height:38px" 
-                             [class.bg-indigo-50]="selectedIds.has(child.id)" 
+                        <div class="row-hover flex items-center border-t border-gray-50 dark:border-surface-800 cursor-pointer hover:bg-gray-50 dark:hover:bg-surface-800"
+                             style="height:38px"
+                             [ngClass]="selectedIds.has(child.id) ? 'bg-indigo-50 dark:bg-indigo-950/30' : ''"
                              (click)="taskClick.emit(child)"
                              (mouseenter)="hoveredTaskId = node.task.id; hoveredStateId = group.state.id"
                              (mouseleave)="hoveredTaskId === node.task.id ? hoveredTaskId = null : null">
@@ -172,7 +171,7 @@ interface TaskNode { task: TaskListItem; children: TaskListItem[] }
                 </div>
               }
             </div>
-            <div class="flex items-center border-b border-gray-50 relative" 
+            <div class="flex items-center border-b border-gray-50 dark:border-surface-800 relative" 
                  style="height:32px; padding-left:40px"
                  (mouseenter)="hoveredTaskId = 'end-' + group.state.id; hoveredStateId = group.state.id"
                  (mouseleave)="hoveredTaskId === 'end-' + group.state.id ? hoveredTaskId = null : null">

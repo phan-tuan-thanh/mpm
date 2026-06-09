@@ -29,39 +29,34 @@ import { MemberResponse, ProjectRole } from '@mpm/shared-types';
     FormsModule,
   ],
   template: `
-    <div class="bg-white rounded-xl border border-gray-100 p-6 shadow-sm space-y-5">
-      <!-- Title & CTA -->
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div class="space-y-4">
+      <!-- Header row -->
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h2 class="text-lg font-bold text-gray-900">Thành viên dự án</h2>
-          <p class="text-xs text-gray-500 font-medium mt-0.5">Mời thành viên mới tham gia dự án và gán vai trò tương ứng.</p>
+          <h2 class="text-base font-bold text-gray-900 dark:text-surface-0">Thành viên dự án</h2>
+          <p class="text-xs text-gray-400 dark:text-surface-500 mt-0.5">Mời thành viên và gán vai trò tương ứng.</p>
         </div>
-        @if (!isReadOnly()) {
-          <button
-            pButton
-            (click)="showAddDialog()"
-            label="Thêm thành viên"
-            icon="pi pi-plus"
-          ></button>
-        }
+        <div class="flex items-center gap-3">
+          <!-- Search inline -->
+          <span class="p-input-icon-left">
+            <i class="pi pi-search text-gray-400 dark:text-surface-500"></i>
+            <input
+              type="text"
+              pInputText
+              [(ngModel)]="searchTerm"
+              (ngModelChange)="onSearchChange($event)"
+              placeholder="Tìm tên hoặc email..."
+              class="text-sm w-56"
+            />
+          </span>
+          @if (!isReadOnly()) {
+            <button pButton (click)="showAddDialog()" label="Thêm thành viên" icon="pi pi-plus" size="small"></button>
+          }
+        </div>
       </div>
 
-      <!-- Search Bar -->
-      <p-fluid class="block max-w-md">
-        <span class="p-input-icon-left">
-          <i class="pi pi-search text-gray-400"></i>
-          <input
-            type="text"
-            pInputText
-            [(ngModel)]="searchTerm"
-            (ngModelChange)="onSearchChange($event)"
-            placeholder="Tìm theo tên hoặc email..."
-          />
-        </span>
-      </p-fluid>
-
       <!-- Members Table -->
-      <div class="border border-gray-100 rounded-lg overflow-hidden">
+      <div class="bg-white dark:bg-surface-900 rounded-xl border border-gray-100 dark:border-surface-800 shadow-sm overflow-hidden">
         <p-table
           [value]="filteredMembers()"
           [loading]="projectStore.isLoading()"
@@ -69,19 +64,19 @@ import { MemberResponse, ProjectRole } from '@mpm/shared-types';
           class="text-xs"
         >
           <ng-template pTemplate="header">
-            <tr class="bg-gray-50 border-b border-gray-100">
-              <th class="py-3 px-4 text-left font-semibold text-gray-500">Avatar</th>
-              <th class="py-3 px-4 text-left font-semibold text-gray-500">Họ tên</th>
-              <th class="py-3 px-4 text-left font-semibold text-gray-500">Email</th>
-              <th class="py-3 px-4 text-left font-semibold text-gray-500">Vai trò</th>
-              <th class="py-3 px-4 text-left font-semibold text-gray-500">Ngày tham gia</th>
+            <tr class="bg-gray-50 dark:bg-surface-800 border-b border-gray-100 dark:border-surface-700">
+              <th class="py-3 px-4 text-left font-semibold text-gray-500 dark:text-surface-400">Avatar</th>
+              <th class="py-3 px-4 text-left font-semibold text-gray-500 dark:text-surface-400">Họ tên</th>
+              <th class="py-3 px-4 text-left font-semibold text-gray-500 dark:text-surface-400">Email</th>
+              <th class="py-3 px-4 text-left font-semibold text-gray-500 dark:text-surface-400">Vai trò</th>
+              <th class="py-3 px-4 text-left font-semibold text-gray-500 dark:text-surface-400">Ngày tham gia</th>
               @if (!isReadOnly()) {
-                <th class="py-3 px-4 text-center font-semibold text-gray-500 w-24">Hành động</th>
+                <th class="py-3 px-4 text-center font-semibold text-gray-500 dark:text-surface-400 w-24">Hành động</th>
               }
             </tr>
           </ng-template>
           <ng-template pTemplate="body" let-member>
-            <tr class="border-b border-gray-50 hover:bg-gray-50/50 transition">
+            <tr class="border-b border-gray-50 dark:border-surface-800 hover:bg-gray-50/50 dark:hover:bg-surface-800/50 transition">
               <td class="py-2.5 px-4">
                 <p-avatar
                   [label]="member.displayName.substring(0, 1).toUpperCase()"
@@ -89,8 +84,8 @@ import { MemberResponse, ProjectRole } from '@mpm/shared-types';
                   styleClass="bg-indigo-50 text-indigo-700 font-bold text-xs"
                 ></p-avatar>
               </td>
-              <td class="py-2.5 px-4 font-semibold text-gray-800">{{ member.displayName }}</td>
-              <td class="py-2.5 px-4 text-gray-500 font-medium">{{ member.email }}</td>
+              <td class="py-2.5 px-4 font-semibold text-gray-800 dark:text-surface-100">{{ member.displayName }}</td>
+              <td class="py-2.5 px-4 text-gray-500 dark:text-surface-400 font-medium">{{ member.email }}</td>
               <td class="py-2.5 px-4 overflow-visible">
                 @if (!isReadOnly() && member.userId !== currentUserId()) {
                   <p-select
@@ -103,12 +98,12 @@ import { MemberResponse, ProjectRole } from '@mpm/shared-types';
                     [style]="{ width: '130px' }"
                   ></p-select>
                 } @else {
-                  <span class="inline-flex items-center rounded-md bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-600">
+                  <span class="inline-flex items-center rounded-md bg-gray-100 dark:bg-surface-700 px-2.5 py-0.5 text-xs font-semibold text-gray-600 dark:text-surface-300">
                     {{ formatRole(member.projectRole) }}
                   </span>
                 }
               </td>
-              <td class="py-2.5 px-4 text-gray-500">
+              <td class="py-2.5 px-4 text-gray-500 dark:text-surface-400">
                 {{ member.joinedAt | date: 'dd/MM/yyyy' }}
               </td>
               @if (!isReadOnly()) {
@@ -116,7 +111,7 @@ import { MemberResponse, ProjectRole } from '@mpm/shared-types';
                   @if (member.userId !== currentUserId()) {
                     <button
                       (click)="onRemoveMember(member)"
-                      class="flex h-7 w-7 items-center justify-center rounded hover:bg-red-50 hover:text-red-600 text-gray-400 mx-auto transition"
+                      class="flex h-7 w-7 items-center justify-center rounded hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 text-gray-400 dark:text-surface-500 mx-auto transition"
                       title="Xóa thành viên"
                     >
                       <i class="pi pi-trash"></i>
@@ -141,7 +136,7 @@ import { MemberResponse, ProjectRole } from '@mpm/shared-types';
         <p-fluid class="block space-y-4 py-2 text-xs">
           <!-- Email Field -->
           <div class="flex flex-col gap-1.5">
-            <label class="font-semibold text-gray-700">Email thành viên</label>
+            <label class="font-semibold text-gray-700 dark:text-surface-200">Email thành viên</label>
             <input
               type="email"
               pInputText
@@ -152,7 +147,7 @@ import { MemberResponse, ProjectRole } from '@mpm/shared-types';
 
           <!-- Role Field -->
           <div class="flex flex-col gap-1.5">
-            <label class="font-semibold text-gray-700">Vai trò</label>
+            <label class="font-semibold text-gray-700 dark:text-surface-200">Vai trò</label>
             <p-select
               [options]="roleOptions"
               [(ngModel)]="newMemberRole"

@@ -10,50 +10,41 @@ import { MessageService } from 'primeng/api';
   selector: 'app-features-tab',
   imports: [CommonModule],
   template: `
-    <div class="space-y-6 max-w-2xl bg-white rounded-xl border border-gray-100 p-6 shadow-sm">
-      <div>
-        <h2 class="text-lg font-bold text-gray-900 pb-2 border-b border-gray-150">
-          Quản lý tính năng (Feature Flags)
-        </h2>
-        <p class="text-xs text-gray-500 mt-1">Bật hoặc tắt các module bổ sung cho dự án của bạn để tối giản hóa giao diện.</p>
+    <div class="space-y-4">
+
+      <!-- Header -->
+      <div class="flex items-start justify-between">
+        <div>
+          <h2 class="text-base font-bold text-gray-900 dark:text-surface-0">Tính năng (Feature Flags)</h2>
+          <p class="text-xs text-gray-400 dark:text-surface-500 mt-0.5">Bật hoặc tắt các module bổ sung để tối giản hóa giao diện.</p>
+        </div>
       </div>
 
-      <!-- Warning info for read-only members -->
       @if (isReadOnly()) {
-        <div class="rounded-lg bg-gray-50 p-3 flex gap-2 text-xs text-gray-550 font-medium">
-          <i class="pi pi-info-circle text-gray-400 mt-0.5"></i>
-          <span>Bạn ở chế độ xem. Chỉ Scrum Master hoặc Admin mới có quyền bật/tắt các tính năng này.</span>
+        <div class="rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 p-3 flex gap-2 text-xs text-amber-700 dark:text-amber-400 font-medium">
+          <i class="pi pi-lock text-sm mt-0.5"></i>
+          <span>Chế độ xem. Chỉ Scrum Master hoặc Admin mới có quyền bật/tắt các tính năng này.</span>
         </div>
       }
 
-      <!-- Features List -->
-      <div class="divide-y divide-gray-100">
+      <!-- Features card -->
+      <div class="bg-white dark:bg-surface-900 rounded-xl border border-gray-100 dark:border-surface-800 shadow-sm divide-y divide-gray-100 dark:divide-surface-800">
         @for (feat of featuresList; track feat.key) {
-          <div class="flex items-center justify-between py-4 first:pt-0 last:pb-0 gap-4">
-            <div class="flex items-start gap-3">
-              <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 text-lg flex-shrink-0 mt-0.5">
-                <i [class]="feat.icon"></i>
+          <div class="flex items-center justify-between px-5 py-3.5 gap-4">
+            <div class="flex items-center gap-3">
+              <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 flex-shrink-0">
+                <i [class]="feat.icon + ' text-sm'"></i>
               </div>
-              <div class="space-y-0.5">
-                <h3 class="text-sm font-bold text-gray-800">{{ feat.name }}</h3>
-                <p class="text-xs text-gray-500 max-w-md">{{ feat.description }}</p>
+              <div>
+                <h3 class="text-sm font-semibold text-gray-800 dark:text-surface-100">{{ feat.name }}</h3>
+                <p class="text-xs text-gray-400 dark:text-surface-500 max-w-md">{{ feat.description }}</p>
               </div>
             </div>
-
-            <!-- Switch component -->
-            <label
-              class="relative inline-flex items-center select-none"
+            <label class="relative inline-flex items-center select-none flex-shrink-0"
               [ngClass]="isReadOnly() ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'"
-              [title]="isReadOnly() ? 'Chỉ Scrum Master mới được thay đổi' : ''"
-            >
-              <input
-                type="checkbox"
-                [checked]="getFeatureValue(feat.key)"
-                (change)="onToggle(feat.key, $any($event.target).checked)"
-                [disabled]="isReadOnly()"
-                class="sr-only peer"
-              />
-              <div class="w-10 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+              [title]="isReadOnly() ? 'Chỉ Scrum Master mới được thay đổi' : ''">
+              <input type="checkbox" [checked]="getFeatureValue(feat.key)" (change)="onToggle(feat.key, $any($event.target).checked)" [disabled]="isReadOnly()" class="sr-only peer" />
+              <div class="w-10 h-6 bg-gray-200 dark:bg-surface-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
             </label>
           </div>
         }
