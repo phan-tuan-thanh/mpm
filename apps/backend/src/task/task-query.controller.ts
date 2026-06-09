@@ -2,6 +2,7 @@ import { Controller, Get, Param, ParseUUIDPipe, Query } from '@nestjs/common';
 import { ProjectRoles } from '../auth/decorators/project-roles.decorator';
 import { TaskService } from './task.service';
 import { ActivityService } from './activity/activity.service';
+import { GetActivityQueryDto } from './activity/dto/get-activity.dto';
 import type { TaskType, TaskPriority } from './entities/task.entity';
 
 @Controller('api/projects/:projectId/tasks')
@@ -60,17 +61,28 @@ export class TaskQueryController {
     return this.taskService.findById(projectId, taskId);
   }
 
+  @Get(':taskId/children')
+  @ProjectRoles('Scrum_Master', 'Product_Owner', 'Developer', 'QA', 'Stakeholder')
+  async getChildren(
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+    @Param('taskId', ParseUUIDPipe) taskId: string,
+    @Query('depth') depthParam?: string,
+  ) {
+    const depth = depthParam ? Math.min(Math.max(parseInt(depthParam, 10) || 5, 1), 5) : 5;
+    return this.taskService.getChildrenTree(projectId, taskId, depth);
+  }
+
   @Get(':taskId/activity')
   @ProjectRoles('Scrum_Master', 'Product_Owner', 'Developer', 'QA', 'Stakeholder')
   async getActivity(
     @Param('taskId', ParseUUIDPipe) taskId: string,
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
+    @Query() query: GetActivityQueryDto,
   ) {
-    return this.activityService.getTimeline(
+    return this.activityService.getFilteredActivity(
       taskId,
-      page ? parseInt(page, 10) : 1,
-      limit ? parseInt(limit, 10) : 50,
+      query.type,
+      query.page,
+      query.limit,
     );
   }
 }

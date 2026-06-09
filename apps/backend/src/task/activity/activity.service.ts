@@ -4,8 +4,9 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { TaskActivity, TaskActivityType } from '../entities/task-activity.entity';
+import type { ActivityFilterType } from '@mpm/shared-types';
 
 export interface LogOptions {
   field?: string;
@@ -35,6 +36,43 @@ export interface ActivityPage {
   page: number;
   pageSize: number;
 }
+
+export interface ActivityFilteredPage {
+  data: ActivityDto[];
+  total: number;
+  page: number;
+  hasMore: boolean;
+}
+
+/** Entry types classified as system-generated activity */
+const ACTIVITY_ENTRY_TYPES: TaskActivityType[] = [
+  'state_changed',
+  'priority_changed',
+  'type_changed',
+  'parent_changed',
+  'estimate_changed',
+  'start_date_changed',
+  'due_date_changed',
+  'assignee_added',
+  'assignee_removed',
+  'label_added',
+  'label_removed',
+  'created',
+  'completed',
+  'reopened',
+];
+
+/** Entry types classified as comments */
+const COMMENT_ENTRY_TYPES: TaskActivityType[] = [
+  'comment_added',
+  'comment_edited',
+  'comment_deleted',
+];
+
+/** Entry types classified as history (state transitions only) */
+const HISTORY_ENTRY_TYPES: TaskActivityType[] = [
+  'state_changed',
+];
 
 @Injectable()
 export class ActivityService {
@@ -70,6 +108,44 @@ export class ActivityService {
       take: limit,
     });
     return { data: data.map(this.toDto), total, page, pageSize: limit };
+  }
+
+  async getFilteredActivity(
+    taskId: string,
+    type: ActivityFilterType = 'all',
+    page = 1,
+    limit = 30,
+  ): Promise<ActivityFilteredPage> {
+    const whereCondition = this.buildFilterCondition(taskId, type);
+
+    const [data, total] = await this.activityRepo.findAndCount({
+      where: whereCondition,
+      relations: ['actor'],
+      order: { createdAt: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+
+    return {
+      data: data.map(this.toDto),
+      total,
+      page,
+      hasMore: page * limit < total,
+    };
+  }
+
+  private buildFilterCondition(taskId: string, type: ActivityFilterType) {
+    switch (type) {
+      case 'activity':
+        return { taskId, entryType: In(ACTIVITY_ENTRY_TYPES) };
+      case 'comments':
+        return { taskId, entryType: In(COMMENT_ENTRY_TYPES) };
+      case 'history':
+        return { taskId, entryType: In(HISTORY_ENTRY_TYPES) };
+      case 'all':
+      default:
+        return { taskId };
+    }
   }
 
   private toDto(entry: TaskActivity): ActivityDto {

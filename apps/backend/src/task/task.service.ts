@@ -5,6 +5,7 @@ import { TaskCreateService } from './task-create.service';
 import { TaskUpdateService } from './task-update.service';
 import { TaskDeleteService } from './task-delete.service';
 import { TaskOrderService } from './task-order.service';
+import type { SubItemsTreeResponse } from '@mpm/shared-types';
 
 @Injectable()
 export class TaskService {
@@ -46,5 +47,9 @@ export class TaskService {
 
   async search(projectId: string, query: string): Promise<Task[]> {
     return this.queryService.search(projectId, query);
+  }
+
+  async getChildrenTree(projectId: string, taskId: string, depth?: number): Promise<SubItemsTreeResponse> {
+    return this.queryService.getChildrenTree(projectId, taskId, depth);
   }
 }

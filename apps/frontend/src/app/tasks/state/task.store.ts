@@ -12,6 +12,8 @@ import type {
   CreateTaskDto,
   UpdateTaskDto,
   ReorderTaskItem,
+  SubItemTreeNode,
+  ActivityFilterType,
 } from '@mpm/shared-types';
 
 @Injectable({ providedIn: 'root' })
@@ -34,6 +36,19 @@ export class TaskStore {
   readonly orderBy = signal<string>('rank');
   readonly total = signal(0);
   readonly page = signal(1);
+
+  // ─── Sub-items signals ──────────────────────────────────────────────────
+  readonly subItemsTree = signal<SubItemTreeNode[]>([]);
+  readonly subItemsLoading = signal(false);
+  readonly subItemsTotalCount = signal(0);
+  readonly subItemsDoneCount = signal(0);
+
+  // ─── Activity pagination signals ────────────────────────────────────────
+  readonly activityEntries = signal<TaskActivity[]>([]);
+  readonly activityFilter = signal<ActivityFilterType>('all');
+  readonly activityPage = signal(1);
+  readonly activityHasMore = signal(true);
+  readonly activityLoading = signal(false);
 
   // ─── Computed ────────────────────────────────────────────────────────────
   readonly hasSelection = computed(() => this.selectedTaskIds().size > 0);
@@ -109,7 +124,11 @@ export class TaskStore {
       .subscribe((updated) => {
         if (updated) {
           this.saveStatus.set('saved');
-          this.currentTask.set(updated);
+          // Update currentTask in-place (không dùng .set() để tránh trigger effect
+          // ở TaskDetailPanelComponent vì effect track task().id)
+          this.currentTask.update((prev) =>
+            prev ? { ...prev, ...updated } : updated,
+          );
           this.tasks.update((prev) =>
             prev.map((t) => (t.id === taskId ? ({ ...t, ...updated } as TaskListItem) : t)),
           );
@@ -201,5 +220,92 @@ export class TaskStore {
 
   loadLabels(projectId: string): void {
     this.labelStore.loadLabels(projectId);
+  }
+
+  // ─── Sub-items tree methods ─────────────────────────────────────────────
+
+  /**
+   * Load the sub-items tree for a given task.
+   * Updates subItemsTree, subItemsTotalCount, subItemsDoneCount signals.
+   */
+  loadSubItemsTree(projectId: string, taskId: string): void {
+    this.subItemsLoading.set(true);
+
+    this.taskService
+      .getSubItemsTree(projectId, taskId)
+      .pipe(
+        catchError(() => {
+          this.subItemsTree.set([]);
+          this.subItemsTotalCount.set(0);
+          this.subItemsDoneCount.set(0);
+          return of(null);
+        }),
+        finalize(() => this.subItemsLoading.set(false)),
+      )
+      .subscribe((res) => {
+        if (res) {
+          this.subItemsTree.set(res.items);
+          this.subItemsTotalCount.set(res.totalCount);
+          this.subItemsDoneCount.set(res.doneCount);
+        }
+      });
+  }
+
+  // ─── Activity pagination methods ────────────────────────────────────────
+
+  /**
+   * Load activity entries for a given task with filter and pagination.
+   * Replaces the current activity entries (used for initial load or filter change).
+   */
+  loadActivity(projectId: string, taskId: string, filter: ActivityFilterType, page = 1): void {
+    this.activityLoading.set(true);
+    this.activityFilter.set(filter);
+    this.activityPage.set(page);
+
+    this.taskService
+      .getActivityFiltered(projectId, taskId, filter, page, 30)
+      .pipe(
+        catchError(() => {
+          this.activityEntries.set([]);
+          this.activityHasMore.set(false);
+          return of(null);
+        }),
+        finalize(() => this.activityLoading.set(false)),
+      )
+      .subscribe((res) => {
+        if (res) {
+          this.activityEntries.set(res.data);
+          this.activityHasMore.set(res.hasMore);
+          this.activityPage.set(res.page);
+        }
+      });
+  }
+
+  /**
+   * Load the next page of activity entries and append to existing list.
+   * Used for infinite scroll / "load more" functionality.
+   */
+  loadMoreActivity(projectId: string, taskId: string): void {
+    if (!this.activityHasMore() || this.activityLoading()) return;
+
+    const nextPage = this.activityPage() + 1;
+    this.activityLoading.set(true);
+
+    this.taskService
+      .getActivityFiltered(projectId, taskId, this.activityFilter(), nextPage, 30)
+      .pipe(
+        catchError(() => {
+          this.activityHasMore.set(false);
+          return of(null);
+        }),
+        finalize(() => this.activityLoading.set(false)),
+      )
+      .subscribe((res) => {
+        if (res) {
+          this.activityEntries.update((prev) => [...prev, ...res.data]);
+          this.activityHasMore.set(res.hasMore);
+          this.activityPage.set(res.page);
+        }
+      });
   }
 }
