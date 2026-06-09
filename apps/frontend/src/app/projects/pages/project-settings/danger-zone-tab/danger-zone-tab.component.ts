@@ -16,52 +16,40 @@ import { FormsModule } from '@angular/forms';
   selector: 'app-danger-zone-tab',
   imports: [CommonModule, ButtonModule, DialogModule, InputTextModule, FluidModule, FormsModule],
   template: `
-    <div class="bg-white rounded-xl border border-red-100 p-6 shadow-sm max-w-xl space-y-6">
-      <h2 class="text-lg font-bold text-red-700 border-b border-red-50 pb-2">
-        Danger Zone
-      </h2>
+    <div class="space-y-4">
 
-      <!-- Read-only Mode Warning -->
+      <!-- Header -->
+      <div>
+        <h2 class="text-base font-bold text-red-600 dark:text-red-400">Danger Zone</h2>
+        <p class="text-xs text-gray-400 dark:text-surface-500 mt-0.5">Các thao tác không thể hoàn tác đối với dự án này.</p>
+      </div>
+
       @if (isReadOnly()) {
-        <div class="rounded-lg bg-gray-50 p-3 flex gap-2 text-xs text-gray-500 font-medium">
-          <i class="pi pi-info-circle text-gray-400 mt-0.5"></i>
-          <span>Bạn đang ở chế độ xem. Chỉ Scrum Master hoặc Admin hệ thống mới có quyền truy cập Danger Zone.</span>
+        <div class="rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 p-3 flex gap-2 text-xs text-amber-700 dark:text-amber-400 font-medium">
+          <i class="pi pi-lock text-sm mt-0.5"></i>
+          <span>Chế độ xem. Chỉ Scrum Master hoặc Admin mới có quyền thực hiện các thao tác này.</span>
         </div>
       }
 
-      <!-- Archive Project Section -->
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 py-2 border-b border-gray-100">
-        <div class="space-y-1">
-          <h3 class="text-sm font-bold text-gray-800">Lưu trữ dự án (Archive)</h3>
-          <p class="text-xs text-gray-500 max-w-sm">
-            Chuyển trạng thái dự án sang lưu trữ. Dự án sẽ ở chế độ chỉ đọc nhưng không bị xóa khỏi hệ thống.
-          </p>
+      <!-- Danger actions card -->
+      <div class="bg-white dark:bg-surface-900 rounded-xl border border-red-100 dark:border-red-900/40 shadow-sm divide-y divide-red-50 dark:divide-red-900/30">
+        <!-- Archive -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 px-5 py-4">
+          <div>
+            <h3 class="text-sm font-semibold text-gray-800 dark:text-surface-100">Lưu trữ dự án</h3>
+            <p class="text-xs text-gray-400 dark:text-surface-500 mt-0.5 max-w-sm">Dự án sẽ chuyển sang chế độ chỉ đọc nhưng không bị xóa khỏi hệ thống.</p>
+          </div>
+          <button pButton (click)="onArchive()" [disabled]="isReadOnly() || isArchived() || isSubmitting()" label="Lưu trữ" severity="warning" [outlined]="true" class="flex-shrink-0"></button>
         </div>
-        <button
-          pButton
-          (click)="onArchive()"
-          [disabled]="isReadOnly() || isArchived() || isSubmitting()"
-          label="Lưu trữ dự án"
-          severity="warning"
-          [outlined]="true"
-        ></button>
-      </div>
 
-      <!-- Delete Project Section -->
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 py-2">
-        <div class="space-y-1">
-          <h3 class="text-sm font-bold text-gray-800">Xóa vĩnh viễn dự án (Delete)</h3>
-          <p class="text-xs text-gray-500 max-w-sm text-red-500/80">
-            Hành động này sẽ xóa vĩnh viễn dự án này cùng tất cả dữ liệu liên quan (thành viên, tasks, sprints). Không thể hoàn tác.
-          </p>
+        <!-- Delete -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 px-5 py-4">
+          <div>
+            <h3 class="text-sm font-semibold text-red-600 dark:text-red-400">Xóa vĩnh viễn dự án</h3>
+            <p class="text-xs text-gray-400 dark:text-surface-500 mt-0.5 max-w-sm">Xóa sạch toàn bộ dữ liệu: thành viên, tasks, sprints. Không thể khôi phục.</p>
+          </div>
+          <button pButton (click)="showDeleteDialog()" [disabled]="isReadOnly() || isSubmitting()" label="Xóa dự án" severity="danger" class="flex-shrink-0"></button>
         </div>
-        <button
-          pButton
-          (click)="showDeleteDialog()"
-          [disabled]="isReadOnly() || isSubmitting()"
-          label="Xóa dự án"
-          severity="danger"
-        ></button>
       </div>
 
       <!-- Delete Confirmation Dialog -->
@@ -73,7 +61,7 @@ import { FormsModule } from '@angular/forms';
         [draggable]="false"
         [resizable]="false"
       >
-        <div class="space-y-4 py-2 text-xs text-gray-600">
+        <div class="space-y-4 py-2 text-xs text-gray-600 dark:text-surface-300">
           <div class="rounded-lg bg-red-50 border border-red-100 p-3 text-red-700 flex gap-2">
             <i class="pi pi-exclamation-triangle text-base mt-0.5"></i>
             <div>

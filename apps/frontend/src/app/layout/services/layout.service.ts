@@ -66,9 +66,15 @@ export class LayoutService {
   readonly isCollapsed = signal<boolean>(false);
   readonly isOverlayOpen = signal<boolean>(false);
   readonly fullBleed = signal<boolean>(false);
+  readonly isMobile = signal<boolean>(false);
+
+  // On mobile (<768px) always use overlay regardless of stored menuMode
+  readonly effectiveMenuMode = computed<MenuMode>(() =>
+    this.isMobile() ? 'overlay' : this.menuMode()
+  );
 
   readonly isSidebarVisible = computed(
-    () => this.menuMode() === 'static' || this.isOverlayOpen()
+    () => this.effectiveMenuMode() === 'static' || this.isOverlayOpen()
   );
 
   // ── Surface palette definitions ───────────────────────────────────────────
@@ -92,6 +98,11 @@ export class LayoutService {
       this.surface.set(stored.surface ?? null);
       this.menuMode.set(stored.menuMode);
       this.isCollapsed.set(stored.sidebarCollapsed);
+
+      // Mobile detection — service is app-scoped so no cleanup needed
+      const checkMobile = () => this.isMobile.set(window.innerWidth < 768);
+      checkMobile();
+      window.addEventListener('resize', checkMobile);
     }
 
     // Sync .dark class on <html>
@@ -182,10 +193,10 @@ export class LayoutService {
   }
 
   toggleSidebar(): void {
-    if (this.menuMode() === 'overlay') {
-      this.isOverlayOpen.set(!this.isOverlayOpen());
+    if (this.effectiveMenuMode() === 'overlay') {
+      this.isOverlayOpen.update(v => !v);
     } else {
-      this.isCollapsed.set(!this.isCollapsed());
+      this.isCollapsed.update(v => !v);
     }
   }
 

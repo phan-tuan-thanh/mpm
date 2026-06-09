@@ -1,7 +1,6 @@
 import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { StyleClassModule } from 'primeng/styleclass';
 import { ButtonModule } from 'primeng/button';
 import { LayoutService } from '../../services/layout.service';
 import { ThemeConfigComponent } from '../../theme-config/theme-config.component';
@@ -12,9 +11,9 @@ import type { ToolbarMode } from '../../../shared/components/rich-text-editor/rt
 @Component({
   standalone: true,
   selector: 'app-topbar',
-  imports: [CommonModule, StyleClassModule, ButtonModule, ThemeConfigComponent],
+  imports: [CommonModule, ButtonModule, ThemeConfigComponent],
   template: `
-    <header class="w-full h-16 bg-white dark:bg-surface-900 border-b border-[#e2e8f0] dark:border-surface-800 flex items-center justify-between px-4 sm:px-6 transition-colors duration-200">
+    <header class="w-full h-16 bg-surface-0 dark:bg-surface-900 border-b border-surface-200 dark:border-surface-800 flex items-center justify-between px-4 sm:px-6 transition-colors duration-200">
       <!-- Left side: Hamburger + Logo -->
       <div class="flex items-center gap-4">
         <button
@@ -51,17 +50,14 @@ import type { ToolbarMode } from '../../../shared/components/rich-text-editor/rt
         <div class="relative">
           <p-button
             icon="pi pi-palette"
-            pStyleClass="@next"
-            enterFromClass="hidden"
-            enterActiveClass="animate-scalein"
-            leaveToClass="hidden"
-            leaveActiveClass="animate-fadeout"
-            [hideOnOutsideClick]="true"
+            (onClick)="toggleThemeConfig($event)"
             [rounded]="true"
             severity="secondary"
             size="small"
           />
-          <app-theme-config />
+          @if (isThemeConfigOpen()) {
+            <app-theme-config (click)="$event.stopPropagation()" />
+          }
         </div>
 
         <!-- Divider -->
@@ -161,6 +157,7 @@ export class TopbarComponent {
     this.editorPref.set(mode);
   }
 
+  readonly isThemeConfigOpen = signal<boolean>(false);
   readonly isProfileMenuOpen = signal<boolean>(false);
 
   readonly userEmail = computed(() => this.authService.currentUser()?.email || 'user');
@@ -171,7 +168,16 @@ export class TopbarComponent {
   });
 
   constructor() {
-    document.addEventListener('click', () => this.isProfileMenuOpen.set(false));
+    document.addEventListener('click', () => {
+      this.isProfileMenuOpen.set(false);
+      this.isThemeConfigOpen.set(false);
+    });
+  }
+
+  toggleThemeConfig(event: MouseEvent): void {
+    event.stopPropagation();
+    this.isThemeConfigOpen.set(!this.isThemeConfigOpen());
+    this.isProfileMenuOpen.set(false);
   }
 
   toggleProfileMenu(event: MouseEvent): void {

@@ -1,5 +1,5 @@
-import { Component, OnInit, computed, inject } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { Component, OnInit, computed, inject, signal, effect } from '@angular/core';
+import { Router, RouterLink, RouterLinkActive, NavigationEnd } from '@angular/router';
 import { ProjectStore } from '../../../projects/state/project.store';
 import { LayoutService } from '../../services/layout.service';
 import { AuthStore } from '../../../auth/state/auth.store';
@@ -7,6 +7,8 @@ import { CommonModule } from '@angular/common';
 import { SelectModule } from 'primeng/select';
 import { FormsModule } from '@angular/forms';
 import { ProjectListItem } from '@mpm/shared-types';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { filter, map } from 'rxjs';
 
 @Component({
   standalone: true,
@@ -16,10 +18,10 @@ import { ProjectListItem } from '@mpm/shared-types';
     <div
       [class.w-64]="layoutService.menuMode() === 'overlay' || isExpanded()"
       [class.w-16]="layoutService.menuMode() === 'static' && !isExpanded()"
-      class="flex h-full flex-col border-r border-[#e2e8f0] dark:border-surface-800 bg-white dark:bg-surface-900 text-gray-800 dark:text-surface-100 transition-all duration-300 ease-in-out select-none shadow-sm"
+      class="flex h-full flex-col border-r border-surface-200 dark:border-surface-800 bg-surface-0 dark:bg-surface-900 text-gray-800 dark:text-surface-100 transition-all duration-300 ease-in-out select-none shadow-sm"
     >
       <!-- Project Switcher -->
-      <div class="p-3 border-b border-[#f1f5f9] dark:border-surface-800 overflow-visible">
+      <div class="p-3 border-b border-surface-100 dark:border-surface-800 overflow-visible">
         @if (isExpanded()) {
           <span class="block text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-surface-400 mb-2 px-1">Dự án</span>
           <p-select
@@ -77,64 +79,32 @@ import { ProjectListItem } from '@mpm/shared-types';
 
       <!-- Nav Links -->
       <div class="flex-1 space-y-1 p-2 overflow-y-auto">
-        <!-- Danh sách dự án (Always visible) -->
+        <!-- Danh sách dự án (luôn hiển thị) -->
         <a
           routerLink="/projects"
           routerLinkActive="bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 font-semibold border-l-4 border-indigo-600"
           [routerLinkActiveOptions]="{ exact: true }"
           class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 dark:text-surface-400 hover:bg-gray-50 dark:hover:bg-surface-800 hover:text-gray-900 dark:hover:text-surface-100 transition duration-200"
-          [title]="!isExpanded() ? 'Danh sách dự án' : ''"
+          [title]="!isExpanded() ? 'Dự án' : ''"
         >
-          <i class="pi pi-list text-base"></i>
+          <i class="pi pi-th-large text-base"></i>
           @if (isExpanded()) {
-            <span>Danh sách dự án</span>
+            <span>Dự án</span>
           }
         </a>
 
-        @if (authStore.isAdmin()) {
-          <a
-            routerLink="/admin/users"
-            routerLinkActive="bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 font-semibold border-l-4 border-indigo-600"
-            [routerLinkActiveOptions]="{ exact: false }"
-            class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 dark:text-surface-400 hover:bg-gray-50 dark:hover:bg-surface-800 hover:text-gray-900 dark:hover:text-surface-100 transition duration-200"
-            [title]="!isExpanded() ? 'Quản trị hệ thống' : ''"
-          >
-            <i class="pi pi-shield text-base"></i>
-            @if (isExpanded()) {
-              <span>Quản trị</span>
-            }
-          </a>
-        }
-
         @if (projectStore.currentProject()) {
-          <!-- Divider -->
-          <div class="my-2 border-t border-[#f1f5f9] dark:border-surface-800"></div>
-
-          <!-- Board (Always visible) -->
-          <a
-            [routerLink]="['/projects', currentKey(), 'board']"
-            routerLinkActive="bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 font-semibold border-l-4 border-indigo-600"
-            [routerLinkActiveOptions]="{ exact: false }"
-            class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 dark:text-surface-400 hover:bg-gray-50 dark:hover:bg-surface-800 hover:text-gray-900 dark:hover:text-surface-100 transition duration-200"
-            [title]="!isExpanded() ? 'Board' : ''"
-          >
-            <i class="pi pi-table text-base"></i>
-            @if (isExpanded()) {
-              <span>Kanban Board</span>
-            }
-          </a>
-
-          <!-- Backlog (Always visible) -->
+          <!-- Work Items (Always visible) -->
           <a
             [routerLink]="['/projects', currentKey(), 'backlog']"
             routerLinkActive="bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 font-semibold border-l-4 border-indigo-600"
             [routerLinkActiveOptions]="{ exact: false }"
             class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 dark:text-surface-400 hover:bg-gray-50 dark:hover:bg-surface-800 hover:text-gray-900 dark:hover:text-surface-100 transition duration-200"
-            [title]="!isExpanded() ? 'Backlog' : ''"
+            [title]="!isExpanded() ? 'Work Items' : ''"
           >
             <i class="pi pi-align-left text-base"></i>
             @if (isExpanded()) {
-              <span>Backlog</span>
+              <span>Work Items</span>
             }
           </a>
 
@@ -218,19 +188,62 @@ import { ProjectListItem } from '@mpm/shared-types';
             </a>
           }
 
-          <!-- Settings (Always visible) -->
-          <a
-            [routerLink]="['/projects', currentKey(), 'settings']"
-            routerLinkActive="bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 font-semibold border-l-4 border-indigo-600"
-            [routerLinkActiveOptions]="{ exact: false }"
-            class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 dark:text-surface-400 hover:bg-gray-50 dark:hover:bg-surface-800 hover:text-gray-900 dark:hover:text-surface-100 transition duration-200"
-            [title]="!isExpanded() ? 'Settings' : ''"
-          >
-            <i class="pi pi-cog text-base"></i>
-            @if (isExpanded()) {
-              <span>Cấu hình</span>
+          <!-- Settings (with collapsible sub-items) -->
+          <div>
+            <button
+              type="button"
+              (click)="onSettingsClick()"
+              class="w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition duration-200"
+              [ngClass]="isOnSettings()
+                ? 'bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 font-semibold border-l-4 border-indigo-600'
+                : 'text-gray-600 dark:text-surface-400 hover:bg-gray-50 dark:hover:bg-surface-800 hover:text-gray-900 dark:hover:text-surface-100'"
+              [title]="!isExpanded() ? 'Cấu hình' : ''"
+            >
+              <i class="pi pi-cog text-base flex-shrink-0"></i>
+              @if (isExpanded()) {
+                <span class="flex-1 text-left">Cấu hình</span>
+                <i class="pi text-[10px] text-gray-400 dark:text-surface-500 transition-transform duration-200"
+                   [ngClass]="isSettingsOpen() ? 'pi-chevron-down' : 'pi-chevron-right'"></i>
+              }
+            </button>
+
+            @if (isExpanded() && isSettingsOpen()) {
+              <div class="mt-0.5 ml-4 pl-3 border-l border-gray-100 dark:border-surface-800 space-y-0.5">
+                @for (sub of settingsSubItems; track sub.label) {
+                  <a
+                    [routerLink]="['/projects', currentKey(), 'settings'].concat(sub.route)"
+                    [routerLinkActiveOptions]="{ exact: sub.exact }"
+                    [routerLinkActive]="sub.danger ? 'bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 font-semibold' : 'bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 font-semibold'"
+                    class="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs transition"
+                    [ngClass]="sub.danger
+                      ? 'text-red-400 dark:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 hover:text-red-600 dark:hover:text-red-400'
+                      : 'text-gray-500 dark:text-surface-400 hover:bg-gray-50 dark:hover:bg-surface-800 hover:text-gray-700 dark:hover:text-surface-100'"
+                  >
+                    <i [class]="'pi ' + sub.icon + ' text-[10px]'"></i>
+                    {{ sub.label }}
+                  </a>
+                }
+              </div>
             }
-          </a>
+          </div>
+
+          <!-- Quản trị (admin only, grouped with bottom admin items) -->
+          @if (authStore.isAdmin()) {
+            <div class="mt-2 pt-2 border-t border-[#f1f5f9] dark:border-surface-800">
+              <a
+                routerLink="/admin/users"
+                routerLinkActive="bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 font-semibold border-l-4 border-indigo-600"
+                [routerLinkActiveOptions]="{ exact: false }"
+                class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 dark:text-surface-400 hover:bg-gray-50 dark:hover:bg-surface-800 hover:text-gray-900 dark:hover:text-surface-100 transition duration-200"
+                [title]="!isExpanded() ? 'Quản trị hệ thống' : ''"
+              >
+                <i class="pi pi-shield text-base"></i>
+                @if (isExpanded()) {
+                  <span>Quản trị</span>
+                }
+              </a>
+            </div>
+          }
         }
       </div>
     </div>
@@ -241,6 +254,42 @@ export class SidebarComponent implements OnInit {
   readonly layoutService = inject(LayoutService);
   readonly authStore = inject(AuthStore);
   private readonly router = inject(Router);
+
+  readonly isOnSettings = toSignal(
+    this.router.events.pipe(
+      filter(e => e instanceof NavigationEnd),
+      map(() => this.router.url.includes('/settings'))
+    ),
+    { initialValue: this.router.url.includes('/settings') }
+  );
+
+  readonly isSettingsOpen = signal<boolean>(this.router.url.includes('/settings'));
+
+  constructor() {
+    // Auto-expand when navigating into settings, but preserve manual collapse
+    effect(() => {
+      if (this.isOnSettings()) {
+        this.isSettingsOpen.set(true);
+      }
+    });
+  }
+
+  onSettingsClick(): void {
+    if (this.isOnSettings()) {
+      this.isSettingsOpen.update(v => !v);
+    } else {
+      void this.router.navigate(['/projects', this.currentKey(), 'settings']);
+    }
+  }
+
+  readonly settingsSubItems = [
+    { label: 'Cấu hình chung', icon: 'pi-sliders-h',            route: [] as string[], exact: true,  danger: false },
+    { label: 'Thành viên',     icon: 'pi-users',                 route: ['members'],   exact: false, danger: false },
+    { label: 'Trạng thái',     icon: 'pi-list',                  route: ['states'],    exact: false, danger: false },
+    { label: 'Ước lượng',      icon: 'pi-chart-bar',             route: ['estimates'], exact: false, danger: false },
+    { label: 'Tính năng',      icon: 'pi-toggle-on',             route: ['features'],  exact: false, danger: false },
+    { label: 'Danger Zone',    icon: 'pi-exclamation-triangle',  route: ['danger'],    exact: false, danger: true  },
+  ];
 
   // In overlay mode the sidebar is always fully expanded; in static mode it respects isCollapsed
   readonly isExpanded = computed(

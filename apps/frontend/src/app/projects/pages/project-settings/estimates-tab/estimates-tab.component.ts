@@ -21,69 +21,67 @@ import { EstimateType } from '@mpm/shared-types';
     FormsModule,
   ],
   template: `
-    <div class="space-y-6 max-w-3xl">
+    <div class="space-y-5">
       <div>
-        <h2 class="text-lg font-bold text-gray-900 pb-2 border-b border-gray-150">
-          Cấu hình ước lượng (Estimates)
-        </h2>
-        <p class="text-xs text-gray-500 mt-1">Thiết lập cách nhóm của bạn ước lượng khối lượng công việc cho dự án.</p>
+        <h2 class="text-base font-bold text-gray-900 dark:text-surface-0">Ước lượng (Estimates)</h2>
+        <p class="text-xs text-gray-400 dark:text-surface-500 mt-0.5">Thiết lập cách nhóm ước lượng khối lượng công việc cho dự án.</p>
       </div>
 
       <!-- Section 1: Estimate Type Selection -->
       <div class="space-y-3">
-        <label class="text-sm font-semibold text-gray-700">Loại ước lượng</label>
+        <label class="text-sm font-semibold text-gray-700 dark:text-surface-200">Loại ước lượng</label>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <!-- Points Card -->
           <div
             (click)="selectType(EstimateType.POINTS)"
             [ngClass]="{
-              'border-indigo-600 ring-2 ring-indigo-600 bg-indigo-50/10': tempType === EstimateType.POINTS,
-              'border-gray-200 hover:border-gray-300 bg-white': tempType !== EstimateType.POINTS,
+              'border-indigo-600 ring-2 ring-indigo-600 bg-indigo-50/10 dark:bg-indigo-950/40': tempType === EstimateType.POINTS,
+              'border-gray-200 dark:border-surface-700 hover:border-gray-300 dark:hover:border-surface-600 bg-white dark:bg-surface-800': tempType !== EstimateType.POINTS,
               'opacity-60 cursor-not-allowed': isReadOnly()
             }"
             class="border rounded-xl p-4 flex flex-col items-center justify-center text-center cursor-pointer transition select-none"
           >
-            <i class="pi pi-percentage text-2xl mb-2" [ngClass]="tempType === EstimateType.POINTS ? 'text-indigo-600' : 'text-gray-400'"></i>
-            <span class="text-sm font-bold text-gray-800">Story Points</span>
-            <span class="text-xs text-gray-400 mt-1">Sử dụng điểm số (Fibonacci, Linear, etc.) để tính toán độ phức tạp.</span>
+            <i class="pi pi-percentage text-2xl mb-2" [ngClass]="tempType === EstimateType.POINTS ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-400 dark:text-surface-500'"></i>
+            <span class="text-sm font-bold text-gray-800 dark:text-surface-100">Story Points</span>
+            <span class="text-xs text-gray-400 dark:text-surface-500 mt-1">Sử dụng điểm số (Fibonacci, Linear, etc.) để tính toán độ phức tạp.</span>
           </div>
 
           <!-- Categories Card -->
           <div
             (click)="selectType(EstimateType.CATEGORIES)"
             [ngClass]="{
-              'border-indigo-600 ring-2 ring-indigo-600 bg-indigo-50/10': tempType === EstimateType.CATEGORIES,
-              'border-gray-200 hover:border-gray-300 bg-white': tempType !== EstimateType.CATEGORIES,
+              'border-indigo-600 ring-2 ring-indigo-600 bg-indigo-50/10 dark:bg-indigo-950/40': tempType === EstimateType.CATEGORIES,
+              'border-gray-200 dark:border-surface-700 hover:border-gray-300 dark:hover:border-surface-600 bg-white dark:bg-surface-800': tempType !== EstimateType.CATEGORIES,
               'opacity-60 cursor-not-allowed': isReadOnly()
             }"
             class="border rounded-xl p-4 flex flex-col items-center justify-center text-center cursor-pointer transition select-none"
           >
-            <i class="pi pi-tags text-2xl mb-2" [ngClass]="tempType === EstimateType.CATEGORIES ? 'text-indigo-600' : 'text-gray-400'"></i>
-            <span class="text-sm font-bold text-gray-800">T-Shirt Sizes</span>
-            <span class="text-xs text-gray-400 mt-1">Sử dụng kích cỡ (XS, S, M, L, XL) hoặc phân loại Easy, Medium, Hard.</span>
+            <i class="pi pi-tags text-2xl mb-2" [ngClass]="tempType === EstimateType.CATEGORIES ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-400 dark:text-surface-500'"></i>
+            <span class="text-sm font-bold text-gray-800 dark:text-surface-100">T-Shirt Sizes</span>
+            <span class="text-xs text-gray-400 dark:text-surface-500 mt-1">Sử dụng kích cỡ (XS, S, M, L, XL) hoặc phân loại Easy, Medium, Hard.</span>
           </div>
 
           <!-- Time Card -->
           <div
             (click)="selectType(EstimateType.TIME)"
             [ngClass]="{
-              'border-indigo-600 ring-2 ring-indigo-600 bg-indigo-50/10': tempType === EstimateType.TIME,
-              'border-gray-200 hover:border-gray-300 bg-white': tempType !== EstimateType.TIME,
+              'border-indigo-600 ring-2 ring-indigo-600 bg-indigo-50/10 dark:bg-indigo-950/40': tempType === EstimateType.TIME,
+              'border-gray-200 dark:border-surface-700 hover:border-gray-300 dark:hover:border-surface-600 bg-white dark:bg-surface-800': tempType !== EstimateType.TIME,
               'opacity-60 cursor-not-allowed': isReadOnly()
             }"
             class="border rounded-xl p-4 flex flex-col items-center justify-center text-center cursor-pointer transition select-none"
           >
-            <i class="pi pi-clock text-2xl mb-2" [ngClass]="tempType === EstimateType.TIME ? 'text-indigo-600' : 'text-gray-400'"></i>
-            <span class="text-sm font-bold text-gray-800">Thời gian (Hours)</span>
-            <span class="text-xs text-gray-400 mt-1">Ước lượng trực tiếp theo số giờ làm việc (0.5h, 1h, 2h, 4h, etc.).</span>
+            <i class="pi pi-clock text-2xl mb-2" [ngClass]="tempType === EstimateType.TIME ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-400 dark:text-surface-500'"></i>
+            <span class="text-sm font-bold text-gray-800 dark:text-surface-100">Thời gian (Hours)</span>
+            <span class="text-xs text-gray-400 dark:text-surface-500 mt-1">Ước lượng trực tiếp theo số giờ làm việc (0.5h, 1h, 2h, 4h, etc.).</span>
           </div>
         </div>
       </div>
 
       <!-- Section 2: Template Selection -->
       @if (hasTemplates(tempType) && !isReadOnly()) {
-        <div class="bg-gray-55 rounded-xl p-4 border border-gray-100 space-y-3">
-          <label for="template" class="text-sm font-semibold text-gray-700">Mẫu giá trị gợi ý (Templates)</label>
+        <div class="bg-gray-50 dark:bg-surface-800 rounded-xl p-4 border border-gray-100 dark:border-surface-700 space-y-3">
+          <label for="template" class="text-sm font-semibold text-gray-700 dark:text-surface-200">Mẫu giá trị gợi ý (Templates)</label>
           <div class="flex gap-3">
             <p-select
               id="template"
@@ -109,11 +107,11 @@ import { EstimateType } from '@mpm/shared-types';
       <!-- Section 3: Custom Values Chips Editor -->
       <div class="space-y-3">
         <div class="flex justify-between items-center">
-          <label class="text-sm font-semibold text-gray-700">Các giá trị ước lượng (Values)</label>
-          <span class="text-xs text-gray-400 font-medium">Từ 2 đến 12 phần tử</span>
+          <label class="text-sm font-semibold text-gray-700 dark:text-surface-200">Các giá trị ước lượng (Values)</label>
+          <span class="text-xs text-gray-400 dark:text-surface-500 font-medium">Từ 2 đến 12 phần tử</span>
         </div>
 
-        <div class="border border-gray-200 rounded-xl p-4 bg-white flex flex-wrap gap-2 items-center">
+        <div class="border border-gray-200 dark:border-surface-700 rounded-xl p-4 bg-white dark:bg-surface-800 flex flex-wrap gap-2 items-center">
           @for (val of tempValues; track $index) {
             <span class="inline-flex items-center gap-1.5 bg-indigo-50 border border-indigo-100 rounded-lg px-2.5 py-1 text-sm font-bold text-indigo-700">
               {{ val }}
@@ -135,20 +133,20 @@ import { EstimateType } from '@mpm/shared-types';
               [(ngModel)]="newValueInput"
               (keydown.enter)="addValue($event)"
               placeholder="Thêm giá trị..."
-              class="border-none focus:outline-none text-sm px-2 py-1 text-gray-800 flex-1 min-w-[120px]"
+              class="border-none focus:outline-none text-sm px-2 py-1 text-gray-800 dark:text-surface-100 bg-transparent flex-1 min-w-[120px]"
             />
           }
         </div>
       </div>
 
       <!-- Section 4: Preview Mockup -->
-      <div class="bg-white rounded-xl border border-gray-150 p-5 space-y-4">
-        <h3 class="text-sm font-bold text-gray-800 border-b border-gray-50 pb-2">Xem trước (Preview)</h3>
-        <div class="max-w-md border border-gray-100 rounded-xl p-4 bg-gray-50/50 space-y-3">
+      <div class="bg-white dark:bg-surface-900 rounded-xl border border-gray-200 dark:border-surface-800 p-5 space-y-4">
+        <h3 class="text-sm font-bold text-gray-800 dark:text-surface-100 border-b border-gray-50 dark:border-surface-800 pb-2">Xem trước (Preview)</h3>
+        <div class="max-w-md border border-gray-100 dark:border-surface-700 rounded-xl p-4 bg-gray-50/50 dark:bg-surface-800 space-y-3">
           <div class="flex items-center gap-3">
-            <span class="text-xs font-bold text-gray-500 w-24">Task Estimate:</span>
+            <span class="text-xs font-bold text-gray-500 dark:text-surface-400 w-24">Task Estimate:</span>
             <div class="flex-1">
-              <select class="w-full border border-gray-200 rounded-lg p-2 text-sm bg-white font-semibold text-gray-850">
+              <select class="w-full border border-gray-200 dark:border-surface-700 rounded-lg p-2 text-sm bg-white dark:bg-surface-800 font-semibold text-gray-800 dark:text-surface-100">
                 <option value="">-- Chọn độ phức tạp --</option>
                 @for (val of tempValues; track val) {
                   <option [value]="val">{{ val }} {{ tempType === EstimateType.TIME ? 'h' : '' }}</option>
@@ -161,7 +159,7 @@ import { EstimateType } from '@mpm/shared-types';
 
       <!-- Form actions -->
       @if (!isReadOnly()) {
-        <div class="flex justify-end gap-3 pt-3 border-t border-gray-100">
+        <div class="flex justify-end gap-3 pt-3 border-t border-gray-100 dark:border-surface-800">
           <button
             pButton
             type="button"
