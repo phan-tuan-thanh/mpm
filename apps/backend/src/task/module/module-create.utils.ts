@@ -23,7 +23,7 @@ export async function createModule(
     name: dto.name,
     description: dto.description ?? null,
     descriptionPlain: extractPlainText(dto.description ?? null),
-    status: dto.status ?? 'backlog',
+    status: dto.status ?? 'planning',
     startDate: dto.startDate ?? null,
     endDate: dto.endDate ?? null,
     createdBy: userId,

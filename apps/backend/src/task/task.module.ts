@@ -7,6 +7,7 @@ import { Task } from './entities/task.entity';
 import { Label } from './entities/label.entity';
 import { Module as ModuleEntity } from './entities/module.entity';
 import { TaskModule as TaskModuleEntity } from './entities/task-module.entity';
+import { ModuleLifecycleLog } from './entities/module-lifecycle-log.entity';
 import { TaskAttachment } from './entities/task-attachment.entity';
 import { TaskLink } from './entities/task-link.entity';
 import { TaskRelation } from './entities/task-relation.entity';
@@ -39,6 +40,8 @@ import { RelationService } from './relation/relation.service';
 import { ModuleService } from './module/module.service';
 import { ModuleQueryService } from './module/module-query.service';
 import { ModuleTaskService } from './module/module-task.service';
+import { ModuleLifecycleService } from './module/module-lifecycle.service';
+import { ModuleLifecycleAuditService } from './module/module-lifecycle-audit.service';
 
 import { AuthModule } from '../auth/auth.module';
 import { AuditModule } from '../audit/audit.module';
@@ -50,6 +53,7 @@ import { AuditModule } from '../audit/audit.module';
       Label,
       ModuleEntity,
       TaskModuleEntity,
+      ModuleLifecycleLog,
       TaskAttachment,
       TaskLink,
       TaskRelation,
@@ -91,6 +95,8 @@ import { AuditModule } from '../audit/audit.module';
     ModuleService,
     ModuleQueryService,
     ModuleTaskService,
+    ModuleLifecycleService,
+    ModuleLifecycleAuditService,
   ],
   exports: [TaskService, ActivityService, LabelService],
 })

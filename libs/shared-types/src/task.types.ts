@@ -1,3 +1,5 @@
+import type { ModuleLifecycleStatus } from './module.types';
+
 export type TiptapDoc = Record<string, any>;
 
 export type TaskType = 'epic' | 'story' | 'task' | 'subtask';
@@ -266,6 +268,7 @@ export interface TaskQueryDto {
 
 // ─── Modules ──────────────────────────────────────────────────────────────────
 
+/** @deprecated Use ModuleLifecycleStatus from module.types instead */
 export type ModuleStatus = 'backlog' | 'in_progress' | 'paused' | 'completed' | 'cancelled';
 
 export interface ProjectModule {
@@ -275,12 +278,14 @@ export interface ProjectModule {
   projectId: string | null;
   name: string;
   description: TiptapDoc | null;
-  status: ModuleStatus;
+  status: ModuleLifecycleStatus;
   startDate: string | null;
   endDate: string | null;
+  version: number;
   taskCount: number;
   completedCount: number;
   progress: number;
+  allowedTransitions: ModuleLifecycleStatus[];
   createdBy: string;
   createdAt: Date;
   updatedAt: Date;
@@ -290,7 +295,7 @@ export interface TaskModuleRef {
   id: string;
   name: string;
   scope: 'workspace' | 'project';
-  status: ModuleStatus;
+  status: ModuleLifecycleStatus;
 }
 
 // ─── Display Properties ───────────────────────────────────────────────────────

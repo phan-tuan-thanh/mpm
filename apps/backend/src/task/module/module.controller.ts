@@ -1,5 +1,6 @@
 import {
   Body,
+  ConflictException,
   Controller,
   Delete,
   Get,
@@ -10,12 +11,14 @@ import {
   Query,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, OptimisticLockVersionMismatchError } from 'typeorm';
 import { CurrentUser, RequestUser } from '../../auth/decorators/current-user.decorator';
 import { ProjectRoles } from '../../auth/decorators/project-roles.decorator';
 import { Roles } from '../../auth/decorators/roles.decorator';
 import { Project } from '../../project/entities/project.entity';
 import { ModuleService } from './module.service';
+import { MODULE_LIFECYCLE_STATUSES, type ModuleLifecycleStatus } from '@mpm/shared-types';
+import { InvalidStatusValueException } from './module-lifecycle.exceptions';
 import type { CreateModuleDto, UpdateModuleDto, ModuleQueryDto } from './module.dto';
 
 // ─── Project-Scoped Module Controller ───────────────────────────────────────
@@ -23,10 +26,10 @@ import type { CreateModuleDto, UpdateModuleDto, ModuleQueryDto } from './module.
 /**
  * Module Controller — Project-scoped routes
  *
- * CRUD cho modules tại project level + task assignment.
- * - GET: any project member (all roles)
- * - POST/PATCH/DELETE + task assignment: Scrum_Master hoặc Product_Owner
- * workspaceId được resolve từ Project entity để merge workspace modules.
+ * POST: status bị ignore — luôn là 'planning'
+ * PATCH: nếu body có status → dùng lifecycleService.transition(); 409 nếu OptimisticLock
+ * GET: hỗ trợ ?status=active,maintenance (multi-value)
+ * Tất cả responses bao gồm allowedTransitions
  */
 @Controller('api/projects/:projectId/modules')
 export class ModuleController {
@@ -36,9 +39,6 @@ export class ModuleController {
     private readonly projectRepo: Repository<Project>,
   ) {}
 
-  /**
-   * Resolve workspaceId từ project entity
-   */
   private async resolveWorkspaceId(projectId: string): Promise<string | null> {
     const project = await this.projectRepo.findOne({
       where: { id: projectId },
@@ -49,25 +49,36 @@ export class ModuleController {
 
   /**
    * GET /api/projects/:projectId/modules
-   * Trả về merged list: workspace modules + project modules, kèm progress
+   * ?status=active,maintenance — multi-value filter
    */
   @Get()
   @ProjectRoles('Scrum_Master', 'Product_Owner', 'Developer', 'QA', 'Stakeholder')
   async findAll(
     @Param('projectId', ParseUUIDPipe) projectId: string,
-    @Query('status') status?: string,
+    @Query('status') statusParam?: string,
     @Query('scope') scope?: string,
   ) {
     const workspaceId = await this.resolveWorkspaceId(projectId);
     const query: ModuleQueryDto = {};
-    if (status) query.status = status as ModuleQueryDto['status'];
+
+    if (statusParam) {
+      const statuses = statusParam.split(',').map((s) => s.trim()) as ModuleLifecycleStatus[];
+      // Validate all status values
+      for (const s of statuses) {
+        if (!(MODULE_LIFECYCLE_STATUSES as readonly string[]).includes(s)) {
+          throw new InvalidStatusValueException(s);
+        }
+      }
+      query.status = statuses.length === 1 ? statuses[0] : statuses;
+    }
+
     if (scope) query.scope = scope as ModuleQueryDto['scope'];
     return this.moduleService.findAllForProject(projectId, workspaceId, query);
   }
 
   /**
    * POST /api/projects/:projectId/modules
-   * Tạo project-scoped module mới
+   * status bị ignore — luôn là 'planning'
    */
   @Post()
   @ProjectRoles('Scrum_Master', 'Product_Owner')
@@ -76,13 +87,16 @@ export class ModuleController {
     @CurrentUser() user: RequestUser,
     @Body() dto: CreateModuleDto,
   ) {
+    if (dto.status && !(MODULE_LIFECYCLE_STATUSES as readonly string[]).includes(dto.status)) {
+      throw new InvalidStatusValueException(dto.status);
+    }
     const workspaceId = await this.resolveWorkspaceId(projectId);
     return this.moduleService.create('project', workspaceId, projectId, user.id, dto);
   }
 
   /**
    * PATCH /api/projects/:projectId/modules/:moduleId
-   * Partial update module — SM/PO cho project module; Admin cho workspace module
+   * status → lifecycleService.transition(); OptimisticLockVersionMismatchError → 409
    */
   @Patch(':moduleId')
   @ProjectRoles('Scrum_Master', 'Product_Owner')
@@ -92,6 +106,41 @@ export class ModuleController {
     @CurrentUser() user: RequestUser,
     @Body() dto: UpdateModuleDto,
   ) {
+    // If status is being changed, route through lifecycle service
+    if (dto.status !== undefined) {
+      const targetStatus = dto.status;
+      if (!(MODULE_LIFECYCLE_STATUSES as readonly string[]).includes(targetStatus)) {
+        throw new InvalidStatusValueException(targetStatus);
+      }
+
+      try {
+        const result = await this.moduleService.lifecycleService.transition(
+          moduleId,
+          targetStatus,
+          user.id,
+        );
+        // If there are other fields to update, apply them too
+        const { status: _s, ...nonStatusDto } = dto;
+        const hasOtherFields = Object.keys(nonStatusDto).some(
+          (k) => (nonStatusDto as any)[k] !== undefined,
+        );
+        if (hasOtherFields) {
+          return this.moduleService.update(moduleId, user.id, nonStatusDto, {
+            userSystemRole: user.systemRole,
+          });
+        }
+        return result;
+      } catch (err) {
+        if (err instanceof OptimisticLockVersionMismatchError) {
+          throw new ConflictException({
+            errorCode: 'CONCURRENT_MODIFICATION',
+            message: 'Module was modified by another request. Please refresh and try again.',
+          });
+        }
+        throw err;
+      }
+    }
+
     return this.moduleService.update(moduleId, user.id, dto, {
       userSystemRole: user.systemRole,
     });
@@ -99,7 +148,6 @@ export class ModuleController {
 
   /**
    * DELETE /api/projects/:projectId/modules/:moduleId
-   * Xóa module — cascade task_modules; trả về { deletedModuleId, affectedTaskCount }
    */
   @Delete(':moduleId')
   @ProjectRoles('Scrum_Master', 'Product_Owner')
@@ -115,8 +163,6 @@ export class ModuleController {
 
   /**
    * POST /api/projects/:projectId/modules/:moduleId/tasks
-   * Batch gán tasks vào module — body { taskIds: string[] }
-   * Trả về { added, alreadyExists }
    */
   @Post(':moduleId/tasks')
   @ProjectRoles('Scrum_Master', 'Product_Owner')
@@ -130,7 +176,6 @@ export class ModuleController {
 
   /**
    * DELETE /api/projects/:projectId/modules/:moduleId/tasks/:taskId
-   * Gỡ task khỏi module
    */
   @Delete(':moduleId/tasks/:taskId')
   @ProjectRoles('Scrum_Master', 'Product_Owner')
@@ -145,43 +190,28 @@ export class ModuleController {
 
 // ─── Workspace-Scoped Module Controller ─────────────────────────────────────
 
-/**
- * Workspace Module Controller
- *
- * CRUD cho workspace-scoped modules.
- * Tất cả routes yêu cầu System Role = Admin (Workspace Admin).
- */
 @Controller('api/workspaces/:workspaceId/modules')
 @Roles('Admin')
 export class WorkspaceModuleController {
   constructor(private readonly moduleService: ModuleService) {}
 
-  /**
-   * GET /api/workspaces/:workspaceId/modules
-   * Trả về tất cả workspace-scoped modules
-   */
   @Get()
   async findAll(@Param('workspaceId', ParseUUIDPipe) workspaceId: string) {
     return this.moduleService.findAllForWorkspace(workspaceId);
   }
 
-  /**
-   * POST /api/workspaces/:workspaceId/modules
-   * Tạo workspace-scoped module mới
-   */
   @Post()
   async create(
     @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
     @CurrentUser() user: RequestUser,
     @Body() dto: CreateModuleDto,
   ) {
+    if (dto.status && !(MODULE_LIFECYCLE_STATUSES as readonly string[]).includes(dto.status)) {
+      throw new InvalidStatusValueException(dto.status);
+    }
     return this.moduleService.create('workspace', workspaceId, null, user.id, dto);
   }
 
-  /**
-   * PATCH /api/workspaces/:workspaceId/modules/:moduleId
-   * Cập nhật workspace module
-   */
   @Patch(':moduleId')
   async update(
     @Param('workspaceId', ParseUUIDPipe) _workspaceId: string,
@@ -189,16 +219,44 @@ export class WorkspaceModuleController {
     @CurrentUser() user: RequestUser,
     @Body() dto: UpdateModuleDto,
   ) {
+    if (dto.status !== undefined) {
+      const targetStatus = dto.status;
+      if (!(MODULE_LIFECYCLE_STATUSES as readonly string[]).includes(targetStatus)) {
+        throw new InvalidStatusValueException(targetStatus);
+      }
+
+      try {
+        const result = await this.moduleService.lifecycleService.transition(
+          moduleId,
+          targetStatus,
+          user.id,
+        );
+        const { status: _s, ...nonStatusDto } = dto;
+        const hasOtherFields = Object.keys(nonStatusDto).some(
+          (k) => (nonStatusDto as any)[k] !== undefined,
+        );
+        if (hasOtherFields) {
+          return this.moduleService.update(moduleId, user.id, nonStatusDto, {
+            userSystemRole: user.systemRole,
+          });
+        }
+        return result;
+      } catch (err) {
+        if (err instanceof OptimisticLockVersionMismatchError) {
+          throw new ConflictException({
+            errorCode: 'CONCURRENT_MODIFICATION',
+            message: 'Module was modified by another request. Please refresh and try again.',
+          });
+        }
+        throw err;
+      }
+    }
+
     return this.moduleService.update(moduleId, user.id, dto, {
       userSystemRole: user.systemRole,
     });
   }
 
-  /**
-   * DELETE /api/workspaces/:workspaceId/modules/:moduleId
-   * Xóa workspace module — cascade task_modules
-   * Trả về { deletedModuleId, affectedTaskCount }
-   */
   @Delete(':moduleId')
   async delete(
     @Param('workspaceId', ParseUUIDPipe) _workspaceId: string,
