@@ -1,8 +1,16 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { catchError, finalize } from 'rxjs/operators';
 import { of } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ModuleService, CreateModuleDto, UpdateModuleDto, ModuleQueryParams } from '../services/module.service';
 import type { ProjectModule } from '@mpm/shared-types';
+
+export interface ModuleUpdateError {
+  type: '422' | '409' | 'unknown';
+  currentStatus?: string;
+  allowedTransitions?: string[];
+  message: string;
+}
 
 @Injectable({ providedIn: 'root' })
 export class ModuleStore {
@@ -38,17 +46,46 @@ export class ModuleStore {
     });
   }
 
-  updateModule(projectId: string, moduleId: string, dto: UpdateModuleDto): void {
-    this.moduleService
-      .updateModule(projectId, moduleId, dto)
-      .pipe(catchError(() => of(null)))
-      .subscribe((updated) => {
-        if (updated) {
-          this.modules.update((prev) =>
-            prev.map((m) => (m.id === moduleId ? { ...m, ...updated } : m)),
-          );
-        }
-      });
+  updateModule(
+    projectId: string,
+    moduleId: string,
+    dto: UpdateModuleDto,
+  ): Promise<{ success: true } | { success: false; error: ModuleUpdateError }> {
+    return new Promise((resolve) => {
+      this.moduleService
+        .updateModule(projectId, moduleId, dto)
+        .pipe(
+          catchError((err: HttpErrorResponse) => {
+            let error: ModuleUpdateError;
+            if (err.status === 422) {
+              const body = err.error ?? {};
+              error = {
+                type: '422',
+                currentStatus: body.currentStatus,
+                allowedTransitions: body.allowedTransitions,
+                message: body.message ?? 'Transition không hợp lệ',
+              };
+            } else if (err.status === 409) {
+              error = {
+                type: '409',
+                message: 'Module đã được sửa đổi bởi người khác. Vui lòng làm mới và thử lại.',
+              };
+            } else {
+              error = { type: 'unknown', message: err.message ?? 'Đã xảy ra lỗi' };
+            }
+            resolve({ success: false, error });
+            return of(null);
+          }),
+        )
+        .subscribe((updated) => {
+          if (updated) {
+            this.modules.update((prev) =>
+              prev.map((m) => (m.id === moduleId ? { ...m, ...updated } : m)),
+            );
+            resolve({ success: true });
+          }
+        });
+    });
   }
 
   deleteModule(projectId: string, moduleId: string): void {
@@ -109,17 +146,46 @@ export class ModuleStore {
     });
   }
 
-  updateWorkspaceModule(workspaceId: string, moduleId: string, dto: UpdateModuleDto): void {
-    this.moduleService
-      .updateWorkspaceModule(workspaceId, moduleId, dto)
-      .pipe(catchError(() => of(null)))
-      .subscribe((updated) => {
-        if (updated) {
-          this.modules.update((prev) =>
-            prev.map((m) => (m.id === moduleId ? { ...m, ...updated } : m)),
-          );
-        }
-      });
+  updateWorkspaceModule(
+    workspaceId: string,
+    moduleId: string,
+    dto: UpdateModuleDto,
+  ): Promise<{ success: true } | { success: false; error: ModuleUpdateError }> {
+    return new Promise((resolve) => {
+      this.moduleService
+        .updateWorkspaceModule(workspaceId, moduleId, dto)
+        .pipe(
+          catchError((err: HttpErrorResponse) => {
+            let error: ModuleUpdateError;
+            if (err.status === 422) {
+              const body = err.error ?? {};
+              error = {
+                type: '422',
+                currentStatus: body.currentStatus,
+                allowedTransitions: body.allowedTransitions,
+                message: body.message ?? 'Transition không hợp lệ',
+              };
+            } else if (err.status === 409) {
+              error = {
+                type: '409',
+                message: 'Module đã được sửa đổi bởi người khác. Vui lòng làm mới và thử lại.',
+              };
+            } else {
+              error = { type: 'unknown', message: err.message ?? 'Đã xảy ra lỗi' };
+            }
+            resolve({ success: false, error });
+            return of(null);
+          }),
+        )
+        .subscribe((updated) => {
+          if (updated) {
+            this.modules.update((prev) =>
+              prev.map((m) => (m.id === moduleId ? { ...m, ...updated } : m)),
+            );
+            resolve({ success: true });
+          }
+        });
+    });
   }
 
   deleteWorkspaceModule(workspaceId: string, moduleId: string): void {

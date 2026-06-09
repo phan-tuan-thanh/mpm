@@ -1,45 +1,45 @@
+/* ── Wrapper ────────────────────────────────────────────── */
 .rte-wrapper {
+  position: relative;
   border: 1px solid var(--p-surface-200, #e5e7eb);
   border-radius: 8px;
   overflow: hidden;
 }
 
-.dark .rte-wrapper {
-  border-color: var(--p-surface-700, #374151);
+:host-context(.dark) .rte-wrapper {
+  border-color: var(--p-surface-600, #475569);
 }
 
-.rte-disabled {
-  opacity: 0.6;
-  pointer-events: none;
-}
-
+/* ── Toolbar ────────────────────────────────────────────── */
 .rte-toolbar {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 2px;
-  padding: 6px 8px;
+  padding: 4px 6px;
   border-bottom: 1px solid var(--p-surface-200, #e5e7eb);
   background: var(--p-surface-50, #f9fafb);
 }
 
-.dark .rte-toolbar {
-  border-color: var(--p-surface-700, #374151);
-  background: var(--p-surface-800, #1f2937);
+:host-context(.dark) .rte-toolbar {
+  border-color: var(--p-surface-600, #475569);
+  background: var(--p-surface-800, #1e293b);
 }
 
+/* ── Toolbar buttons ────────────────────────────────────── */
 .rte-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-width: 28px;
-  height: 26px;
-  padding: 0 6px;
-  font-size: 12px;
-  font-weight: 500;
+  height: 28px;
+  padding: 0 4px;
   border: none;
   border-radius: 4px;
   background: transparent;
   color: var(--p-surface-600, #4b5563);
+  font-size: 13px;
+  font-weight: 500;
   cursor: pointer;
   transition: background 0.15s;
 }
@@ -48,54 +48,71 @@
   background: var(--p-surface-200, #e5e7eb);
 }
 
-.dark .rte-btn {
-  color: var(--p-surface-300, #d1d5db);
-}
-
-.dark .rte-btn:hover {
-  background: var(--p-surface-600, #4b5563);
-}
-
-.rte-btn.rte-active {
+.rte-btn--active {
   background: color-mix(in srgb, var(--p-primary-500, #6366f1) 15%, transparent);
   color: var(--p-primary-700, #4338ca);
 }
 
-.dark .rte-btn.rte-active {
+:host-context(.dark) .rte-btn {
+  color: var(--p-surface-300, #d1d5db);
+}
+
+:host-context(.dark) .rte-btn:hover {
+  background: var(--p-surface-600, #475569);
+}
+
+:host-context(.dark) .rte-btn--active {
+  background: color-mix(in srgb, var(--p-primary-400, #818cf8) 20%, transparent);
   color: var(--p-primary-300, #a5b4fc);
 }
 
-.rte-italic { font-style: italic; }
-.rte-underline { text-decoration: underline; }
+.rte-btn--floating {
+  min-width: 24px;
+  height: 24px;
+  font-size: 12px;
+}
 
+/* ── Separator ──────────────────────────────────────────── */
 .rte-sep {
   width: 1px;
-  align-self: stretch;
+  height: 18px;
   background: var(--p-surface-300, #d1d5db);
-  margin: 0 4px;
+  margin: 0 2px;
+  flex-shrink: 0;
 }
 
-.dark .rte-sep {
-  background: var(--p-surface-600, #4b5563);
+:host-context(.dark) .rte-sep {
+  background: var(--p-surface-600, #475569);
 }
 
-/* Editor content area */
+/* ── Editor content background (dark) ──────────────────── */
+:host-context(.dark) ::ng-deep .rte-content {
+  background: var(--p-surface-900, #0f172a);
+}
+
+/* ── Tiptap content area ────────────────────────────────── */
 :host ::ng-deep .rte-content {
   display: block;
   min-height: 120px;
 }
 
-:host ::ng-deep .rte-content .tiptap {
+:host ::ng-deep .tiptap {
   outline: none;
   padding: 10px 12px;
   font-size: 0.875rem;
   line-height: 1.6;
   min-height: 120px;
+  color: var(--p-surface-800, #1f2937);
+}
+
+:host-context(.dark) ::ng-deep .tiptap {
+  color: var(--p-surface-100, #f1f5f9);
+  background: var(--p-surface-900, #0f172a);
 }
 
 /* Placeholder */
 :host ::ng-deep .tiptap p.is-editor-empty:first-child::before {
-  color: #9ca3af;
+  color: var(--p-surface-400, #9ca3af);
   content: attr(data-placeholder);
   float: left;
   height: 0;
@@ -108,10 +125,11 @@
 :host ::ng-deep .tiptap h3 { font-size: 1.1rem; font-weight: 600; margin: 0.5rem 0 0.25rem; }
 
 /* Lists */
-:host ::ng-deep .tiptap ul, :host ::ng-deep .tiptap ol { padding-left: 1.25rem; margin: 0.25rem 0; }
+:host ::ng-deep .tiptap ul,
+:host ::ng-deep .tiptap ol { padding-left: 1.25rem; margin: 0.25rem 0; }
 :host ::ng-deep .tiptap li { margin: 2px 0; }
 
-/* Task list (checklist) */
+/* Task list */
 :host ::ng-deep .tiptap ul[data-type="taskList"] { list-style: none; padding: 0; }
 :host ::ng-deep .tiptap ul[data-type="taskList"] li {
   display: flex;
@@ -121,35 +139,47 @@
 :host ::ng-deep .tiptap ul[data-type="taskList"] li > label { margin-top: 2px; cursor: pointer; }
 :host ::ng-deep .tiptap ul[data-type="taskList"] li[data-checked="true"] > div {
   text-decoration: line-through;
-  color: #9ca3af;
+  color: var(--p-surface-400, #9ca3af);
 }
 
 /* Blockquote */
 :host ::ng-deep .tiptap blockquote {
-  border-left: 3px solid #d1d5db;
+  border-left: 3px solid var(--p-surface-300, #d1d5db);
   padding-left: 0.75rem;
-  color: #6b7280;
+  color: var(--p-surface-500, #6b7280);
   margin: 0.5rem 0;
 }
 
-/* Code */
+:host-context(.dark) ::ng-deep .tiptap blockquote {
+  border-left-color: var(--p-surface-600, #475569);
+  color: var(--p-surface-400, #94a3b8);
+}
+
+/* Inline code */
 :host ::ng-deep .tiptap code {
-  background: #f3f4f6;
+  background: var(--p-surface-100, #f3f4f6);
+  color: var(--p-surface-700, #374151);
   padding: 1px 4px;
   border-radius: 3px;
   font-size: 0.8em;
   font-family: ui-monospace, monospace;
 }
 
+:host-context(.dark) ::ng-deep .tiptap code {
+  background: var(--p-surface-700, #334155);
+  color: var(--p-surface-200, #e2e8f0);
+}
+
+/* Code block */
 :host ::ng-deep .tiptap pre {
-  background: #f3f4f6;
-  padding: 10px 12px;
+  background: var(--p-surface-900, #111827);
+  color: var(--p-surface-50, #f9fafb);
   border-radius: 6px;
+  padding: 12px 16px;
   margin: 0.5rem 0;
   overflow-x: auto;
 }
-
-:host ::ng-deep .tiptap pre code { background: none; padding: 0; font-size: 0.85em; }
+:host ::ng-deep .tiptap pre code { background: none; padding: 0; font-size: 0.85em; color: inherit; }
 
 /* Table */
 :host ::ng-deep .tiptap table {
@@ -159,55 +189,26 @@
 }
 :host ::ng-deep .tiptap table td,
 :host ::ng-deep .tiptap table th {
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--p-surface-200, #e5e7eb);
   padding: 4px 8px;
   min-width: 80px;
   vertical-align: top;
 }
 :host ::ng-deep .tiptap table th {
-  background: #f9fafb;
+  background: var(--p-surface-50, #f9fafb);
   font-weight: 600;
 }
-:host ::ng-deep .tiptap table .selectedCell { background: #ede9fe; }
 
-/* ── Toolbar base ───────────────────────────────────────── */
-.rte-wrapper { position: relative; }
-
-.rte-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 2px;
-  padding: 4px 6px;
-  border-bottom: 1px solid var(--p-surface-200);
-  background: var(--p-surface-0);
+:host-context(.dark) ::ng-deep .tiptap table td,
+:host-context(.dark) ::ng-deep .tiptap table th {
+  border-color: var(--p-surface-600, #475569);
 }
 
-.rte-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 28px;
-  height: 28px;
-  padding: 0 4px;
-  border: none;
-  border-radius: 4px;
-  background: transparent;
-  color: var(--p-surface-600);
-  font-size: 13px;
-  cursor: pointer;
-  transition: background 0.15s;
+:host-context(.dark) ::ng-deep .tiptap table th {
+  background: var(--p-surface-800, #1e293b);
 }
 
-.rte-btn:hover { background: var(--p-surface-100); }
-.rte-btn--active { background: var(--p-primary-50); color: var(--p-primary-600); }
-
-.rte-sep {
-  width: 1px;
-  height: 18px;
-  background: var(--p-surface-200);
-  margin: 0 2px;
-}
+:host ::ng-deep .tiptap table .selectedCell { background: var(--p-primary-50, #ede9fe); }
 
 /* ── Bubble menu ────────────────────────────────────────── */
 .rte-bubble-menu {
@@ -216,12 +217,18 @@
   align-items: center;
   gap: 2px;
   padding: 4px 6px;
-  background: var(--p-surface-0);
-  border: 1px solid var(--p-surface-200);
+  background: var(--p-surface-0, #ffffff);
+  border: 1px solid var(--p-surface-200, #e5e7eb);
   border-radius: 8px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.12);
   z-index: 1000;
   pointer-events: auto;
+}
+
+:host-context(.dark) .rte-bubble-menu {
+  background: var(--p-surface-800, #1e293b);
+  border-color: var(--p-surface-600, #475569);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
 }
 
 /* ── Floating menu ──────────────────────────────────────── */
@@ -231,14 +238,18 @@
   align-items: center;
   gap: 2px;
   padding: 2px 4px;
-  background: var(--p-surface-0);
-  border: 1px solid var(--p-surface-200);
+  background: var(--p-surface-0, #ffffff);
+  border: 1px solid var(--p-surface-200, #e5e7eb);
   border-radius: 6px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   z-index: 999;
 }
 
-.rte-btn--floating { min-width: 24px; height: 24px; font-size: 12px; }
+:host-context(.dark) .rte-floating-menu {
+  background: var(--p-surface-800, #1e293b);
+  border-color: var(--p-surface-600, #475569);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
 
 /* ── Overflow panel ─────────────────────────────────────── */
 .rte-overflow-wrapper { position: relative; }
@@ -251,12 +262,18 @@
   flex-wrap: wrap;
   gap: 2px;
   padding: 6px;
-  background: var(--p-surface-0);
-  border: 1px solid var(--p-surface-200);
+  background: var(--p-surface-0, #ffffff);
+  border: 1px solid var(--p-surface-200, #e5e7eb);
   border-radius: 8px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.12);
   z-index: 1000;
   min-width: 160px;
+}
+
+:host-context(.dark) .rte-overflow-panel {
+  background: var(--p-surface-800, #1e293b);
+  border-color: var(--p-surface-600, #475569);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
 }
 
 /* ── Mention popup ──────────────────────────────────────── */
@@ -264,8 +281,8 @@
   list-style: none;
   margin: 0;
   padding: 4px;
-  background: var(--p-surface-0);
-  border: 1px solid var(--p-surface-200);
+  background: var(--p-surface-0, #ffffff);
+  border: 1px solid var(--p-surface-200, #e5e7eb);
   border-radius: 8px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.12);
   min-width: 160px;
@@ -273,45 +290,35 @@
   overflow-y: auto;
 }
 
+:host-context(.dark) .rte-mention-list {
+  background: var(--p-surface-800, #1e293b);
+  border-color: var(--p-surface-600, #475569);
+}
+
 .rte-mention-item {
   padding: 6px 10px;
   border-radius: 4px;
   cursor: pointer;
   font-size: 13px;
-  color: var(--p-surface-700);
+  color: var(--p-surface-700, #374151);
 }
-.rte-mention-item:hover { background: var(--p-surface-100); }
-.rte-mention-empty { padding: 8px 10px; font-size: 13px; color: var(--p-surface-400); }
+.rte-mention-item:hover { background: var(--p-surface-100, #f3f4f6); }
+
+:host-context(.dark) .rte-mention-item { color: var(--p-surface-200, #e2e8f0); }
+:host-context(.dark) .rte-mention-item:hover { background: var(--p-surface-700, #334155); }
+
+.rte-mention-empty { padding: 8px 10px; font-size: 13px; color: var(--p-surface-400, #9ca3af); }
 
 /* ── Mention inline ─────────────────────────────────────── */
 .rte-mention {
-  background: var(--p-primary-50);
-  color: var(--p-primary-600);
+  background: var(--p-primary-50, #ede9fe);
+  color: var(--p-primary-600, #4f46e5);
   border-radius: 4px;
   padding: 0 3px;
   font-weight: 500;
 }
 
-/* ── Code block ─────────────────────────────────────────── */
-.rte-content pre {
-  background: var(--p-surface-900);
-  color: var(--p-surface-0);
-  border-radius: 6px;
-  padding: 12px 16px;
-  overflow-x: auto;
-  font-size: 13px;
-}
-.rte-content pre code { background: none; padding: 0; }
-
-/* Dark mode adjustments */
-@media (prefers-color-scheme: dark) {
-  .rte-bubble-menu,
-  .rte-floating-menu,
-  .rte-overflow-panel,
-  .rte-mention-list {
-    background: var(--p-surface-800);
-    border-color: var(--p-surface-600);
-  }
-  .rte-btn { color: var(--p-surface-300); }
-  .rte-btn:hover { background: var(--p-surface-700); }
+:host-context(.dark) .rte-mention {
+  background: color-mix(in srgb, var(--p-primary-400, #818cf8) 20%, transparent);
+  color: var(--p-primary-300, #a5b4fc);
 }

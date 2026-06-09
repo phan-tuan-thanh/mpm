@@ -2,14 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Module as ModuleEntity, ModuleScope } from '../entities/module.entity';
+import { LIFECYCLE_TRANSITIONS, type ModuleLifecycleStatus } from '@mpm/shared-types';
 import type { ModuleQueryDto, ModuleWithProgress } from './module.dto';
 
 /**
  * Module Query Service — read-only queries cho modules
- *
- * Chịu trách nhiệm:
- * - findAllForProject: merged list workspace + project modules với progress computed
- * - findAllForWorkspace: workspace-scoped modules cho admin management
  */
 @Injectable()
 export class ModuleQueryService {
@@ -66,7 +63,6 @@ export class ModuleQueryService {
         pid2: projectId,
       });
     } else if (hasWorkspace) {
-      // Default: merged list (workspace + project)
       qb.where(
         '(m.scope = :ws AND m.workspace_id = :wid) OR (m.scope = :proj AND m.project_id = :pid2)',
         {
@@ -77,16 +73,20 @@ export class ModuleQueryService {
         },
       );
     } else {
-      // No workspace — only project-scoped modules
       qb.where('m.scope = :proj AND m.project_id = :pid2', {
         proj: 'project',
         pid2: projectId,
       });
     }
 
-    // Optional status filter
+    // Multi-value status filter
     if (query?.status) {
-      qb.andWhere('m.status = :status', { status: query.status });
+      const statuses = Array.isArray(query.status) ? query.status : [query.status];
+      if (statuses.length === 1) {
+        qb.andWhere('m.status = :status', { status: statuses[0] });
+      } else {
+        qb.andWhere('m.status IN (:...statuses)', { statuses });
+      }
     }
 
     qb.groupBy('m.id')
@@ -95,40 +95,68 @@ export class ModuleQueryService {
 
     const rows = await qb.getRawMany();
 
-    return rows.map((r) => ({
-      id: r.id,
-      scope: r.scope,
-      workspaceId: r.workspace_id,
-      projectId: r.project_id,
-      name: r.name,
-      description: r.description,
-      status: r.status,
-      startDate: r.start_date,
-      endDate: r.end_date,
-      createdBy: r.created_by,
-      createdAt: r.created_at,
-      updatedAt: r.updated_at,
-      taskCount: parseInt(r.taskCount ?? '0', 10),
-      completedCount: parseInt(r.completedCount ?? '0', 10),
-      progress:
-        parseInt(r.taskCount ?? '0', 10) > 0
-          ? Math.round(
-              (parseInt(r.completedCount ?? '0', 10) /
-                parseInt(r.taskCount ?? '0', 10)) *
-                100,
-            )
-          : 0,
-    }));
+    return rows.map((r) => {
+      const status = r.status as ModuleLifecycleStatus;
+      return {
+        id: r.id,
+        scope: r.scope,
+        workspaceId: r.workspace_id,
+        projectId: r.project_id,
+        name: r.name,
+        description: r.description,
+        status,
+        startDate: r.start_date,
+        endDate: r.end_date,
+        version: r.version ?? 1,
+        createdBy: r.created_by,
+        createdAt: r.created_at,
+        updatedAt: r.updated_at,
+        taskCount: parseInt(r.taskCount ?? '0', 10),
+        completedCount: parseInt(r.completedCount ?? '0', 10),
+        progress:
+          parseInt(r.taskCount ?? '0', 10) > 0
+            ? Math.round(
+                (parseInt(r.completedCount ?? '0', 10) /
+                  parseInt(r.taskCount ?? '0', 10)) *
+                  100,
+              )
+            : 0,
+        allowedTransitions: [...LIFECYCLE_TRANSITIONS[status]],
+      };
+    });
   }
 
   /**
    * Trả về chỉ workspace-scoped modules (cho workspace admin management)
    * Sorted theo name ASC
    */
-  async findAllForWorkspace(workspaceId: string): Promise<ModuleEntity[]> {
-    return this.moduleRepo.find({
+  async findAllForWorkspace(workspaceId: string): Promise<ModuleWithProgress[]> {
+    const modules = await this.moduleRepo.find({
       where: { scope: 'workspace' as ModuleScope, workspaceId },
       order: { name: 'ASC' },
+    });
+
+    return modules.map((m) => {
+      const status = m.status as ModuleLifecycleStatus;
+      return {
+        id: m.id,
+        scope: m.scope,
+        workspaceId: m.workspaceId ?? '',
+        projectId: m.projectId,
+        name: m.name,
+        description: m.description,
+        status,
+        startDate: m.startDate,
+        endDate: m.endDate,
+        version: m.version,
+        createdBy: m.createdBy,
+        createdAt: m.createdAt,
+        updatedAt: m.updatedAt,
+        taskCount: 0,
+        completedCount: 0,
+        progress: 0,
+        allowedTransitions: [...LIFECYCLE_TRANSITIONS[status]],
+      };
     });
   }
 }

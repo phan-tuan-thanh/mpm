@@ -93,6 +93,25 @@ const PRIORITY_CONFIG: Record<string, { icon: string; color: string }> = {
         </div>
       }
 
+      <!-- modules -->
+      @if (displayProps.showModules && task.modules?.length) {
+        <div class="flex flex-wrap gap-1 mb-1.5">
+          @for (mod of task.modules.slice(0, displayProps.maxModules); track mod.id) {
+            <span class="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-px rounded bg-gray-50 dark:bg-surface-800 border border-gray-200 dark:border-surface-700 text-gray-600 dark:text-surface-300 cursor-default"
+                  [pTooltip]="(mod.scope === 'workspace' ? 'Workspace module: ' : 'Project module: ') + mod.name">
+              <i [class]="mod.scope === 'workspace' ? 'pi pi-globe' : 'pi pi-folder'" style="font-size:9px"></i>
+              <span class="truncate max-w-[72px]">{{ mod.name }}</span>
+            </span>
+          }
+          @if (task.modules.length > displayProps.maxModules) {
+            <span class="inline-flex items-center text-[10px] text-gray-500 dark:text-surface-400 font-medium px-1 py-px rounded-full bg-gray-100 dark:bg-surface-800 border border-gray-200 dark:border-surface-700 cursor-default"
+                  [pTooltip]="hiddenModulesTooltip(task.modules)">
+              +{{ task.modules.length - displayProps.maxModules }}
+            </span>
+          }
+        </div>
+      }
+
       <!-- priority + assignees + due date + sub-item count -->
       <div class="flex items-center gap-2 flex-wrap">
         @if (displayProps.showPriority && task.priority !== 'none') {
@@ -178,6 +197,10 @@ export class BoardCardComponent {
 
   protected hiddenLabelsTooltip(labels: Label[]): string {
     return labels.slice(this.displayProps.maxLabels).map(l => l.name).join(', ');
+  }
+
+  protected hiddenModulesTooltip(modules: { name: string }[]): string {
+    return modules.slice(this.displayProps.maxModules).map(m => m.name).join(', ');
   }
 
   protected isOverdue(d: string | null): boolean { return !!d && new Date(d) < new Date(); }

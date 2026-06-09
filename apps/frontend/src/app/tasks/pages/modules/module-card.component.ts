@@ -2,29 +2,13 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
-import type { ProjectModule, ModuleStatus } from '@mpm/shared-types';
-
-/** Màu status theo design spec */
-const STATUS_COLORS: Record<ModuleStatus, string> = {
-  backlog: '#6B7280',
-  in_progress: '#3B82F6',
-  paused: '#F59E0B',
-  completed: '#10B981',
-  cancelled: '#EF4444',
-};
-
-const STATUS_LABELS: Record<ModuleStatus, string> = {
-  backlog: 'Backlog',
-  in_progress: 'In Progress',
-  paused: 'Paused',
-  completed: 'Completed',
-  cancelled: 'Cancelled',
-};
+import type { ProjectModule } from '@mpm/shared-types';
+import { ModuleStatusBadgeComponent } from './module-status-badge.component';
 
 @Component({
   standalone: true,
   selector: 'app-module-card',
-  imports: [CommonModule, ButtonModule, TooltipModule, DatePipe],
+  imports: [CommonModule, ButtonModule, TooltipModule, DatePipe, ModuleStatusBadgeComponent],
   template: `
     <div
       class="border border-gray-200 dark:border-surface-700 rounded-lg p-4 bg-white dark:bg-surface-800 hover:shadow-md transition-shadow cursor-pointer"
@@ -54,14 +38,7 @@ const STATUS_LABELS: Record<ModuleStatus, string> = {
 
       <!-- Status badge -->
       <div class="mb-3">
-        <span
-          class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
-          [style.background-color]="getStatusBgColor(module.status)"
-          [style.color]="getStatusColor(module.status)"
-          [style.border]="'1px solid ' + getStatusColor(module.status)"
-        >
-          {{ getStatusLabel(module.status) }}
-        </span>
+        <app-module-status-badge [status]="module.status" />
       </div>
 
       <!-- Progress bar -->
@@ -72,9 +49,8 @@ const STATUS_LABELS: Record<ModuleStatus, string> = {
         </div>
         <div class="w-full h-2 bg-gray-100 dark:bg-surface-700 rounded-full overflow-hidden">
           <div
-            class="h-full rounded-full transition-all duration-300"
+            class="h-full rounded-full transition-all duration-300 bg-blue-500"
             [style.width.%]="module.progress"
-            [style.background-color]="getStatusColor(module.status)"
           ></div>
         </div>
       </div>
@@ -107,17 +83,4 @@ export class ModuleCardComponent {
   @Input({ required: true }) module!: ProjectModule;
   @Output() edit = new EventEmitter<ProjectModule>();
   @Output() menuClick = new EventEmitter<ProjectModule>();
-
-  getStatusColor(status: ModuleStatus): string {
-    return STATUS_COLORS[status] ?? '#6B7280';
-  }
-
-  getStatusBgColor(status: ModuleStatus): string {
-    const hex = STATUS_COLORS[status] ?? '#6B7280';
-    return hex + '15'; // ~8% opacity via hex alpha
-  }
-
-  getStatusLabel(status: ModuleStatus): string {
-    return STATUS_LABELS[status] ?? status;
-  }
 }

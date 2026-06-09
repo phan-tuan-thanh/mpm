@@ -1,20 +1,22 @@
-import type { ModuleScope, ModuleStatusType } from '../entities/module.entity';
+import type { ModuleScope } from '../entities/module.entity';
+import type { ModuleLifecycleStatus } from '@mpm/shared-types';
 
 /**
  * DTO và interface types cho Module domain
  */
 
-/** Query params khi lấy danh sách modules */
+/** Query params khi lấy danh sách modules — hỗ trợ multi-value status */
 export interface ModuleQueryDto {
-  status?: ModuleStatusType;
+  /** Single status hoặc mảng statuses để filter (multi-value: ?status=active,maintenance) */
+  status?: ModuleLifecycleStatus | ModuleLifecycleStatus[];
   scope?: 'workspace' | 'project' | 'all';
 }
 
-/** DTO tạo module mới */
+/** DTO tạo module mới — status mặc định 'planning' nếu không truyền */
 export interface CreateModuleDto {
   name: string;
   description?: Record<string, any> | null;
-  status?: ModuleStatusType;
+  status?: ModuleLifecycleStatus;
   startDate?: string | null;
   endDate?: string | null;
 }
@@ -23,12 +25,12 @@ export interface CreateModuleDto {
 export interface UpdateModuleDto {
   name?: string;
   description?: Record<string, any> | null;
-  status?: ModuleStatusType;
+  status?: ModuleLifecycleStatus;
   startDate?: string | null;
   endDate?: string | null;
 }
 
-/** Module với progress computed từ task count */
+/** Module với progress computed từ task count + allowedTransitions */
 export interface ModuleWithProgress {
   id: string;
   scope: ModuleScope;
@@ -36,9 +38,10 @@ export interface ModuleWithProgress {
   projectId: string | null;
   name: string;
   description: Record<string, any> | null;
-  status: ModuleStatusType;
+  status: ModuleLifecycleStatus;
   startDate: string | null;
   endDate: string | null;
+  version: number;
   createdBy: string;
   createdAt: Date;
   updatedAt: Date;
@@ -46,4 +49,6 @@ export interface ModuleWithProgress {
   completedCount: number;
   /** Progress tính bằng phần trăm (0-100), 0 nếu không có task */
   progress: number;
+  /** Các transitions hợp lệ từ trạng thái hiện tại */
+  allowedTransitions: ModuleLifecycleStatus[];
 }

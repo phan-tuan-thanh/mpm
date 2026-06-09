@@ -2,7 +2,6 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { Task, TaskType, TaskPriority } from './entities/task.entity';
-import { Module } from './entities/module.entity';
 import { Project } from '../project/entities/project.entity';
 
 @Injectable()
@@ -44,19 +43,11 @@ export class TaskQueryService {
       .leftJoinAndSelect('t.parent', 'parent')
       .leftJoinAndSelect('t.assignees', 'assignee')
       .leftJoinAndSelect('t.labels', 'label')
-      .leftJoin(
-        'task_modules',
-        'tm',
-        'tm.task_id = t.id',
-      )
-      .leftJoinAndMapMany(
+      .leftJoinAndSelect(
         't.modules',
-        Module,
         'module',
-        `module.id = tm.module_id AND (
-          (module.scope = 'workspace' AND module.workspace_id = :workspaceId)
-          OR (module.scope = 'project' AND module.project_id = :projectId)
-        )`,
+        `(module.scope = 'workspace' AND module.workspace_id = :workspaceId)
+          OR (module.scope = 'project' AND module.project_id = :projectId)`,
         { workspaceId: workspaceId ?? '00000000-0000-0000-0000-000000000000', projectId },
       )
       .loadRelationCountAndMap('t.subItemCount', 't.children')

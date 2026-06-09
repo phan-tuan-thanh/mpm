@@ -5,6 +5,7 @@ import { Module as ModuleEntity, ModuleScope } from '../entities/module.entity';
 import { TaskModule } from '../entities/task-module.entity';
 import { ModuleQueryService } from './module-query.service';
 import { ModuleTaskService } from './module-task.service';
+import { ModuleLifecycleService, ModuleWithTransitions } from './module-lifecycle.service';
 import type { CreateModuleDto, UpdateModuleDto, ModuleQueryDto, ModuleWithProgress } from './module.dto';
 import { createModule } from './module-create.utils';
 import { updateModule } from './module-update.utils';
@@ -22,11 +23,11 @@ export class ModuleService {
     private readonly taskModuleRepo: Repository<TaskModule>,
     private readonly queryService: ModuleQueryService,
     private readonly taskService: ModuleTaskService,
+    readonly lifecycleService: ModuleLifecycleService,
   ) {}
 
   // ─── Delegated Reads ──────────────────────────────────────────────────────────
 
-  /** @see ModuleQueryService.findAllForProject */
   findAllForProject(
     projectId: string,
     workspaceId: string | null,
@@ -35,14 +36,12 @@ export class ModuleService {
     return this.queryService.findAllForProject(projectId, workspaceId, query);
   }
 
-  /** @see ModuleQueryService.findAllForWorkspace */
-  findAllForWorkspace(workspaceId: string): Promise<ModuleEntity[]> {
+  findAllForWorkspace(workspaceId: string): Promise<ModuleWithProgress[]> {
     return this.queryService.findAllForWorkspace(workspaceId);
   }
 
   // ─── Delegated Task Assignment ────────────────────────────────────────────────
 
-  /** @see ModuleTaskService.addTasks */
   addTasks(
     moduleId: string,
     taskIds: string[],
@@ -50,41 +49,39 @@ export class ModuleService {
     return this.taskService.addTasks(moduleId, taskIds);
   }
 
-  /** @see ModuleTaskService.removeTask */
   removeTask(moduleId: string, taskId: string): Promise<void> {
     return this.taskService.removeTask(moduleId, taskId);
   }
 
   // ─── Core CRUD ────────────────────────────────────────────────────────────────
 
-  /**
-   * Tạo module mới
-   */
   async create(
     scope: ModuleScope,
     workspaceId: string | null,
     projectId: string | null,
     userId: string,
     dto: CreateModuleDto,
-  ): Promise<ModuleEntity> {
-    return createModule(this.moduleRepo, scope, workspaceId, projectId, userId, dto);
+  ): Promise<ModuleWithTransitions> {
+    const saved = await createModule(this.moduleRepo, scope, workspaceId, projectId, userId, dto);
+    return {
+      ...saved,
+      allowedTransitions: this.lifecycleService.getAllowedTransitions(saved.status),
+    };
   }
 
-  /**
-   * Partial update module
-   */
   async update(
     moduleId: string,
     userId: string,
     dto: UpdateModuleDto,
     opts: { userSystemRole: string },
-  ): Promise<ModuleEntity> {
-    return updateModule(this.moduleRepo, moduleId, dto, opts);
+  ): Promise<ModuleWithTransitions> {
+    const saved = await updateModule(this.moduleRepo, moduleId, dto, opts);
+    return {
+      ...saved,
+      allowedTransitions: this.lifecycleService.getAllowedTransitions(saved.status),
+    };
   }
 
-  /**
-   * Xóa module — CASCADE task_modules (FK ON DELETE CASCADE)
-   */
   async delete(
     moduleId: string,
     userId: string,

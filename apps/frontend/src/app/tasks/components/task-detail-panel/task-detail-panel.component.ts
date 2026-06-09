@@ -81,7 +81,7 @@ const PRIORITY_OPTIONS = [
     <ng-template #detailTpl>
       <div class="flex flex-col h-full w-full overflow-hidden bg-white dark:bg-surface-900 text-gray-800 dark:text-surface-100">
         <!-- ══ Header ══ -->
-        <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-surface-700 bg-gray-50/50 dark:bg-surface-850/50 flex-shrink-0">
+        <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-surface-700 bg-gray-50 dark:bg-surface-800 flex-shrink-0">
           <div class="flex items-center gap-3">
             @if (task()) {
               <span class="font-mono text-xs font-semibold text-gray-500 dark:text-surface-400 bg-gray-100 dark:bg-surface-800 px-2 py-1 rounded cursor-pointer hover:bg-gray-200 dark:hover:bg-surface-700" (click)="copyTaskId(task()!.taskId)">
@@ -102,7 +102,7 @@ const PRIORITY_OPTIONS = [
               <button pButton icon="pi pi-bars" class="p-button-rounded p-button-text p-button-sm"
                 [severity]="showSidebar() ? 'primary' : 'secondary'"
                 pTooltip="Bật/Tắt thuộc tính sidebar" (click)="showSidebar.set(!showSidebar())"></button>
-              <div class="w-px h-4 bg-gray-200 dark:bg-surface-750 mx-1"></div>
+              <div class="w-px h-4 bg-gray-200 dark:bg-surface-600 mx-1"></div>
             }
 
             <!-- Slide-in (Drawer) Mode -->
@@ -120,7 +120,7 @@ const PRIORITY_OPTIONS = [
               [severity]="viewMode === 'full-page' ? 'primary' : 'secondary'"
               pTooltip="Full Page" (click)="viewModeChange.emit('full-page')"></button>
 
-            <div class="w-px h-4 bg-gray-200 dark:bg-surface-750 mx-1"></div>
+            <div class="w-px h-4 bg-gray-200 dark:bg-surface-600 mx-1"></div>
 
             <!-- Close button -->
             <button pButton [icon]="viewMode === 'full-page' ? 'pi pi-arrow-left' : 'pi pi-times'" 
@@ -134,7 +134,7 @@ const PRIORITY_OPTIONS = [
           <!-- Single Column scrollable view for right-pane / popup modes -->
           @if (viewMode !== 'full-page') {
             <div class="flex-1 flex flex-col overflow-hidden">
-              <div class="px-4 py-3 border-b border-gray-150 dark:border-surface-750 flex-shrink-0">
+              <div class="px-4 py-3 border-b border-gray-150 dark:border-surface-700 flex-shrink-0">
                 <input pInputText class="w-full text-lg font-semibold border-none shadow-none focus:ring-0 bg-transparent p-0" [(ngModel)]="editTitle" (blur)="saveTitle()" (keydown.enter)="saveTitle()" />
               </div>
               <p-tabs [value]="'overview'" class="flex-1 overflow-hidden flex flex-col">

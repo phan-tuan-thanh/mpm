@@ -34,7 +34,7 @@ export async function updateModule(
     module.description = dto.description;
     module.descriptionPlain = extractPlainText(dto.description);
   }
-  if (dto.status !== undefined) module.status = dto.status;
+  // status changes are handled by ModuleLifecycleService, not here
   if (dto.startDate !== undefined) module.startDate = dto.startDate;
   if (dto.endDate !== undefined) module.endDate = dto.endDate;
 

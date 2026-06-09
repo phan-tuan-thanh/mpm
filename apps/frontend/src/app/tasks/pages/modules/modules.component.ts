@@ -12,7 +12,8 @@ import { ProjectStore } from '../../../projects/state/project.store';
 import { AuthStore } from '../../../auth/state/auth.store';
 import { ModuleCardComponent } from './module-card.component';
 import { ModuleFormComponent, ModuleFormData } from './module-form.component';
-import type { ProjectModule } from '@mpm/shared-types';
+import { ModuleStatusFilterComponent } from './module-status-filter.component';
+import type { ProjectModule, ModuleLifecycleStatus } from '@mpm/shared-types';
 
 @Component({
   standalone: true,
@@ -25,85 +26,110 @@ import type { ProjectModule } from '@mpm/shared-types';
     ToastModule,
     ModuleCardComponent,
     ModuleFormComponent,
+    ModuleStatusFilterComponent,
   ],
   providers: [ConfirmationService, MessageService],
   template: `
-    <div class="p-6 max-w-7xl mx-auto">
-      <!-- Header -->
-      <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold text-gray-800 dark:text-surface-100">Modules</h1>
+    <div class="flex flex-col h-full bg-white dark:bg-surface-900">
+
+      <!-- Toolbar -->
+      <div class="flex items-center gap-3 px-6 py-3 border-b border-gray-200 dark:border-surface-700 flex-shrink-0">
+        <h1 class="text-base font-semibold text-gray-800 dark:text-surface-100 mr-2">Modules</h1>
+        <app-module-status-filter
+          [selectedStatuses]="statusFilter()"
+          (filterChanged)="onFilterChanged($event)"
+        />
+        @if (statusFilter().length > 0) {
+          <button
+            pButton
+            label="Xóa filter"
+            icon="pi pi-times"
+            severity="secondary"
+            [outlined]="true"
+            size="small"
+            (click)="clearFilter()"
+          ></button>
+        }
+        <div class="flex-1"></div>
         <button
           pButton
           label="Tạo Module"
           icon="pi pi-plus"
+          size="small"
           (click)="openCreateForm()"
         ></button>
       </div>
 
-      <!-- Loading state -->
-      @if (moduleStore.isLoading()) {
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          @for (i of skeletonItems; track i) {
-            <div class="border border-gray-200 dark:border-surface-700 rounded-lg p-4">
-              <p-skeleton width="60%" height="1.5rem" styleClass="mb-3" />
-              <p-skeleton width="30%" height="1rem" styleClass="mb-3" />
-              <p-skeleton width="100%" height="0.5rem" styleClass="mb-3" />
-              <p-skeleton width="40%" height="1rem" />
-            </div>
+      <!-- Content -->
+      <div class="flex-1 overflow-y-auto px-6 py-4">
+
+        <!-- Loading state -->
+        @if (moduleStore.isLoading()) {
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            @for (i of skeletonItems; track i) {
+              <div class="border border-gray-200 dark:border-surface-700 rounded-lg p-4">
+                <p-skeleton width="60%" height="1.25rem" styleClass="mb-3" />
+                <p-skeleton width="30%" height="1rem" styleClass="mb-3" />
+                <p-skeleton width="100%" height="0.5rem" styleClass="mb-3" />
+                <p-skeleton width="40%" height="1rem" />
+              </div>
+            }
+          </div>
+        } @else {
+
+          <!-- Workspace Modules -->
+          @if (filteredWorkspaceModules().length > 0) {
+            <section class="mb-6">
+              <h2 class="flex items-center gap-2 text-sm font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wide mb-3">
+                <i class="pi pi-globe text-indigo-500 text-xs"></i>
+                Workspace
+                <span class="font-normal normal-case tracking-normal">({{ filteredWorkspaceModules().length }})</span>
+              </h2>
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                @for (mod of filteredWorkspaceModules(); track mod.id) {
+                  <app-module-card
+                    [module]="mod"
+                    (edit)="openEditForm($event)"
+                    (menuClick)="onModuleMenu($event)"
+                  />
+                }
+              </div>
+            </section>
           }
-        </div>
-      } @else {
-        <!-- Workspace Modules -->
-        @if (workspaceModules().length > 0) {
-          <section class="mb-8">
-            <h2 class="flex items-center gap-2 text-lg font-semibold text-gray-700 dark:text-surface-200 mb-4">
-              <i class="pi pi-globe text-indigo-500"></i>
-              Workspace Modules
-              <span class="text-sm font-normal text-gray-500 dark:text-surface-400">
-                ({{ workspaceModules().length }})
-              </span>
+
+          <!-- Project Modules -->
+          <section>
+            <h2 class="flex items-center gap-2 text-sm font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wide mb-3">
+              <i class="pi pi-folder text-teal-500 text-xs"></i>
+              Project
+              <span class="font-normal normal-case tracking-normal">({{ filteredProjectModules().length }})</span>
             </h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              @for (mod of workspaceModules(); track mod.id) {
-                <app-module-card
-                  [module]="mod"
-                  (edit)="openEditForm($event)"
-                  (menuClick)="onModuleMenu($event)"
-                />
-              }
-            </div>
+            @if (filteredProjectModules().length > 0) {
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                @for (mod of filteredProjectModules(); track mod.id) {
+                  <app-module-card
+                    [module]="mod"
+                    (edit)="openEditForm($event)"
+                    (menuClick)="onModuleMenu($event)"
+                  />
+                }
+              </div>
+            } @else {
+              <!-- Empty state -->
+              <div class="flex flex-col items-center justify-center py-16 text-center">
+                <i class="pi pi-inbox text-4xl text-gray-300 dark:text-surface-600 mb-3"></i>
+                @if (statusFilter().length > 0) {
+                  <p class="text-sm text-gray-500 dark:text-surface-400 mb-3">Không có module nào khớp với filter hiện tại</p>
+                  <button pButton label="Xóa filter" icon="pi pi-times" [outlined]="true" size="small" (click)="clearFilter()"></button>
+                } @else {
+                  <p class="text-sm text-gray-500 dark:text-surface-400 mb-3">Chưa có module nào trong project này</p>
+                  <button pButton label="Tạo Module đầu tiên" icon="pi pi-plus" [outlined]="true" size="small" (click)="openCreateForm()"></button>
+                }
+              </div>
+            }
           </section>
         }
-
-        <!-- Project Modules -->
-        <section class="mb-8">
-          <h2 class="flex items-center gap-2 text-lg font-semibold text-gray-700 dark:text-surface-200 mb-4">
-            <i class="pi pi-folder text-teal-500"></i>
-            Project Modules
-            <span class="text-sm font-normal text-gray-500 dark:text-surface-400">
-              ({{ projectModules().length }})
-            </span>
-          </h2>
-          @if (projectModules().length > 0) {
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              @for (mod of projectModules(); track mod.id) {
-                <app-module-card
-                  [module]="mod"
-                  (edit)="openEditForm($event)"
-                  (menuClick)="onModuleMenu($event)"
-                />
-              }
-            </div>
-          } @else {
-            <!-- Empty state -->
-            <div class="flex flex-col items-center justify-center py-12 text-center">
-              <i class="pi pi-inbox text-4xl text-gray-300 dark:text-surface-600 mb-3"></i>
-              <p class="text-gray-500 dark:text-surface-400 mb-2">Chưa có module nào trong project này</p>
-              <button pButton label="Tạo Module đầu tiên" icon="pi pi-plus" [outlined]="true" (click)="openCreateForm()"></button>
-            </div>
-          }
-        </section>
-      }
+      </div>
     </div>
 
     <!-- Create/Edit Dialog -->
@@ -128,20 +154,33 @@ export class ModulesComponent implements OnInit {
 
   protected formVisible = false;
   protected editingModule = signal<ProjectModule | null>(null);
+  protected statusFilter = signal<ModuleLifecycleStatus[]>([]);
   protected readonly skeletonItems = [1, 2, 3, 4, 5, 6];
 
   private projectId = '';
   private workspaceId = '';
 
-  /** Workspace modules (scope = 'workspace') */
   readonly workspaceModules = computed(() =>
     this.moduleStore.modules().filter((m) => m.scope === 'workspace'),
   );
 
-  /** Project modules (scope = 'project') */
   readonly projectModules = computed(() =>
     this.moduleStore.modules().filter((m) => m.scope === 'project'),
   );
+
+  readonly filteredWorkspaceModules = computed(() => {
+    const filter = this.statusFilter();
+    return filter.length === 0
+      ? this.workspaceModules()
+      : this.workspaceModules().filter((m) => filter.includes(m.status));
+  });
+
+  readonly filteredProjectModules = computed(() => {
+    const filter = this.statusFilter();
+    return filter.length === 0
+      ? this.projectModules()
+      : this.projectModules().filter((m) => filter.includes(m.status));
+  });
 
   ngOnInit(): void {
     const project = this.projectStore.currentProject();
@@ -152,13 +191,20 @@ export class ModulesComponent implements OnInit {
     }
   }
 
+  onFilterChanged(statuses: ModuleLifecycleStatus[]): void {
+    this.statusFilter.set(statuses);
+  }
+
+  clearFilter(): void {
+    this.statusFilter.set([]);
+  }
+
   openCreateForm(): void {
     this.editingModule.set(null);
     this.formVisible = true;
   }
 
   openEditForm(module: ProjectModule): void {
-    // Chỉ cho phép sửa nếu có quyền
     if (module.scope === 'workspace' && !this.authStore.isAdmin()) {
       this.messageService.add({
         severity: 'warn',
@@ -173,7 +219,6 @@ export class ModulesComponent implements OnInit {
   }
 
   onModuleMenu(module: ProjectModule): void {
-    // Kiểm tra quyền xóa
     if (module.scope === 'workspace' && !this.authStore.isAdmin()) {
       this.messageService.add({
         severity: 'warn',
@@ -206,14 +251,46 @@ export class ModulesComponent implements OnInit {
   async onFormSave(data: ModuleFormData): Promise<void> {
     const editing = this.editingModule();
     if (editing) {
-      // Update
-      this.moduleStore.updateModule(this.projectId, editing.id, {
+      const dto: { name?: string; description?: any; status?: any; startDate?: string | null; endDate?: string | null } = {
         name: data.name,
         description: data.description,
-        status: data.status,
         startDate: data.startDate,
         endDate: data.endDate,
-      });
+      };
+      if (data.status) dto.status = data.status;
+
+      const result = await this.moduleStore.updateModule(this.projectId, editing.id, dto);
+
+      if (!result.success) {
+        if (result.error.type === '422') {
+          const allowed = result.error.allowedTransitions?.join(', ') ?? '';
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Transition không hợp lệ',
+            detail: `Trạng thái hiện tại: ${result.error.currentStatus}. Cho phép: ${allowed}`,
+            life: 5000,
+          });
+          // Reload to get latest state
+          this.moduleStore.loadModules(this.projectId);
+        } else if (result.error.type === '409') {
+          this.messageService.add({
+            severity: 'warn',
+            summary: 'Xung đột cập nhật',
+            detail: result.error.message,
+            life: 4000,
+          });
+          this.moduleStore.loadModules(this.projectId);
+        } else {
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Lỗi',
+            detail: result.error.message,
+            life: 3000,
+          });
+        }
+        return;
+      }
+
       this.messageService.add({
         severity: 'success',
         summary: 'Đã cập nhật',
@@ -221,15 +298,14 @@ export class ModulesComponent implements OnInit {
         life: 3000,
       });
     } else {
-      // Create
-      const result = await this.moduleStore.createModule(this.projectId, {
+      const module = await this.moduleStore.createModule(this.projectId, {
         name: data.name,
         description: data.description,
         status: data.status,
         startDate: data.startDate,
         endDate: data.endDate,
       });
-      if (result) {
+      if (module) {
         this.messageService.add({
           severity: 'success',
           summary: 'Đã tạo',

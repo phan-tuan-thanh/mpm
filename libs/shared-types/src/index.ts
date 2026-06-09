@@ -50,6 +50,13 @@ export {
 } from './task.types';
 
 export {
+  ModuleLifecycleStatus,
+  MODULE_LIFECYCLE_STATUSES,
+  TERMINAL_STATUSES,
+  LIFECYCLE_TRANSITIONS,
+} from './module.types';
+
+export {
   ProjectStatus,
   ProjectAuditEvent,
   Project,

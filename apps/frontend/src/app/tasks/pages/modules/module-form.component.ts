@@ -6,13 +6,15 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { DatePickerModule } from 'primeng/datepicker';
-import type { ProjectModule, ModuleStatus, TiptapDoc } from '@mpm/shared-types';
+import { MODULE_LIFECYCLE_STATUSES, type ProjectModule, type ModuleLifecycleStatus, type TiptapDoc } from '@mpm/shared-types';
 import { RichTextEditorComponent } from '../../../shared/components/rich-text-editor/rich-text-editor.component';
+import { ModuleTransitionSelectorComponent } from './module-transition-selector.component';
+import { STATUS_CONFIG } from './module-status-badge.component';
 
 export interface ModuleFormData {
   name: string;
   description: TiptapDoc | null;
-  status: ModuleStatus;
+  status?: ModuleLifecycleStatus;
   startDate: string | null;
   endDate: string | null;
 }
@@ -29,6 +31,7 @@ export interface ModuleFormData {
     SelectModule,
     DatePickerModule,
     RichTextEditorComponent,
+    ModuleTransitionSelectorComponent,
   ],
   template: `
     <p-dialog
@@ -64,19 +67,40 @@ export interface ModuleFormData {
           <app-rich-text-editor [(ngModel)]="formData.description" placeholder="Mô tả ngắn gọn cho module..."></app-rich-text-editor>
         </div>
 
-        <!-- Status -->
+        <!-- Status: dropdown khi tạo mới, transition selector khi edit -->
         <div class="flex flex-col gap-1">
-          <label for="module-status" class="text-sm font-medium text-gray-700 dark:text-surface-300">
-            Trạng thái
-          </label>
-          <p-select
-            id="module-status"
-            [(ngModel)]="formData.status"
-            [options]="statusOptions"
-            optionLabel="label"
-            optionValue="value"
-            placeholder="Chọn trạng thái"
-          />
+          <label class="text-sm font-medium text-gray-700 dark:text-surface-300">Trạng thái</label>
+
+          @if (editModule) {
+            <!-- Edit: chỉ cho phép transition hợp lệ -->
+            <app-module-transition-selector
+              [currentStatus]="editModule.status"
+              [allowedTransitions]="editModule.allowedTransitions"
+              (transitionRequested)="onStatusTransition($event)"
+            />
+          } @else {
+            <!-- Create: chọn bất kỳ trong 7 trạng thái, mặc định 'planning' -->
+            <p-select
+              [options]="allStatusOptions"
+              [(ngModel)]="formData.status"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Chọn trạng thái"
+            >
+              <ng-template #selectedItem let-item>
+                <span class="flex items-center gap-2">
+                  <i [class]="item.icon + ' text-xs'" [style.color]="item.color"></i>
+                  {{ item.label }}
+                </span>
+              </ng-template>
+              <ng-template #item let-item>
+                <span class="flex items-center gap-2">
+                  <i [class]="item.icon + ' text-xs'" [style.color]="item.color"></i>
+                  {{ item.label }}
+                </span>
+              </ng-template>
+            </p-select>
+          }
         </div>
 
         <!-- Dates -->
@@ -130,7 +154,7 @@ export class ModuleFormComponent implements OnChanges {
   formData: ModuleFormData = {
     name: '',
     description: null,
-    status: 'backlog',
+    status: 'planning',
     startDate: null,
     endDate: null,
   };
@@ -138,23 +162,23 @@ export class ModuleFormComponent implements OnChanges {
   startDateValue: Date | null = null;
   endDateValue: Date | null = null;
   submitted = false;
+  private pendingStatusTransition: ModuleLifecycleStatus | undefined = undefined;
 
-  readonly statusOptions = [
-    { label: 'Backlog', value: 'backlog' },
-    { label: 'In Progress', value: 'in_progress' },
-    { label: 'Paused', value: 'paused' },
-    { label: 'Completed', value: 'completed' },
-    { label: 'Cancelled', value: 'cancelled' },
-  ];
+  readonly allStatusOptions = MODULE_LIFECYCLE_STATUSES.map((s) => ({
+    value: s,
+    label: STATUS_CONFIG[s].label,
+    icon: STATUS_CONFIG[s].icon,
+    color: STATUS_CONFIG[s].color,
+  }));
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['visible'] && this.visible) {
       this.submitted = false;
+      this.pendingStatusTransition = undefined;
       if (this.editModule) {
         this.formData = {
           name: this.editModule.name,
           description: this.editModule.description,
-          status: this.editModule.status,
           startDate: this.editModule.startDate,
           endDate: this.editModule.endDate,
         };
@@ -164,6 +188,10 @@ export class ModuleFormComponent implements OnChanges {
         this.resetForm();
       }
     }
+  }
+
+  onStatusTransition(status: ModuleLifecycleStatus): void {
+    this.pendingStatusTransition = status;
   }
 
   onSubmit(): void {
@@ -176,6 +204,10 @@ export class ModuleFormComponent implements OnChanges {
       startDate: this.startDateValue ? this.formatDate(this.startDateValue) : null,
       endDate: this.endDateValue ? this.formatDate(this.endDateValue) : null,
     };
+
+    if (this.pendingStatusTransition) {
+      data.status = this.pendingStatusTransition;
+    }
 
     this.save.emit(data);
     this.close();
@@ -195,7 +227,7 @@ export class ModuleFormComponent implements OnChanges {
     this.formData = {
       name: '',
       description: null,
-      status: 'backlog',
+      status: 'planning',
       startDate: null,
       endDate: null,
     };
@@ -203,7 +235,6 @@ export class ModuleFormComponent implements OnChanges {
     this.endDateValue = null;
   }
 
-  /** Formats Date to 'YYYY-MM-DD' for API */
   private formatDate(date: Date): string {
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, '0');

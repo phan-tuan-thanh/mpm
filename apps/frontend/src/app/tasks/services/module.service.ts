@@ -1,12 +1,12 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import type { ProjectModule, ModuleStatus, TiptapDoc } from '@mpm/shared-types';
+import type { ProjectModule, ModuleLifecycleStatus, TiptapDoc } from '@mpm/shared-types';
 
 export interface CreateModuleDto {
   name: string;
   description?: TiptapDoc | null;
-  status?: ModuleStatus;
+  status?: ModuleLifecycleStatus;
   startDate?: string | null;
   endDate?: string | null;
 }
@@ -14,7 +14,7 @@ export interface CreateModuleDto {
 export interface UpdateModuleDto {
   name?: string;
   description?: TiptapDoc | null;
-  status?: ModuleStatus;
+  status?: ModuleLifecycleStatus;
   startDate?: string | null;
   endDate?: string | null;
 }
@@ -25,7 +25,7 @@ export interface AddTasksResponse {
 }
 
 export interface ModuleQueryParams {
-  status?: ModuleStatus;
+  status?: ModuleLifecycleStatus | ModuleLifecycleStatus[];
   scope?: 'workspace' | 'project' | 'all';
 }
 
@@ -38,7 +38,8 @@ export class ModuleService {
   getModules(projectId: string, query?: ModuleQueryParams): Observable<ProjectModule[]> {
     let params = new HttpParams();
     if (query?.status) {
-      params = params.set('status', query.status);
+      const statuses = Array.isArray(query.status) ? query.status : [query.status];
+      params = params.set('status', statuses.join(','));
     }
     if (query?.scope) {
       params = params.set('scope', query.scope);

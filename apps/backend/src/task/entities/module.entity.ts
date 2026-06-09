@@ -4,14 +4,16 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  VersionColumn,
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
+import type { ModuleLifecycleStatus } from '@mpm/shared-types';
+import { MODULE_LIFECYCLE_STATUSES } from '@mpm/shared-types';
 import { Project } from '../../project/entities/project.entity';
 import { User } from '../../auth/entities/user.entity';
 
 export type ModuleScope = 'workspace' | 'project';
-export type ModuleStatusType = 'backlog' | 'in_progress' | 'paused' | 'completed' | 'cancelled';
 
 @Entity('modules')
 export class Module {
@@ -38,11 +40,11 @@ export class Module {
 
   @Column({
     type: 'enum',
-    enum: ['backlog', 'in_progress', 'paused', 'completed', 'cancelled'],
-    enumName: 'module_status_enum',
-    default: 'backlog',
+    enum: MODULE_LIFECYCLE_STATUSES,
+    enumName: 'module_lifecycle_status_enum',
+    default: 'planning',
   })
-  status!: ModuleStatusType;
+  status!: ModuleLifecycleStatus;
 
   @Column({ name: 'start_date', type: 'date', nullable: true })
   startDate!: string | null;
@@ -52,6 +54,9 @@ export class Module {
 
   @Column({ name: 'created_by', type: 'uuid' })
   createdBy!: string;
+
+  @VersionColumn()
+  version!: number;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
