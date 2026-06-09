@@ -429,7 +429,7 @@ export class TaskDetailPanelComponent implements OnInit, OnDestroy {
         this.taskStore.loadTask(projectId, taskId);
         if (!this.projectStore.members().length) this.projectStore.loadMembers(projectId);
         if (!this.moduleStore.modules().length) this.moduleStore.loadModules(projectId);
-        this.taskStore.loadLabels(projectId);
+        if (!this.taskStore.labels().length) this.taskStore.loadLabels(projectId);
       } else this.isVisible.set(false);
     });
   }

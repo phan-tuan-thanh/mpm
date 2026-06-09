@@ -16,217 +16,123 @@ import { DisplayProperties, DEFAULT_DISPLAY_PROPS } from '@mpm/shared-types';
     CommonModule, FormsModule,
     ToggleSwitchModule, RadioButtonModule, InputNumberModule, SelectModule,
   ],
+  styles: [`
+    :host { display:block; width:360px; overflow:hidden; box-sizing:border-box; }
+    .sec-hdr {
+      font-size:9px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+      padding:5px 10px; border-bottom:1px solid var(--surface-border);
+    }
+    .cell { display:flex; align-items:center; justify-content:space-between; height:32px; padding:0 10px; gap:8px; }
+    .cell > span { font-size:12px; color:var(--text-color); flex:1; min-width:0; white-space:nowrap; }
+    .cell-sm > span { font-size:11px; color:var(--text-color-secondary); }
+    .sp { width:76px; min-width:76px; flex-shrink:0; }
+    .sp ::ng-deep .p-inputnumber,
+    .sp ::ng-deep .p-inputnumber-input { width:100% !important; }
+    .sel-cell { display:grid; grid-template-columns:40px 1fr; align-items:center; gap:6px; padding:5px 10px; }
+    .sel-cell > span { font-size:11px; color:var(--text-color-secondary); white-space:nowrap; }
+    .sel-cell ::ng-deep .p-select { width:100% !important; min-width:0 !important; }
+    .box { border:1px solid var(--surface-border); border-radius:8px; overflow:hidden; }
+    .vdiv { border-right:1px solid var(--surface-border); }
+    .hdiv { border-bottom:1px solid var(--surface-border); }
+  `],
   template: `
-    <div class="w-80 p-4 flex flex-col gap-4">
-      <h3 class="text-sm font-semibold text-gray-700 dark:text-surface-200 uppercase tracking-wide">
-        Display Properties
-      </h3>
+    <div style="display:flex; flex-direction:column; box-sizing:border-box;">
 
-      <!-- Property Toggles -->
-      <div class="flex flex-col gap-3">
-        <div class="flex items-center justify-between">
-          <label class="text-sm text-gray-600 dark:text-surface-300">Assignee</label>
-          <p-toggleswitch
-            [ngModel]="displayProps.showAssignee"
-            (ngModelChange)="onToggle('showAssignee', $event)"
-          />
-        </div>
+      <!-- Panel header -->
+      <div style="padding:10px 12px 8px; border-bottom:1px solid var(--surface-border); background:rgba(99,102,241,0.06);">
+        <span style="font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:#6366f1;">Display Properties</span>
+      </div>
 
-        <div class="flex items-center justify-between">
-          <label class="text-sm text-gray-600 dark:text-surface-300">Priority</label>
-          <p-toggleswitch
-            [ngModel]="displayProps.showPriority"
-            (ngModelChange)="onToggle('showPriority', $event)"
-          />
-        </div>
+      <div style="padding:12px; display:flex; flex-direction:column; gap:10px;">
 
-        <div class="flex items-center justify-between">
-          <label class="text-sm text-gray-600 dark:text-surface-300">Due date</label>
-          <p-toggleswitch
-            [ngModel]="displayProps.showDueDate"
-            (ngModelChange)="onToggle('showDueDate', $event)"
-          />
-        </div>
-
-        <div class="flex items-center justify-between">
-          <label class="text-sm text-gray-600 dark:text-surface-300">Start date</label>
-          <p-toggleswitch
-            [ngModel]="displayProps.showStartDate"
-            (ngModelChange)="onToggle('showStartDate', $event)"
-          />
-        </div>
-
-        <div class="flex items-center justify-between">
-          <label class="text-sm text-gray-600 dark:text-surface-300">Labels</label>
-          <p-toggleswitch
-            [ngModel]="displayProps.showLabels"
-            (ngModelChange)="onToggle('showLabels', $event)"
-          />
-        </div>
-
-        <!-- Labels sub-options -->
-        @if (displayProps.showLabels) {
-          <div class="ml-4 pl-3 border-l-2 border-gray-200 dark:border-surface-600 flex flex-col gap-2">
-            <!-- Label Mode -->
-            <div class="flex flex-col gap-1">
-              <span class="text-xs text-gray-500 dark:text-surface-400">Mode</span>
-              <div class="flex items-center gap-4">
-                <div class="flex items-center gap-1">
-                  <p-radiobutton
-                    name="labelMode"
-                    value="badge"
-                    [ngModel]="displayProps.labelMode"
-                    (ngModelChange)="onToggle('labelMode', $event)"
-                  />
-                  <label class="text-xs text-gray-600 dark:text-surface-300">Badge</label>
-                </div>
-                <div class="flex items-center gap-1">
-                  <p-radiobutton
-                    name="labelMode"
-                    value="dot"
-                    [ngModel]="displayProps.labelMode"
-                    (ngModelChange)="onToggle('labelMode', $event)"
-                  />
-                  <label class="text-xs text-gray-600 dark:text-surface-300">Dot</label>
-                </div>
+        <!-- ── FIELDS ── -->
+        <div class="box">
+          <div class="sec-hdr" style="background:rgba(99,102,241,0.08); color:#6366f1;">Fields</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr;">
+            @for (f of simpleFields; track f.key; let i = $index) {
+              <div class="cell"
+                   [class.vdiv]="i % 2 === 0"
+                   [class.hdiv]="i < simpleFields.length - 2"
+                   [style.background]="i % 2 === 0 ? 'rgba(99,102,241,0.03)' : ''">
+                <span>{{ f.label }}</span>
+                <p-toggleswitch [ngModel]="getVal(f.key)" (ngModelChange)="onToggle(f.key, $event)" />
               </div>
-            </div>
-
-            <!-- Max Labels -->
-            <div class="flex items-center justify-between">
-              <span class="text-xs text-gray-500 dark:text-surface-400">Max</span>
-              <p-inputnumber
-                [ngModel]="displayProps.maxLabels"
-                (ngModelChange)="onToggle('maxLabels', $event)"
-                [min]="1"
-                [max]="4"
-                [showButtons]="true"
-                [style]="{ width: '5rem' }"
-                inputStyleClass="text-xs w-full"
-                size="small"
-              />
-            </div>
-
-            <!-- Always Show -->
-            <div class="flex items-center justify-between">
-              <span class="text-xs text-gray-500 dark:text-surface-400">Always show</span>
-              <p-toggleswitch
-                [ngModel]="displayProps.alwaysShowLabels"
-                (ngModelChange)="onToggle('alwaysShowLabels', $event)"
-              />
-            </div>
-          </div>
-        }
-
-        <div class="flex items-center justify-between">
-          <label class="text-sm text-gray-600 dark:text-surface-300">Estimate</label>
-          <p-toggleswitch
-            [ngModel]="displayProps.showEstimate"
-            (ngModelChange)="onToggle('showEstimate', $event)"
-          />
-        </div>
-
-        <div class="flex items-center justify-between">
-          <label class="text-sm text-gray-600 dark:text-surface-300">Sub-item count</label>
-          <p-toggleswitch
-            [ngModel]="displayProps.showSubItemCount"
-            (ngModelChange)="onToggle('showSubItemCount', $event)"
-          />
-        </div>
-
-        <div class="flex items-center justify-between">
-          <label class="text-sm text-gray-600 dark:text-surface-300">State</label>
-          <p-toggleswitch
-            [ngModel]="displayProps.showState"
-            (ngModelChange)="onToggle('showState', $event)"
-          />
-        </div>
-
-        <div class="flex items-center justify-between">
-          <label class="text-sm text-gray-600 dark:text-surface-300">Modules</label>
-          <p-toggleswitch
-            [ngModel]="displayProps.showModules"
-            (ngModelChange)="onToggle('showModules', $event)"
-          />
-        </div>
-
-        <!-- Modules sub-options (disabled when showModules = false) -->
-        <div class="ml-4 pl-3 border-l-2 border-gray-200 dark:border-surface-600 flex flex-col gap-2"
-             [class.opacity-50]="!displayProps.showModules"
-             [class.pointer-events-none]="!displayProps.showModules">
-          <div class="flex items-center justify-between">
-            <span class="text-xs text-gray-500 dark:text-surface-400">Max</span>
-            <p-inputnumber
-              [ngModel]="displayProps.maxModules"
-              (ngModelChange)="onToggle('maxModules', $event)"
-              [min]="1"
-              [max]="3"
-              [showButtons]="true"
-              [disabled]="!displayProps.showModules"
-              [style]="{ width: '5rem' }"
-              inputStyleClass="text-xs w-full"
-              size="small"
-            />
+            }
           </div>
         </div>
-      </div>
 
-      <!-- Divider -->
-      <hr class="border-gray-200 dark:border-surface-600" />
+        <!-- ── LABELS | SUB-ITEMS + MODULES ── -->
+        <div class="box" style="display:grid; grid-template-columns:1fr 1fr;">
 
-      <!-- Group by -->
-      <div class="flex flex-col gap-1">
-        <label class="text-xs text-gray-500 dark:text-surface-400 uppercase tracking-wide">Group by</label>
-        <p-select
-          [options]="groupByOptions"
-          [ngModel]="selectedGroupBy"
-          optionLabel="label"
-          optionValue="value"
-          styleClass="w-full text-sm"
-          (ngModelChange)="groupByChange.emit($event)"
-        />
-      </div>
+          <!-- Labels (purple) -->
+          <div class="vdiv" style="background:rgba(139,92,246,0.04);">
+            <div class="cell hdiv" style="background:rgba(139,92,246,0.1);">
+              <span style="font-weight:600; color:#8b5cf6;">Labels</span>
+              <p-toggleswitch [ngModel]="displayProps.showLabels" (ngModelChange)="onToggle('showLabels',$event)" />
+            </div>
+            @if (displayProps.showLabels) {
+              <div class="cell hdiv cell-sm" style="gap:5px; justify-content:flex-start;">
+                <span style="width:32px; flex-shrink:0; flex:unset; font-size:11px; color:var(--text-color-secondary);">Mode</span>
+                <label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-size:11px;color:var(--text-color);white-space:nowrap;">
+                  <p-radiobutton name="lm" value="badge" [ngModel]="displayProps.labelMode" (ngModelChange)="onToggle('labelMode',$event)" />Badge
+                </label>
+                <label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-size:11px;color:var(--text-color);margin-left:4px;white-space:nowrap;">
+                  <p-radiobutton name="lm" value="dot" [ngModel]="displayProps.labelMode" (ngModelChange)="onToggle('labelMode',$event)" />Dot
+                </label>
+              </div>
+              <div class="cell hdiv cell-sm">
+                <span>Max shown</span>
+                <div class="sp"><p-inputnumber [ngModel]="displayProps.maxLabels" (ngModelChange)="onToggle('maxLabels',$event)" [min]="1" [max]="4" [showButtons]="true" inputStyleClass="text-xs" size="small" /></div>
+              </div>
+              <div class="cell cell-sm">
+                <span>Always show</span>
+                <p-toggleswitch [ngModel]="displayProps.alwaysShowLabels" (ngModelChange)="onToggle('alwaysShowLabels',$event)" />
+              </div>
+            }
+          </div>
 
-      <!-- Order by -->
-      <div class="flex flex-col gap-1">
-        <label class="text-xs text-gray-500 dark:text-surface-400 uppercase tracking-wide">Order by</label>
-        <p-select
-          [options]="orderByOptions"
-          [ngModel]="selectedOrderBy"
-          optionLabel="label"
-          optionValue="value"
-          styleClass="w-full text-sm"
-          (ngModelChange)="orderByChange.emit($event)"
-        />
-      </div>
+          <!-- Sub-items (green) + Modules (amber) -->
+          <div style="display:flex; flex-direction:column;">
+            <div class="sec-hdr hdiv" style="background:rgba(16,185,129,0.1); color:#10b981;">Sub-items</div>
+            <div class="cell hdiv cell-sm" style="background:rgba(16,185,129,0.03);">
+              <span>Show count</span>
+              <p-toggleswitch [ngModel]="displayProps.showSubItemCount" (ngModelChange)="onToggle('showSubItemCount',$event)" />
+            </div>
+            <div class="cell hdiv cell-sm" style="background:rgba(16,185,129,0.03);">
+              <span>Depth <span style="font-size:9px;opacity:.6;">(0=ẩn)</span></span>
+              <div class="sp"><p-inputnumber [ngModel]="displayProps.maxSubItemDepth" (ngModelChange)="onToggle('maxSubItemDepth',$event)" [min]="0" [max]="5" [showButtons]="true" inputStyleClass="text-xs" size="small" /></div>
+            </div>
+            <div class="cell hdiv" style="background:rgba(245,158,11,0.1);">
+              <span style="font-weight:600; color:#f59e0b;">Modules</span>
+              <p-toggleswitch [ngModel]="displayProps.showModules" (ngModelChange)="onToggle('showModules',$event)" />
+            </div>
+            <div class="cell cell-sm" style="background:rgba(245,158,11,0.03);"
+                 [style.opacity]="displayProps.showModules?'1':'0.4'"
+                 [class.pointer-events-none]="!displayProps.showModules">
+              <span>Max shown</span>
+              <div class="sp"><p-inputnumber [ngModel]="displayProps.maxModules" (ngModelChange)="onToggle('maxModules',$event)" [min]="1" [max]="3" [showButtons]="true" [disabled]="!displayProps.showModules" inputStyleClass="text-xs" size="small" /></div>
+            </div>
+          </div>
 
-      <!-- Divider -->
-      <hr class="border-gray-200 dark:border-surface-600" />
+        </div>
 
-      <!-- Task Creation View Mode -->
-      <div class="flex flex-col gap-1">
-        <label class="text-xs text-gray-500 dark:text-surface-400 uppercase tracking-wide">Task Creation Mode</label>
-        <p-select
-          [options]="creationModeOptions"
-          [ngModel]="displayProps.taskCreationViewMode || 'popup'"
-          optionLabel="label"
-          optionValue="value"
-          styleClass="w-full text-sm"
-          (ngModelChange)="onToggle('taskCreationViewMode', $event)"
-        />
-      </div>
+        <!-- ── VIEW | OPEN TASK AS ── -->
+        <div class="box" style="display:grid; grid-template-columns:1fr 1fr;">
 
-      <!-- Task Detail View Mode -->
-      <div class="flex flex-col gap-1">
-        <label class="text-xs text-gray-500 dark:text-surface-400 uppercase tracking-wide">Task Detail Mode</label>
-        <p-select
-          [options]="detailModeOptions"
-          [ngModel]="displayProps.taskDetailViewMode || 'right-pane'"
-          optionLabel="label"
-          optionValue="value"
-          styleClass="w-full text-sm"
-          (ngModelChange)="onToggle('taskDetailViewMode', $event)"
-        />
+          <div class="vdiv" style="background:rgba(59,130,246,0.04);">
+            <div class="sec-hdr hdiv" style="background:rgba(59,130,246,0.1); color:#3b82f6;">View</div>
+            <div class="sel-cell hdiv"><span>Group</span><p-select [options]="groupByOptions" [ngModel]="selectedGroupBy" optionLabel="label" optionValue="value" styleClass="text-xs" (ngModelChange)="groupByChange.emit($event)" /></div>
+            <div class="sel-cell"><span>Order</span><p-select [options]="orderByOptions" [ngModel]="selectedOrderBy" optionLabel="label" optionValue="value" styleClass="text-xs" (ngModelChange)="orderByChange.emit($event)" /></div>
+          </div>
+
+          <div style="background:rgba(20,184,166,0.04);">
+            <div class="sec-hdr hdiv" style="background:rgba(20,184,166,0.1); color:#14b8a6;">Open task as</div>
+            <div class="sel-cell hdiv"><span>Create</span><p-select [options]="creationModeOptions" [ngModel]="displayProps.taskCreationViewMode || 'popup'" optionLabel="label" optionValue="value" styleClass="text-xs" (ngModelChange)="onToggle('taskCreationViewMode',$event)" /></div>
+            <div class="sel-cell"><span>Detail</span><p-select [options]="detailModeOptions" [ngModel]="displayProps.taskDetailViewMode || 'right-pane'" optionLabel="label" optionValue="value" styleClass="text-xs" (ngModelChange)="onToggle('taskDetailViewMode',$event)" /></div>
+          </div>
+
+        </div>
+
       </div>
     </div>
   `,
@@ -239,6 +145,19 @@ export class DisplayPropertiesPanelComponent {
   @Output() displayPropsChange = new EventEmitter<Partial<DisplayProperties>>();
   @Output() groupByChange = new EventEmitter<string>();
   @Output() orderByChange = new EventEmitter<string>();
+
+  readonly simpleFields: { key: keyof DisplayProperties; label: string }[] = [
+    { key: 'showAssignee',  label: 'Assignee'   },
+    { key: 'showPriority',  label: 'Priority'   },
+    { key: 'showDueDate',   label: 'Due date'   },
+    { key: 'showStartDate', label: 'Start date' },
+    { key: 'showEstimate',  label: 'Estimate'   },
+    { key: 'showState',     label: 'State'      },
+  ];
+
+  getVal(key: keyof DisplayProperties): boolean {
+    return !!this.displayProps[key];
+  }
 
   readonly groupByOptions = [
     { label: 'None', value: 'none' },
@@ -255,14 +174,14 @@ export class DisplayPropertiesPanelComponent {
   ];
 
   readonly creationModeOptions = [
-    { label: 'Popup (Dialog)', value: 'popup' },
-    { label: 'Right Pane (Drawer)', value: 'right-pane' },
+    { label: 'Popup', value: 'popup' },
+    { label: 'Right Pane', value: 'right-pane' },
     { label: 'Full Page', value: 'full-page' },
   ];
 
   readonly detailModeOptions = [
-    { label: 'Popup (Dialog)', value: 'popup' },
-    { label: 'Right Pane (Drawer)', value: 'right-pane' },
+    { label: 'Popup', value: 'popup' },
+    { label: 'Right Pane', value: 'right-pane' },
     { label: 'Full Page', value: 'full-page' },
   ];
 

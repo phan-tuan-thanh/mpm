@@ -18,7 +18,7 @@ import { TaskDetailPanelComponent } from '../../components/task-detail-panel/tas
 import { LabelManagerComponent } from '../../components/label-manager/label-manager.component';
 import type { TaskListItem, CreateTaskDto, ReorderTaskItem, DisplayProperties } from '@mpm/shared-types';
 import { DEFAULT_DISPLAY_PROPS } from '@mpm/shared-types';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, takeUntil, distinctUntilChanged } from 'rxjs';
 
 @Component({
   standalone: true,
@@ -171,7 +171,10 @@ export class BacklogComponent implements OnInit, OnDestroy {
       }
     });
 
-    this.route.parent?.params.pipe(takeUntil(this.destroy$)).subscribe(() => {
+    this.route.parent?.params.pipe(
+      takeUntil(this.destroy$),
+      distinctUntilChanged((a, b) => a['key'] === b['key']),
+    ).subscribe(() => {
       const project = this.projectStore.currentProject();
       this.projectId = project?.id ?? '';
       this.workspaceId = project?.workspaceId ?? '';
@@ -182,8 +185,9 @@ export class BacklogComponent implements OnInit, OnDestroy {
       }
     });
 
+    // Fallback: load immediately if project is available but subscription didn't capture it
     const project = this.projectStore.currentProject();
-    if (project?.id) {
+    if (project?.id && !this.projectId) {
       this.projectId = project.id;
       this.workspaceId = project?.workspaceId ?? '';
       this.loadDisplayPropsFromStorage();
