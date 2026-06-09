@@ -317,6 +317,7 @@ export interface DisplayProperties {
   maxModules: number;  // 1–3
   taskCreationViewMode?: 'right-pane' | 'full-page' | 'popup';
   taskDetailViewMode?: 'right-pane' | 'full-page' | 'popup';
+  maxSubItemDepth: number; // 0 = ẩn sub-items, 1 = chỉ con trực tiếp, v.v.
 }
 
 export const DEFAULT_DISPLAY_PROPS: DisplayProperties = {
@@ -336,4 +337,5 @@ export const DEFAULT_DISPLAY_PROPS: DisplayProperties = {
   maxModules: 1,
   taskCreationViewMode: 'popup',
   taskDetailViewMode: 'right-pane',
+  maxSubItemDepth: 3,
 };

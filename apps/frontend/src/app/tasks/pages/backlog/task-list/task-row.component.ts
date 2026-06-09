@@ -48,8 +48,8 @@ const AVATAR_PALETTE = [
         [ngModel]="isSelected" 
         (ngModelChange)="selectionToggle.emit(task.id)" />
     </div>
-    @if (depth === 1) {
-      <span class="flex-shrink-0" style="width:20px; padding-left:4px"><span class="block w-3 h-px bg-gray-200 dark:bg-surface-700"></span></span>
+    @if (depth > 0) {
+      <span class="flex-shrink-0" [style.width.px]="depth * 20" style="padding-left:4px"><span class="block w-3 h-px bg-gray-200 dark:bg-surface-700"></span></span>
     }
     <span class="text-xs font-mono text-gray-400 dark:text-surface-500 flex-shrink-0 mr-2" style="width:58px">{{ task.taskId }}</span>
     @if (childCount > 0) {

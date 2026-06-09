@@ -29,7 +29,7 @@ export interface BacklogFilter {
   imports: [CommonModule, FormsModule, ButtonModule, InputTextModule, SelectModule, MultiSelectModule, PopoverModule, TooltipModule, DisplayPropertiesPanelComponent],
   template: `
     <div class="flex items-center gap-3 px-4 py-3 border-b border-gray-200 dark:border-surface-700 bg-white dark:bg-surface-900 flex-shrink-0 flex-wrap">
-      <h1 class="text-lg font-semibold text-gray-900 dark:text-surface-0 mr-2">Backlog</h1>
+      <h1 class="text-lg font-semibold text-gray-900 dark:text-surface-0 mr-2">Work Items</h1>
 
       <!-- Search -->
       <div class="relative flex-1 max-w-xs">
@@ -107,7 +107,7 @@ export interface BacklogFilter {
       <!-- Display Properties -->
       <button pButton label="Display" icon="pi pi-sliders-h" severity="secondary" size="small" text
         (click)="displayPopover.toggle($event)" aria-label="Display Properties"></button>
-      <p-popover #displayPopover>
+      <p-popover #displayPopover styleClass="!p-0 !overflow-hidden">
         <app-display-properties-panel
           [displayProps]="displayProps"
           [selectedGroupBy]="selectedGroupBy"
