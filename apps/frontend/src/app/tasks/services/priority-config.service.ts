@@ -1,72 +1,44 @@
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, inject, signal, computed } from '@angular/core';
+import { catchError } from 'rxjs/operators';
+import { of } from 'rxjs';
+import { ProjectPriority } from '@mpm/shared-types';
+import { PriorityService } from '../../projects/services/priority.service';
 
-export interface PriorityOption {
-  value: string;
-  label: string;
-  icon: string;
-  color: string;
-}
-
-export const DEFAULT_PRIORITY_OPTIONS: PriorityOption[] = [
-  { value: 'urgent', label: 'Urgent', icon: 'pi pi-flag', color: '#EF4444' },
-  { value: 'high',   label: 'High',   icon: 'pi pi-flag', color: '#F97316' },
-  { value: 'medium', label: 'Medium', icon: 'pi pi-flag', color: '#EAB308' },
-  { value: 'low',    label: 'Low',    icon: 'pi pi-flag', color: '#3B82F6' },
-  { value: 'none',   label: 'None',   icon: 'pi pi-flag', color: '#9CA3AF' },
+export const DEFAULT_PRIORITY_OPTIONS: ProjectPriority[] = [
+  { id: '', projectId: '', name: 'Urgent', value: 'urgent', colorLight: '#EF4444', colorDark: '#FCA5A5', icon: 'pi pi-flag', order: 1, isSystem: false, createdAt: new Date(), updatedAt: new Date() },
+  { id: '', projectId: '', name: 'High',   value: 'high',   colorLight: '#F97316', colorDark: '#FDBA74', icon: 'pi pi-flag', order: 2, isSystem: false, createdAt: new Date(), updatedAt: new Date() },
+  { id: '', projectId: '', name: 'Medium', value: 'medium', colorLight: '#EAB308', colorDark: '#FDE047', icon: 'pi pi-flag', order: 3, isSystem: false, createdAt: new Date(), updatedAt: new Date() },
+  { id: '', projectId: '', name: 'Low',    value: 'low',    colorLight: '#3B82F6', colorDark: '#93C5FD', icon: 'pi pi-flag', order: 4, isSystem: false, createdAt: new Date(), updatedAt: new Date() },
+  { id: '', projectId: '', name: 'None',   value: 'none',   colorLight: '#9CA3AF', colorDark: '#6B7280', icon: 'pi pi-flag', order: 5, isSystem: true,  createdAt: new Date(), updatedAt: new Date() },
 ];
-
-const STORAGE_KEY_PREFIX = 'priority-config:';
 
 @Injectable({ providedIn: 'root' })
 export class PriorityConfigService {
-  private readonly _configs = signal<Record<string, PriorityOption[]>>({});
+  private readonly priorityService = inject(PriorityService);
+  private readonly _priorities = signal<Record<string, ProjectPriority[]>>({});
 
-  getOptions(projectId: string): PriorityOption[] {
-    const cached = this._configs()[projectId];
-    if (cached) return cached;
+  loadPriorities(projectId: string): void {
+    this.priorityService.getPriorities(projectId).pipe(
+      catchError(() => of({ data: DEFAULT_PRIORITY_OPTIONS })),
+    ).subscribe(res => {
+      this._priorities.update(m => ({ ...m, [projectId]: res.data }));
+    });
+  }
 
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY_PREFIX + projectId);
-      if (raw) {
-        const parsed: PriorityOption[] = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length) {
-          this._configs.update(c => ({ ...c, [projectId]: parsed }));
-          return parsed;
-        }
-      }
-    } catch { /* ignore */ }
-
-    return DEFAULT_PRIORITY_OPTIONS;
+  getOptions(projectId: string): ProjectPriority[] {
+    return this._priorities()[projectId] ?? DEFAULT_PRIORITY_OPTIONS;
   }
 
   optionsSignal(projectId: string) {
-    return computed(() => {
-      this._configs(); // track reactivity
-      return this.getOptions(projectId);
-    });
+    return computed(() => this._priorities()[projectId] ?? DEFAULT_PRIORITY_OPTIONS);
   }
 
-  saveOptions(projectId: string, options: PriorityOption[]): void {
-    try {
-      localStorage.setItem(STORAGE_KEY_PREFIX + projectId, JSON.stringify(options));
-    } catch { /* ignore */ }
-    this._configs.update(c => ({ ...c, [projectId]: [...options] }));
-  }
-
-  resetOptions(projectId: string): void {
-    try {
-      localStorage.removeItem(STORAGE_KEY_PREFIX + projectId);
-    } catch { /* ignore */ }
-    this._configs.update(c => {
-      const next = { ...c };
-      delete next[projectId];
-      return next;
-    });
-  }
-
-  getConfig(projectId: string, value: string): PriorityOption {
-    return this.getOptions(projectId).find(p => p.value === value)
-      ?? DEFAULT_PRIORITY_OPTIONS.find(p => p.value === value)
-      ?? DEFAULT_PRIORITY_OPTIONS[4];
+  getConfig(projectId: string, value: string): ProjectPriority {
+    const opts = this.getOptions(projectId);
+    return (
+      opts.find(p => p.value === value) ??
+      DEFAULT_PRIORITY_OPTIONS.find(p => p.value === value) ??
+      DEFAULT_PRIORITY_OPTIONS[4]
+    );
   }
 }

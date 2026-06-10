@@ -173,7 +173,7 @@ export class TaskRowComponent {
     return this.priorityConfigService.getConfig(this.projectStore.currentProject()?.id ?? '', p).icon;
   }
   protected priorityColor(p: TaskPriority): string {
-    return this.priorityConfigService.getConfig(this.projectStore.currentProject()?.id ?? '', p).color;
+    return this.priorityConfigService.getConfig(this.projectStore.currentProject()?.id ?? '', p).colorLight;
   }
 
   protected isOverdue(d: string | null): boolean { return !!d && new Date(d) < new Date(); }
