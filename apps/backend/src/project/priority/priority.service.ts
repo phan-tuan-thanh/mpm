@@ -21,8 +21,6 @@ export class PriorityService {
   constructor(
     @InjectRepository(ProjectPriority)
     private readonly repo: Repository<ProjectPriority>,
-    @InjectRepository(Task)
-    private readonly taskRepo: Repository<Task>,
     private readonly auditService: AuditService,
     private readonly dataSource: DataSource,
   ) {}
@@ -66,7 +64,7 @@ export class PriorityService {
     const saved = await this.repo.save(priority);
 
     this.auditService.log(
-      'project_state_created' as any,
+      'project_priority_created' as any,
       userId, ip, ua,
       { projectId, priorityId: saved.id, value: saved.value },
     );
@@ -98,7 +96,7 @@ export class PriorityService {
     const saved = await this.repo.save(priority);
 
     this.auditService.log(
-      'project_state_updated' as any,
+      'project_priority_updated' as any,
       userId, ip, ua,
       { projectId, priorityId: saved.id },
     );
@@ -140,6 +138,16 @@ export class PriorityService {
       });
     }
 
+    if (dto.migrateToValue === priority.value) {
+      throw new UnprocessableEntityException({
+        statusCode: 422,
+        error: 'Unprocessable Entity',
+        message: 'Cannot migrate tasks to the priority being deleted',
+        errorCode: 'PRIORITY_SELF_MIGRATION',
+        timestamp: new Date().toISOString(),
+      });
+    }
+
     const migrateTarget = await this.repo.findOne({ where: { projectId, value: dto.migrateToValue } });
     if (!migrateTarget) {
       throw new NotFoundException({
@@ -154,18 +162,17 @@ export class PriorityService {
     await queryRunner.startTransaction();
 
     try {
-      await queryRunner.manager
-        .createQueryBuilder()
-        .update(Task)
-        .set({ priority: dto.migrateToValue })
-        .where('"project_id" = :projectId AND "priority" = :value', { projectId, value: priority.value })
-        .execute();
+      await queryRunner.manager.update(
+        Task,
+        { projectId, priority: priority.value },
+        { priority: dto.migrateToValue },
+      );
 
       await queryRunner.manager.remove(ProjectPriority, priority);
       await queryRunner.commitTransaction();
 
       this.auditService.log(
-        'project_state_deleted' as any,
+        'project_priority_deleted' as any,
         userId, ip, ua,
         { projectId, priorityId, value: priority.value, migratedTo: dto.migrateToValue },
       );
@@ -203,7 +210,7 @@ export class PriorityService {
       await queryRunner.commitTransaction();
 
       this.auditService.log(
-        'project_state_updated' as any,
+        'project_priority_updated' as any,
         userId, ip, ua,
         { projectId, reorderedCount: count },
       );
