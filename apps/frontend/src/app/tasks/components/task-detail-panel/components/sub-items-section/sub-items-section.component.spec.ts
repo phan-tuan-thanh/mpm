@@ -271,9 +271,9 @@ describe('SubItemsSectionComponent', () => {
       expect(component.subItemClicked.emit).toBeDefined();
     });
 
-    it('should have reordered EventEmitter', () => {
-      expect(component.reordered).toBeDefined();
-      expect(component.reordered.emit).toBeDefined();
+    it('should have saveRequested EventEmitter', () => {
+      expect(component.saveRequested).toBeDefined();
+      expect(typeof component.saveRequested.emit).toBe('function');
     });
   });
 

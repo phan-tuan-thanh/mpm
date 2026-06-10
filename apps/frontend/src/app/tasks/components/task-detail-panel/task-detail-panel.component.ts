@@ -44,7 +44,7 @@ import type {
   CreateSubItemDto,
   ActivityFilterType,
 } from '@mpm/shared-types';
-import { Subject, takeUntil, combineLatest, distinctUntilChanged, filter } from 'rxjs';
+import { Subject, takeUntil, combineLatest, distinctUntilChanged, filter, firstValueFrom } from 'rxjs';
 
 import { TaskHeaderComponent } from './components/task-header/task-header.component';
 import { TaskTitleInlineComponent } from './components/task-title-inline/task-title-inline.component';
@@ -222,6 +222,7 @@ import { RichTextEditorComponent } from '../../../shared/components/rich-text-ed
                   [taskId]="task()!.id"
                   (createSubItem)="onCreateSubItem($event)"
                   (subItemClicked)="openChildTask($event)"
+                  (saveRequested)="onSubItemSaveRequested($event)"
                 />
               </div>
 
@@ -312,6 +313,7 @@ import { RichTextEditorComponent } from '../../../shared/components/rich-text-ed
                     [taskId]="task()!.id"
                     (createSubItem)="onCreateSubItem($event)"
                     (subItemClicked)="openChildTask($event)"
+                    (saveRequested)="onSubItemSaveRequested($event)"
                   />
                 </div>
 
@@ -654,6 +656,47 @@ export class TaskDetailPanelComponent implements OnInit, OnChanges, OnDestroy {
         // Reload sub-items tree after creation
         this.stateService.loadSubItemsTree(projectId, t.id);
       });
+  }
+
+  protected async onSubItemSaveRequested(payload: {
+    moves: Array<{ taskId: string; newParentId: string | null; oldParentId: string | null }>;
+    parentOrders: Array<{ parentId: string | null; childIds: string[] }>;
+  }): Promise<void> {
+    const t = this.task();
+    if (!t) return;
+    const projectId = this.projectId();
+
+    // 1. Reparent tasks where parent actually changed.
+    //    In the flat tree, null means "direct child of the current task", not project-root.
+    const reparentCalls = payload.moves
+      .filter(m => m.newParentId !== m.oldParentId)
+      .map(m =>
+        firstValueFrom(
+          this.taskService.updateTask(projectId, m.taskId, {
+            parentId: m.newParentId ?? t.id,
+          }),
+        ),
+      );
+    await Promise.allSettled(reparentCalls);
+
+    // 2. Persist sibling order for every affected parent via reorderTasks.
+    //    backlogOrder = (index + 1) * 1000 preserves gaps for future inserts.
+    const reorderCalls = payload.parentOrders
+      .filter(po => po.childIds.length > 0)
+      .map(po =>
+        firstValueFrom(
+          this.taskService.reorderTasks(projectId, {
+            items: po.childIds.map((id, idx) => ({
+              taskId: id,
+              backlogOrder: (idx + 1) * 1000,
+            })),
+          }),
+        ),
+      );
+    await Promise.allSettled(reorderCalls);
+
+    // 3. Reload tree to reflect server-confirmed data + counts
+    this.stateService.loadSubItemsTree(projectId, t.id);
   }
 
   protected openChildTask(taskId: string): void {

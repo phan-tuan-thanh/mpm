@@ -1,38 +1,23 @@
 /**
  * Unit tests for SubItemTreeComponent
  *
- * Tests component logic: expand/collapse, drag-drop reorder,
- * priority icons, initials, and tree depth constraints.
+ * Tests: expand/collapse, flat node computation, drag helpers,
+ * priority icons, initials, and view-icon click.
  *
- * Uses direct class instantiation (same pattern as CollapsibleSectionComponent tests)
- * with module mocks to avoid JIT compilation issues.
- *
- * Validates: Requirements 4.3, 4.4, 4.5, 4.7
+ * Uses direct class instantiation with a mock ElementRef.
+ * Pointer-event drag flow requires a live DOM and is covered by e2e tests.
  */
 
-// Mock Angular modules that require JIT compilation
-jest.mock('@angular/common', () => ({ NgTemplateOutlet: class {} }));
 jest.mock('primeng/tooltip', () => ({ Tooltip: class {} }));
-jest.mock('@angular/cdk/drag-drop', () => ({
-  CdkDrag: class {},
-  CdkDragHandle: class {},
-  CdkDragPlaceholder: class {},
-  CdkDragPreview: class {},
-  CdkDropList: class {},
-  moveItemInArray: jest.fn((array: unknown[], previousIndex: number, currentIndex: number) => {
-    const item = array[previousIndex];
-    array.splice(previousIndex, 1);
-    array.splice(currentIndex, 0, item);
-  }),
-}));
 
+import { ElementRef, SimpleChange } from '@angular/core';
 import { SubItemTreeComponent } from './sub-item-tree.component';
 import type { SubItemTreeNode } from '@mpm/shared-types';
 
 describe('SubItemTreeComponent', () => {
   let component: SubItemTreeComponent;
+  let mockNativeEl: HTMLElement;
 
-  /** Helper to create a minimal SubItemTreeNode */
   function makeNode(overrides: Partial<SubItemTreeNode> = {}): SubItemTreeNode {
     return {
       id: 'node-1',
@@ -52,106 +37,148 @@ describe('SubItemTreeComponent', () => {
     };
   }
 
+  /** Helper: set items and trigger ngOnChanges (mimics Angular's change detection) */
+  function setItems(items: SubItemTreeNode[]): void {
+    component.items = items;
+    component.ngOnChanges({
+      items: new SimpleChange([], items, false),
+    });
+  }
+
   beforeEach(() => {
-    component = new SubItemTreeComponent();
+    mockNativeEl = document.createElement('div');
+    const mockElRef = { nativeElement: mockNativeEl } as ElementRef<HTMLElement>;
+    component = new SubItemTreeComponent(mockElRef);
   });
 
-  it('should create the component', () => {
+  it('should create', () => {
     expect(component).toBeTruthy();
   });
+
+  // ─── Default values ───────────────────────────────────────────────────────
 
   describe('default values', () => {
     it('should default items to empty array', () => {
       expect(component.items).toEqual([]);
     });
 
-    it('should have maxDepth of 5 (Requirement 4.3)', () => {
+    it('should have maxDepth of 5', () => {
       expect(component.maxDepth).toBe(5);
     });
 
-    it('should have indentation of 20px per level', () => {
+    it('should have indentPx of 20', () => {
       expect(component.indentPx).toBe(20);
     });
-  });
 
-  describe('expand/collapse (Requirement 4.4)', () => {
-    it('should expand all nodes by default when items have children', () => {
-      const parent = makeNode({
-        id: 'parent-1',
-        children: [makeNode({ id: 'child-1' })],
-      });
-      component.items = [parent];
-
-      // isExpanded triggers lazy initialization
-      expect(component.isExpanded('parent-1')).toBe(true);
-    });
-
-    it('should collapse a node when toggleExpand is called on expanded node', () => {
-      const parent = makeNode({
-        id: 'parent-1',
-        children: [makeNode({ id: 'child-1' })],
-      });
-      component.items = [parent];
-
-      // Initialize
-      component.isExpanded('parent-1');
-
-      // Toggle to collapse
-      component.toggleExpand('parent-1');
-      expect(component.isExpanded('parent-1')).toBe(false);
-    });
-
-    it('should expand a node when toggleExpand is called on collapsed node', () => {
-      const parent = makeNode({
-        id: 'parent-1',
-        children: [makeNode({ id: 'child-1' })],
-      });
-      component.items = [parent];
-
-      // Initialize and collapse
-      component.isExpanded('parent-1');
-      component.toggleExpand('parent-1');
-      expect(component.isExpanded('parent-1')).toBe(false);
-
-      // Toggle again to expand
-      component.toggleExpand('parent-1');
-      expect(component.isExpanded('parent-1')).toBe(true);
-    });
-
-    it('should handle deeply nested nodes as expanded by default', () => {
-      const grandchild = makeNode({ id: 'gc-1' });
-      const child = makeNode({ id: 'child-1', children: [grandchild] });
-      const parent = makeNode({ id: 'parent-1', children: [child] });
-      component.items = [parent];
-
-      expect(component.isExpanded('parent-1')).toBe(true);
-      expect(component.isExpanded('child-1')).toBe(true);
-    });
-
-    it('should not track leaf nodes (no children) in expanded set', () => {
-      const leaf = makeNode({ id: 'leaf-1', children: [] });
-      component.items = [leaf];
-
-      // Leaf nodes aren't tracked as expanded since they have no children
-      expect(component.isExpanded('leaf-1')).toBe(false);
-    });
-
-    it('should handle multiple root nodes all expanded', () => {
-      const root1 = makeNode({ id: 'root-1', children: [makeNode({ id: 'c1' })] });
-      const root2 = makeNode({ id: 'root-2', children: [makeNode({ id: 'c2' })] });
-      component.items = [root1, root2];
-
-      expect(component.isExpanded('root-1')).toBe(true);
-      expect(component.isExpanded('root-2')).toBe(true);
+    it('should start with empty flatNodes', () => {
+      expect(component.flatNodes()).toEqual([]);
     });
   });
 
-  describe('onItemClick (Requirement 4.5)', () => {
-    it('should emit the taskId when a row is clicked', () => {
+  // ─── flatNodes computation ────────────────────────────────────────────────
+
+  describe('flatNodes', () => {
+    it('should return root-level nodes at depth 0', () => {
+      const a = makeNode({ id: 'a', taskId: 'P-1' });
+      const b = makeNode({ id: 'b', taskId: 'P-2' });
+      setItems([a, b]);
+
+      const flat = component.flatNodes();
+      expect(flat).toHaveLength(2);
+      expect(flat[0]).toMatchObject({ depth: 0, parentId: null });
+      expect(flat[1]).toMatchObject({ depth: 0, parentId: null });
+    });
+
+    it('should flatten children at depth 1 when parent is expanded', () => {
+      const child = makeNode({ id: 'child' });
+      const parent = makeNode({ id: 'parent', children: [child] });
+      setItems([parent]);
+
+      const flat = component.flatNodes();
+      expect(flat).toHaveLength(2);
+      expect(flat[0]).toMatchObject({ depth: 0, parentId: null });
+      expect(flat[1]).toMatchObject({ depth: 1, parentId: 'parent' });
+    });
+
+    it('should not include children of collapsed nodes', () => {
+      const child = makeNode({ id: 'child' });
+      const parent = makeNode({ id: 'parent', children: [child] });
+      setItems([parent]);
+      component.toggleExpand('parent'); // collapse
+
+      const flat = component.flatNodes();
+      expect(flat).toHaveLength(1);
+      expect(flat[0].node.id).toBe('parent');
+    });
+
+    it('should handle deeply nested structure', () => {
+      const gc = makeNode({ id: 'gc' });
+      const child = makeNode({ id: 'child', children: [gc] });
+      const root = makeNode({ id: 'root', children: [child] });
+      setItems([root]);
+
+      const flat = component.flatNodes();
+      expect(flat).toHaveLength(3);
+      expect(flat[2]).toMatchObject({ depth: 2, parentId: 'child' });
+    });
+  });
+
+  // ─── Expand / Collapse ────────────────────────────────────────────────────
+
+  describe('expand/collapse', () => {
+    it('should expand all nodes with children by default', () => {
+      const parent = makeNode({ id: 'p', children: [makeNode({ id: 'c' })] });
+      setItems([parent]);
+
+      expect(component.isExpanded('p')).toBe(true);
+    });
+
+    it('should collapse on first toggleExpand call', () => {
+      const parent = makeNode({ id: 'p', children: [makeNode({ id: 'c' })] });
+      setItems([parent]);
+
+      component.toggleExpand('p');
+      expect(component.isExpanded('p')).toBe(false);
+    });
+
+    it('should re-expand on second toggleExpand call', () => {
+      const parent = makeNode({ id: 'p', children: [makeNode({ id: 'c' })] });
+      setItems([parent]);
+
+      component.toggleExpand('p');
+      component.toggleExpand('p');
+      expect(component.isExpanded('p')).toBe(true);
+    });
+
+    it('should not expand leaf nodes', () => {
+      const leaf = makeNode({ id: 'leaf', children: [] });
+      setItems([leaf]);
+
+      expect(component.isExpanded('leaf')).toBe(false);
+    });
+
+    it('should expand all nodes at all depths by default', () => {
+      const gc = makeNode({ id: 'gc', children: [makeNode({ id: 'ggc' })] });
+      const child = makeNode({ id: 'child', children: [gc] });
+      const root = makeNode({ id: 'root', children: [child] });
+      setItems([root]);
+
+      expect(component.isExpanded('root')).toBe(true);
+      expect(component.isExpanded('child')).toBe(true);
+      expect(component.isExpanded('gc')).toBe(true);
+    });
+  });
+
+  // ─── View icon click ──────────────────────────────────────────────────────
+
+  describe('onViewClick', () => {
+    it('should emit taskId via itemClicked', () => {
       const spy = jest.spyOn(component.itemClicked, 'emit');
       const node = makeNode({ taskId: 'PROJ-42' });
+      const event = new MouseEvent('click');
+      jest.spyOn(event, 'stopPropagation');
 
-      component.onItemClick(node);
+      component.onViewClick(node, event);
 
       expect(spy).toHaveBeenCalledWith('PROJ-42');
     });
@@ -159,98 +186,81 @@ describe('SubItemTreeComponent', () => {
     it('should emit exactly once per click', () => {
       const spy = jest.spyOn(component.itemClicked, 'emit');
       const node = makeNode({ taskId: 'PROJ-1' });
+      const event = new MouseEvent('click');
 
-      component.onItemClick(node);
+      component.onViewClick(node, event);
 
       expect(spy).toHaveBeenCalledTimes(1);
     });
   });
 
-  describe('onDrop — drag-and-drop reorder (Requirement 4.7)', () => {
-    it('should emit reordered event with taskId and newIndex on valid drop', () => {
-      const spy = jest.spyOn(component.reordered, 'emit');
-      const nodes = [
-        makeNode({ id: 'a', taskId: 'PROJ-1' }),
-        makeNode({ id: 'b', taskId: 'PROJ-2' }),
-        makeNode({ id: 'c', taskId: 'PROJ-3' }),
-      ];
+  // ─── Row drag start (threshold-based) ────────────────────────────────────
 
-      // Simulate CDK drop event: move index 0 to index 2
-      const container = { data: [...nodes] } as any;
-      const event = {
-        previousIndex: 0,
-        currentIndex: 2,
-        previousContainer: container,
-        container: container,
-      } as any;
+  describe('onRowPointerDown', () => {
+    function makePointerEvent(target: HTMLElement, clientX = 100, clientY = 50): PointerEvent {
+      return { target, clientX, clientY } as unknown as PointerEvent;
+    }
 
-      component.onDrop(event, 0);
+    it('should not start drag when target is a button', () => {
+      const node = makeNode({ id: 'n1' });
+      const btn = document.createElement('button');
+      mockNativeEl.appendChild(btn);
 
-      // After moveItemInArray, node 'a' moves to index 2
-      expect(spy).toHaveBeenCalledWith({ taskId: 'a', newIndex: 2 });
+      component.onRowPointerDown(node, makePointerEvent(btn));
+
+      expect(component.isDragging()).toBe(false);
+      expect((component as any).pendingDrag).toBeNull();
     });
 
-    it('should not emit when previousIndex equals currentIndex', () => {
-      const spy = jest.spyOn(component.reordered, 'emit');
-      const nodes = [makeNode({ id: 'a' }), makeNode({ id: 'b' })];
+    it('should record pendingDrag when target is not a button', () => {
+      const node = makeNode({ id: 'n1' });
+      const div = document.createElement('div');
 
-      const container = { data: [...nodes] } as any;
-      const event = {
-        previousIndex: 1,
-        currentIndex: 1,
-        previousContainer: container,
-        container: container,
-      } as any;
+      component.onRowPointerDown(node, makePointerEvent(div, 100, 50));
 
-      component.onDrop(event, 0);
-
-      expect(spy).not.toHaveBeenCalled();
-    });
-
-    it('should not emit when containers differ (cross-level drop)', () => {
-      const spy = jest.spyOn(component.reordered, 'emit');
-      const nodes = [makeNode({ id: 'a' }), makeNode({ id: 'b' })];
-
-      const container1 = { data: [...nodes] } as any;
-      const container2 = { data: [] } as any;
-      const event = {
-        previousIndex: 0,
-        currentIndex: 0,
-        previousContainer: container1,
-        container: container2,
-      } as any;
-
-      component.onDrop(event, 0);
-
-      expect(spy).not.toHaveBeenCalled();
-    });
-
-    it('should reorder the array data correctly', () => {
-      const nodes = [
-        makeNode({ id: 'a' }),
-        makeNode({ id: 'b' }),
-        makeNode({ id: 'c' }),
-      ];
-
-      const container = { data: [...nodes] } as any;
-      const event = {
-        previousIndex: 2,
-        currentIndex: 0,
-        previousContainer: container,
-        container: container,
-      } as any;
-
-      component.onDrop(event, 0);
-
-      // Verify order changed: c moved from index 2 to index 0
-      expect(container.data[0].id).toBe('c');
-      expect(container.data[1].id).toBe('a');
-      expect(container.data[2].id).toBe('b');
+      expect((component as any).pendingDrag).toMatchObject({ startX: 100, startY: 50 });
+      // Cleanup listeners added in test
+      component.ngOnDestroy();
     });
   });
 
-  describe('getInitial (Requirement 4.5 — assignee avatar)', () => {
-    it('should return uppercase first letter of name', () => {
+  // ─── Drop indicator helpers ────────────────────────────────────────────────
+
+  describe('drop indicator helpers', () => {
+    it('isDropBefore returns true only for the matching nodeId', () => {
+      (component as any).dropTarget.set({ type: 'before', nodeId: 'abc' });
+      expect(component.isDropBefore('abc')).toBe(true);
+      expect(component.isDropBefore('xyz')).toBe(false);
+    });
+
+    it('isDropChild returns true only for the matching nodeId', () => {
+      (component as any).dropTarget.set({ type: 'child', nodeId: 'abc' });
+      expect(component.isDropChild('abc')).toBe(true);
+      expect(component.isDropChild('xyz')).toBe(false);
+    });
+
+    it('isDropEnd returns true when target is end', () => {
+      (component as any).dropTarget.set({ type: 'end' });
+      expect(component.isDropEnd()).toBe(true);
+    });
+
+    it('isDropEnd returns false when target is before/child', () => {
+      (component as any).dropTarget.set({ type: 'before', nodeId: 'x' });
+      expect(component.isDropEnd()).toBe(false);
+    });
+
+    it('all indicators return false when dropTarget is null', () => {
+      (component as any).dropTarget.set(null);
+      expect(component.isDropBefore('x')).toBe(false);
+      expect(component.isDropChild('x')).toBe(false);
+      expect(component.isDropEnd()).toBe(false);
+    });
+  });
+
+  // ─── getInitial ───────────────────────────────────────────────────────────
+
+  describe('getInitial', () => {
+    it('should return uppercase first letter', () => {
       expect(component.getInitial('Nguyễn Văn A')).toBe('N');
     });
 
@@ -258,48 +268,48 @@ describe('SubItemTreeComponent', () => {
       expect(component.getInitial('')).toBe('?');
     });
 
-    it('should handle single character names', () => {
-      expect(component.getInitial('a')).toBe('A');
-    });
-
-    it('should handle names starting with lowercase', () => {
+    it('should uppercase lowercase first letter', () => {
       expect(component.getInitial('john')).toBe('J');
     });
   });
 
-  describe('getPriorityIconClass (Requirement 4.5 — priority icon)', () => {
-    it('should return red exclamation for urgent', () => {
+  // ─── getPriorityIconClass ─────────────────────────────────────────────────
+
+  describe('getPriorityIconClass', () => {
+    it('urgent → red exclamation', () => {
       const cls = component.getPriorityIconClass('urgent');
       expect(cls).toContain('text-red-500');
       expect(cls).toContain('pi-exclamation-circle');
     });
 
-    it('should return orange arrow-up for high', () => {
+    it('high → orange arrow-up', () => {
       const cls = component.getPriorityIconClass('high');
       expect(cls).toContain('text-orange-500');
       expect(cls).toContain('pi-arrow-up');
     });
 
-    it('should return yellow minus for medium', () => {
+    it('medium → yellow minus', () => {
       const cls = component.getPriorityIconClass('medium');
       expect(cls).toContain('text-yellow-500');
       expect(cls).toContain('pi-minus');
     });
 
-    it('should return blue arrow-down for low', () => {
+    it('low → blue arrow-down', () => {
       const cls = component.getPriorityIconClass('low');
       expect(cls).toContain('text-blue-400');
       expect(cls).toContain('pi-arrow-down');
     });
 
-    it('should return gray minus for none/unknown', () => {
+    it('none/unknown → gray minus', () => {
       const cls = component.getPriorityIconClass('none');
       expect(cls).toContain('text-gray-300');
     });
   });
 
-  describe('getPriorityLabel (Requirement 4.5)', () => {
-    it('should return Vietnamese labels for each priority', () => {
+  // ─── getPriorityLabel ─────────────────────────────────────────────────────
+
+  describe('getPriorityLabel', () => {
+    it('should return Vietnamese labels', () => {
       expect(component.getPriorityLabel('urgent')).toBe('Khẩn cấp');
       expect(component.getPriorityLabel('high')).toBe('Cao');
       expect(component.getPriorityLabel('medium')).toBe('Trung bình');
@@ -308,15 +318,77 @@ describe('SubItemTreeComponent', () => {
     });
   });
 
+  // ─── Outputs ──────────────────────────────────────────────────────────────
+
   describe('component outputs', () => {
     it('should have itemClicked EventEmitter', () => {
       expect(component.itemClicked).toBeDefined();
-      expect(component.itemClicked.emit).toBeDefined();
+      expect(typeof component.itemClicked.emit).toBe('function');
     });
 
-    it('should have reordered EventEmitter', () => {
-      expect(component.reordered).toBeDefined();
-      expect(component.reordered.emit).toBeDefined();
+    it('should have saveRequested EventEmitter', () => {
+      expect(component.saveRequested).toBeDefined();
+      expect(typeof component.saveRequested.emit).toBe('function');
+    });
+
+    it('should not have a moved EventEmitter (removed in favour of saveRequested)', () => {
+      expect((component as any).moved).toBeUndefined();
+    });
+  });
+
+  // ─── Save / Cancel pending changes ───────────────────────────────────────
+
+  describe('save / cancel pending changes', () => {
+    it('hasPendingChanges is false initially', () => {
+      expect(component.hasPendingChanges()).toBe(false);
+    });
+
+    it('onCancelChanges resets _items to parent items and clears pending', () => {
+      const items = [makeNode({ id: 'a' }), makeNode({ id: 'b' })];
+      setItems(items);
+      // Simulate an optimistic move
+      (component as any).pendingMoves.set([{ taskId: 'a', newParentId: 'b', newIndex: 0 }]);
+      (component as any)._items.set([makeNode({ id: 'b', children: [makeNode({ id: 'a' })] })]);
+
+      component.onCancelChanges();
+
+      expect(component.hasPendingChanges()).toBe(false);
+      expect((component as any)._items()).toEqual(items);
+    });
+
+    it('onSaveChanges emits saveRequested with moves + parentOrders and clears pending', () => {
+      const spy = jest.spyOn(component.saveRequested, 'emit');
+      const moves = [{ taskId: 'x', newParentId: null, oldParentId: null }];
+      (component as any).pendingMoves.set(moves);
+
+      component.onSaveChanges();
+
+      expect(spy).toHaveBeenCalledWith(expect.objectContaining({ moves }));
+      expect(component.hasPendingChanges()).toBe(false);
+    });
+
+    it('onSaveChanges does nothing when there are no pending moves', () => {
+      const spy = jest.spyOn(component.saveRequested, 'emit');
+
+      component.onSaveChanges();
+
+      expect(spy).not.toHaveBeenCalled();
+    });
+
+    it('ngOnChanges clears pending moves when items input changes', () => {
+      (component as any).pendingMoves.set([{ taskId: 'x', newParentId: null, newIndex: 0 }]);
+
+      setItems([makeNode({ id: 'fresh' })]);
+
+      expect(component.hasPendingChanges()).toBe(false);
+    });
+  });
+
+  // ─── ngOnDestroy cleanup ──────────────────────────────────────────────────
+
+  describe('ngOnDestroy', () => {
+    it('should not throw when destroyed without an active drag', () => {
+      expect(() => component.ngOnDestroy()).not.toThrow();
     });
   });
 });
