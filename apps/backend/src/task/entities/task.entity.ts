@@ -64,6 +64,9 @@ export class Task {
   @Column({ name: 'backlog_order', type: 'float8', default: 0 })
   backlogOrder!: number;
 
+  @Column({ name: 'is_draft', type: 'boolean', default: false })
+  isDraft!: boolean;
+
   @Column({ name: 'start_date', type: 'date', nullable: true })
   startDate!: string | null;
 

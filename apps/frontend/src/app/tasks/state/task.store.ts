@@ -151,7 +151,7 @@ export class TaskStore {
           finalize(() => this.isSaving.set(false)),
         )
         .subscribe((task) => {
-          if (task) {
+          if (task && !task.isDraft) {
             this.tasks.update((prev) => [task as unknown as TaskListItem, ...prev]);
           }
           resolve(task);
@@ -178,9 +178,13 @@ export class TaskStore {
           this.currentTask.update((prev) =>
             prev ? { ...prev, ...updated } : updated,
           );
-          this.tasks.update((prev) =>
-            prev.map((t) => (t.id === taskId ? ({ ...t, ...updated } as TaskListItem) : t)),
-          );
+          this.tasks.update((prev) => {
+            const exists = prev.some((t) => t.id === taskId);
+            if (!exists && !updated.isDraft) {
+              return [updated as unknown as TaskListItem, ...prev];
+            }
+            return prev.map((t) => (t.id === taskId ? ({ ...t, ...updated } as TaskListItem) : t));
+          });
           setTimeout(() => this.saveStatus.set('idle'), 2000);
         }
       });

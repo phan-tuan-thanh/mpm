@@ -139,6 +139,7 @@ export interface TaskListItem {
   dueDate: string | null;
   completedAt: Date | null;
   backlogOrder: number;
+  isDraft: boolean;
   parentId: string | null;
   parent?: TaskParentRef | null;
   reporterId: string;
@@ -149,6 +150,7 @@ export interface TaskListItem {
   createdAt: Date;
   updatedAt: Date;
 }
+
 
 export interface Task extends TaskListItem {
   description: TiptapDoc | null;
@@ -189,10 +191,12 @@ export interface CreateTaskDto {
   stateId?: string;
   assigneeIds?: string[];
   labelIds?: string[];
+  moduleIds?: string[];
   estimateValue?: number;
   startDate?: string;
   dueDate?: string;
   parentId?: string;
+  isDraft?: boolean;
 }
 
 export interface UpdateTaskDto {
@@ -203,10 +207,12 @@ export interface UpdateTaskDto {
   stateId?: string;
   assigneeIds?: string[];
   labelIds?: string[];
+  moduleIds?: string[];
   estimateValue?: number | null;
   startDate?: string | null;
   dueDate?: string | null;
   parentId?: string | null;
+  isDraft?: boolean;
 }
 
 export interface ReorderTaskItem {

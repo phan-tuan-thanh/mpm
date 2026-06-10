@@ -12,7 +12,7 @@ import { Component, Input } from '@angular/core';
   standalone: true,
   selector: 'app-sub-item-progress',
   template: `
-    <div class="inline-flex items-center gap-1.5">
+    <div class="relative inline-flex items-center justify-center" [style.width.px]="size" [style.height.px]="size">
       <!-- SVG circular progress ring -->
       <svg
         [attr.width]="size"
@@ -27,7 +27,7 @@ import { Component, Input } from '@angular/core';
           [attr.cy]="center"
           [attr.r]="radius"
           fill="none"
-          class="stroke-gray-200 dark:stroke-surface-600"
+          class="stroke-gray-100 dark:stroke-surface-700"
           [attr.stroke-width]="strokeWidth"
         />
         <!-- Filled arc (done) -->
@@ -44,8 +44,8 @@ import { Component, Input } from '@angular/core';
           />
         }
       </svg>
-      <!-- Text label: "X/Y" -->
-      <span class="text-xs text-gray-600 dark:text-surface-300 font-medium whitespace-nowrap">
+      <!-- Text label: "X/Y" centered inside -->
+      <span class="absolute text-[9px] text-gray-600 dark:text-surface-300 font-semibold leading-none select-none">
         {{ done }}/{{ total }}
       </span>
     </div>
@@ -59,10 +59,10 @@ export class SubItemProgressComponent {
   @Input() total = 0;
 
   /** SVG dimensions */
-  readonly size = 24;
-  readonly strokeWidth = 3;
-  readonly radius = (this.size - this.strokeWidth) / 2; // 10.5
-  readonly center = this.size / 2; // 12
+  readonly size = 36;
+  readonly strokeWidth = 3.5;
+  readonly radius = (this.size - this.strokeWidth) / 2; // 16.25
+  readonly center = this.size / 2; // 18
 
   /** Tính percentage: done/total * 100, handle total=0 */
   get percentage(): number {

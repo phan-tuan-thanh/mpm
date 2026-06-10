@@ -30,10 +30,12 @@ export class TaskUpdateService {
       stateId?: string;
       assigneeIds?: string[];
       labelIds?: string[];
+      moduleIds?: string[];
       estimateValue?: number | null;
       startDate?: string | null;
       dueDate?: string | null;
       parentId?: string | null;
+      isDraft?: boolean;
     },
   ): Promise<Task> {
     let capturedChanges: Array<{ field: string; oldValue: string; newValue: string }> = [];
@@ -80,6 +82,23 @@ export class TaskUpdateService {
         task.completedAt = state?.group === 'completed' ? (task.completedAt ?? new Date()) : null;
       }
 
+      if (dto.isDraft === false && task.isDraft) {
+        task.isDraft = false;
+        await em.query(
+          `
+          WITH RECURSIVE task_tree AS (
+            SELECT id FROM tasks WHERE parent_id = $1 AND project_id = $2
+            UNION ALL
+            SELECT c.id FROM tasks c
+            INNER JOIN task_tree tt ON c.parent_id = tt.id
+            WHERE c.project_id = $2
+          )
+          UPDATE tasks SET is_draft = false WHERE id IN (SELECT id FROM task_tree)
+          `,
+          [taskId, projectId],
+        );
+      }
+
       const saved = await em.save(Task, task);
 
       if (dto.assigneeIds !== undefined) {
@@ -95,6 +114,14 @@ export class TaskUpdateService {
         if (dto.labelIds.length > 0) {
           await em.createQueryBuilder().insert().into('task_labels')
             .values(dto.labelIds.map((lid) => ({ task_id: taskId, label_id: lid }))).execute();
+        }
+      }
+
+      if (dto.moduleIds !== undefined) {
+        await em.createQueryBuilder().delete().from('task_modules').where('task_id = :id', { id: taskId }).execute();
+        if (dto.moduleIds.length > 0) {
+          await em.createQueryBuilder().insert().into('task_modules')
+            .values(dto.moduleIds.map((mid: string) => ({ task_id: taskId, module_id: mid }))).execute();
         }
       }
 

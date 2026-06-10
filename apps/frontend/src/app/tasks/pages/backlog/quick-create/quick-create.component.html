@@ -25,16 +25,18 @@
     <ng-container *ngTemplateOutlet="formTpl"></ng-container>
   </p-drawer>
 } @else if (viewMode === 'full-page') {
-  <div class="w-full max-w-4xl bg-white dark:bg-surface-900 border border-gray-200 dark:border-surface-700 rounded-xl shadow-sm overflow-hidden flex flex-col">
-    <ng-container *ngTemplateOutlet="formTpl"></ng-container>
+  <div class="absolute inset-0 z-10 bg-white dark:bg-surface-900 overflow-hidden flex flex-col border border-gray-100 dark:border-surface-700 rounded-xl shadow-sm">
+    <div class="w-full h-full flex flex-col">
+      <ng-container *ngTemplateOutlet="formTpl"></ng-container>
+    </div>
   </div>
 }
 
 <ng-template #formTpl>
-  <div style="display: flex; flex-direction: column; background: var(--surface-0, #fff); height: 100%; width: 100%; overflow: hidden">
+  <div class="flex flex-col h-full w-full overflow-hidden bg-white dark:bg-surface-900">
 
     <!-- ══ Header ══ -->
-    <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 18px 10px; border-bottom: 1px solid var(--surface-100, #f3f4f6)">
+    <div class="flex items-center justify-between border-b border-gray-100 dark:border-surface-800" style="padding: 14px 18px 10px">
       <div style="display: flex; align-items: center; gap: 8px">
         <!-- Type dropdown pill -->
         <button class="type-pill" (click)="typePopover.toggle($event)">
@@ -83,133 +85,196 @@
       />
     </div>
 
-    <!-- ══ Description ══ -->
-    <div style="padding: 0 18px 12px">
-      <textarea
-        pTextarea
-        style="width: 100%; font-size: 13px; color: var(--text-color-secondary); border: none; box-shadow: none; background: transparent; padding: 0; min-height: 120px; resize: vertical; outline: none"
-        placeholder="Mô tả (tùy chọn)"
-        [rows]="6"
-        [(ngModel)]="description"
-        (keydown.control.enter)="title.trim() && onSubmit()"
-        (keydown.meta.enter)="title.trim() && onSubmit()"
-        (keydown.escape)="onCancel()"
-      ></textarea>
-    </div>
+    <!-- ══ Metadata row (unified two-row layout!) ══ -->
+    <div style="display: flex; flex-direction: column; gap: 8px; padding: 10px 18px; border-bottom: 1px solid var(--surface-100, #f3f4f6)" class="dark:border-surface-800 bg-gray-50/20 dark:bg-surface-800/10">
+      <!-- Row 1: Core properties -->
+      <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap">
+        <!-- State -->
+        <button class="meta-pill" [class.active]="false" (click)="statePopover.toggle($event)">
+          <span style="width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; display: inline-block"
+            [style.background]="selectedStateColor()"></span>
+          <span>{{ selectedStateName() }}</span>
+        </button>
 
-    <!-- ══ Divider ══ -->
-    <div style="height: 1px; background: var(--surface-100, #f3f4f6); margin: 0 18px"></div>
+        <div class="meta-divider"></div>
 
-    <!-- ══ Metadata row ══ -->
-    <div style="display: flex; align-items: center; gap: 6px; padding: 10px 18px; flex-wrap: wrap">
+        <!-- Priority -->
+        <button class="meta-pill" [class.active]="false" (click)="priorityPopover.toggle($event)">
+          <i [class]="selectedPriorityConfig().icon" [style.color]="selectedPriorityConfig().color" style="font-size: 11px"></i>
+          <span>{{ selectedPriorityConfig().label }}</span>
+        </button>
 
-      <!-- State -->
-      <button class="meta-pill" [class.active]="!!selectedStateId()" (click)="statePopover.toggle($event)">
-        <span style="width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; display: inline-block"
-          [style.background]="selectedStateColor()"></span>
-        <span>{{ selectedStateName() }}</span>
-      </button>
+        <div class="meta-divider"></div>
 
-      <div class="meta-divider"></div>
+        <!-- Assignees -->
+        <button class="meta-pill" [class.active]="selectedAssigneeIds.length > 0" (click)="assigneePopover.toggle($event)">
+          @if (selectedAssigneeIds.length) {
+            <div style="display: flex; align-items: center; gap: -2px">
+              @for (id of selectedAssigneeIds.slice(0, 3); track id) {
+                <div class="avatar-xs" style="margin-right: -4px">{{ getMemberInitial(id) }}</div>
+              }
+            </div>
+            <span style="margin-left: 6px">
+              {{ selectedAssigneeIds.length === 1 ? getMemberName(selectedAssigneeIds[0]) : selectedAssigneeIds.length + ' người' }}
+            </span>
+          } @else {
+            <i class="pi pi-user" style="font-size: 11px"></i>
+            <span>Assignees</span>
+          }
+        </button>
+      </div>
 
-      <!-- Priority -->
-      <button class="meta-pill" [class.active]="selectedPriority() !== 'none'" (click)="priorityPopover.toggle($event)">
-        <i [class]="selectedPriorityConfig().icon" [style.color]="selectedPriorityConfig().color" style="font-size: 11px"></i>
-        <span>{{ selectedPriorityConfig().label }}</span>
-      </button>
+      <!-- Row 2: Supporting properties -->
+      <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap">
+        <!-- Labels -->
+        <button class="meta-pill" [class.active]="selectedLabelIds.length > 0" (click)="labelPopover.toggle($event)">
+          <i class="pi pi-tag" style="font-size: 11px"></i>
+          @if (selectedLabelIds.length) {
+            <div class="flex items-center gap-1">
+              @for (id of selectedLabelIds.slice(0, 2); track id) {
+                @if (isScoped(getLabelName(id))) {
+                  <span class="inline-flex items-center text-[10px] rounded-full overflow-hidden border border-gray-200 dark:border-surface-700 bg-white dark:bg-surface-800 font-medium" [pTooltip]="getLabelDescription(id) ? getLabelName(id) + ': ' + getLabelDescription(id) : getLabelName(id)">
+                    <span class="px-1.5 py-px text-white" 
+                          [style.background]="layoutService.getAdaptiveColor(getScopeColor(getLabelName(id), getLabelColor(id)))" 
+                          [style.color]="layoutService.getTextColor(layoutService.getAdaptiveColor(getScopeColor(getLabelName(id), getLabelColor(id))))">{{ getScope(getLabelName(id)) }}</span>
+                    <span class="px-1.5 py-px" 
+                          [style.background]="layoutService.getAdaptiveColor(getLabelColor(id)) + '18'" 
+                          [style.color]="layoutService.getAdaptiveColor(getLabelColor(id))">{{ getValue(getLabelName(id)) }}</span>
+                  </span>
+                } @else {
+                  <span class="text-[10px] px-1 py-px rounded-full font-medium bg-white dark:bg-surface-800 border"
+                        [style.border-color]="layoutService.getAdaptiveColor(getLabelColor(id))"
+                        [style.color]="layoutService.getAdaptiveColor(getLabelColor(id))"
+                        [pTooltip]="getLabelDescription(id) ? getLabelName(id) + ': ' + getLabelDescription(id) : getLabelName(id)">
+                    {{ getLabelName(id) }}
+                  </span>
+                }
+              }
+              @if (selectedLabelIds.length > 2) {
+                <span class="text-[10px] font-medium text-gray-400">+{{ selectedLabelIds.length - 2 }}</span>
+              }
+            </div>
+          } @else {
+            <span>Labels</span>
+          }
+        </button>
 
-      <div class="meta-divider"></div>
+        <div class="meta-divider"></div>
 
-      <!-- Assignees -->
-      <button class="meta-pill" [class.active]="selectedAssigneeIds.length > 0" (click)="assigneePopover.toggle($event)">
-        @if (selectedAssigneeIds.length) {
-          <div style="display: flex; align-items: center; gap: -2px">
-            @for (id of selectedAssigneeIds.slice(0, 3); track id) {
-              <div class="avatar-xs" style="margin-right: -4px">{{ getMemberInitial(id) }}</div>
-            }
-          </div>
-          <span style="margin-left: 6px">
-            {{ selectedAssigneeIds.length === 1 ? getMemberName(selectedAssigneeIds[0]) : selectedAssigneeIds.length + ' người' }}
+        <!-- Parent Task -->
+        <button class="meta-pill" [class.active]="selectedParentId() !== null" (click)="parentPopover.toggle($event)">
+          <i class="pi pi-sitemap" style="font-size: 11px" [style.color]="selectedParentId() !== null ? '#6366f1' : undefined"></i>
+          <span [style.color]="selectedParentId() !== null ? '#6366f1' : undefined">{{ selectedParentTitle() }}</span>
+        </button>
+
+        <!-- Start date -->
+        <button class="meta-pill" [class.active]="!!startDate" (click)="startDatePopover.toggle($event)">
+          <i class="pi pi-calendar" style="font-size: 11px" [style.color]="startDate ? '#6366f1' : undefined"></i>
+          <span [style.color]="startDate ? '#6366f1' : undefined">
+            {{ startDate ? (startDate | date:'dd/MM/yy') : 'Bắt đầu' }}
           </span>
-        } @else {
-          <i class="pi pi-user" style="font-size: 11px"></i>
-          <span>Assignees</span>
-        }
-      </button>
+        </button>
 
-      <!-- Labels -->
-      <button class="meta-pill" [class.active]="selectedLabelIds.length > 0" (click)="labelPopover.toggle($event)">
-        <i class="pi pi-tag" style="font-size: 11px"></i>
-        @if (selectedLabelIds.length) {
-          <div class="flex items-center gap-1">
-            @for (id of selectedLabelIds.slice(0, 2); track id) {
-              @if (isScoped(getLabelName(id))) {
-                <span class="inline-flex items-center text-[10px] rounded-full overflow-hidden border border-gray-200 bg-white font-medium" [pTooltip]="getLabelDescription(id) ? getLabelName(id) + ': ' + getLabelDescription(id) : getLabelName(id)">
-                  <span class="px-1.5 py-px text-white" 
-                        [style.background]="layoutService.getAdaptiveColor(getScopeColor(getLabelName(id), getLabelColor(id)))" 
-                        [style.color]="layoutService.getTextColor(layoutService.getAdaptiveColor(getScopeColor(getLabelName(id), getLabelColor(id))))">{{ getScope(getLabelName(id)) }}</span>
-                  <span class="px-1.5 py-px" 
-                        [style.background]="layoutService.getAdaptiveColor(getLabelColor(id)) + '18'" 
-                        [style.color]="layoutService.getAdaptiveColor(getLabelColor(id))">{{ getValue(getLabelName(id)) }}</span>
-                </span>
-              } @else {
-                <span class="text-[10px] px-1 py-px rounded-full font-medium bg-white border" 
-                      [style.border-color]="layoutService.getAdaptiveColor(getLabelColor(id))"
-                      [style.color]="layoutService.getAdaptiveColor(getLabelColor(id))"
-                      [pTooltip]="getLabelDescription(id) ? getLabelName(id) + ': ' + getLabelDescription(id) : getLabelName(id)">
-                  {{ getLabelName(id) }}
+        <!-- Due date -->
+        <button class="meta-pill" [class.active]="!!dueDate" (click)="dueDatePopover.toggle($event)">
+          <i class="pi pi-calendar" style="font-size: 11px"
+            [style.color]="isOverdue() ? '#ef4444' : dueDate ? '#6366f1' : undefined"></i>
+          <span [style.color]="isOverdue() ? '#ef4444' : dueDate ? '#6366f1' : undefined">
+            {{ dueDate ? (dueDate | date:'dd/MM/yy') : 'Hết hạn' }}
+          </span>
+        </button>
+
+        <!-- Estimate -->
+        <button class="meta-pill" [class.active]="estimateValue !== null" (click)="estimatePopover.toggle($event)">
+          <i class="pi pi-stopwatch" style="font-size: 11px" [style.color]="estimateValue !== null ? '#6366f1' : undefined"></i>
+          <span [style.color]="estimateValue !== null ? '#6366f1' : undefined">
+            {{ estimateValue !== null ? estimateValue + ' pts' : 'Estimate' }}
+          </span>
+        </button>
+
+        <div class="meta-divider"></div>
+
+        <!-- Modules -->
+        <button class="meta-pill" [class.active]="selectedModuleIds.length > 0" (click)="modulePopover.toggle($event)">
+          <i class="pi pi-box" style="font-size: 11px" [style.color]="selectedModuleIds.length > 0 ? '#6366f1' : undefined"></i>
+          @if (selectedModuleIds.length) {
+            <div class="flex items-center gap-1">
+              @for (id of selectedModuleIds.slice(0, 2); track id) {
+                <span class="text-[10px] px-1.5 py-px rounded-full font-medium bg-white dark:bg-surface-800 border border-gray-200 dark:border-surface-700"
+                      [style.color]="'#6366f1'">
+                  {{ moduleOptions().find(m => m.id === id)?.name || id }}
                 </span>
               }
-            }
-            @if (selectedLabelIds.length > 2) {
-              <span class="text-[10px] font-medium text-gray-400">+{{ selectedLabelIds.length - 2 }}</span>
-            }
-          </div>
-        } @else {
-          <span>Labels</span>
-        }
-      </button>
+              @if (selectedModuleIds.length > 2) {
+                <span class="text-[10px] font-medium text-gray-400">+{{ selectedModuleIds.length - 2 }}</span>
+              }
+            </div>
+          } @else {
+            <span>Modules</span>
+          }
+        </button>
+      </div>
+    </div>
 
-      <div class="meta-divider"></div>
+    <!-- ══ Description ══ -->
+    <div class="px-[18px] pb-3 flex-1 overflow-auto flex flex-col gap-4 pt-3">
+      <div>
+        <app-rich-text-editor
+          [(ngModel)]="description"
+          placeholder="Mô tả (tùy chọn)"
+          toolbarMode="bubble"
+        />
+      </div>
 
-      <!-- Parent Task -->
-      <button class="meta-pill" [class.active]="selectedParentId() !== null" (click)="parentPopover.toggle($event)">
-        <i class="pi pi-sitemap" style="font-size: 11px" [style.color]="selectedParentId() !== null ? '#6366f1' : undefined"></i>
-        <span [style.color]="selectedParentId() !== null ? '#6366f1' : undefined">{{ selectedParentTitle() }}</span>
-      </button>
+      @if (draftTask) {
+        <!-- Attachments & Links -->
+        <div class="pt-3 border-t border-gray-100 dark:border-surface-800 flex flex-col gap-3">
+          <app-task-attachments
+            [projectId]="draftTask.projectId"
+            [taskId]="draftTask.id"
+            [attachments]="draftTask.attachments ?? []"
+            (upload)="onFileUpload($event)"
+            (delete)="deleteAttachment($event)"
+            (deleteGroup)="deleteAttachmentGroup($event)"
+            (batchUpdate)="onBatchUpdateAttachments($event)"
+          />
+          <app-task-links
+            [links]="draftTask.links ?? []"
+            (add)="addLink($event)"
+            (delete)="deleteLink($event)"
+          />
+        </div>
 
-      <!-- Start date -->
-      <button class="meta-pill" [class.active]="!!startDate" (click)="startDatePopover.toggle($event)">
-        <i class="pi pi-calendar" style="font-size: 11px" [style.color]="startDate ? '#6366f1' : undefined"></i>
-        <span [style.color]="startDate ? '#6366f1' : undefined">
-          {{ startDate ? (startDate | date:'dd/MM/yy') : 'Bắt đầu' }}
-        </span>
-      </button>
-
-      <!-- Due date -->
-      <button class="meta-pill" [class.active]="!!dueDate" (click)="dueDatePopover.toggle($event)">
-        <i class="pi pi-calendar" style="font-size: 11px"
-          [style.color]="isOverdue() ? '#ef4444' : dueDate ? '#6366f1' : undefined"></i>
-        <span [style.color]="isOverdue() ? '#ef4444' : dueDate ? '#6366f1' : undefined">
-          {{ dueDate ? (dueDate | date:'dd/MM/yy') : 'Hết hạn' }}
-        </span>
-      </button>
-
-      <!-- Estimate -->
-      <button class="meta-pill" [class.active]="estimateValue !== null" (click)="estimatePopover.toggle($event)">
-        <i class="pi pi-stopwatch" style="font-size: 11px" [style.color]="estimateValue !== null ? '#6366f1' : undefined"></i>
-        <span [style.color]="estimateValue !== null ? '#6366f1' : undefined">
-          {{ estimateValue !== null ? estimateValue + ' pts' : 'Estimate' }}
-        </span>
-      </button>
-
+        <!-- Sub-Items -->
+        <div class="pt-3 border-t border-gray-100 dark:border-surface-800">
+          <app-sub-items-section
+            [items]="subItemsTree()"
+            [totalCount]="subItemsTotalCount()"
+            [doneCount]="subItemsDoneCount()"
+            [members]="memberOptions()"
+            [projectId]="draftTask.projectId"
+            [taskId]="draftTask.id"
+            (createSubItem)="onCreateSubItem($event)"
+            (subItemClicked)="$event"
+            (saveRequested)="onSubItemSaveRequested($event)"
+          />
+        </div>
+      }
     </div>
 
     <!-- ══ Footer ══ -->
-    <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 18px 14px; border-top: 1px solid var(--surface-100, #f3f4f6)">
-      <div style="display: flex; align-items: center; gap: 8px">
-        <p-toggleswitch [(ngModel)]="createMore" [style]="{ transform: 'scale(0.8)', transformOrigin: 'left center' }" />
-        <span style="font-size: 12px; color: var(--text-color-secondary)">Tạo tiếp</span>
+    <div class="flex items-center justify-between border-t border-gray-100 dark:border-surface-800" style="padding: 10px 18px 14px">
+      <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2">
+          <p-toggleswitch [(ngModel)]="createMore" [style]="{ transform: 'scale(0.8)', transformOrigin: 'left center' }" />
+          <span style="font-size: 12px; color: var(--text-color-secondary)">Tạo tiếp</span>
+        </div>
+        <button type="button"
+          class="flex items-center gap-1 text-xs text-indigo-500 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
+          (click)="viewModeChange.emit('full-page')">
+          <i class="pi pi-expand" style="font-size: 9px"></i>
+          Mở rộng
+        </button>
       </div>
       <div style="display: flex; align-items: center; gap: 8px">
         <button pButton label="Hủy" severity="secondary" [text]="true" size="small" (click)="onCancel()"></button>
@@ -450,5 +515,29 @@
       <button pButton icon="pi pi-times" severity="secondary" [text]="true" size="small"
         pTooltip="Xóa" (click)="estimateValue = null; estimatePopover.hide()" style="flex-shrink: 0; width: 24px; height: 24px; padding: 0"></button>
     }
+  </div>
+</p-popover>
+
+<!-- Modules Popover -->
+<p-popover #modulePopover>
+  <div style="min-width: 180px; max-width: 240px; padding: 2px; display: flex; flex-direction: column; gap: 2px">
+    <div style="max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 1px">
+      @if (!moduleOptions().length) {
+        <p style="padding: 6px; font-size: 11px; color: var(--text-color-secondary); text-align: center">
+          Chưa có module
+        </p>
+      }
+      @for (m of moduleOptions(); track m.id) {
+        <button class="pop-item" [class.selected]="selectedModuleIds.includes(m.id)"
+          style="padding: 5px 10px; font-size: 12px; border-radius: 4px"
+          (click)="toggleModule(m.id)">
+          <i class="pi pi-box text-gray-400" style="font-size: 11px"></i>
+          <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px">{{ m.name }}</span>
+          @if (selectedModuleIds.includes(m.id)) {
+            <i class="pi pi-check" style="font-size: 10px; color: #6366f1; flex-shrink: 0"></i>
+          }
+        </button>
+      }
+    </div>
   </div>
 </p-popover>

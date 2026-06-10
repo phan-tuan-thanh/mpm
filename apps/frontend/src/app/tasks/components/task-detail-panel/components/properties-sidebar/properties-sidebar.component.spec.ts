@@ -54,6 +54,7 @@ describe('PropertiesSidebarComponent — Helpers', () => {
     dueDate: '2026-06-15',
     completedAt: null,
     backlogOrder: 0,
+    isDraft: false,
     parentId: null,
     parent: null,
     reporterId: 'u1',

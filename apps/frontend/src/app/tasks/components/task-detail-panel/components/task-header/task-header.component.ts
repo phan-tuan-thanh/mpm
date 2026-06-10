@@ -56,30 +56,7 @@ import type { Task } from '@mpm/shared-types';
         }
       }
 
-      <!-- State Badge (Req 1.4) -->
-      @if (task()?.state) {
-        <span
-          class="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded-full"
-          [style.background-color]="task()!.state!.color + '1A'"
-          [style.color]="task()!.state!.color"
-        >
-          <span
-            class="w-2 h-2 rounded-full inline-block"
-            [style.background-color]="task()!.state!.color"
-          ></span>
-          {{ task()!.state!.name }}
-        </span>
-      }
 
-      <!-- Priority Badge (Req 1.5) -->
-      @if (task()?.priority && task()!.priority !== 'none') {
-        <span
-          class="inline-flex items-center text-xs font-medium px-2 py-1 rounded-full"
-          [class]="priorityClasses()"
-        >
-          {{ priorityLabel() }}
-        </span>
-      }
 
       <!-- Spacer -->
       <div class="flex-1"></div>

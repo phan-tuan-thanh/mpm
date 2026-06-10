@@ -30,12 +30,19 @@ export class TaskCreateService {
       stateId?: string;
       assigneeIds?: string[];
       labelIds?: string[];
+      moduleIds?: string[];
       estimateValue?: number;
       startDate?: string;
       dueDate?: string;
       parentId?: string;
+      isDraft?: boolean;
     },
   ): Promise<Task> {
+    const title = dto.title?.trim() ? dto.title.trim() : (dto.isDraft ? 'Task nháp' : '');
+    if (!title && !dto.isDraft) {
+      throw new UnprocessableEntityException('Title is required');
+    }
+
     const result = await this.dataSource.transaction(async (em) => {
       const project = await em.findOne(Project, {
         where: { id: projectId },
@@ -77,7 +84,7 @@ export class TaskCreateService {
         reporterId,
         taskId: `${project.key}-${project.taskCounter}`,
         type: dto.type ?? 'task',
-        title: dto.title,
+        title,
         description: dto.description ?? null,
         descriptionPlain: extractPlainText(dto.description ?? null),
         priority: dto.priority ?? 'none',
@@ -87,6 +94,7 @@ export class TaskCreateService {
         dueDate: dto.dueDate ?? null,
         parentId: dto.parentId ?? null,
         backlogOrder,
+        isDraft: dto.isDraft ?? false,
       });
 
       const saved = await em.save(Task, task);
@@ -100,6 +108,11 @@ export class TaskCreateService {
         await validateLabels(em, projectId, dto.labelIds);
         await em.createQueryBuilder().insert().into('task_labels')
           .values(dto.labelIds.map((lid) => ({ task_id: saved.id, label_id: lid }))).execute();
+      }
+
+      if (dto.moduleIds?.length) {
+        await em.createQueryBuilder().insert().into('task_modules')
+          .values(dto.moduleIds.map((mid) => ({ task_id: saved.id, module_id: mid }))).execute();
       }
 
       return saved;

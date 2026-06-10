@@ -9,17 +9,28 @@ import { LayoutService } from '../../../../layout/services/layout.service';
 import { DialogModule } from 'primeng/dialog';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
-import { TextareaModule } from 'primeng/textarea';
+import { SelectModule } from 'primeng/select';
+import { MultiSelectModule } from 'primeng/multiselect';
 import { DatePickerModule } from 'primeng/datepicker';
 import { TooltipModule } from 'primeng/tooltip';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { PopoverModule } from 'primeng/popover';
 import { InputNumberModule } from 'primeng/inputnumber';
 
+import { RichTextEditorComponent } from '../../../../shared/components/rich-text-editor/rich-text-editor.component';
 import { ProjectStore } from '../../../../projects/state/project.store';
 import { TaskStore } from '../../../state/task.store';
 import { LabelStore } from '../../../state/label.store';
-import type { TaskType, TaskPriority, CreateTaskDto } from '@mpm/shared-types';
+import { ModuleStore } from '../../../state/module.store';
+import { AttachmentService } from '../../../services/attachment.service';
+import { LinkService } from '../../../services/link.service';
+import { TaskService } from '../../../services/task.service';
+import { MessageService } from 'primeng/api';
+import { TaskAttachmentsComponent } from '../../../components/task-detail-panel/components/task-attachments.component';
+import { TaskLinksComponent } from '../../../components/task-detail-panel/components/task-links.component';
+import { SubItemsSectionComponent } from '../../../components/task-detail-panel/components/sub-items-section/sub-items-section.component';
+import type { TaskType, TaskPriority, CreateTaskDto, TiptapDoc, Task, TaskAttachment, TaskLink, SubItemTreeNode, CreateSubItemDto } from '@mpm/shared-types';
+import { firstValueFrom } from 'rxjs';
 
 // ─── Static option sets ──────────────────────────────────────────────────────
 
@@ -51,9 +62,15 @@ import { DrawerModule } from 'primeng/drawer';
   selector: 'app-quick-create',
   imports: [
     CommonModule, FormsModule,
-    DialogModule, DrawerModule, ButtonModule, InputTextModule, TextareaModule,
+    DialogModule, DrawerModule, ButtonModule, InputTextModule,
+    SelectModule, MultiSelectModule,
     DatePickerModule, TooltipModule, ToggleSwitchModule, PopoverModule, InputNumberModule,
+    RichTextEditorComponent,
+    TaskAttachmentsComponent,
+    TaskLinksComponent,
+    SubItemsSectionComponent,
   ],
+  providers: [MessageService],
   templateUrl: './quick-create.component.html',
   styleUrl: './quick-create.component.css',
 })
@@ -61,15 +78,26 @@ export class QuickCreateComponent implements OnChanges {
   private readonly projectStore = inject(ProjectStore);
   private readonly taskStore = inject(TaskStore);
   private readonly labelStore = inject(LabelStore);
+  private readonly moduleStore = inject(ModuleStore);
   protected readonly layoutService = inject(LayoutService);
+  private readonly attachmentService = inject(AttachmentService);
+  private readonly linkService = inject(LinkService);
+  private readonly taskService = inject(TaskService);
+  private readonly messageService = inject(MessageService);
 
   @Input() visible = false;
   @Input() parentId?: string;
   @Input() parentType?: TaskType;
   @Input() stateId?: string;
   @Input() viewMode: 'right-pane' | 'full-page' | 'popup' = 'popup';
+  @Input() draftTask?: Task;
 
-  @Output() create = new EventEmitter<CreateTaskDto>();
+  @Output() create = new EventEmitter<{
+    dto: CreateTaskDto;
+    files: File[];
+    links: { url: string; title?: string }[];
+    createMore: boolean;
+  }>();
   @Output() cancel = new EventEmitter<void>();
   @Output() viewModeChange = new EventEmitter<'right-pane' | 'full-page' | 'popup'>();
 
@@ -107,6 +135,11 @@ export class QuickCreateComponent implements OnChanges {
     return list.filter(t => t.taskId.toLowerCase().includes(query) || t.title.toLowerCase().includes(query));
   });
 
+  protected readonly parentSelectOptions = computed(() => [
+    { id: null as string | null, label: 'Không có parent' },
+    ...this.parentOptions().map(t => ({ id: t.id as string | null, label: `${t.taskId} — ${t.title}` })),
+  ]);
+
   protected readonly selectedParentTitle = computed(() => {
     const id = this.selectedParentId();
     if (!id) return 'Parent';
@@ -135,9 +168,14 @@ export class QuickCreateComponent implements OnChanges {
 
   // ─── Plain form fields ───────────────────────────────────────────────────
   protected title = '';
-  protected description = '';
+  protected description: TiptapDoc | null = null;
+  protected pendingFiles: File[] = [];
+  protected pendingLinks: { url: string; title?: string }[] = [];
+  protected newLinkUrl = '';
+  protected newLinkTitle = '';
   protected selectedAssigneeIds: string[] = [];
   protected selectedLabelIds: string[] = [];
+  protected selectedModuleIds: string[] = [];
   protected dueDate: Date | null = null;
   protected startDate: Date | null = null;
   protected estimateValue: number | null = null;
@@ -174,6 +212,8 @@ export class QuickCreateComponent implements OnChanges {
   protected readonly labelOptions = computed(() =>
     this.taskStore.labels().map((l) => ({ id: l.id, name: l.name, color: l.color, isExclusive: l.isExclusive, description: l.description })),
   );
+
+  protected readonly moduleOptions = computed(() => this.moduleStore.modules());
 
   // ─── Computed display values ─────────────────────────────────────────────
   protected readonly selectedStateColor = computed(() =>
@@ -251,6 +291,12 @@ export class QuickCreateComponent implements OnChanges {
       : [...this.selectedAssigneeIds, userId];
   }
 
+  protected toggleModule(moduleId: string): void {
+    this.selectedModuleIds = this.selectedModuleIds.includes(moduleId)
+      ? this.selectedModuleIds.filter((id) => id !== moduleId)
+      : [...this.selectedModuleIds, moduleId];
+  }
+
   protected toggleLabel(labelId: string): void {
     const label = this.labelOptions().find(l => l.id === labelId);
     if (!label) return;
@@ -289,6 +335,184 @@ export class QuickCreateComponent implements OnChanges {
     return !!this.dueDate && this.dueDate < new Date();
   }
 
+  protected onMultiLabelChange(newIds: string[]): void {
+    const addedId = newIds.find(id => !this.selectedLabelIds.includes(id));
+    if (addedId) {
+      const addedLabel = this.labelOptions().find(l => l.id === addedId);
+      if (addedLabel && addedLabel.name.includes('::') && addedLabel.isExclusive !== false) {
+        const scope = addedLabel.name.split('::')[0].trim().toLowerCase();
+        this.selectedLabelIds = newIds.filter(id => {
+          if (id === addedId) return true;
+          const label = this.labelOptions().find(l => l.id === id);
+          if (label && label.name.includes('::') && label.isExclusive !== false) {
+            return label.name.split('::')[0].trim().toLowerCase() !== scope;
+          }
+          return true;
+        });
+        return;
+      }
+    }
+    this.selectedLabelIds = newIds;
+  }
+
+  // ─── Sub-items signals ──────────────────────────────────────────────────
+  protected readonly subItemsTree = signal<SubItemTreeNode[]>([]);
+  protected readonly subItemsTotalCount = signal(0);
+  protected readonly subItemsDoneCount = signal(0);
+
+
+
+  // ─── Attachments, Links & Sub-items handlers ─────────────────────────────
+  protected onFileUpload(event: { files: FileList; title: string }): void {
+    if (!this.draftTask) return;
+    const projectId = this.projectStore.currentProject()?.id;
+    if (!projectId) return;
+    const title = event.title || undefined;
+    Array.from(event.files).forEach(file => {
+      this.attachmentService.upload(projectId, this.draftTask!.id, file, title).subscribe({
+        next: (attachment) => {
+          this.draftTask!.attachments = [...(this.draftTask!.attachments ?? []), attachment];
+          this.draftTask!.attachmentCount = (this.draftTask!.attachmentCount ?? 0) + 1;
+        },
+        error: (err) =>
+          this.messageService.add({
+            severity: 'error',
+            summary: err.error?.message ?? 'Upload thất bại',
+          }),
+      });
+    });
+  }
+
+  protected deleteAttachment(att: TaskAttachment): void {
+    if (!this.draftTask) return;
+    const projectId = this.projectStore.currentProject()?.id;
+    if (!projectId) return;
+    this.attachmentService.delete(projectId, this.draftTask!.id, att.id).subscribe(() => {
+      this.draftTask!.attachments = (this.draftTask!.attachments ?? []).filter(a => a.id !== att.id);
+      this.draftTask!.attachmentCount = Math.max(0, (this.draftTask!.attachmentCount ?? 0) - 1);
+    });
+  }
+
+  protected deleteAttachmentGroup(atts: TaskAttachment[]): void {
+    if (!this.draftTask) return;
+    const projectId = this.projectStore.currentProject()?.id;
+    if (!projectId) return;
+    atts.forEach(att => {
+      this.attachmentService.delete(projectId, this.draftTask!.id, att.id).subscribe(() => {
+        this.draftTask!.attachments = (this.draftTask!.attachments ?? []).filter(a => a.id !== att.id);
+        this.draftTask!.attachmentCount = Math.max(0, (this.draftTask!.attachmentCount ?? 0) - 1);
+      });
+    });
+  }
+
+  protected onBatchUpdateAttachments(items: Array<{ id: string; title?: string | null; sortOrder?: number }>): void {
+    if (!this.draftTask) return;
+    const projectId = this.projectStore.currentProject()?.id;
+    if (!projectId) return;
+    this.attachmentService.batchUpdate(projectId, this.draftTask!.id, items).subscribe({
+      next: () => {
+        const map = new Map(items.map(i => [i.id, i]));
+        this.draftTask!.attachments = (this.draftTask!.attachments ?? []).map(a => {
+          const u = map.get(a.id);
+          return u ? { ...a, ...u } : a;
+        });
+      }
+    });
+  }
+
+  protected addLink(event: { url: string; title?: string }): void {
+    if (!this.draftTask) return;
+    const projectId = this.projectStore.currentProject()?.id;
+    if (!projectId) return;
+    this.linkService.addLink(projectId, this.draftTask!.id, event).subscribe({
+      next: (link) => {
+        this.draftTask!.links = [...(this.draftTask!.links ?? []), link];
+        this.draftTask!.linkCount = (this.draftTask!.linkCount ?? 0) + 1;
+      },
+      error: (err) =>
+        this.messageService.add({
+          severity: 'error',
+          summary: err.error?.message ?? 'Lỗi',
+        }),
+    });
+  }
+
+  protected deleteLink(link: TaskLink): void {
+    if (!this.draftTask) return;
+    const projectId = this.projectStore.currentProject()?.id;
+    if (!projectId) return;
+    this.linkService.deleteLink(projectId, this.draftTask!.id, link.id).subscribe(() => {
+      this.draftTask!.links = (this.draftTask!.links ?? []).filter(l => l.id !== link.id);
+      this.draftTask!.linkCount = Math.max(0, (this.draftTask!.linkCount ?? 0) - 1);
+    });
+  }
+
+  protected onCreateSubItem(dto: CreateSubItemDto): void {
+    if (!this.draftTask) return;
+    const projectId = this.projectStore.currentProject()?.id;
+    if (!projectId) return;
+    this.taskStore.createTask(projectId, {
+      title: dto.title,
+      parentId: dto.parentId,
+      type: this.draftTask.type === 'epic' ? 'story' : this.draftTask.type === 'story' ? 'task' : 'subtask',
+      assigneeIds: dto.assigneeIds,
+      priority: dto.priority,
+      dueDate: dto.dueDate,
+      isDraft: true,
+    } as any).then(() => {
+      this.loadSubItems();
+    });
+  }
+
+  protected async onSubItemSaveRequested(payload: {
+    moves: Array<{ taskId: string; newParentId: string | null; oldParentId: string | null }>;
+    parentOrders: Array<{ parentId: string | null; childIds: string[] }>;
+  }): Promise<void> {
+    if (!this.draftTask) return;
+    const projectId = this.projectStore.currentProject()?.id;
+    if (!projectId) return;
+
+    const reparentCalls = payload.moves
+      .filter(m => m.newParentId !== m.oldParentId)
+      .map(m =>
+        firstValueFrom(
+          this.taskService.updateTask(projectId, m.taskId, {
+            parentId: m.newParentId ?? this.draftTask!.id,
+          }),
+        ),
+      );
+    await Promise.allSettled(reparentCalls);
+
+    const reorderCalls = payload.parentOrders
+      .filter(po => po.childIds.length > 0)
+      .map(po =>
+        firstValueFrom(
+          this.taskService.reorderTasks(projectId, {
+            items: po.childIds.map((id, idx) => ({
+              taskId: id,
+              backlogOrder: (idx + 1) * 1000,
+            })),
+          }),
+        ),
+      );
+    await Promise.allSettled(reorderCalls);
+
+    this.loadSubItems();
+  }
+
+  protected loadSubItems(): void {
+    if (!this.draftTask) return;
+    const projectId = this.projectStore.currentProject()?.id;
+    if (!projectId) return;
+    this.taskService.getSubItemsTree(projectId, this.draftTask.id).subscribe((res) => {
+      if (res) {
+        this.subItemsTree.set(res.items);
+        this.subItemsTotalCount.set(res.totalCount);
+        this.subItemsDoneCount.set(res.doneCount);
+      }
+    });
+  }
+
   // ─── Lifecycle ───────────────────────────────────────────────────────────
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['visible']?.currentValue === true && !changes['visible'].previousValue) {
@@ -308,11 +532,12 @@ export class QuickCreateComponent implements OnChanges {
       this.selectedPriority.set('none');
       this.selectedAssigneeIds = [];
       this.selectedLabelIds = [];
+      this.selectedModuleIds = [];
       this.dueDate = null;
       this.startDate = null;
       this.estimateValue = null;
       this.title = '';
-      this.description = '';
+      this.description = null;
 
       const defaultState = this.stateId
         ?? this.stateOptions().find((s) => s.isDefault)?.id
@@ -320,7 +545,19 @@ export class QuickCreateComponent implements OnChanges {
         ?? '';
       this.selectedStateId.set(defaultState);
 
+      const projectId = this.projectStore.currentProject()?.id;
+      if (projectId) {
+        this.projectStore.loadMembers(projectId);
+        this.moduleStore.loadModules(projectId);
+        this.taskStore.loadLabels(projectId);
+      }
+
+      this.loadSubItems();
       setTimeout(() => this.titleInput?.nativeElement.focus(), 80);
+    }
+
+    if (changes['draftTask']?.currentValue) {
+      this.loadSubItems();
     }
   }
 
@@ -330,24 +567,30 @@ export class QuickCreateComponent implements OnChanges {
     if (!t) return;
 
     this.create.emit({
-      title: t,
-      type: this.selectedType(),
-      priority: this.selectedPriority() !== 'none' ? this.selectedPriority() : undefined,
-      description: this.description.trim()
-        ? { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: this.description.trim() }] }] }
-        : undefined,
-      stateId: this.selectedStateId() || undefined,
-      assigneeIds: this.selectedAssigneeIds.length ? this.selectedAssigneeIds : undefined,
-      labelIds: this.selectedLabelIds.length ? this.selectedLabelIds : undefined,
-      estimateValue: this.estimateValue ?? undefined,
-      startDate: this.startDate ? this.startDate.toISOString().split('T')[0] : undefined,
-      dueDate: this.dueDate ? this.dueDate.toISOString().split('T')[0] : undefined,
-      parentId: this.selectedParentId() || undefined,
+      dto: {
+        title: t,
+        type: this.selectedType(),
+        priority: this.selectedPriority() !== 'none' ? this.selectedPriority() : undefined,
+        description: this.description ?? undefined,
+        stateId: this.selectedStateId() || undefined,
+        assigneeIds: this.selectedAssigneeIds.length ? this.selectedAssigneeIds : undefined,
+        labelIds: this.selectedLabelIds.length ? this.selectedLabelIds : undefined,
+        moduleIds: this.selectedModuleIds.length ? this.selectedModuleIds : undefined,
+        estimateValue: this.estimateValue ?? undefined,
+        startDate: this.startDate ? this.startDate.toISOString().split('T')[0] : undefined,
+        dueDate: this.dueDate ? this.dueDate.toISOString().split('T')[0] : undefined,
+        parentId: this.selectedParentId() || undefined,
+      },
+      files: this.pendingFiles,
+      links: this.pendingLinks,
+      createMore: this.createMore,
     });
 
     if (this.createMore) {
       this.title = '';
-      this.description = '';
+      this.description = null;
+      this.pendingFiles = [];
+      this.pendingLinks = [];
       setTimeout(() => this.titleInput?.nativeElement.focus(), 50);
     } else {
       this.resetForm();
@@ -420,9 +663,33 @@ export class QuickCreateComponent implements OnChanges {
     });
   }
 
+  protected addPendingLink(): void {
+    const url = this.newLinkUrl.trim();
+    if (!url) return;
+    this.pendingLinks = [...this.pendingLinks, { url, title: this.newLinkTitle.trim() || undefined }];
+    this.newLinkUrl = '';
+    this.newLinkTitle = '';
+  }
+
+  protected removePendingLink(idx: number): void {
+    this.pendingLinks = this.pendingLinks.filter((_, i) => i !== idx);
+  }
+
+  protected onFilesSelected(event: Event): void {
+    const files = (event.target as HTMLInputElement).files;
+    if (files) {
+      this.pendingFiles = [...this.pendingFiles, ...Array.from(files)];
+    }
+    (event.target as HTMLInputElement).value = '';
+  }
+
+  protected removePendingFile(idx: number): void {
+    this.pendingFiles = this.pendingFiles.filter((_, i) => i !== idx);
+  }
+
   private resetForm(): void {
     this.title = '';
-    this.description = '';
+    this.description = null;
     this.selectedType.set('task');
     this.selectedPriority.set('none');
     this.selectedAssigneeIds = [];
@@ -435,5 +702,13 @@ export class QuickCreateComponent implements OnChanges {
     this.selectedParentId.set(null);
     this.parentSearch.set('');
     this.assigneeSearch.set('');
+    this.pendingFiles = [];
+    this.pendingLinks = [];
+    this.newLinkUrl = '';
+    this.newLinkTitle = '';
+    this.subItemsTree.set([]);
+    this.subItemsTotalCount.set(0);
+    this.subItemsDoneCount.set(0);
+    this.selectedModuleIds = [];
   }
 }

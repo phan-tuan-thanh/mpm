@@ -38,20 +38,10 @@ import { SubItemQuickToolbarComponent } from '../sub-item-quick-toolbar/sub-item
     SubItemQuickToolbarComponent,
   ],
   template: `
-    <!-- ═══ Section Header ═══ -->
-    <div class="flex items-center gap-2 mb-3">
+    <div class="flex items-center gap-2.5 mb-3">
       <h3 class="text-sm font-semibold text-gray-700 dark:text-surface-200">Sub-items</h3>
 
-      <!-- Count badge -->
-      <span
-        class="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5
-               text-[11px] font-medium rounded-full
-               bg-gray-100 dark:bg-surface-700 text-gray-600 dark:text-surface-300"
-      >
-        {{ totalCount }}
-      </span>
-
-      <!-- Circular progress ring -->
+      <!-- Circular progress ring (contains done/total count inside) -->
       @if (totalCount > 0) {
         <app-sub-item-progress
           [done]="doneCount"

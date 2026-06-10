@@ -10,13 +10,15 @@ import { ToastModule } from 'primeng/toast';
 import { TaskStore } from '../../state/task.store';
 import { ProjectStore } from '../../../projects/state/project.store';
 import { LayoutService } from '../../../layout/services/layout.service';
+import { AttachmentService } from '../../services/attachment.service';
+import { LinkService } from '../../services/link.service';
 import { BacklogToolbarComponent, BacklogFilter } from './backlog-toolbar/backlog-toolbar.component';
 import { TaskListComponent } from './task-list/task-list.component';
 import { BoardComponent } from './board/board.component';
 import { QuickCreateComponent } from './quick-create/quick-create.component';
 import { TaskDetailPanelComponent } from '../../components/task-detail-panel/task-detail-panel.component';
 import { LabelManagerComponent } from '../../components/label-manager/label-manager.component';
-import type { TaskListItem, CreateTaskDto, ReorderTaskItem, DisplayProperties } from '@mpm/shared-types';
+import type { TaskListItem, CreateTaskDto, ReorderTaskItem, DisplayProperties, Task } from '@mpm/shared-types';
 import { DEFAULT_DISPLAY_PROPS } from '@mpm/shared-types';
 import { Subject, takeUntil, filter, distinctUntilChanged } from 'rxjs';
 import { toObservable } from '@angular/core/rxjs-interop';
@@ -64,11 +66,13 @@ import { toObservable } from '@angular/core/rxjs-interop';
       <!-- Task list / Board (relative container for full-page overlay) -->
       <div class="flex-1 overflow-hidden relative">
         @if (showQuickCreate() && displayProps().taskCreationViewMode === 'full-page') {
-          <div class="h-full p-6 bg-gray-50 dark:bg-surface-950 flex justify-center items-start overflow-y-auto">
+          <div class="absolute inset-0 z-10">
             <app-quick-create
+              class="h-full w-full block"
               [visible]="showQuickCreate()"
               [stateId]="quickCreateStateId()"
               [viewMode]="'full-page'"
+              [draftTask]="currentDraftTask() || undefined"
               (create)="onQuickCreate($event)"
               (cancel)="closeQuickCreate()"
               (viewModeChange)="onCreationViewModeChange($event)"
@@ -113,6 +117,7 @@ import { toObservable } from '@angular/core/rxjs-interop';
           [visible]="showQuickCreate()"
           [stateId]="quickCreateStateId()"
           [viewMode]="displayProps().taskCreationViewMode || 'popup'"
+          [draftTask]="currentDraftTask() || undefined"
           (create)="onQuickCreate($event)"
           (cancel)="closeQuickCreate()"
           (viewModeChange)="onCreationViewModeChange($event)"
@@ -131,6 +136,8 @@ export class BacklogComponent implements OnInit, OnDestroy {
   readonly taskStore = inject(TaskStore);
   private readonly projectStore = inject(ProjectStore);
   private readonly layoutService = inject(LayoutService);
+  private readonly attachmentService = inject(AttachmentService);
+  private readonly linkService = inject(LinkService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly confirmService = inject(ConfirmationService);
@@ -141,6 +148,7 @@ export class BacklogComponent implements OnInit, OnDestroy {
   protected selectedOrderBy = 'rank';
   protected showQuickCreate = signal(false);
   protected quickCreateStateId = signal<string | undefined>(undefined);
+  protected currentDraftTask = signal<Task | null>(null);
   protected projectId = '';
   protected workspaceId = '';
   protected currentTaskId = signal<string | null>(null);
@@ -185,6 +193,11 @@ export class BacklogComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.layoutService.fullBleed.set(false);
+    // Nếu vẫn còn task nháp chưa lưu thì dọn dẹp
+    const draft = this.currentDraftTask();
+    if (draft && this.projectId) {
+      this.taskStore.deleteTask(this.projectId, draft.id);
+    }
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -198,12 +211,28 @@ export class BacklogComponent implements OnInit, OnDestroy {
     });
   }
 
-  protected openQuickCreate(stateId?: string): void {
+  protected async openQuickCreate(stateId?: string): Promise<void> {
     this.quickCreateStateId.set(stateId);
-    this.showQuickCreate.set(true);
+    // Tạo task nháp trước trên server để có ID quản lý attachments và sub-items
+    const draft = await this.taskStore.createTask(this.projectId, {
+      title: 'Task nháp',
+      isDraft: true,
+      stateId,
+    });
+    if (draft) {
+      this.currentDraftTask.set(draft);
+      this.showQuickCreate.set(true);
+    } else {
+      this.messageService.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể khởi tạo task nháp' });
+    }
   }
 
   protected closeQuickCreate(): void {
+    const draft = this.currentDraftTask();
+    if (draft) {
+      this.taskStore.deleteTask(this.projectId, draft.id);
+      this.currentDraftTask.set(null);
+    }
     this.showQuickCreate.set(false);
     this.quickCreateStateId.set(undefined);
   }
@@ -241,15 +270,38 @@ export class BacklogComponent implements OnInit, OnDestroy {
     this.taskStore.moveToState(this.projectId, event.taskId, event.stateId, event.backlogOrder);
   }
 
-  protected async onQuickCreate(dto: CreateTaskDto): Promise<void> {
+  protected async onQuickCreate(event: {
+    dto: CreateTaskDto;
+    files: File[];
+    links: { url: string; title?: string }[];
+    createMore: boolean;
+  }): Promise<void> {
     if (!this.projectId) return;
-    const result = await this.taskStore.createTask(this.projectId, dto);
-    if (result) {
-      this.messageService.add({ severity: 'success', summary: 'Thành công', detail: 'Đã tạo task mới' });
-      this.closeQuickCreate();
+    const draft = this.currentDraftTask();
+    if (!draft) return;
+
+    // Lưu chính thức bằng cách cập nhật các trường và set isDraft = false
+    this.taskStore.updateTask(this.projectId, draft.id, {
+      ...event.dto,
+      isDraft: false,
+    });
+
+    this.messageService.add({ severity: 'success', summary: 'Thành công', detail: 'Đã tạo task mới' });
+
+    if (event.createMore) {
+      // Nếu chọn "Tạo tiếp", ta tự động khởi tạo ngay một task nháp mới tiếp theo
+      const nextDraft = await this.taskStore.createTask(this.projectId, {
+        title: 'Task nháp',
+        isDraft: true,
+        stateId: this.quickCreateStateId(),
+      });
+      this.currentDraftTask.set(nextDraft);
     } else {
-      this.messageService.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tạo task. Vui lòng thử lại.' });
+      this.currentDraftTask.set(null);
+      this.showQuickCreate.set(false);
+      this.quickCreateStateId.set(undefined);
     }
+
     this.taskStore.loadBacklog(this.projectId);
   }
 

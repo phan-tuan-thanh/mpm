@@ -13,6 +13,8 @@ import {
   Output,
   EventEmitter,
   Injector,
+  ViewChild,
+  ElementRef,
 } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
@@ -23,6 +25,9 @@ import { ButtonModule } from 'primeng/button';
 import { ToastModule } from 'primeng/toast';
 import { DialogModule } from 'primeng/dialog';
 import { TooltipModule } from 'primeng/tooltip';
+import { PopoverModule } from 'primeng/popover';
+import { DatePickerModule } from 'primeng/datepicker';
+import { InputNumberModule } from 'primeng/inputnumber';
 import { MessageService } from 'primeng/api';
 
 import { TaskStore } from '../../state/task.store';
@@ -66,16 +71,103 @@ import { RichTextEditorComponent } from '../../../shared/components/rich-text-ed
     ButtonModule,
     ToastModule,
     TooltipModule,
+    PopoverModule,
+    DatePickerModule,
+    InputNumberModule,
     TaskHeaderComponent,
     TaskTitleInlineComponent,
     SubItemsSectionComponent,
     ActivityPanelComponent,
-    PropertiesSidebarComponent,
     TaskAttachmentsComponent,
     TaskLinksComponent,
     RichTextEditorComponent,
   ],
   providers: [MessageService, TaskDetailStateService],
+  styles: [`
+    /* ── Pill buttons ── */
+    .meta-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+      border: 1px solid var(--surface-200, #e5e7eb);
+      border-radius: 6px;
+      padding: 4px 9px;
+      cursor: pointer;
+      user-select: none;
+      background: transparent;
+      color: var(--text-color-secondary, #6b7280);
+      transition: background 0.12s, border-color 0.12s, color 0.12s;
+      white-space: nowrap;
+    }
+    .meta-pill:hover {
+      background: var(--surface-50, #f9fafb);
+      border-color: var(--surface-300, #d1d5db);
+      color: var(--text-color, #374151);
+    }
+    .meta-pill.active {
+      background: var(--surface-50, #f9fafb);
+      border-color: var(--surface-300, #d1d5db);
+      color: var(--text-color, #374151);
+    }
+    :host-context(.dark) .meta-pill {
+      border-color: var(--surface-700, #334155);
+    }
+    :host-context(.dark) .meta-pill:hover,
+    :host-context(.dark) .meta-pill.active {
+      background: var(--surface-800, #1e293b);
+      border-color: var(--surface-600, #475569);
+      color: var(--text-color, #f3f4f6);
+    }
+
+    /* ── Assignee avatar ── */
+    .avatar-xs {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #6366f1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      color: #fff;
+      font-weight: 700;
+      flex-shrink: 0;
+      border: 1.5px solid var(--surface-0, #fff);
+    }
+
+    /* ── Popover items ── */
+    .pop-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      padding: 7px 12px;
+      border: none;
+      background: transparent;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      color: var(--text-color);
+      transition: background 0.12s;
+      text-align: left;
+    }
+    .pop-item:hover { background: var(--surface-50, #f9fafb); }
+    .pop-item.selected { background: #eef2ff; color: #4f46e5; }
+    :host-context(.dark) .pop-item:hover { background: var(--surface-800, #1e293b); }
+    :host-context(.dark) .pop-item.selected { background: rgba(99, 102, 241, 0.2); color: #a5b4fc; }
+
+    /* ── Metadata separator ── */
+    .meta-divider {
+      width: 1px;
+      height: 14px;
+      background: var(--surface-200, #e5e7eb);
+      flex-shrink: 0;
+    }
+    :host-context(.dark) .meta-divider {
+      background: var(--surface-700, #334155);
+    }
+  `],
   template: `
     <!-- Always rendered — avoids abrupt @if teardown that calls disableModality()→detectChanges() during ngOnDestroy -->
     <p-dialog
@@ -113,7 +205,9 @@ import { RichTextEditorComponent } from '../../../shared/components/rich-text-ed
 
     @if (viewMode === 'full-page' && isVisible()) {
       <div class="absolute inset-0 z-10 bg-white dark:bg-surface-900 overflow-hidden flex flex-col border border-gray-100 dark:border-surface-700 rounded-xl shadow-sm">
-        <ng-container *ngTemplateOutlet="detailTpl"></ng-container>
+        <div class="w-full h-full flex flex-col">
+          <ng-container *ngTemplateOutlet="detailTpl"></ng-container>
+        </div>
       </div>
     }
 
@@ -132,16 +226,6 @@ import { RichTextEditorComponent } from '../../../shared/components/rich-text-ed
 
           <!-- Header Controls -->
           <div class="flex items-center gap-2 flex-shrink-0">
-            <!-- Sidebar Toggle (Req 8.4, 8.6: Only visible in full-page mode) -->
-            @if (viewMode === 'full-page') {
-              <button pButton icon="pi pi-bars" class="p-button-rounded p-button-text p-button-sm"
-                [severity]="stateService.sidebarExpanded() ? 'primary' : 'secondary'"
-                pTooltip="Bật/Tắt thuộc tính sidebar"
-                aria-label="Toggle sidebar"
-                (click)="toggleSidebar()"></button>
-              <div class="w-px h-4 bg-gray-200 dark:bg-surface-600 mx-1"></div>
-            }
-
             <!-- View Mode Controls -->
             <button pButton icon="pi pi-align-right" class="p-button-rounded p-button-text p-button-sm"
               [severity]="viewMode === 'right-pane' ? 'primary' : 'secondary'"
@@ -165,210 +249,403 @@ import { RichTextEditorComponent } from '../../../shared/components/rich-text-ed
 
         <!-- ══ Body ══ -->
         @if (task()) {
-          <!-- ─── Single Column Layout (Drawer / Popup) — Req 8.2, 8.3 ─── -->
-          @if (viewMode !== 'full-page') {
-            <!-- Single scrollable column — title + all content + activity in one scroll -->
-            <div class="flex-1 overflow-y-auto min-h-0">
-              <!-- Title -->
-              <div class="px-4 py-3 border-b border-gray-100 dark:border-surface-700">
-                <app-task-title-inline
-                  [title]="task()!.title"
-                  [viewMode]="viewMode === 'right-pane' ? 'drawer' : 'popup'"
-                  (titleSaved)="onTitleSaved($event)"
-                />
-              </div>
-
-              <!-- Description -->
-              <div class="px-4 pt-4 pb-3 border-b border-gray-100 dark:border-surface-700">
-                <label class="text-xs font-semibold text-gray-400 dark:text-surface-500 uppercase tracking-wide mb-2 block">Mô tả</label>
-                @if (showRte()) {
-                  <app-rich-text-editor
-                    [ngModel]="task()?.description"
-                    (ngModelChange)="onDescriptionChange($event)"
-                    placeholder="Thêm mô tả..."
-                    (blurEditor)="saveDescription()"
-                  />
-                } @else {
-                  <div class="min-h-[4rem] rounded-lg border border-gray-200 dark:border-surface-700 bg-gray-50 dark:bg-surface-800"></div>
-                }
-              </div>
-
-              <!-- Attachments & Links -->
-              <div class="px-4 py-3 border-b border-gray-100 dark:border-surface-700 flex flex-col gap-3">
-                <app-task-attachments
-                  [projectId]="projectId()"
-                  [taskId]="task()!.id"
-                  [attachments]="task()!.attachments ?? []"
-                  (upload)="onFileUpload($event)"
-                  (delete)="deleteAttachment($event)"
-                  (deleteGroup)="deleteAttachmentGroup($event)"
-                  (batchUpdate)="onBatchUpdateAttachments($event)"
-                />
-                <app-task-links
-                  [links]="task()!.links ?? []"
-                  (add)="addLink($event)"
-                  (delete)="deleteLink($event)"
-                />
-              </div>
-
-              <!-- Sub-Items -->
-              <div class="px-4 py-3 border-b border-gray-100 dark:border-surface-700">
-                <app-sub-items-section
-                  [items]="stateService.subItemsTree()"
-                  [totalCount]="stateService.subItemsTotalCount()"
-                  [doneCount]="stateService.subItemsDoneCount()"
-                  [members]="memberOptions()"
-                  [projectId]="projectId()"
-                  [taskId]="task()!.id"
-                  (createSubItem)="onCreateSubItem($event)"
-                  (subItemClicked)="openChildTask($event)"
-                  (saveRequested)="onSubItemSaveRequested($event)"
-                />
-              </div>
-
-              <!-- Activity + Properties tab (compact, no internal scroll — parent div scrolls) -->
-              <div class="px-4 pt-3 pb-6">
-                <app-activity-panel
-                  [entries]="stateService.activityEntries()"
-                  [loading]="stateService.activityLoading()"
-                  [hasMore]="stateService.activityHasMore()"
-                  [activeFilter]="activeActivityTab()"
-                  [viewMode]="viewMode === 'right-pane' ? 'drawer' : 'popup'"
-                  [showPropertiesTab]="true"
-                  [compact]="true"
-                  (filterChanged)="onActivityFilterChanged($event)"
-                  (loadMore)="onActivityLoadMore()"
-                >
-                  <div activityPanelProperties>
-                    <app-properties-sidebar
-                      [task]="task()"
-                      [states]="stateOptions()"
-                      [members]="memberOptions()"
-                      [labels]="labelOptions()"
-                      [modules]="moduleOptions()"
-                      [availableParentTasks]="taskStore.tasks()"
-                      [collapseState]="stateService.sectionCollapseState()"
-                      (propertyChanged)="onPropertyChanged($event)"
-                      (parentChanged)="onParentChanged($event)"
-                      (parentClicked)="openChildTask($event)"
-                      (sectionToggled)="onSectionToggled($event)"
-                    />
-                  </div>
-                </app-activity-panel>
-              </div>
+          <!-- Single scrollable column — title + all content + activity in one scroll -->
+          <div class="flex-1 overflow-y-auto min-h-0">
+            <!-- Title -->
+            <div class="px-4 py-3 border-b border-gray-100 dark:border-surface-700">
+              <app-task-title-inline
+                [title]="task()!.title"
+                [viewMode]="viewMode === 'right-pane' ? 'drawer' : viewMode === 'full-page' ? 'full-page' : 'popup'"
+                (titleSaved)="onTitleSaved($event)"
+              />
             </div>
-          } @else {
-            <!-- ─── Two Column Layout (Full Page) — Req 8.1 ─── -->
-            <div class="flex-1 flex overflow-hidden">
-              <!-- Left Column: Main Content (fills remaining width) -->
-              <div class="flex-1 overflow-y-auto px-8 py-6 flex flex-col gap-6 min-w-0">
-                <!-- Title -->
-                <app-task-title-inline
-                  [title]="task()!.title"
-                  viewMode="full-page"
-                  (titleSaved)="onTitleSaved($event)"
-                />
 
-                <!-- Description — showRte deferred via setTimeout so Tiptap init doesn't block the mode-switch CD cycle -->
-                <div>
-                  <label class="text-xs font-semibold text-gray-400 dark:text-surface-500 uppercase tracking-wide mb-2 block">Mô tả</label>
-                  @if (showRte()) {
-                    <app-rich-text-editor
-                      [ngModel]="task()?.description"
-                      (ngModelChange)="onDescriptionChange($event)"
-                      placeholder="Thêm mô tả..."
-                      (blurEditor)="saveDescription()"
-                    ></app-rich-text-editor>
+            <!-- Metadata row (unified two-row layout!) -->
+            <div style="display: flex; flex-direction: column; gap: 8px; padding: 10px 16px; border-bottom: 1px solid var(--surface-100, #f3f4f6)" class="dark:border-surface-700/50 bg-gray-50/20 dark:bg-surface-800/10">
+              <!-- Row 1: Core properties -->
+              <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap">
+                <!-- State -->
+                <button class="meta-pill" [class.active]="false" (click)="statePopover.toggle($event)">
+                  <span style="width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; display: inline-block"
+                    [style.background]="selectedStateColor()"></span>
+                  <span>{{ selectedStateName() }}</span>
+                </button>
+
+                <div class="meta-divider"></div>
+
+                <!-- Priority -->
+                <button class="meta-pill" [class.active]="false" (click)="priorityPopover.toggle($event)">
+                  <i [class]="selectedPriorityConfig().icon" [style.color]="selectedPriorityConfig().color" style="font-size: 11px"></i>
+                  <span>{{ selectedPriorityConfig().label }}</span>
+                </button>
+
+                <div class="meta-divider"></div>
+
+                <!-- Assignees -->
+                <button class="meta-pill" [class.active]="selectedAssigneeIds().length > 0" (click)="assigneePopover.toggle($event)">
+                  @if (selectedAssigneeIds().length) {
+                    <div style="display: flex; align-items: center; gap: -2px">
+                      @for (id of selectedAssigneeIds().slice(0, 3); track id) {
+                        <div class="avatar-xs" style="margin-right: -4px">{{ getMemberInitial(id) }}</div>
+                      }
+                    </div>
+                    <span style="margin-left: 6px">
+                      {{ selectedAssigneeIds().length === 1 ? getMemberName(selectedAssigneeIds()[0]) : selectedAssigneeIds().length + ' người' }}
+                    </span>
                   } @else {
-                    <div class="min-h-[5rem] rounded-lg border border-gray-200 dark:border-surface-700 bg-gray-50 dark:bg-surface-800"></div>
+                    <i class="pi pi-user" style="font-size: 11px"></i>
+                    <span>Assignees</span>
                   }
-                </div>
-
-                <!-- Attachments & Links -->
-                <div class="border-t border-gray-100 dark:border-surface-800 pt-4 flex flex-col gap-4">
-                  <app-task-attachments
-                    [projectId]="projectId()"
-                    [taskId]="task()!.id"
-                    [attachments]="task()!.attachments ?? []"
-                    (upload)="onFileUpload($event)"
-                    (delete)="deleteAttachment($event)"
-                    (deleteGroup)="deleteAttachmentGroup($event)"
-                    (batchUpdate)="onBatchUpdateAttachments($event)"
-                  />
-                  <app-task-links
-                    [links]="task()!.links ?? []"
-                    (add)="addLink($event)"
-                    (delete)="deleteLink($event)"
-                  />
-                </div>
-
-                <!-- Sub-Items Section -->
-                <div class="border-t border-gray-100 dark:border-surface-800 pt-6">
-                  <app-sub-items-section
-                    [items]="stateService.subItemsTree()"
-                    [totalCount]="stateService.subItemsTotalCount()"
-                    [doneCount]="stateService.subItemsDoneCount()"
-                    [members]="memberOptions()"
-                    [projectId]="projectId()"
-                    [taskId]="task()!.id"
-                    (createSubItem)="onCreateSubItem($event)"
-                    (subItemClicked)="openChildTask($event)"
-                    (saveRequested)="onSubItemSaveRequested($event)"
-                  />
-                </div>
-
-                <!-- Activity Panel (no Properties tab in full-page mode) -->
-                <div class="border-t border-gray-100 dark:border-surface-800 pt-6">
-                  <app-activity-panel
-                    [entries]="stateService.activityEntries()"
-                    [loading]="stateService.activityLoading()"
-                    [hasMore]="stateService.activityHasMore()"
-                    [activeFilter]="activeActivityTab()"
-                    viewMode="full-page"
-                    [showPropertiesTab]="false"
-                    [compact]="false"
-                    (filterChanged)="onActivityFilterChanged($event)"
-                    (loadMore)="onActivityLoadMore()"
-                  />
-                </div>
+                </button>
               </div>
 
-              <!-- Right Column: Properties Sidebar (Req 8.1, 8.4, 8.5) -->
-              <div
-                class="border-l border-gray-100 dark:border-surface-700 bg-gray-50/30 dark:bg-surface-900/30 flex-shrink-0 relative overflow-hidden"
-                [style.width]="stateService.sidebarExpanded() ? sidebarWidth() + 'px' : '0px'"
-                [style.opacity]="stateService.sidebarExpanded() ? '1' : '0'"
-                [style.transition]="isResizing() ? 'opacity 200ms' : 'opacity 200ms, width 200ms ease-in-out'"
-              >
-                <!-- Drag-resize handle on the left edge -->
-                @if (stateService.sidebarExpanded()) {
-                  <div
-                    class="absolute left-0 top-0 bottom-0 w-1 z-10 cursor-col-resize select-none hover:bg-indigo-400/50 active:bg-indigo-500/60 transition-colors"
-                    (mousedown)="onResizeStart($event)"
-                  ></div>
-                }
-                <!-- Scrollable content -->
-                <div class="h-full overflow-y-auto">
-                  <div class="p-5 w-full box-border" [style.min-width]="sidebarWidth() + 'px'">
-                    <app-properties-sidebar
-                      [task]="task()"
-                      [states]="stateOptions()"
-                      [members]="memberOptions()"
-                      [labels]="labelOptions()"
-                      [modules]="moduleOptions()"
-                      [availableParentTasks]="taskStore.tasks()"
-                      [collapseState]="stateService.sectionCollapseState()"
-                      (propertyChanged)="onPropertyChanged($event)"
-                      (parentChanged)="onParentChanged($event)"
-                      (parentClicked)="openChildTask($event)"
-                      (sectionToggled)="onSectionToggled($event)"
-                    />
-                  </div>
-                </div>
+              <!-- Row 2: Supporting properties -->
+              <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap">
+                <!-- Labels -->
+                <button class="meta-pill" [class.active]="selectedLabelIds().length > 0" (click)="labelPopover.toggle($event)">
+                  <i class="pi pi-tag" style="font-size: 11px"></i>
+                  @if (selectedLabelIds().length) {
+                    <div class="flex items-center gap-1">
+                      @for (id of selectedLabelIds().slice(0, 2); track id) {
+                        @if (isScoped(getLabelName(id))) {
+                          <span class="inline-flex items-center text-[10px] rounded-full overflow-hidden border border-gray-200 dark:border-surface-700 bg-white dark:bg-surface-800 font-medium">
+                            <span class="px-1.5 py-px text-white" 
+                                  [style.background]="layoutService.getAdaptiveColor(getScopeColor(getLabelName(id), getLabelColor(id)))" 
+                                  [style.color]="layoutService.getTextColor(layoutService.getAdaptiveColor(getScopeColor(getLabelName(id), getLabelColor(id))))">{{ getScope(getLabelName(id)) }}</span>
+                            <span class="px-1.5 py-px" 
+                                  [style.background]="layoutService.getAdaptiveColor(getLabelColor(id)) + '18'" 
+                                  [style.color]="layoutService.getAdaptiveColor(getLabelColor(id))">{{ getValue(getLabelName(id)) }}</span>
+                          </span>
+                        } @else {
+                          <span class="text-[10px] px-1 py-px rounded-full font-medium bg-white dark:bg-surface-800 border"
+                                [style.border-color]="layoutService.getAdaptiveColor(getLabelColor(id))"
+                                [style.color]="layoutService.getAdaptiveColor(getLabelColor(id))"
+                                [pTooltip]="getLabelDescription(id) ? getLabelName(id) + ': ' + getLabelDescription(id) : getLabelName(id)">
+                            {{ getLabelName(id) }}
+                          </span>
+                        }
+                      }
+                      @if (selectedLabelIds().length > 2) {
+                        <span class="text-[10px] font-medium text-gray-400">+{{ selectedLabelIds().length - 2 }}</span>
+                      }
+                    </div>
+                  } @else {
+                    <span>Labels</span>
+                  }
+                </button>
+
+                <div class="meta-divider"></div>
+
+                <!-- Parent Task -->
+                <button class="meta-pill" [class.active]="(task()?.parentId) !== null" (click)="parentPopover.toggle($event)">
+                  <i class="pi pi-sitemap" style="font-size: 11px" [style.color]="(task()?.parentId) !== null ? '#6366f1' : undefined"></i>
+                  <span [style.color]="(task()?.parentId) !== null ? '#6366f1' : undefined">{{ selectedParentTitle() }}</span>
+                </button>
+
+                <!-- Start date -->
+                <button class="meta-pill" [class.active]="!!(task()?.startDate)" (click)="startDatePopover.toggle($event)">
+                  <i class="pi pi-calendar" style="font-size: 11px" [style.color]="(task()?.startDate) ? '#6366f1' : undefined"></i>
+                  <span [style.color]="(task()?.startDate) ? '#6366f1' : undefined">
+                    {{ (task()?.startDate) ? (task()?.startDate | date:'dd/MM/yy') : 'Bắt đầu' }}
+                  </span>
+                </button>
+
+                <!-- Due date -->
+                <button class="meta-pill" [class.active]="!!(task()?.dueDate)" (click)="dueDatePopover.toggle($event)">
+                  <i class="pi pi-calendar" style="font-size: 11px"
+                    [style.color]="isOverdue() ? '#ef4444' : (task()?.dueDate) ? '#6366f1' : undefined"></i>
+                  <span [style.color]="isOverdue() ? '#ef4444' : (task()?.dueDate) ? '#6366f1' : undefined">
+                    {{ (task()?.dueDate) ? (task()?.dueDate | date:'dd/MM/yy') : 'Hết hạn' }}
+                  </span>
+                </button>
+
+                <!-- Estimate -->
+                <button class="meta-pill" [class.active]="(task()?.estimateValue) !== null" (click)="estimatePopover.toggle($event)">
+                  <i class="pi pi-stopwatch" style="font-size: 11px" [style.color]="(task()?.estimateValue) !== null ? '#6366f1' : undefined"></i>
+                  <span [style.color]="(task()?.estimateValue) !== null ? '#6366f1' : undefined">
+                    {{ (task()?.estimateValue) !== null ? (task()?.estimateValue) + ' pts' : 'Estimate' }}
+                  </span>
+                </button>
+
+                <div class="meta-divider"></div>
+
+                <!-- Modules -->
+                <button class="meta-pill" [class.active]="selectedModuleIds().length > 0" (click)="modulePopover.toggle($event)">
+                  <i class="pi pi-box" style="font-size: 11px" [style.color]="selectedModuleIds().length > 0 ? '#6366f1' : undefined"></i>
+                  @if (selectedModuleIds().length) {
+                    <div class="flex items-center gap-1">
+                      @for (id of selectedModuleIds().slice(0, 2); track id) {
+                        <span class="text-[10px] px-1.5 py-px rounded-full font-medium bg-white dark:bg-surface-800 border border-gray-200 dark:border-surface-700"
+                              [style.color]="'#6366f1'">
+                          {{ moduleOptions().find(m => m.id === id)?.name || id }}
+                        </span>
+                      }
+                      @if (selectedModuleIds().length > 2) {
+                        <span class="text-[10px] font-medium text-gray-400">+{{ selectedModuleIds().length - 2 }}</span>
+                      }
+                    </div>
+                  } @else {
+                    <span>Modules</span>
+                  }
+                </button>
               </div>
             </div>
-          }
+
+            <!-- Description -->
+            <div class="px-4 pt-4 pb-3 border-b border-gray-100 dark:border-surface-700">
+              <label class="text-xs font-semibold text-gray-400 dark:text-surface-500 uppercase tracking-wide mb-2 block">Mô tả</label>
+              @if (showRte()) {
+                <app-rich-text-editor
+                  [ngModel]="task()?.description"
+                  (ngModelChange)="onDescriptionChange($event)"
+                  placeholder="Thêm mô tả..."
+                  (blurEditor)="saveDescription()"
+                />
+              } @else {
+                <div class="min-h-[4rem] rounded-lg border border-gray-200 dark:border-surface-700 bg-gray-50 dark:bg-surface-800"></div>
+              }
+            </div>
+
+            <!-- Attachments & Links -->
+            <div class="px-4 py-3 border-b border-gray-100 dark:border-surface-700 flex flex-col gap-3">
+              <app-task-attachments
+                [projectId]="projectId()"
+                [taskId]="task()!.id"
+                [attachments]="task()!.attachments ?? []"
+                (upload)="onFileUpload($event)"
+                (delete)="deleteAttachment($event)"
+                (deleteGroup)="deleteAttachmentGroup($event)"
+                (batchUpdate)="onBatchUpdateAttachments($event)"
+              />
+              <app-task-links
+                [links]="task()!.links ?? []"
+                (add)="addLink($event)"
+                (delete)="deleteLink($event)"
+              />
+            </div>
+
+            <!-- Sub-Items -->
+            <div class="px-4 py-3 border-b border-gray-100 dark:border-surface-700">
+              <app-sub-items-section
+                [items]="stateService.subItemsTree()"
+                [totalCount]="stateService.subItemsTotalCount()"
+                [doneCount]="stateService.subItemsDoneCount()"
+                [members]="memberOptions()"
+                [projectId]="projectId()"
+                [taskId]="task()!.id"
+                (createSubItem)="onCreateSubItem($event)"
+                (subItemClicked)="openChildTask($event)"
+                (saveRequested)="onSubItemSaveRequested($event)"
+              />
+            </div>
+
+            <!-- Activity + Properties tab (compact, no internal scroll — parent div scrolls) -->
+            <div class="px-4 pt-3 pb-6">
+              <app-activity-panel
+                [entries]="stateService.activityEntries()"
+                [loading]="stateService.activityLoading()"
+                [hasMore]="stateService.activityHasMore()"
+                [activeFilter]="activeActivityTab()"
+                [viewMode]="viewMode === 'right-pane' ? 'drawer' : viewMode === 'full-page' ? 'full-page' : 'popup'"
+                [showPropertiesTab]="false"
+                [compact]="true"
+                (filterChanged)="onActivityFilterChanged($event)"
+                (loadMore)="onActivityLoadMore()"
+              />
+            </div>
+          </div>
         }
+        <!-- Popovers (unified with quick-create style!) -->
+
+        <!-- State Popover -->
+        <p-popover #statePopover>
+          <div style="min-width: 140px; padding: 2px; display: flex; flex-direction: column; gap: 2px">
+            @for (s of stateOptions(); track s.id) {
+              <button class="pop-item" [class.selected]="task()?.stateId === s.id"
+                style="padding: 5px 10px; font-size: 12px; border-radius: 4px"
+                (click)="selectState(s.id); statePopover.hide()">
+                <span style="width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0"
+                  [style.background]="s.color"></span>
+                <span style="flex: 1; text-align: left; font-size: 12px">{{ s.name }}</span>
+                @if (task()?.stateId === s.id) {
+                  <i class="pi pi-check" style="font-size: 10px; color: #6366f1; flex-shrink: 0"></i>
+                }
+              </button>
+            }
+          </div>
+        </p-popover>
+
+        <!-- Priority Popover -->
+        <p-popover #priorityPopover>
+          <div style="min-width: 120px; padding: 2px; display: flex; flex-direction: column; gap: 2px">
+            @for (p of PRIORITY_OPTIONS; track p.value) {
+              <button class="pop-item" [class.selected]="(task()?.priority ?? 'none') === p.value"
+                style="padding: 5px 10px; font-size: 12px; border-radius: 4px"
+                (click)="selectPriority(p.value); priorityPopover.hide()">
+                <i [class]="p.icon" [style.color]="p.color" style="font-size: 11px"></i>
+                <span style="flex: 1; text-align: left; font-size: 12px">{{ p.label }}</span>
+                @if ((task()?.priority ?? 'none') === p.value) {
+                  <i class="pi pi-check" style="font-size: 10px; color: #6366f1; flex-shrink: 0"></i>
+                }
+              </button>
+            }
+          </div>
+        </p-popover>
+
+        <!-- Assignees Popover -->
+        <p-popover #assigneePopover (onShow)="focusAssigneeSearch()">
+          <div style="width: 220px; padding: 4px; display: flex; flex-direction: column; gap: 4px">
+            <input #assigneeSearchInput type="text" pInputText placeholder="Tìm thành viên..."
+              style="padding: 4px 8px; font-size: 11px; width: 100%"
+              [ngModel]="assigneeSearch()" (ngModelChange)="assigneeSearch.set($event)" />
+            <div style="max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 1px">
+              @if (!filteredMembers().length) {
+                <p style="padding: 6px; font-size: 11px; color: var(--text-color-secondary); text-align: center">
+                  Không tìm thấy thành viên
+                </p>
+              }
+              @for (m of filteredMembers(); track m.userId) {
+                <button class="pop-item" [class.selected]="selectedAssigneeIds().includes(m.userId)"
+                  style="padding: 5px 10px; font-size: 12px; border-radius: 4px"
+                  (click)="toggleAssignee(m.userId)">
+                  <div class="avatar-xs">{{ getMemberInitial(m.userId) }}</div>
+                  <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px">{{ m.displayName }}</span>
+                  @if (selectedAssigneeIds().includes(m.userId)) {
+                    <i class="pi pi-check" style="font-size: 10px; color: #6366f1; flex-shrink: 0"></i>
+                  }
+                </button>
+              }
+            </div>
+          </div>
+        </p-popover>
+
+        <!-- Labels Popover -->
+        <p-popover #labelPopover (onShow)="focusLabelSearch()">
+          <div style="width: 240px; padding: 4px; display: flex; flex-direction: column; gap: 4px">
+            <input #labelSearchInput type="text" pInputText placeholder="Tìm nhãn..."
+              style="padding: 4px 8px; font-size: 11px; width: 100%"
+              [ngModel]="labelSearch()" (ngModelChange)="labelSearch.set($event)" />
+            <div style="max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 1px">
+              @if (!filteredLabels().length) {
+                <p style="padding: 6px; font-size: 11px; color: var(--text-color-secondary); text-align: center">
+                  Không tìm thấy nhãn
+                </p>
+              }
+              @for (l of filteredLabels(); track l.id) {
+                <button class="pop-item" [class.selected]="selectedLabelIds().includes(l.id)"
+                  style="padding: 5px 10px; font-size: 12px; border-radius: 4px"
+                  (click)="toggleLabel(l.id)">
+                  <span style="width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0"
+                    [style.background]="l.color"></span>
+                  <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px">{{ l.name }}</span>
+                  @if (selectedLabelIds().includes(l.id)) {
+                    <i class="pi pi-check" style="font-size: 10px; color: #6366f1; flex-shrink: 0"></i>
+                  }
+                </button>
+              }
+            </div>
+          </div>
+        </p-popover>
+
+        <!-- Parent Popover -->
+        <p-popover #parentPopover (onShow)="focusParentSearch()">
+          <div style="width: 260px; padding: 4px; display: flex; flex-direction: column; gap: 4px">
+            <input #parentSearchInput type="text" pInputText placeholder="Tìm parent task..."
+              style="padding: 4px 8px; font-size: 11px; width: 100%"
+              [ngModel]="parentSearch()" (ngModelChange)="parentSearch.set($event)" />
+            <div style="max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 1px">
+              <button class="pop-item" [class.selected]="task()?.parentId === null"
+                style="padding: 5px 10px; font-size: 12px; border-radius: 4px"
+                (click)="selectParent(null); parentPopover.hide()">
+                <i class="pi pi-times text-gray-400" style="font-size: 11px"></i>
+                <span style="flex: 1; font-size: 12px; color: var(--text-color-secondary)">Không có parent</span>
+                @if (task()?.parentId === null) {
+                  <i class="pi pi-check" style="font-size: 10px; color: #6366f1; flex-shrink: 0"></i>
+                }
+              </button>
+              @if (!filteredParents().length && parentSearch()) {
+                <p style="padding: 6px; font-size: 11px; color: var(--text-color-secondary); text-align: center">
+                  Không tìm thấy parent
+                </p>
+              }
+              @for (p of filteredParents(); track p.id) {
+                <button class="pop-item" [class.selected]="task()?.parentId === p.id"
+                  style="padding: 5px 10px; font-size: 12px; border-radius: 4px"
+                  (click)="selectParent(p.id); parentPopover.hide()">
+                  <i class="pi pi-sitemap text-gray-400" style="font-size: 11px"></i>
+                  <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px">
+                    {{ p.taskId }} {{ p.title }}
+                  </span>
+                  @if (task()?.parentId === p.id) {
+                    <i class="pi pi-check" style="font-size: 10px; color: #6366f1; flex-shrink: 0"></i>
+                  }
+                </button>
+              }
+            </div>
+          </div>
+        </p-popover>
+
+        <!-- Start Date Popover -->
+        <p-popover #startDatePopover>
+          <div style="padding: 8px; display: flex; flex-direction: column; gap: 6px">
+            <p-datepicker [ngModel]="startDateValue()" (ngModelChange)="onStartDateChange($event); startDatePopover.hide()"
+              [inline]="true" styleClass="border-0 text-xs" />
+            @if (task()?.startDate) {
+              <button pButton label="Xóa ngày" severity="secondary" size="small" [text]="true"
+                (click)="onStartDateChange(null); startDatePopover.hide()"></button>
+            }
+          </div>
+        </p-popover>
+
+        <!-- Due Date Popover -->
+        <p-popover #dueDatePopover>
+          <div style="padding: 8px; display: flex; flex-direction: column; gap: 6px">
+            <p-datepicker [ngModel]="dueDateValue()" (ngModelChange)="onDueDateChange($event); dueDatePopover.hide()"
+              [inline]="true" styleClass="border-0 text-xs" />
+            @if (task()?.dueDate) {
+              <button pButton label="Xóa ngày" severity="secondary" size="small" [text]="true"
+                (click)="onDueDateChange(null); dueDatePopover.hide()"></button>
+            }
+          </div>
+        </p-popover>
+
+        <!-- Estimate Popover -->
+        <p-popover #estimatePopover>
+          <div style="padding: 6px 8px; display: flex; align-items: center; gap: 6px; width: 160px">
+            <p-inputnumber [ngModel]="task()?.estimateValue" [min]="0" [maxFractionDigits]="1"
+              styleClass="w-full flex-1" inputStyleClass="w-full text-xs" placeholder="Story points" [autofocus]="true"
+              (ngModelChange)="onEstimateChange($event)"
+              (keydown.enter)="estimatePopover.hide()" />
+            @if (task()?.estimateValue !== null) {
+              <button pButton icon="pi pi-times" severity="secondary" [text]="true" size="small"
+                pTooltip="Xóa" (click)="onEstimateChange(null); estimatePopover.hide()" style="flex-shrink: 0; width: 24px; height: 24px; padding: 0"></button>
+            }
+          </div>
+        </p-popover>
+
+        <!-- Modules Popover -->
+        <p-popover #modulePopover>
+          <div style="min-width: 180px; max-width: 240px; padding: 2px; display: flex; flex-direction: column; gap: 2px">
+            <div style="max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 1px">
+              @if (!moduleOptions().length) {
+                <p style="padding: 6px; font-size: 11px; color: var(--text-color-secondary); text-align: center">
+                  Chưa có module
+                </p>
+              }
+              @for (m of moduleOptions(); track m.id) {
+                <button class="pop-item" [class.selected]="selectedModuleIds().includes(m.id)"
+                  style="padding: 5px 10px; font-size: 12px; border-radius: 4px"
+                  (click)="toggleModule(m.id)">
+                  <i class="pi pi-box text-gray-400" style="font-size: 11px"></i>
+                  <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px">{{ m.name }}</span>
+                  @if (selectedModuleIds().includes(m.id)) {
+                    <i class="pi pi-check" style="font-size: 10px; color: #6366f1; flex-shrink: 0"></i>
+                  }
+                </button>
+              }
+            </div>
+          </div>
+        </p-popover>
       </div>
     </ng-template>
     <p-toast />
@@ -428,6 +705,223 @@ export class TaskDetailPanelComponent implements OnInit, OnChanges, OnDestroy {
   protected readonly labelOptions = computed(() => this.taskStore.labels());
   protected readonly moduleOptions = computed(() => this.moduleStore.modules());
 
+  protected readonly selectedAssigneeIds = computed(() => {
+    return this.task()?.assignees?.map(a => (a as any).id || (a as any).userId).filter(Boolean) ?? [];
+  });
+
+  protected readonly selectedLabelIds = computed(() => {
+    return this.task()?.labels?.map(l => l.id) ?? [];
+  });
+
+  protected readonly selectedModuleIds = computed(() => {
+    return this.task()?.modules?.map(m => m.id) ?? [];
+  });
+
+  protected readonly startDateValue = computed(() => {
+    const d = this.task()?.startDate;
+    return d ? new Date(d) : null;
+  });
+
+  protected readonly dueDateValue = computed(() => {
+    const d = this.task()?.dueDate;
+    return d ? new Date(d) : null;
+  });
+
+  // ─── Metadata Row & Popovers Helpers ─────────────────────────────────────
+  protected readonly PRIORITY_OPTIONS = [
+    { label: 'Urgent', value: 'urgent', icon: 'pi pi-angle-double-up', color: '#EF4444' },
+    { label: 'High',   value: 'high',   icon: 'pi pi-angle-up',        color: '#F97316' },
+    { label: 'Medium', value: 'medium', icon: 'pi pi-minus',           color: '#EAB308' },
+    { label: 'Low',    value: 'low',    icon: 'pi pi-angle-down',      color: '#3B82F6' },
+    { label: 'None',   value: 'none',   icon: 'pi pi-circle',          color: '#9CA3AF' },
+  ];
+
+  protected readonly selectedStateName = computed(() => {
+    const t = this.task();
+    if (!t) return 'Trạng thái';
+    return this.stateOptions().find((s) => s.id === t.stateId)?.name ?? 'Trạng thái';
+  });
+
+  protected readonly selectedStateColor = computed(() => {
+    const t = this.task();
+    if (!t) return '#9CA3AF';
+    return this.stateOptions().find((s) => s.id === t.stateId)?.color ?? '#9CA3AF';
+  });
+
+  protected readonly selectedPriorityConfig = computed(() => {
+    const val = this.task()?.priority ?? 'none';
+    return this.PRIORITY_OPTIONS.find((p) => p.value === val) ?? this.PRIORITY_OPTIONS[4];
+  });
+
+  protected readonly selectedParentTitle = computed(() => {
+    const parentId = this.task()?.parentId;
+    if (!parentId) return 'Parent';
+    const match = this.taskStore.tasks().find((t) => t.id === parentId);
+    return match ? `${match.taskId} ${match.title}` : 'Parent';
+  });
+
+  protected isOverdue(): boolean {
+    const due = this.task()?.dueDate;
+    if (!due) return false;
+    return new Date(due).getTime() < new Date().setHours(0,0,0,0);
+  }
+
+  // --- Search signals & computeds ---
+  protected readonly assigneeSearch = signal('');
+  protected readonly filteredMembers = computed(() => {
+    const query = this.assigneeSearch().trim().toLowerCase();
+    const list = this.memberOptions();
+    if (!query) return list;
+    return list.filter(m => m.displayName.toLowerCase().includes(query));
+  });
+
+  protected readonly parentSearch = signal('');
+  protected readonly parentOptions = computed(() =>
+    this.taskStore.tasks().filter((t) => !t.parentId && t.id !== this.task()?.id)
+  );
+  protected readonly filteredParents = computed(() => {
+    const query = this.parentSearch().trim().toLowerCase();
+    const list = this.parentOptions();
+    if (!query) return list;
+    return list.filter(t => t.taskId.toLowerCase().includes(query) || t.title.toLowerCase().includes(query));
+  });
+
+  protected readonly labelSearch = signal('');
+  protected readonly filteredLabels = computed(() => {
+    const query = this.labelSearch().trim().toLowerCase();
+    const list = this.labelOptions();
+    if (!query) return list;
+    return list.filter(l => l.name.toLowerCase().includes(query));
+  });
+
+  @ViewChild('assigneeSearchInput') assigneeSearchInput?: ElementRef<HTMLInputElement>;
+  @ViewChild('labelSearchInput') labelSearchInput?: ElementRef<HTMLInputElement>;
+  @ViewChild('parentSearchInput') parentSearchInput?: ElementRef<HTMLInputElement>;
+
+  protected focusAssigneeSearch(): void {
+    setTimeout(() => this.assigneeSearchInput?.nativeElement.focus(), 50);
+  }
+  protected focusLabelSearch(): void {
+    setTimeout(() => this.labelSearchInput?.nativeElement.focus(), 50);
+  }
+  protected focusParentSearch(): void {
+    setTimeout(() => this.parentSearchInput?.nativeElement.focus(), 50);
+  }
+
+  // --- Label coloring & parsing ---
+  protected getLabelName(id: string): string {
+    return this.labelOptions().find(l => l.id === id)?.name ?? id;
+  }
+  protected getLabelColor(id: string): string {
+    return this.labelOptions().find(l => l.id === id)?.color ?? '#9CA3AF';
+  }
+  protected getLabelDescription(id: string): string {
+    return this.labelOptions().find(l => l.id === id)?.description ?? '';
+  }
+  protected isScoped(name: string): boolean {
+    return name.includes('::');
+  }
+  protected getScope(name: string): string {
+    return name.split('::')[0];
+  }
+  protected getValue(name: string): string {
+    return name.split('::')[1] ?? name;
+  }
+  protected getScopeColor(name: string, defaultColor: string): string {
+    const scope = this.getScope(name).toLowerCase();
+    if (scope === 'epic') return '#8B5CF6';
+    if (scope === 'story') return '#3B82F6';
+    if (scope === 'task') return '#10B981';
+    if (scope === 'bug') return '#EF4444';
+    return defaultColor;
+  }
+
+  protected getMemberInitial(id: string): string {
+    const match = this.memberOptions().find(m => m.userId === id);
+    if (!match) return '?';
+    return match.displayName.split(' ').pop()?.charAt(0).toUpperCase() || '?';
+  }
+  protected getMemberName(id: string): string {
+    const match = this.memberOptions().find(m => m.userId === id);
+    return match ? match.displayName : id;
+  }
+
+  // --- Properties Update Methods ---
+  protected selectState(stateId: string): void {
+    const t = this.task();
+    if (t) {
+      this.taskStore.updateTask(this.projectId(), t.id, { stateId });
+    }
+  }
+
+  protected selectPriority(priority: string): void {
+    const t = this.task();
+    if (t) {
+      this.taskStore.updateTask(this.projectId(), t.id, { priority: priority === 'none' ? null : priority } as any);
+    }
+  }
+
+  protected toggleAssignee(userId: string): void {
+    const t = this.task();
+    if (t) {
+      const current = this.selectedAssigneeIds();
+      const next = current.includes(userId)
+        ? current.filter((id) => id !== userId)
+        : [...current, userId];
+      this.taskStore.updateTask(this.projectId(), t.id, { assigneeIds: next });
+    }
+  }
+
+  protected toggleLabel(labelId: string): void {
+    const t = this.task();
+    if (t) {
+      const current = this.selectedLabelIds();
+      const next = current.includes(labelId)
+        ? current.filter((id) => id !== labelId)
+        : [...current, labelId];
+      this.taskStore.updateTask(this.projectId(), t.id, { labelIds: next });
+    }
+  }
+
+  protected selectParent(parentId: string | null): void {
+    const t = this.task();
+    if (t) {
+      this.taskStore.updateTask(this.projectId(), t.id, { parentId } as any);
+    }
+  }
+
+  protected onStartDateChange(date: Date | null): void {
+    const t = this.task();
+    if (t) {
+      this.taskStore.updateTask(this.projectId(), t.id, { startDate: date ? date.toISOString() : null } as any);
+    }
+  }
+
+  protected onDueDateChange(date: Date | null): void {
+    const t = this.task();
+    if (t) {
+      this.taskStore.updateTask(this.projectId(), t.id, { dueDate: date ? date.toISOString() : null } as any);
+    }
+  }
+
+  protected onEstimateChange(val: number | null): void {
+    const t = this.task();
+    if (t) {
+      this.taskStore.updateTask(this.projectId(), t.id, { estimateValue: val });
+    }
+  }
+
+  protected toggleModule(moduleId: string): void {
+    const t = this.task();
+    if (t) {
+      const current = this.selectedModuleIds();
+      const next = current.includes(moduleId)
+        ? current.filter((id) => id !== moduleId)
+        : [...current, moduleId];
+      this.taskStore.updateTask(this.projectId(), t.id, { moduleIds: next });
+    }
+  }
+
   // ─── Constructor Effects ────────────────────────────────────────────────
   constructor() {
     // Effect: chỉ trigger khi task ID hoặc projectId thay đổi — KHÔNG phải
@@ -485,9 +979,9 @@ export class TaskDetailPanelComponent implements OnInit, OnChanges, OnDestroy {
       if (taskId) {
         this.isVisible.set(true);
         this.taskStore.loadTask(projectId, taskId);
-        if (!this.projectStore.members().length) this.projectStore.loadMembers(projectId);
-        if (!this.moduleStore.modules().length) this.moduleStore.loadModules(projectId);
-        if (!this.taskStore.labels().length) this.taskStore.loadLabels(projectId);
+        this.projectStore.loadMembers(projectId);
+        this.moduleStore.loadModules(projectId);
+        this.taskStore.loadLabels(projectId);
       } else {
         this.isVisible.set(false);
       }

@@ -54,7 +54,8 @@ export class TaskQueryService {
       .loadRelationCountAndMap('t.subItemCount', 't.children')
       .loadRelationCountAndMap('t.attachmentCount', 't.attachments')
       .loadRelationCountAndMap('t.linkCount', 't.links')
-      .where('t.projectId = :projectId', { projectId });
+      .where('t.projectId = :projectId', { projectId })
+      .andWhere('t.isDraft = :isDraft', { isDraft: false });
 
     if (query.types?.length) qb.andWhere('t.type IN (:...types)', { types: query.types });
     if (query.stateIds?.length) qb.andWhere('t.stateId IN (:...stateIds)', { stateIds: query.stateIds });
@@ -127,6 +128,7 @@ export class TaskQueryService {
       .createQueryBuilder('t')
       .leftJoinAndSelect('t.state', 'state')
       .where('t.projectId = :projectId', { projectId })
+      .andWhere('t.isDraft = :isDraft', { isDraft: false })
       .andWhere(
         `(to_tsvector('simple', t.title) @@ plainto_tsquery('simple', :q)
           OR t.taskId ILIKE :like
