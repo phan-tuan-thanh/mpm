@@ -57,15 +57,19 @@ const routes = [
         children: [
           {
             path: 'board',
-            redirectTo: 'backlog?view=board',
+            redirectTo: 'workitem?view=board',
           },
           {
             path: 'backlog',
+            redirectTo: 'workitem',
+          },
+          {
+            path: 'workitem',
             loadComponent: () =>
               import('./app/tasks/pages/backlog/backlog.component').then(
                 (m) => m.BacklogComponent
               ),
-            title: 'Backlog — Agile PM',
+            title: 'Work Items — Agile PM',
           },
           {
             path: 'cycles',

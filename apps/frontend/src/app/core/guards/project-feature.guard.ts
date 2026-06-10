@@ -69,5 +69,5 @@ export const projectFeatureGuard: CanActivateFn = async (route, state) => {
     detail: `Tính năng ${featureName} chưa được bật cho project này.`,
   });
 
-  return router.createUrlTree(['/projects', key, 'backlog']);
+  return router.createUrlTree(['/projects', key, 'workitem']);
 };

@@ -96,7 +96,7 @@ import { filter, map } from 'rxjs';
         @if (projectStore.currentProject()) {
           <!-- Work Items (Always visible) -->
           <a
-            [routerLink]="['/projects', currentKey(), 'backlog']"
+            [routerLink]="['/projects', currentKey(), 'workitem']"
             routerLinkActive="bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 font-semibold border-l-4 border-indigo-600"
             [routerLinkActiveOptions]="{ exact: false }"
             class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 dark:text-surface-400 hover:bg-gray-50 dark:hover:bg-surface-800 hover:text-gray-900 dark:hover:text-surface-100 transition duration-200"
