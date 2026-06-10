@@ -18,7 +18,8 @@ import { TaskDetailPanelComponent } from '../../components/task-detail-panel/tas
 import { LabelManagerComponent } from '../../components/label-manager/label-manager.component';
 import type { TaskListItem, CreateTaskDto, ReorderTaskItem, DisplayProperties } from '@mpm/shared-types';
 import { DEFAULT_DISPLAY_PROPS } from '@mpm/shared-types';
-import { Subject, takeUntil, distinctUntilChanged } from 'rxjs';
+import { Subject, takeUntil, filter, distinctUntilChanged } from 'rxjs';
+import { toObservable } from '@angular/core/rxjs-interop';
 
 @Component({
   standalone: true,
@@ -147,6 +148,9 @@ export class BacklogComponent implements OnInit, OnDestroy {
 
   protected readonly displayProps = signal<DisplayProperties>(DEFAULT_DISPLAY_PROPS);
 
+  // Phải khai báo ở class field để toObservable() chạy trong injection context
+  private readonly currentProject$ = toObservable(this.projectStore.currentProject);
+
   protected readonly flatStates = computed(() => {
     const grouped = this.projectStore.currentProjectStates();
     if (!grouped) return [];
@@ -164,29 +168,19 @@ export class BacklogComponent implements OnInit, OnDestroy {
       }
     });
 
-    this.route.parent?.params.pipe(
+    // Load lại khi project thay đổi (kể cả khi quay lại project cũ).
+    // distinctUntilChanged chỉ chặn nếu cùng project liên tiếp (không đổi ID).
+    this.currentProject$.pipe(
       takeUntil(this.destroy$),
-      distinctUntilChanged((a, b) => a['key'] === b['key']),
-    ).subscribe(() => {
-      const project = this.projectStore.currentProject();
-      this.projectId = project?.id ?? '';
-      this.workspaceId = project?.workspaceId ?? '';
-      if (this.projectId) {
-        this.loadDisplayPropsFromStorage();
-        this.taskStore.loadBacklog(this.projectId);
-        this.taskStore.loadLabels(this.projectId);
-      }
-    });
-
-    // Fallback: load immediately if project is available but subscription didn't capture it
-    const project = this.projectStore.currentProject();
-    if (project?.id && !this.projectId) {
-      this.projectId = project.id;
-      this.workspaceId = project?.workspaceId ?? '';
+      filter(project => !!project),
+      distinctUntilChanged((a, b) => a!.id === b!.id),
+    ).subscribe(project => {
+      this.projectId = project!.id;
+      this.workspaceId = project!.workspaceId ?? '';
       this.loadDisplayPropsFromStorage();
       this.taskStore.loadBacklog(this.projectId);
       this.taskStore.loadLabels(this.projectId);
-    }
+    });
   }
 
   ngOnDestroy(): void {

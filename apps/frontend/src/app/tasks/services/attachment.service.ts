@@ -7,9 +7,10 @@ import type { TaskAttachment } from '@mpm/shared-types';
 export class AttachmentService {
   private readonly http = inject(HttpClient);
 
-  upload(projectId: string, taskId: string, file: File): Observable<TaskAttachment> {
+  upload(projectId: string, taskId: string, file: File, title?: string): Observable<TaskAttachment> {
     const form = new FormData();
     form.append('file', file);
+    if (title?.trim()) form.append('title', title.trim());
     return this.http.post<TaskAttachment>(
       `/api/projects/${projectId}/tasks/${taskId}/attachments`,
       form,
@@ -18,6 +19,24 @@ export class AttachmentService {
 
   getDownloadUrl(projectId: string, taskId: string, attachmentId: string): string {
     return `/api/projects/${projectId}/tasks/${taskId}/attachments/${attachmentId}`;
+  }
+
+  batchUpdate(
+    projectId: string,
+    taskId: string,
+    items: Array<{ id: string; title?: string | null; sortOrder?: number }>,
+  ): Observable<{ ok: boolean }> {
+    return this.http.patch<{ ok: boolean }>(
+      `/api/projects/${projectId}/tasks/${taskId}/attachments`,
+      { items },
+    );
+  }
+
+  updateTitle(projectId: string, taskId: string, attachmentId: string, title: string | null): Observable<TaskAttachment> {
+    return this.http.patch<TaskAttachment>(
+      `/api/projects/${projectId}/tasks/${taskId}/attachments/${attachmentId}`,
+      { title },
+    );
   }
 
   delete(projectId: string, taskId: string, attachmentId: string): Observable<void> {

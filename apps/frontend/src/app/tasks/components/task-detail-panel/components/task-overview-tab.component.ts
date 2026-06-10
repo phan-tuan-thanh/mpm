@@ -164,7 +164,8 @@ const PRIORITY_OPTIONS = [
           (blurEditor)="onBlurDescription()"></app-rich-text-editor>
       </div>
       <app-task-attachments [projectId]="projectId" [taskId]="taskVal.id" [attachments]="taskVal.attachments ?? []"
-        (upload)="uploadAttachment.emit($event)" (delete)="deleteAttachment.emit($event)" />
+        (upload)="uploadAttachment.emit($event)" (delete)="deleteAttachment.emit($event)"
+        (deleteGroup)="deleteAttachmentGroup.emit($event)" (batchUpdate)="batchUpdateAttachments.emit($event)" />
       <app-task-links [links]="taskVal.links ?? []" (add)="addLink.emit($event)" (delete)="deleteLink.emit($event)" />
     }
   `,
@@ -217,8 +218,10 @@ export class TaskOverviewTabComponent {
   @Output() saveField = new EventEmitter<{ field: string; value: any }>();
   @Output() saveDescription = new EventEmitter<TiptapDoc | null>();
   @Output() changeModules = new EventEmitter<string[]>();
-  @Output() uploadAttachment = new EventEmitter<FileList>();
+  @Output() uploadAttachment = new EventEmitter<{ files: FileList; title: string }>();
   @Output() deleteAttachment = new EventEmitter<TaskAttachment>();
+  @Output() deleteAttachmentGroup = new EventEmitter<TaskAttachment[]>();
+  @Output() batchUpdateAttachments = new EventEmitter<Array<{ id: string; title?: string | null; sortOrder?: number }>>();
   @Output() addLink = new EventEmitter<{ url: string; title?: string }>();
   @Output() deleteLink = new EventEmitter<TaskLink>();
 

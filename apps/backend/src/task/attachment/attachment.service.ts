@@ -30,6 +30,7 @@ export class AttachmentService {
     projectId: string,
     userId: string,
     file: Express.Multer.File,
+    title?: string,
   ): Promise<TaskAttachment> {
     if (file.size > MAX_FILE_BYTES) {
       throw new PayloadTooLargeException('File size exceeds 20MB limit');
@@ -47,7 +48,7 @@ export class AttachmentService {
       // Unrecognized type — fall back to multer's mime
     }
 
-    // Check attachment count
+    // Check attachment count and compute next sortOrder
     const count = await this.attachmentRepo.count({ where: { taskId } });
     if (count >= MAX_ATTACHMENTS) {
       throw new UnprocessableEntityException(`Task already has ${MAX_ATTACHMENTS} attachments (maximum reached)`);
@@ -77,9 +78,18 @@ export class AttachmentService {
       fs.writeFileSync(storagePath, file.buffer);
     }
 
+    const maxResult = await this.attachmentRepo
+      .createQueryBuilder('a')
+      .select('COALESCE(MAX(a.sortOrder), -1)', 'maxOrder')
+      .where('a.taskId = :taskId', { taskId })
+      .getRawOne<{ maxOrder: number }>();
+    const sortOrder = (maxResult?.maxOrder ?? -1) + 1;
+
     const attachment = this.attachmentRepo.create({
       taskId,
       originalName: file.originalname,
+      title: title?.trim() || null,
+      sortOrder,
       storagePath,
       mimeType,
       sizeBytes: file.size,
@@ -93,6 +103,27 @@ export class AttachmentService {
     });
 
     return saved;
+  }
+
+  async batchUpdate(
+    taskId: string,
+    items: Array<{ id: string; title?: string | null; sortOrder?: number }>,
+  ): Promise<void> {
+    for (const item of items) {
+      const update: Partial<TaskAttachment> = {};
+      if (item.title !== undefined) update.title = item.title;
+      if (item.sortOrder !== undefined) update.sortOrder = item.sortOrder;
+      if (Object.keys(update).length > 0) {
+        await this.attachmentRepo.update({ id: item.id, taskId }, update);
+      }
+    }
+  }
+
+  async updateTitle(attachmentId: string, title: string | null): Promise<TaskAttachment> {
+    const attachment = await this.attachmentRepo.findOne({ where: { id: attachmentId } });
+    if (!attachment) throw new NotFoundException('Attachment not found');
+    attachment.title = title;
+    return this.attachmentRepo.save(attachment);
   }
 
   async getFile(attachmentId: string): Promise<TaskAttachment> {
