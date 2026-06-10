@@ -6,11 +6,11 @@ import { TaskStore } from '../../../state/task.store';
 import type { TaskListItem, DisplayProperties, Label } from '@mpm/shared-types';
 
 const PRIORITY_CONFIG: Record<string, { icon: string; color: string }> = {
-  urgent: { icon: 'pi pi-angle-double-up', color: '#EF4444' },
-  high:   { icon: 'pi pi-angle-up',        color: '#F97316' },
-  medium: { icon: 'pi pi-minus',           color: '#EAB308' },
-  low:    { icon: 'pi pi-angle-down',      color: '#3B82F6' },
-  none:   { icon: 'pi pi-circle',          color: '#D1D5DB' },
+  urgent: { icon: 'pi pi-flag', color: '#EF4444' },
+  high:   { icon: 'pi pi-flag', color: '#F97316' },
+  medium: { icon: 'pi pi-flag', color: '#EAB308' },
+  low:    { icon: 'pi pi-flag', color: '#3B82F6' },
+  none:   { icon: 'pi pi-flag', color: '#D1D5DB' },
 };
 
 @Component({

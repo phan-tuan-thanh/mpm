@@ -275,11 +275,7 @@ export class SidebarComponent implements OnInit {
   }
 
   onSettingsClick(): void {
-    if (this.isOnSettings()) {
-      this.isSettingsOpen.update(v => !v);
-    } else {
-      void this.router.navigate(['/projects', this.currentKey(), 'settings']);
-    }
+    this.isSettingsOpen.update(v => !v);
   }
 
   readonly settingsSubItems = [

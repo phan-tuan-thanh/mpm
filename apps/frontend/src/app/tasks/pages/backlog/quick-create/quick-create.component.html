@@ -20,6 +20,7 @@
     [style]="{ width: '680px', padding: '0' }"
     [dismissableMask]="true"
     [showHeader]="false"
+    [showCloseIcon]="false"
     (onHide)="onCancel()"
   >
     <ng-container *ngTemplateOutlet="formTpl"></ng-container>
@@ -36,8 +37,8 @@
   <div class="flex flex-col h-full w-full overflow-hidden bg-white dark:bg-surface-900">
 
     <!-- ══ Header ══ -->
-    <div class="flex items-center justify-between border-b border-gray-100 dark:border-surface-800" style="padding: 14px 18px 10px">
-      <div style="display: flex; align-items: center; gap: 8px">
+    <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-surface-700 bg-gray-50 dark:bg-surface-800 flex-shrink-0">
+      <div class="flex items-center gap-3 flex-1 min-w-0">
         <!-- Type dropdown pill -->
         <button class="type-pill" (click)="typePopover.toggle($event)">
           <i [class]="selectedTypeConfig().icon" [style.color]="selectedTypeConfig().color" style="font-size: 11px"></i>
@@ -46,27 +47,23 @@
         </button>
       </div>
 
-      <!-- Layout Switching and Action Icons -->
-      <div style="display: flex; align-items: center; gap: 6px">
-        <!-- Slide-in (Drawer) Mode -->
+      <!-- Header Controls -->
+      <div class="flex items-center gap-2 flex-shrink-0">
         <button pButton icon="pi pi-align-right" class="p-button-rounded p-button-text p-button-sm"
           [severity]="viewMode === 'right-pane' ? 'primary' : 'secondary'"
           pTooltip="Slide-in Drawer" (click)="viewModeChange.emit('right-pane')"></button>
 
-        <!-- Popup (Dialog) Mode -->
         <button pButton icon="pi pi-clone" class="p-button-rounded p-button-text p-button-sm"
           [severity]="viewMode === 'popup' ? 'primary' : 'secondary'"
           pTooltip="Dialog Popup" (click)="viewModeChange.emit('popup')"></button>
 
-        <!-- Full Page Mode -->
         <button pButton icon="pi pi-desktop" class="p-button-rounded p-button-text p-button-sm"
           [severity]="viewMode === 'full-page' ? 'primary' : 'secondary'"
           pTooltip="Full Page" (click)="viewModeChange.emit('full-page')"></button>
 
-        <div style="width: 1px; height: 16px; background: var(--surface-200); margin: 0 4px"></div>
+        <div class="w-px h-4 bg-gray-200 dark:bg-surface-600 mx-1"></div>
 
-        <!-- Close / Cancel button -->
-        <button pButton [icon]="viewMode === 'full-page' ? 'pi pi-arrow-left' : 'pi pi-times'" 
+        <button pButton [icon]="viewMode === 'full-page' ? 'pi pi-arrow-left' : 'pi pi-times'"
           class="p-button-rounded p-button-text p-button-sm" severity="secondary"
           [pTooltip]="viewMode === 'full-page' ? 'Quay lại danh sách' : 'Đóng'" (click)="onCancel()"></button>
       </div>
@@ -288,15 +285,18 @@
 
 <!-- Type -->
 <p-popover #typePopover>
-  <div style="min-width: 110px; padding: 2px">
+  <div class="py-1" style="min-width: 130px">
     @for (t of availableTypes(); track t.value) {
-      <button class="pop-item" [class.selected]="selectedType() === t.value"
-        style="padding: 5px 10px; font-size: 12px"
+      <button
+        class="flex items-center gap-2 w-full px-3 py-1.5 rounded-md text-[12px] font-medium transition-colors text-left cursor-pointer border-none outline-none"
+        [ngClass]="selectedType() === t.value
+          ? 'bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300'
+          : 'bg-transparent text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-surface-700'"
         (click)="selectedType.set(t.value); typePopover.hide()">
-        <i [class]="t.icon" [style.color]="t.color" style="font-size: 11px"></i>
-        <span>{{ t.label }}</span>
+        <i [class]="t.icon" [style.color]="t.color" class="text-[11px] flex-shrink-0"></i>
+        <span class="flex-1">{{ t.label }}</span>
         @if (selectedType() === t.value) {
-          <i class="pi pi-check" style="margin-left: auto; font-size: 10px"></i>
+          <i class="pi pi-check text-[10px] text-indigo-500 dark:text-indigo-400 flex-shrink-0"></i>
         }
       </button>
     }

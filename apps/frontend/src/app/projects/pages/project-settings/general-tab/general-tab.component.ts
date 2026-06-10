@@ -122,7 +122,8 @@ import { RichTextEditorComponent } from '../../../../shared/components/rich-text
         </div>
 
         <!-- Right: metadata card (sticky) -->
-        <div class="w-full xl:w-72 flex-shrink-0 xl:sticky xl:top-4 space-y-4">
+        <div class="w-full xl:w-72 flex-shrink-0">
+          <div class="xl:sticky xl:top-4 space-y-4">
 
           <!-- Card: Thông tin dự án -->
           <div class="bg-surface-0 dark:bg-surface-900 rounded-xl border border-surface-100 dark:border-surface-800 shadow-sm overflow-hidden">
@@ -163,13 +164,13 @@ import { RichTextEditorComponent } from '../../../../shared/components/rich-text
               <!-- Lead -->
               <div class="flex flex-col gap-1.5">
                 <label for="leadId" class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wider">Người phụ trách</label>
-                <p-select id="leadId" [options]="leadOptions()" [(ngModel)]="leadId" name="leadId" optionLabel="label" optionValue="value" [disabled]="isReadOnly() || isSubmitting()" placeholder="Chọn người phụ trách" styleClass="w-full"></p-select>
+                <p-select id="leadId" [options]="leadOptions()" [(ngModel)]="leadId" name="leadId" optionLabel="label" optionValue="value" [filter]="true" filterPlaceholder="Tìm kiếm..." appendTo="body" [disabled]="isReadOnly() || isSubmitting()" placeholder="Chọn người phụ trách" styleClass="w-full"></p-select>
               </div>
 
               <!-- Timezone -->
               <div class="flex flex-col gap-1.5">
-                <label for="timezone" class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wider">Múi giờ</label>
-                <p-select id="timezone" [options]="timezoneOptions" [(ngModel)]="timezone" name="timezone" optionLabel="label" optionValue="value" [filter]="true" [disabled]="isReadOnly() || isSubmitting()" placeholder="Chọn múi giờ" styleClass="w-full"></p-select>
+                <label for="timezone" class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wider">Múi giờ <span class="normal-case font-normal">(theo IANA)</span></label>
+                <p-select id="timezone" [options]="timezoneOptions" [(ngModel)]="timezone" name="timezone" optionLabel="label" optionValue="value" [filter]="true" appendTo="body" [disabled]="isReadOnly() || isSubmitting()" placeholder="Chọn múi giờ" styleClass="w-full"></p-select>
               </div>
 
             </div>
@@ -182,6 +183,7 @@ import { RichTextEditorComponent } from '../../../../shared/components/rich-text
             </div>
           }
 
+          </div>
         </div>
       </div>
 
@@ -205,7 +207,7 @@ export class GeneralTabComponent implements OnInit {
   emoji = '🚀';
   network = ProjectNetwork.SECRET;
   leadId: string | null = null;
-  timezone = 'Asia/Ho_Chi_Minh';
+  timezone = 'Asia/Saigon';
 
   readonly isSubmitting = signal<boolean>(false);
   readonly isUploadingCover = signal<boolean>(false);
@@ -261,7 +263,7 @@ export class GeneralTabComponent implements OnInit {
       this.emoji = project.emoji || '🚀';
       this.network = project.network || ProjectNetwork.SECRET;
       this.leadId = project.lead?.userId || null;
-      this.timezone = project.timezone || 'Asia/Ho_Chi_Minh';
+      this.timezone = project.timezone || 'Asia/Saigon';
       
       // Load members for dropdown selection
       this.projectStore.loadMembers(project.id);

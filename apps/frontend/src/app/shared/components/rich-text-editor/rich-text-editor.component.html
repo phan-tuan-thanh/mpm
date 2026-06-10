@@ -39,6 +39,46 @@
               <i class="pi pi-pencil"></i>
             </button>
           }
+          @if (features.color !== false) {
+            <span class="rte-sep"></span>
+            <div class="rte-color-dropdown-container">
+              <button type="button" class="rte-btn" title="Màu chữ" (click)="toggleColorDropdown($event)">
+                <i class="pi pi-palette" [style.color]="editor.getAttributes('textStyle').color"></i>
+              </button>
+              
+              @if (showColorDropdown()) {
+                <div class="rte-color-dropdown-panel">
+                  @for (p of colorProfiles(); track p.value) {
+                    <button 
+                      type="button" 
+                      class="rte-color-dropdown-item" 
+                      [class.active]="editor.isActive('textStyle', { color: p.value })"
+                      (click)="setColor(p.value)"
+                    >
+                      <span class="rte-color-preview-pair">
+                        <span class="rte-color-preview-dot light" [style.background-color]="p.light"></span>
+                        <span class="rte-color-preview-dot dark" [style.background-color]="p.dark"></span>
+                      </span>
+                      <span class="rte-color-label">{{ p.label }}</span>
+                      @if (editor.isActive('textStyle', { color: p.value })) {
+                        <i class="pi pi-check rte-color-check"></i>
+                      }
+                    </button>
+                  }
+                  
+                  <button 
+                    type="button" 
+                    class="rte-color-dropdown-item rte-color-dropdown-clear" 
+                    (click)="unsetColor()"
+                    [disabled]="!editor.getAttributes('textStyle').color"
+                  >
+                    <i class="pi pi-filter-slash"></i>
+                    <span class="rte-color-label">Mặc định</span>
+                  </button>
+                </div>
+              }
+            </div>
+          }
           <span class="rte-sep"></span>
 
           <!-- Lists -->
@@ -140,6 +180,46 @@
             @if (features.highlight) {
               <button type="button" class="rte-btn" [class.rte-btn--active]="editor.isActive('highlight')" (click)="toggleHighlight()"><i class="pi pi-pencil"></i></button>
             }
+            @if (features.color !== false) {
+              <span class="rte-sep"></span>
+              <div class="rte-color-dropdown-container">
+                <button type="button" class="rte-btn" title="Màu chữ" (click)="toggleColorDropdown($event)">
+                  <i class="pi pi-palette" [style.color]="editor.getAttributes('textStyle').color"></i>
+                </button>
+                
+                @if (showColorDropdown()) {
+                  <div class="rte-color-dropdown-panel">
+                    @for (p of colorProfiles(); track p.value) {
+                      <button 
+                        type="button" 
+                        class="rte-color-dropdown-item" 
+                        [class.active]="editor.isActive('textStyle', { color: p.value })"
+                        (click)="setColor(p.value)"
+                      >
+                        <span class="rte-color-preview-pair">
+                          <span class="rte-color-preview-dot light" [style.background-color]="p.light"></span>
+                          <span class="rte-color-preview-dot dark" [style.background-color]="p.dark"></span>
+                        </span>
+                        <span class="rte-color-label">{{ p.label }}</span>
+                        @if (editor.isActive('textStyle', { color: p.value })) {
+                          <i class="pi pi-check rte-color-check"></i>
+                        }
+                      </button>
+                    }
+                    
+                    <button 
+                      type="button" 
+                      class="rte-color-dropdown-item rte-color-dropdown-clear" 
+                      (click)="unsetColor()"
+                      [disabled]="!editor.getAttributes('textStyle').color"
+                    >
+                      <i class="pi pi-filter-slash"></i>
+                      <span class="rte-color-label">Mặc định</span>
+                    </button>
+                  </div>
+                }
+              </div>
+            }
             @if (features.subscript) {
               <span class="rte-sep"></span>
               <button type="button" class="rte-btn" [class.rte-btn--active]="editor.isActive('subscript')" (click)="toggleSubscript()">x₂</button>
@@ -213,6 +293,46 @@
                 }
                 @if (features.highlight) {
                   <button type="button" class="rte-btn" [class.rte-btn--active]="editor.isActive('highlight')" (click)="toggleHighlight()"><i class="pi pi-pencil"></i></button>
+                }
+                @if (features.color !== false) {
+                  <span class="rte-sep"></span>
+                  <div class="rte-color-dropdown-container">
+                    <button type="button" class="rte-btn" title="Màu chữ" (click)="toggleColorDropdown($event)">
+                      <i class="pi pi-palette" [style.color]="editor.getAttributes('textStyle').color"></i>
+                    </button>
+                    
+                    @if (showColorDropdown()) {
+                      <div class="rte-color-dropdown-panel" style="right: 0; left: auto;">
+                        @for (p of colorProfiles(); track p.value) {
+                          <button 
+                            type="button" 
+                            class="rte-color-dropdown-item" 
+                            [class.active]="editor.isActive('textStyle', { color: p.value })"
+                            (click)="setColor(p.value)"
+                          >
+                            <span class="rte-color-preview-pair">
+                              <span class="rte-color-preview-dot light" [style.background-color]="p.light"></span>
+                              <span class="rte-color-preview-dot dark" [style.background-color]="p.dark"></span>
+                            </span>
+                            <span class="rte-color-label">{{ p.label }}</span>
+                            @if (editor.isActive('textStyle', { color: p.value })) {
+                              <i class="pi pi-check rte-color-check"></i>
+                            }
+                          </button>
+                        }
+                        
+                        <button 
+                          type="button" 
+                          class="rte-color-dropdown-item rte-color-dropdown-clear" 
+                          (click)="unsetColor()"
+                          [disabled]="!editor.getAttributes('textStyle').color"
+                        >
+                          <i class="pi pi-filter-slash"></i>
+                          <span class="rte-color-label">Mặc định</span>
+                        </button>
+                      </div>
+                    }
+                  </div>
                 }
                 @if (features.subscript) {
                   <button type="button" class="rte-btn" [class.rte-btn--active]="editor.isActive('subscript')" (click)="toggleSubscript()">x₂</button>
