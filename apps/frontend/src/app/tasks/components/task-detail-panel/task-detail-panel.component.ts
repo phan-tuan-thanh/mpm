@@ -1,19 +1,29 @@
-import { Component, OnInit, OnDestroy, inject, signal, computed, effect, Input, Output, EventEmitter } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  OnChanges,
+  OnDestroy,
+  SimpleChanges,
+  inject,
+  signal,
+  computed,
+  effect,
+  untracked,
+  Input,
+  Output,
+  EventEmitter,
+  Injector,
+} from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DrawerModule } from 'primeng/drawer';
 import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
 import { ToastModule } from 'primeng/toast';
-import { TabsModule } from 'primeng/tabs';
-import { MessageService } from 'primeng/api';
 import { DialogModule } from 'primeng/dialog';
-import { SelectModule } from 'primeng/select';
-import { MultiSelectModule } from 'primeng/multiselect';
-import { DatePickerModule } from 'primeng/datepicker';
-import { InputNumberModule } from 'primeng/inputnumber';
 import { TooltipModule } from 'primeng/tooltip';
+import { MessageService } from 'primeng/api';
 
 import { TaskStore } from '../../state/task.store';
 import { ProjectStore } from '../../../projects/state/project.store';
@@ -24,319 +34,332 @@ import { AttachmentService } from '../../services/attachment.service';
 import { LinkService } from '../../services/link.service';
 import { RelationService } from '../../services/relation.service';
 import { LayoutService } from '../../../layout/services/layout.service';
-import type { Task, TaskActivity, TaskAttachment, TaskLink, TiptapDoc } from '@mpm/shared-types';
-import { Subject, takeUntil } from 'rxjs';
-import { TaskOverviewTabComponent, TaskSubitemsTabComponent, TaskRelationsTabComponent, TaskActivityTabComponent, TaskAttachmentsComponent, TaskLinksComponent } from './components';
-import { RichTextEditorComponent } from '../../../shared/components/rich-text-editor/rich-text-editor.component';
+import { TaskDetailStateService } from './services/task-detail-state.service';
+import type {
+  Task,
+  TaskActivity,
+  TaskAttachment,
+  TaskLink,
+  TiptapDoc,
+  CreateSubItemDto,
+  ActivityFilterType,
+} from '@mpm/shared-types';
+import { Subject, takeUntil, combineLatest, distinctUntilChanged, filter } from 'rxjs';
 
-const PRIORITY_OPTIONS = [
-  { label: '🔴 Urgent', value: 'urgent' }, { label: '🟠 High', value: 'high' },
-  { label: '🟡 Medium', value: 'medium' }, { label: '🔵 Low', value: 'low' },
-  { label: '⚪ None', value: 'none' },
-];
+import { TaskHeaderComponent } from './components/task-header/task-header.component';
+import { TaskTitleInlineComponent } from './components/task-title-inline/task-title-inline.component';
+import { SubItemsSectionComponent } from './components/sub-items-section/sub-items-section.component';
+import { ActivityPanelComponent } from './components/activity-panel/activity-panel.component';
+import { PropertiesSidebarComponent } from './components/properties-sidebar/properties-sidebar.component';
+import { TaskAttachmentsComponent } from './components/task-attachments.component';
+import { TaskLinksComponent } from './components/task-links.component';
+import { RichTextEditorComponent } from '../../../shared/components/rich-text-editor/rich-text-editor.component';
 
 @Component({
   standalone: true,
   selector: 'app-task-detail-panel',
   imports: [
-    CommonModule, FormsModule, DrawerModule, DialogModule, ButtonModule, InputTextModule, ToastModule, TabsModule,
-    SelectModule, MultiSelectModule, DatePickerModule, InputNumberModule, TooltipModule,
-    TaskOverviewTabComponent, TaskSubitemsTabComponent, TaskRelationsTabComponent, TaskActivityTabComponent,
-    TaskAttachmentsComponent, TaskLinksComponent, RichTextEditorComponent,
+    CommonModule,
+    FormsModule,
+    DrawerModule,
+    DialogModule,
+    ButtonModule,
+    ToastModule,
+    TooltipModule,
+    TaskHeaderComponent,
+    TaskTitleInlineComponent,
+    SubItemsSectionComponent,
+    ActivityPanelComponent,
+    PropertiesSidebarComponent,
+    TaskAttachmentsComponent,
+    TaskLinksComponent,
+    RichTextEditorComponent,
   ],
-  providers: [MessageService],
+  providers: [MessageService, TaskDetailStateService],
   template: `
-    @if (viewMode === 'popup') {
-      <p-dialog
-        [(visible)]="isVisible"
-        [modal]="true"
-        [closable]="false"
-        [showHeader]="false"
-        styleClass="qc-dialog"
-        [style]="{ width: '750px', height: '90vh', padding: '0' }"
-        [contentStyle]="{ padding: '0', borderRadius: '14px', overflow: 'hidden' }"
-        [dismissableMask]="true"
-        (onHide)="onClose()"
-      >
+    <!-- Always rendered — avoids abrupt @if teardown that calls disableModality()→detectChanges() during ngOnDestroy -->
+    <p-dialog
+      [visible]="isVisible() && viewMode === 'popup'"
+      (visibleChange)="onDialogVisibleChange($event)"
+      [transitionOptions]="'0ms'"
+      [modal]="true"
+      [closable]="false"
+      [showHeader]="false"
+      styleClass="qc-dialog"
+      [style]="{ width: '750px', height: '90vh', padding: '0' }"
+      [contentStyle]="{ padding: '0', borderRadius: '14px', overflow: 'hidden' }"
+      [dismissableMask]="true"
+      (onHide)="onDialogHide()"
+    >
+      @if (viewMode === 'popup') {
         <ng-container *ngTemplateOutlet="detailTpl"></ng-container>
-      </p-dialog>
-    } @else if (viewMode === 'right-pane') {
-      <p-drawer
-        [(visible)]="isVisible"
-        position="right"
-        [modal]="false"
-        [style]="{ width: '680px', padding: '0' }"
-        [dismissableMask]="true"
-        [showHeader]="false"
-        (onClose)="onClose()"
-      >
+      }
+    </p-dialog>
+
+    <p-drawer
+      [visible]="isVisible() && viewMode === 'right-pane'"
+      (visibleChange)="onDrawerVisibleChange($event)"
+      position="right"
+      [modal]="false"
+      [style]="{ width: '680px', padding: '0' }"
+      [dismissible]="true"
+      [showCloseIcon]="false"
+      (onHide)="onDrawerClose()"
+    >
+      @if (viewMode === 'right-pane') {
         <ng-container *ngTemplateOutlet="detailTpl"></ng-container>
-      </p-drawer>
-    } @else if (viewMode === 'full-page') {
-      <div class="w-full h-full bg-white dark:bg-surface-900 overflow-hidden flex flex-col border border-gray-100 dark:border-surface-700 rounded-xl shadow-sm">
+      }
+    </p-drawer>
+
+    @if (viewMode === 'full-page' && isVisible()) {
+      <div class="absolute inset-0 z-10 bg-white dark:bg-surface-900 overflow-hidden flex flex-col border border-gray-100 dark:border-surface-700 rounded-xl shadow-sm">
         <ng-container *ngTemplateOutlet="detailTpl"></ng-container>
       </div>
     }
 
     <ng-template #detailTpl>
       <div class="flex flex-col h-full w-full overflow-hidden bg-white dark:bg-surface-900 text-gray-800 dark:text-surface-100">
-        <!-- ══ Header ══ -->
+        <!-- ══ Header Bar ══ -->
         <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-surface-700 bg-gray-50 dark:bg-surface-800 flex-shrink-0">
-          <div class="flex items-center gap-3">
+          <div class="flex items-center gap-3 flex-1 min-w-0">
             @if (task()) {
-              <span class="font-mono text-xs font-semibold text-gray-500 dark:text-surface-400 bg-gray-100 dark:bg-surface-800 px-2 py-1 rounded cursor-pointer hover:bg-gray-200 dark:hover:bg-surface-700" (click)="copyTaskId(task()!.taskId)">
-                {{ task()!.taskId }}
-              </span>
-              @switch (taskStore.saveStatus()) {
-                @case ('saving') { <span class="text-xs text-indigo-500 animate-pulse font-medium">Đang lưu...</span> }
-                @case ('saved') { <span class="text-xs text-green-500 font-medium">✓ Đã lưu</span> }
-                @case ('error') { <span class="text-xs text-red-500 font-medium">✗ Lỗi lưu</span> }
-              }
+              <app-task-header
+                [task]="task"
+                [saveStatus]="saveStatusSignal"
+              />
             }
           </div>
 
-          <!-- Header Layout & Toggle Controls -->
-          <div class="flex items-center gap-2">
-            <!-- Sidebar Toggle (Only visible in full-page mode) -->
+          <!-- Header Controls -->
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <!-- Sidebar Toggle (Req 8.4, 8.6: Only visible in full-page mode) -->
             @if (viewMode === 'full-page') {
               <button pButton icon="pi pi-bars" class="p-button-rounded p-button-text p-button-sm"
-                [severity]="showSidebar() ? 'primary' : 'secondary'"
-                pTooltip="Bật/Tắt thuộc tính sidebar" (click)="showSidebar.set(!showSidebar())"></button>
+                [severity]="stateService.sidebarExpanded() ? 'primary' : 'secondary'"
+                pTooltip="Bật/Tắt thuộc tính sidebar"
+                aria-label="Toggle sidebar"
+                (click)="toggleSidebar()"></button>
               <div class="w-px h-4 bg-gray-200 dark:bg-surface-600 mx-1"></div>
             }
 
-            <!-- Slide-in (Drawer) Mode -->
+            <!-- View Mode Controls -->
             <button pButton icon="pi pi-align-right" class="p-button-rounded p-button-text p-button-sm"
               [severity]="viewMode === 'right-pane' ? 'primary' : 'secondary'"
               pTooltip="Slide-in Drawer" (click)="viewModeChange.emit('right-pane')"></button>
-
-            <!-- Popup (Dialog) Mode -->
             <button pButton icon="pi pi-clone" class="p-button-rounded p-button-text p-button-sm"
               [severity]="viewMode === 'popup' ? 'primary' : 'secondary'"
               pTooltip="Dialog Popup" (click)="viewModeChange.emit('popup')"></button>
-
-            <!-- Full Page Mode -->
             <button pButton icon="pi pi-desktop" class="p-button-rounded p-button-text p-button-sm"
               [severity]="viewMode === 'full-page' ? 'primary' : 'secondary'"
               pTooltip="Full Page" (click)="viewModeChange.emit('full-page')"></button>
 
             <div class="w-px h-4 bg-gray-200 dark:bg-surface-600 mx-1"></div>
 
-            <!-- Close button -->
-            <button pButton [icon]="viewMode === 'full-page' ? 'pi pi-arrow-left' : 'pi pi-times'" 
+            <!-- Close -->
+            <button pButton [icon]="viewMode === 'full-page' ? 'pi pi-arrow-left' : 'pi pi-times'"
               class="p-button-rounded p-button-text p-button-sm" severity="secondary"
-              [pTooltip]="viewMode === 'full-page' ? 'Quay lại danh sách' : 'Đóng'" (click)="onClose()"></button>
+              [pTooltip]="viewMode === 'full-page' ? 'Quay lại danh sách' : 'Đóng'"
+              (click)="onClose()"></button>
           </div>
         </div>
 
         <!-- ══ Body ══ -->
         @if (task()) {
-          <!-- Single Column scrollable view for right-pane / popup modes -->
+          <!-- ─── Single Column Layout (Drawer / Popup) — Req 8.2, 8.3 ─── -->
           @if (viewMode !== 'full-page') {
-            <div class="flex-1 flex flex-col overflow-hidden">
-              <div class="px-4 py-3 border-b border-gray-150 dark:border-surface-700 flex-shrink-0">
-                <input pInputText class="w-full text-lg font-semibold border-none shadow-none focus:ring-0 bg-transparent p-0" [(ngModel)]="editTitle" (blur)="saveTitle()" (keydown.enter)="saveTitle()" />
+            <!-- Single scrollable column — title + all content + activity in one scroll -->
+            <div class="flex-1 overflow-y-auto min-h-0">
+              <!-- Title -->
+              <div class="px-4 py-3 border-b border-gray-100 dark:border-surface-700">
+                <app-task-title-inline
+                  [title]="task()!.title"
+                  [viewMode]="viewMode === 'right-pane' ? 'drawer' : 'popup'"
+                  (titleSaved)="onTitleSaved($event)"
+                />
               </div>
-              <p-tabs [value]="'overview'" class="flex-1 overflow-hidden flex flex-col">
-                <p-tablist>
-                  <p-tab value="overview">Tổng quan</p-tab>
-                  <p-tab value="subitems">Sub-items {{ task()!.children?.length ? '('+task()!.children!.length+')' : '' }}</p-tab>
-                  <p-tab value="relations">Relations</p-tab>
-                  <p-tab value="activity">Activity</p-tab>
-                </p-tablist>
-                <p-tabpanels class="flex-1 overflow-y-auto">
-                  <p-tabpanel value="overview"><app-task-overview-tab [projectId]="projectId()" [task]="task()" [stateOptions]="stateOptions()" [memberOptions]="memberOptions()" [moduleGroupOptions]="moduleGroupOptions()" [labelOptions]="labelOptions()" (changeModules)="onModulesChange($event)" (saveField)="saveField($event.field, $event.value)" (saveDescription)="saveDescription($event)" (uploadAttachment)="onFileUpload($event)" (deleteAttachment)="deleteAttachment($event)" (addLink)="addLink($event)" (deleteLink)="deleteLink($event)" /></p-tabpanel>
-                  <p-tabpanel value="subitems"><app-task-subitems-tab [task]="task()" (openChild)="openChildTask($event)" (addSubItem)="addSubItem($event)" /></p-tabpanel>
-                  <p-tabpanel value="relations"><app-task-relations-tab [task]="task()" (addRelation)="addRelation($event)" (deleteRelation)="deleteRelation($event)" /></p-tabpanel>
-                  <p-tabpanel value="activity"><app-task-activity-tab [activity]="activity()" [currentUserId]="currentUserId()" (submitComment)="submitComment($event)" (editComment)="editComment($event)" (deleteComment)="deleteComment($event)" /></p-tabpanel>
-                </p-tabpanels>
-              </p-tabs>
+
+              <!-- Description -->
+              <div class="px-4 pt-4 pb-3 border-b border-gray-100 dark:border-surface-700">
+                <label class="text-xs font-semibold text-gray-400 dark:text-surface-500 uppercase tracking-wide mb-2 block">Mô tả</label>
+                @if (showRte()) {
+                  <app-rich-text-editor
+                    [ngModel]="task()?.description"
+                    (ngModelChange)="onDescriptionChange($event)"
+                    placeholder="Thêm mô tả..."
+                    (blurEditor)="saveDescription()"
+                  />
+                } @else {
+                  <div class="min-h-[4rem] rounded-lg border border-gray-200 dark:border-surface-700 bg-gray-50 dark:bg-surface-800"></div>
+                }
+              </div>
+
+              <!-- Attachments & Links -->
+              <div class="px-4 py-3 border-b border-gray-100 dark:border-surface-700 flex flex-col gap-3">
+                <app-task-attachments
+                  [projectId]="projectId()"
+                  [taskId]="task()!.id"
+                  [attachments]="task()!.attachments ?? []"
+                  (upload)="onFileUpload($event)"
+                  (delete)="deleteAttachment($event)"
+                />
+                <app-task-links
+                  [links]="task()!.links ?? []"
+                  (add)="addLink($event)"
+                  (delete)="deleteLink($event)"
+                />
+              </div>
+
+              <!-- Sub-Items -->
+              <div class="px-4 py-3 border-b border-gray-100 dark:border-surface-700">
+                <app-sub-items-section
+                  [items]="stateService.subItemsTree()"
+                  [totalCount]="stateService.subItemsTotalCount()"
+                  [doneCount]="stateService.subItemsDoneCount()"
+                  [members]="memberOptions()"
+                  [projectId]="projectId()"
+                  [taskId]="task()!.id"
+                  (createSubItem)="onCreateSubItem($event)"
+                  (subItemClicked)="openChildTask($event)"
+                />
+              </div>
+
+              <!-- Activity + Properties tab (compact, no internal scroll — parent div scrolls) -->
+              <div class="px-4 pt-3 pb-6">
+                <app-activity-panel
+                  [entries]="stateService.activityEntries()"
+                  [loading]="stateService.activityLoading()"
+                  [hasMore]="stateService.activityHasMore()"
+                  [activeFilter]="activeActivityTab()"
+                  [viewMode]="viewMode === 'right-pane' ? 'drawer' : 'popup'"
+                  [showPropertiesTab]="true"
+                  [compact]="true"
+                  (filterChanged)="onActivityFilterChanged($event)"
+                  (loadMore)="onActivityLoadMore()"
+                >
+                  <div activityPanelProperties>
+                    <app-properties-sidebar
+                      [task]="task()"
+                      [states]="stateOptions()"
+                      [members]="memberOptions()"
+                      [labels]="labelOptions()"
+                      [modules]="moduleOptions()"
+                      [availableParentTasks]="taskStore.tasks()"
+                      [collapseState]="stateService.sectionCollapseState()"
+                      (propertyChanged)="onPropertyChanged($event)"
+                      (parentChanged)="onParentChanged($event)"
+                      (parentClicked)="openChildTask($event)"
+                      (sectionToggled)="onSectionToggled($event)"
+                    />
+                  </div>
+                </app-activity-panel>
+              </div>
             </div>
           } @else {
-            <!-- Two Column View for full-page mode -->
+            <!-- ─── Two Column Layout (Full Page) — Req 8.1 ─── -->
             <div class="flex-1 flex overflow-hidden">
-              <!-- Left Column: Main Editor content -->
-              <div class="flex-1 overflow-y-auto px-8 py-6 flex flex-col gap-6">
+              <!-- Left Column: Main Content (fills remaining width) -->
+              <div class="flex-1 overflow-y-auto px-8 py-6 flex flex-col gap-6 min-w-0">
                 <!-- Title -->
-                <div>
-                  <input pInputText class="w-full text-2xl font-bold border-none shadow-none focus:ring-0 bg-transparent p-0" [(ngModel)]="editTitle" (blur)="saveTitle()" (keydown.enter)="saveTitle()" />
-                </div>
+                <app-task-title-inline
+                  [title]="task()!.title"
+                  viewMode="full-page"
+                  (titleSaved)="onTitleSaved($event)"
+                />
 
-                <!-- Description -->
+                <!-- Description — showRte deferred via setTimeout so Tiptap init doesn't block the mode-switch CD cycle -->
                 <div>
                   <label class="text-xs font-semibold text-gray-400 dark:text-surface-500 uppercase tracking-wide mb-2 block">Mô tả</label>
-                  <app-rich-text-editor [ngModel]="task()?.description" (ngModelChange)="saveDescription($event)" placeholder="Thêm mô tả..." (blurEditor)="saveDescription(task()?.description)"></app-rich-text-editor>
+                  @if (showRte()) {
+                    <app-rich-text-editor
+                      [ngModel]="task()?.description"
+                      (ngModelChange)="onDescriptionChange($event)"
+                      placeholder="Thêm mô tả..."
+                      (blurEditor)="saveDescription()"
+                    ></app-rich-text-editor>
+                  } @else {
+                    <div class="min-h-[5rem] rounded-lg border border-gray-200 dark:border-surface-700 bg-gray-50 dark:bg-surface-800"></div>
+                  }
                 </div>
 
                 <!-- Attachments & Links -->
                 <div class="border-t border-gray-100 dark:border-surface-800 pt-4 flex flex-col gap-4">
-                  <app-task-attachments [projectId]="projectId()" [taskId]="task()!.id" [attachments]="task()!.attachments ?? []"
-                    (upload)="onFileUpload($event)" (delete)="deleteAttachment($event)" />
-                  <app-task-links [links]="task()!.links ?? []" (add)="addLink($event)" (delete)="deleteLink($event)" />
+                  <app-task-attachments
+                    [projectId]="projectId()"
+                    [taskId]="task()!.id"
+                    [attachments]="task()!.attachments ?? []"
+                    (upload)="onFileUpload($event)"
+                    (delete)="deleteAttachment($event)"
+                  />
+                  <app-task-links
+                    [links]="task()!.links ?? []"
+                    (add)="addLink($event)"
+                    (delete)="deleteLink($event)"
+                  />
                 </div>
 
-                <!-- Tabs area for children, relations, comments -->
+                <!-- Sub-Items Section -->
                 <div class="border-t border-gray-100 dark:border-surface-800 pt-6">
-                  <p-tabs [value]="'subitems'" class="w-full">
-                    <p-tablist>
-                      <p-tab value="subitems">Sub-items {{ task()!.children?.length ? '('+task()!.children!.length+')' : '' }}</p-tab>
-                      <p-tab value="relations">Relations</p-tab>
-                      <p-tab value="activity">Activity</p-tab>
-                    </p-tablist>
-                    <p-tabpanels class="pt-4">
-                      <p-tabpanel value="subitems"><app-task-subitems-tab [task]="task()" (openChild)="openChildTask($event)" (addSubItem)="addSubItem($event)" /></p-tabpanel>
-                      <p-tabpanel value="relations"><app-task-relations-tab [task]="task()" (addRelation)="addRelation($event)" (deleteRelation)="deleteRelation($event)" /></p-tabpanel>
-                      <p-tabpanel value="activity"><app-task-activity-tab [activity]="activity()" [currentUserId]="currentUserId()" (submitComment)="submitComment($event)" (editComment)="editComment($event)" (deleteComment)="deleteComment($event)" /></p-tabpanel>
-                    </p-tabpanels>
-                  </p-tabs>
+                  <app-sub-items-section
+                    [items]="stateService.subItemsTree()"
+                    [totalCount]="stateService.subItemsTotalCount()"
+                    [doneCount]="stateService.subItemsDoneCount()"
+                    [members]="memberOptions()"
+                    [projectId]="projectId()"
+                    [taskId]="task()!.id"
+                    (createSubItem)="onCreateSubItem($event)"
+                    (subItemClicked)="openChildTask($event)"
+                  />
+                </div>
+
+                <!-- Activity Panel (no Properties tab in full-page mode) -->
+                <div class="border-t border-gray-100 dark:border-surface-800 pt-6">
+                  <app-activity-panel
+                    [entries]="stateService.activityEntries()"
+                    [loading]="stateService.activityLoading()"
+                    [hasMore]="stateService.activityHasMore()"
+                    [activeFilter]="activeActivityTab()"
+                    viewMode="full-page"
+                    [showPropertiesTab]="false"
+                    [compact]="false"
+                    (filterChanged)="onActivityFilterChanged($event)"
+                    (loadMore)="onActivityLoadMore()"
+                  />
                 </div>
               </div>
 
-              <!-- Right Column: Properties Sidebar -->
-              @if (showSidebar()) {
-                <div class="w-80 border-l border-gray-100 dark:border-surface-700 bg-gray-50/30 dark:bg-surface-900/30 overflow-y-auto p-5 flex flex-col gap-4 flex-shrink-0">
-                  <h3 class="text-sm font-semibold text-gray-700 dark:text-surface-200 uppercase tracking-wide">Thuộc tính (Properties)</h3>
-
-                  <!-- State -->
-                  <div>
-                    <label class="text-xs text-gray-500 uppercase tracking-wide mb-1 block font-medium">State</label>
-                    <p-select [options]="stateOptions()" [ngModel]="editStateId()" optionLabel="name" optionValue="id"
-                      placeholder="Chọn state" styleClass="w-full text-sm" (ngModelChange)="saveField('stateId', $event)" />
-                  </div>
-
-                  <!-- Priority -->
-                  <div>
-                    <label class="text-xs text-gray-500 uppercase tracking-wide mb-1 block font-medium">Priority</label>
-                    <p-select [options]="priorityOptions" [ngModel]="editPriority()" optionLabel="label" optionValue="value"
-                      placeholder="Chọn priority" styleClass="w-full text-sm" (ngModelChange)="saveField('priority', $event)" />
-                  </div>
-
-                  <!-- Assignees -->
-                  <div>
-                    <label class="text-xs text-gray-500 uppercase tracking-wide mb-1 block font-medium">Assignees</label>
-                    <p-multiselect [options]="memberOptions()" [ngModel]="editAssigneeIds()" optionLabel="displayName" optionValue="userId"
-                      placeholder="Thêm assignee" styleClass="w-full text-sm" (ngModelChange)="saveField('assigneeIds', $event)" />
-                  </div>
-
-                  <!-- Labels -->
-                  <div>
-                    <label class="text-xs text-gray-500 uppercase tracking-wide mb-1 block font-medium">Nhãn (Labels)</label>
-                    <p-multiselect
-                      [options]="labelOptions()"
-                      [ngModel]="editLabelIds()"
-                      optionLabel="name"
-                      optionValue="id"
-                      placeholder="Chọn nhãn..."
-                      styleClass="w-full text-sm"
-                      (ngModelChange)="onLabelsChange($event)"
-                    >
-                      <ng-template let-label pTemplate="item">
-                        <div class="flex items-center gap-2" [pTooltip]="label.description ? label.name + ': ' + label.description : label.name">
-                          @if (isScoped(label.name)) {
-                            <span class="inline-flex items-center text-xs rounded-full overflow-hidden border border-gray-200 dark:border-surface-700 font-medium bg-white dark:bg-surface-800">
-                              <span class="px-1.5 py-px text-white" 
-                                    [style.background]="layoutService.getAdaptiveColor(getScopeColor(label.name, label.color))" 
-                                    [style.color]="layoutService.getTextColor(layoutService.getAdaptiveColor(getScopeColor(label.name, label.color)))">{{ getScope(label.name) }}</span>
-                              <span class="px-1.5 py-px" 
-                                    [style.background]="layoutService.getAdaptiveColor(label.color) + '18'" 
-                                    [style.color]="layoutService.getAdaptiveColor(label.color)">{{ getValue(label.name) }}</span>
-                            </span>
-                          } @else {
-                            <span class="text-xs px-2 py-0.5 rounded-full font-medium" 
-                                  [style.background]="layoutService.getAdaptiveColor(label.color) + '22'" 
-                                  [style.color]="layoutService.getAdaptiveColor(label.color)">
-                              {{ label.name }}
-                            </span>
-                          }
-                        </div>
-                      </ng-template>
-
-                      <ng-template pTemplate="selectedItems">
-                        <div class="flex flex-wrap gap-1">
-                          @for (valId of editLabelIds(); track valId) {
-                            @let label = getLabelById(valId);
-                            @if (label) {
-                              @if (isScoped(label.name)) {
-                                <span class="inline-flex items-center text-[10px] rounded-full overflow-hidden border border-gray-200 dark:border-surface-700 font-medium bg-white dark:bg-surface-800" [pTooltip]="label.description ? label.name + ': ' + label.description : label.name">
-                                  <span class="px-1.5 py-px text-white" 
-                                        [style.background]="layoutService.getAdaptiveColor(getScopeColor(label.name, label.color))" 
-                                        [style.color]="layoutService.getTextColor(layoutService.getAdaptiveColor(getScopeColor(label.name, label.color)))">{{ getScope(label.name) }}</span>
-                                  <span class="px-1.5 py-px" 
-                                        [style.background]="layoutService.getAdaptiveColor(label.color) + '18'" 
-                                        [style.color]="layoutService.getAdaptiveColor(label.color)">{{ getValue(label.name) }}</span>
-                                </span>
-                              } @else {
-                                <span class="text-[10px] px-2 py-px rounded-full font-medium bg-white dark:bg-surface-800 border" 
-                                      [style.border-color]="layoutService.getAdaptiveColor(label.color)" 
-                                      [style.color]="layoutService.getAdaptiveColor(label.color)"
-                                      [pTooltip]="label.description ? label.name + ': ' + label.description : label.name">
-                                  {{ label.name }}
-                                </span>
-                              }
-                            }
-                          }
-                          @if (!editLabelIds() || editLabelIds().length === 0) {
-                            <span class="text-gray-400 text-xs">Chọn nhãn...</span>
-                          }
-                        </div>
-                      </ng-template>
-                    </p-multiselect>
-                  </div>
-
-                  <!-- Estimate -->
-                  <div>
-                    <label class="text-xs text-gray-500 uppercase tracking-wide mb-1 block font-medium">Estimate</label>
-                    <p-inputnumber [ngModel]="editEstimate()" (ngModelChange)="saveField('estimateValue', $event)" [min]="0" styleClass="w-full text-sm" />
-                  </div>
-
-                  <!-- Start Date -->
-                  <div>
-                    <label class="text-xs text-gray-500 uppercase tracking-wide mb-1 block font-medium">Bắt đầu</label>
-                    <p-datepicker [ngModel]="editStartDate()" (ngModelChange)="saveField('startDate', formatDateToISO($event))" dateFormat="dd/mm/yy" styleClass="w-full text-sm" />
-                  </div>
-
-                  <!-- Due Date -->
-                  <div>
-                    <label class="text-xs text-gray-500 uppercase tracking-wide mb-1 block font-medium">Hết hạn</label>
-                    <p-datepicker [ngModel]="editDueDate()" (ngModelChange)="saveField('dueDate', formatDateToISO($event))" dateFormat="dd/mm/yy" styleClass="w-full text-sm" />
-                  </div>
-
-                  <!-- Modules -->
-                  <div>
-                    <label class="text-xs text-gray-500 uppercase tracking-wide mb-1 block font-medium">Modules</label>
-                    <p-multiselect
-                      [options]="moduleGroupOptions()"
-                      [ngModel]="editModuleIds()"
-                      [group]="true"
-                      optionLabel="name"
-                      optionValue="id"
-                      optionGroupLabel="label"
-                      optionGroupChildren="items"
-                      placeholder="Chọn modules..."
-                      styleClass="w-full text-sm"
-                      display="chip"
-                      (ngModelChange)="onModulesChange($event)"
-                    >
-                      <ng-template let-group pTemplate="group">
-                        <div class="flex items-center gap-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                          <i [class]="group.icon" class="text-xs"></i>
-                          <span>{{ group.label }}</span>
-                        </div>
-                      </ng-template>
-                    </p-multiselect>
-                  </div>
-
-                  <!-- Reporter and metadata -->
-                  <div class="border-t border-gray-100 dark:border-surface-800 pt-4 flex flex-col gap-2 text-xs text-gray-500">
-                    <div>
-                      <span class="font-medium text-gray-400">Người tạo:</span> {{ task()?.reporter?.displayName }}
-                    </div>
-                    <div>
-                      <span class="font-medium text-gray-400">Tạo lúc:</span> {{ task()?.createdAt | date:'dd/MM/yyyy HH:mm' }}
-                    </div>
+              <!-- Right Column: Properties Sidebar (Req 8.1, 8.4, 8.5) -->
+              <div
+                class="border-l border-gray-100 dark:border-surface-700 bg-gray-50/30 dark:bg-surface-900/30 flex-shrink-0 relative overflow-hidden"
+                [style.width]="stateService.sidebarExpanded() ? sidebarWidth() + 'px' : '0px'"
+                [style.opacity]="stateService.sidebarExpanded() ? '1' : '0'"
+                [style.transition]="isResizing() ? 'opacity 200ms' : 'opacity 200ms, width 200ms ease-in-out'"
+              >
+                <!-- Drag-resize handle on the left edge -->
+                @if (stateService.sidebarExpanded()) {
+                  <div
+                    class="absolute left-0 top-0 bottom-0 w-1 z-10 cursor-col-resize select-none hover:bg-indigo-400/50 active:bg-indigo-500/60 transition-colors"
+                    (mousedown)="onResizeStart($event)"
+                  ></div>
+                }
+                <!-- Scrollable content -->
+                <div class="h-full overflow-y-auto">
+                  <div class="p-5 w-full box-border" [style.min-width]="sidebarWidth() + 'px'">
+                    <app-properties-sidebar
+                      [task]="task()"
+                      [states]="stateOptions()"
+                      [members]="memberOptions()"
+                      [labels]="labelOptions()"
+                      [modules]="moduleOptions()"
+                      [availableParentTasks]="taskStore.tasks()"
+                      [collapseState]="stateService.sectionCollapseState()"
+                      (propertyChanged)="onPropertyChanged($event)"
+                      (parentChanged)="onParentChanged($event)"
+                      (parentClicked)="openChildTask($event)"
+                      (sectionToggled)="onSectionToggled($event)"
+                    />
                   </div>
                 </div>
-              }
+              </div>
             </div>
           }
         }
@@ -345,10 +368,12 @@ const PRIORITY_OPTIONS = [
     <p-toast />
   `,
 })
-export class TaskDetailPanelComponent implements OnInit, OnDestroy {
+export class TaskDetailPanelComponent implements OnInit, OnChanges, OnDestroy {
+  // ─── Injected Services ──────────────────────────────────────────────────
   readonly taskStore = inject(TaskStore);
   readonly projectStore = inject(ProjectStore);
   readonly moduleStore = inject(ModuleStore);
+  readonly stateService = inject(TaskDetailStateService);
   private readonly authStore = inject(AuthStore);
   private readonly attachmentService = inject(AttachmentService);
   private readonly taskService = inject(TaskService);
@@ -359,203 +384,345 @@ export class TaskDetailPanelComponent implements OnInit, OnDestroy {
   private readonly messageService = inject(MessageService);
   protected readonly layoutService = inject(LayoutService);
   private readonly destroy$ = new Subject<void>();
+  private readonly injector = inject(Injector);
 
+  // ─── Inputs / Outputs ──────────────────────────────────────────────────
   @Input() viewMode: 'right-pane' | 'full-page' | 'popup' = 'right-pane';
   @Output() viewModeChange = new EventEmitter<'right-pane' | 'full-page' | 'popup'>();
 
+  // ─── Component State ────────────────────────────────────────────────────
   readonly task = this.taskStore.currentTask;
   readonly isVisible = signal(false);
-  protected editTitle = '';
-  protected activity = signal<TaskActivity[]>([]);
+  /** Delayed true so Tiptap init happens in a separate macrotask from the mode-switch CD cycle */
+  protected readonly showRte = signal(false);
+  private _showRteTimer?: ReturnType<typeof setTimeout>;
   protected readonly currentUserId = computed(() => this.authStore.currentUser()?.id ?? '');
+  private isDestroying = false;
 
-  protected showSidebar = signal(true);
-  protected editStateId = signal('');
-  protected editPriority = signal('');
-  protected editAssigneeIds = signal<string[]>([]);
-  protected editLabelIds = signal<string[]>([]);
-  protected editEstimate = signal<number | null>(null);
-  protected editStartDate = signal<Date | null>(null);
-  protected editDueDate = signal<Date | null>(null);
-  protected editModuleIds = signal<string[]>([]);
-  protected readonly priorityOptions = PRIORITY_OPTIONS;
+  /** Signal accessor for save status — passed to TaskHeaderComponent */
+  readonly saveStatusSignal = computed(() => this.taskStore.saveStatus());
 
-  protected readonly stateOptions = computed(() => this.projectStore.currentProjectStates() ? Object.values(this.projectStore.currentProjectStates()!).flat() : []);
-  protected readonly memberOptions = computed(() => this.projectStore.members());
-  protected readonly labelOptions = computed(() => this.taskStore.labels());
-  protected projectId = computed(() => this.projectStore.currentProject()?.id ?? '');
+  /** Active tab in the activity panel — separate from the API filter so 'properties' tab works */
+  protected readonly activeActivityTab = signal<ActivityFilterType | 'properties'>('all');
 
-  protected readonly moduleGroupOptions = computed(() => {
-    const modules = this.moduleStore.modules();
-    const workspaceModules = modules.filter(m => m.scope === 'workspace');
-    const projectModules = modules.filter(m => m.scope === 'project');
-    return [
-      {
-        label: 'Workspace Modules',
-        icon: 'pi pi-globe text-indigo-500',
-        items: workspaceModules.map(m => ({ id: m.id, name: m.name, scope: m.scope })),
-      },
-      {
-        label: 'Project Modules',
-        icon: 'pi pi-folder text-teal-500',
-        items: projectModules.map(m => ({ id: m.id, name: m.name, scope: m.scope })),
-      },
-    ];
+  /** Width of the properties sidebar in pixels; persisted to localStorage */
+  protected readonly sidebarWidth = signal(this.loadSidebarWidth());
+  /** True while the user is dragging the resize handle — suppresses width CSS transition */
+  protected readonly isResizing = signal(false);
+
+  // ─── Computed options for child components ─────────────────────────────
+  protected readonly projectId = computed(() => this.projectStore.currentProject()?.id ?? '');
+
+  protected readonly stateOptions = computed(() => {
+    const states = this.projectStore.currentProjectStates();
+    return states ? Object.values(states).flat() : [];
   });
 
+  protected readonly memberOptions = computed(() => this.projectStore.members());
+  protected readonly labelOptions = computed(() => this.taskStore.labels());
+  protected readonly moduleOptions = computed(() => this.moduleStore.modules());
+
+  // ─── Constructor Effects ────────────────────────────────────────────────
   constructor() {
+    // Effect: chỉ trigger khi task ID hoặc projectId thay đổi — KHÔNG phải
+    // khi task object được cập nhật (save property, etc.).
+    // Dùng untracked() để toàn bộ side-effects bên trong không tạo dependency mới.
+    let lastLoadedTaskId: string | undefined;
     effect(() => {
-      const t = this.task();
-      if (t) {
-        this.editTitle = t.title;
-        this.editStateId.set(t.stateId);
-        this.editPriority.set(t.priority);
-        this.editAssigneeIds.set(t.assignees?.map((a: any) => a.userId ?? a.id) ?? []);
-        this.editLabelIds.set(t.labels?.map((l: any) => l.id) ?? []);
-        this.editEstimate.set(t.estimateValue);
-        this.editStartDate.set(t.startDate ? new Date(t.startDate) : null);
-        this.editDueDate.set(t.dueDate ? new Date(t.dueDate) : null);
-        this.editModuleIds.set(t.modules?.map((m: any) => m.id) ?? []);
-        this.loadActivity();
+      const taskId = this.task()?.id;
+      const projectId = this.projectId();
+      if (taskId && projectId && taskId !== lastLoadedTaskId) {
+        lastLoadedTaskId = taskId;
+        untracked(() => {
+          this.stateService.loadSubItemsTree(projectId, taskId);
+          const limit = this.viewMode === 'full-page' ? 20 : 15;
+          this.stateService.loadActivity(projectId, taskId, 'all', 1, limit);
+        });
       }
+    });
+
+    // Show RTE when panel becomes visible; hide when it closes
+    effect(() => {
+      const visible = this.isVisible();
+      untracked(() => {
+        clearTimeout(this._showRteTimer);
+        if (visible) {
+          this._showRteTimer = setTimeout(() => this.showRte.set(true));
+        } else {
+          this.showRte.set(false);
+        }
+      });
     });
   }
 
+  // ─── Lifecycle ──────────────────────────────────────────────────────────
+
   ngOnInit(): void {
-    this.route.queryParams.pipe(takeUntil(this.destroy$)).subscribe((params) => {
-      const taskId = params['taskId'], projectId = this.projectId();
-      if (taskId && projectId) {
+    // Wait for projectId to be available before reacting to queryParams.
+    // On direct URL load, projectId may be empty until the project store hydrates.
+    // combineLatest ensures we only fire once both are ready.
+    const projectId$ = toObservable(this.projectId, { injector: this.injector }).pipe(
+      filter((id): id is string => !!id),
+      distinctUntilChanged(),
+    );
+
+    const queryParams$ = this.route.queryParams.pipe(
+      distinctUntilChanged((a, b) => a['taskId'] === b['taskId']),
+    );
+
+    combineLatest([queryParams$, projectId$]).pipe(
+      takeUntil(this.destroy$),
+      distinctUntilChanged(([pA, projA], [pB, projB]) => pA['taskId'] === pB['taskId'] && projA === projB),
+    ).subscribe(([params, projectId]) => {
+      const taskId = params['taskId'];
+      this._pendingDescription = undefined; // reset on any task navigation
+      if (taskId) {
         this.isVisible.set(true);
         this.taskStore.loadTask(projectId, taskId);
         if (!this.projectStore.members().length) this.projectStore.loadMembers(projectId);
         if (!this.moduleStore.modules().length) this.moduleStore.loadModules(projectId);
         if (!this.taskStore.labels().length) this.taskStore.loadLabels(projectId);
-      } else this.isVisible.set(false);
+      } else {
+        this.isVisible.set(false);
+      }
     });
   }
 
-  ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
-  protected onClose(): void { this.router.navigate([], { relativeTo: this.route, queryParams: { taskId: null }, queryParamsHandling: 'merge' }); }
-  protected copyTaskId(taskId: string): void { navigator.clipboard.writeText(taskId); this.messageService.add({ severity: 'success', summary: 'Đã sao chép', life: 1500 }); }
-  protected saveTitle(): void { const t = this.task(); if (t && this.editTitle !== t.title) this.taskStore.updateTask(this.projectId(), t.id, { title: this.editTitle }); }
-  protected saveField(field: string, value: unknown): void { const t = this.task(); if (t) this.taskStore.updateTask(this.projectId(), t.id, { [field]: value } as any); }
-  protected saveDescription(desc: TiptapDoc | null): void { const t = this.task(); if (t) this.taskStore.updateTask(this.projectId(), t.id, { description: desc }); }
-  protected openChildTask(taskId: string): void { this.router.navigate([], { relativeTo: this.route, queryParams: { taskId }, queryParamsHandling: 'merge' }); }
-  protected deleteAttachment(att: TaskAttachment): void { const t = this.task(); if (t) this.attachmentService.delete(this.projectId(), t.id, att.id).subscribe(() => this.taskStore.loadTask(this.projectId(), t.taskId)); }
-  protected deleteLink(link: TaskLink): void { const t = this.task(); if (t) this.linkService.deleteLink(this.projectId(), t.id, link.id).subscribe(() => this.taskStore.loadTask(this.projectId(), t.taskId)); }
-  protected deleteRelation(relationId: string): void { const t = this.task(); if (t) this.relationService.deleteRelation(this.projectId(), t.id, relationId).subscribe(() => this.taskStore.loadTask(this.projectId(), t.taskId)); }
-  protected submitComment(content: string): void { const t = this.task(); if (t) this.taskService.addComment(this.projectId(), t.id, { content }).subscribe(() => this.loadActivity()); }
-  protected deleteComment(commentId: string): void { const t = this.task(); if (t) this.taskService.deleteComment(this.projectId(), t.id, commentId).subscribe(() => this.loadActivity()); }
-
-  protected isScoped(name: string): boolean { return name.includes('::'); }
-  protected getScope(name: string): string { return name.split('::')[0].trim(); }
-  protected getValue(name: string): string { return name.split('::').slice(1).join('::').trim(); }
-
-  protected getScopeColor(name: string, fallbackColor: string): string {
-    if (!this.isScoped(name)) return fallbackColor;
-    const scope = this.getScope(name).toLowerCase();
-    const match = this.labelOptions().find(l => l.name.includes('::') && l.name.split('::')[0].trim().toLowerCase() === scope);
-    return match ? match.color : fallbackColor;
-  }
-
-  protected getLabelById(id: string): any {
-    return this.labelOptions().find(l => l.id === id);
-  }
-
-  protected onLabelsChange(newLabelIds: string[]): void {
-    let filteredIds: string[] = [];
-    const previousIds = this.editLabelIds();
-    const addedId = newLabelIds.find(id => !previousIds.includes(id));
-
-    if (addedId) {
-      const addedLabel = this.labelOptions().find(l => l.id === addedId);
-      if (addedLabel && addedLabel.name.includes('::') && addedLabel.isExclusive !== false) {
-        const scope = addedLabel.name.split('::')[0].trim().toLowerCase();
-        filteredIds = newLabelIds.filter(id => {
-          if (id === addedId) return true;
-          const label = this.labelOptions().find(l => l.id === id);
-          if (label && label.name.includes('::') && label.isExclusive !== false) {
-            return label.name.split('::')[0].trim().toLowerCase() !== scope;
-          }
-          return true;
-        });
-      } else {
-        filteredIds = newLabelIds;
-      }
-    } else {
-      filteredIds = newLabelIds;
+  ngOnChanges(changes: SimpleChanges): void {
+    if (!changes['viewMode']) return;
+    // Template branches change on viewMode switch — reset and re-defer RTE init
+    // to avoid blocking the mode-switch CD cycle regardless of which mode we switch to
+    clearTimeout(this._showRteTimer);
+    this.showRte.set(false);
+    if (this.isVisible()) {
+      this._showRteTimer = setTimeout(() => this.showRte.set(true));
     }
-
-    this.editLabelIds.set(filteredIds);
-    this.saveField('labelIds', filteredIds);
   }
 
-  protected formatDateToISO(date: Date | null): string | null {
-    return date ? date.toISOString().split('T')[0] : null;
+  ngOnDestroy(): void {
+    this.isDestroying = true;
+    clearTimeout(this._showRteTimer);
+    this.isVisible.set(false);
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
-  protected onModulesChange(newModuleIds: string[]): void {
+  // ─── Header Actions ─────────────────────────────────────────────────────
+
+  /** Toggle sidebar and persist state (Req 8.4, 8.7) */
+  protected toggleSidebar(): void {
+    this.stateService.toggleSidebar();
+  }
+
+  // ─── Sidebar Resize ─────────────────────────────────────────────────────
+
+  private loadSidebarWidth(): number {
+    try {
+      const saved = localStorage.getItem('task-detail-sidebar-width');
+      if (saved) return Math.max(240, Math.min(640, parseInt(saved, 10)));
+    } catch { /* ignore */ }
+    return 360;
+  }
+
+  private saveSidebarWidth(w: number): void {
+    try { localStorage.setItem('task-detail-sidebar-width', String(w)); } catch { /* ignore */ }
+  }
+
+  protected onResizeStart(e: MouseEvent): void {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startWidth = this.sidebarWidth();
+    this.isResizing.set(true);
+
+    const onMove = (ev: MouseEvent) => {
+      const newWidth = Math.max(240, Math.min(640, startWidth + (startX - ev.clientX)));
+      this.sidebarWidth.set(newWidth);
+    };
+
+    const onUp = () => {
+      this.isResizing.set(false);
+      this.saveSidebarWidth(this.sidebarWidth());
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  }
+
+  protected onDialogVisibleChange(visible: boolean): void {
+    if (!visible && this.viewMode === 'popup' && !this.isDestroying) {
+      this.isVisible.set(false);
+      this.onClose();
+    }
+  }
+
+  protected onDrawerVisibleChange(visible: boolean): void {
+    if (!visible && this.viewMode === 'right-pane' && !this.isDestroying) {
+      this.isVisible.set(false);
+      this.onClose();
+    }
+  }
+
+  protected onDialogHide(): void {
+    if (this.isDestroying) return;
+    if (this.viewMode !== 'popup') return;
+    this.onClose();
+  }
+
+  protected onDrawerClose(): void {
+    if (this.isDestroying) return;
+    if (this.viewMode !== 'right-pane') return;
+    this.onClose();
+  }
+
+  protected onClose(): void {
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { taskId: null },
+      queryParamsHandling: 'merge',
+    });
+  }
+
+  // ─── Title ──────────────────────────────────────────────────────────────
+
+  protected onTitleSaved(newTitle: string): void {
+    const t = this.task();
+    if (t) {
+      this.taskStore.updateTask(this.projectId(), t.id, { title: newTitle });
+    }
+  }
+
+  // ─── Description ────────────────────────────────────────────────────────
+
+  private _pendingDescription: TiptapDoc | null | undefined = undefined;
+
+  protected onDescriptionChange(val: TiptapDoc | null): void {
+    this._pendingDescription = val;
+  }
+
+  protected saveDescription(): void {
+    if (this._pendingDescription === undefined) return;
+    const t = this.task();
+    if (t) {
+      this.taskStore.updateTask(this.projectId(), t.id, { description: this._pendingDescription });
+      this._pendingDescription = undefined;
+    }
+  }
+
+  // ─── Properties Sidebar Events ──────────────────────────────────────────
+
+  protected onPropertyChanged(event: { field: string; value: unknown }): void {
+    const t = this.task();
+    if (t) {
+      this.taskStore.updateTask(this.projectId(), t.id, { [event.field]: event.value } as any);
+    }
+  }
+
+  protected onParentChanged(parentId: string | null): void {
+    const t = this.task();
+    if (t) {
+      this.taskStore.updateTask(this.projectId(), t.id, { parentId } as any);
+    }
+  }
+
+  protected onSectionToggled(event: { key: string; expanded: boolean }): void {
+    this.stateService.toggleSection(event.key);
+  }
+
+  // ─── Sub-Items Events ───────────────────────────────────────────────────
+
+  protected onCreateSubItem(dto: CreateSubItemDto): void {
     const t = this.task();
     if (!t) return;
     const projectId = this.projectId();
-    const previousIds = t.modules?.map(m => m.id) ?? [];
 
-    const added = newModuleIds.filter(id => !previousIds.includes(id));
-    const removed = previousIds.filter(id => !newModuleIds.includes(id));
-
-    for (const moduleId of added) {
-      this.moduleStore.addTasksToModule(projectId, moduleId, [t.id]).then(() => {
-        this.taskStore.loadTask(projectId, t.taskId);
+    this.taskStore
+      .createTask(projectId, {
+        title: dto.title,
+        parentId: dto.parentId,
+        type: t.type === 'epic' ? 'story' : t.type === 'story' ? 'task' : 'subtask',
+        assigneeIds: dto.assigneeIds,
+        priority: dto.priority,
+        dueDate: dto.dueDate,
+      } as any)
+      .then(() => {
+        // Reload sub-items tree after creation
+        this.stateService.loadSubItemsTree(projectId, t.id);
       });
-    }
+  }
 
-    for (const moduleId of removed) {
-      this.moduleStore.removeTaskFromModule(projectId, moduleId, t.id).then(() => {
-        this.taskStore.loadTask(projectId, t.taskId);
-      });
+  protected openChildTask(taskId: string): void {
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { taskId },
+      queryParamsHandling: 'merge',
+    });
+  }
+
+  // ─── Activity Events ────────────────────────────────────────────────────
+
+  protected onActivityFilterChanged(filter: ActivityFilterType | 'properties'): void {
+    this.activeActivityTab.set(filter);
+    if (filter === 'properties') return;
+    const t = this.task();
+    if (t) {
+      this.stateService.setActivityFilter(filter as ActivityFilterType, this.projectId(), t.id);
     }
   }
 
+  protected onActivityLoadMore(): void {
+    const t = this.task();
+    if (t) {
+      this.stateService.loadMoreActivity(this.projectId(), t.id);
+    }
+  }
+
+  // ─── Attachment & Link Events ───────────────────────────────────────────
+
   protected onFileUpload(files: FileList): void {
-    const t = this.task(); if (!t) return;
+    const t = this.task();
+    if (!t) return;
     for (const file of Array.from(files)) {
       this.attachmentService.upload(this.projectId(), t.id, file).subscribe({
         next: () => this.taskStore.loadTask(this.projectId(), t.taskId),
-        error: (err) => this.messageService.add({ severity: 'error', summary: err.error?.message ?? 'Upload thất bại' }),
+        error: (err) =>
+          this.messageService.add({
+            severity: 'error',
+            summary: err.error?.message ?? 'Upload thất bại',
+          }),
       });
     }
   }
 
   protected addLink(event: { url: string; title?: string }): void {
-    const t = this.task(); if (!t) return;
+    const t = this.task();
+    if (!t) return;
     this.linkService.addLink(this.projectId(), t.id, event).subscribe({
       next: () => this.taskStore.loadTask(this.projectId(), t.taskId),
-      error: (err) => this.messageService.add({ severity: 'error', summary: err.error?.message ?? 'Lỗi' }),
+      error: (err) =>
+        this.messageService.add({
+          severity: 'error',
+          summary: err.error?.message ?? 'Lỗi',
+        }),
     });
   }
 
-  protected addSubItem(title: string): void {
-    const t = this.task(); if (!t) return;
-    this.taskStore.createTask(this.projectId(), {
-      title, parentId: t.id,
-      type: t.type === 'epic' ? 'story' : t.type === 'story' ? 'task' : 'subtask',
-    }).then(() => this.taskStore.loadTask(this.projectId(), t.taskId));
-  }
-
-  protected addRelation(event: { targetTaskId: string; relationType: string }): void {
-    const t = this.task(); if (!t) return;
-    this.relationService.addRelation(this.projectId(), t.id, event as any).subscribe({
-      next: () => this.taskStore.loadTask(this.projectId(), t.taskId),
-      error: (err) => this.messageService.add({ severity: 'error', summary: err.error?.message ?? 'Lỗi' }),
-    });
-  }
-
-  protected editComment(event: { id: string; content: string }): void {
+  protected deleteAttachment(att: TaskAttachment): void {
     const t = this.task();
-    if (t) this.taskService.editComment(this.projectId(), t.id, event.id, { content: event.content }).subscribe(() => this.loadActivity());
+    if (t) {
+      this.attachmentService
+        .delete(this.projectId(), t.id, att.id)
+        .subscribe(() => this.taskStore.loadTask(this.projectId(), t.taskId));
+    }
   }
 
-  private loadActivity(): void {
-    const t = this.task(); if (t) this.taskService.getActivity(this.projectId(), t.id).subscribe((res) => this.activity.set(res.data));
+  protected deleteLink(link: TaskLink): void {
+    const t = this.task();
+    if (t) {
+      this.linkService
+        .deleteLink(this.projectId(), t.id, link.id)
+        .subscribe(() => this.taskStore.loadTask(this.projectId(), t.taskId));
+    }
   }
 }

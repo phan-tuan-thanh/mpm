@@ -13,6 +13,9 @@ import type {
   TaskQueryDto,
   CreateCommentDto,
   UpdateCommentDto,
+  SubItemsTreeResponse,
+  ActivityFilteredResponse,
+  ActivityFilterType,
 } from '@mpm/shared-types';
 
 @Injectable({ providedIn: 'root' })
@@ -86,5 +89,31 @@ export class TaskService {
 
   deleteComment(projectId: string, taskId: string, commentId: string): Observable<void> {
     return this.http.delete<void>(`${this.base(projectId)}/${taskId}/comments/${commentId}`);
+  }
+
+  getSubItemsTree(projectId: string, taskId: string, depth?: number): Observable<SubItemsTreeResponse> {
+    let params = new HttpParams();
+    if (depth != null) params = params.set('depth', String(depth));
+    return this.http.get<SubItemsTreeResponse>(
+      `${this.base(projectId)}/${taskId}/children`,
+      { params },
+    );
+  }
+
+  getActivityFiltered(
+    projectId: string,
+    taskId: string,
+    type?: ActivityFilterType,
+    page?: number,
+    limit?: number,
+  ): Observable<ActivityFilteredResponse> {
+    let params = new HttpParams();
+    if (type) params = params.set('type', type);
+    if (page != null) params = params.set('page', String(page));
+    if (limit != null) params = params.set('limit', String(limit));
+    return this.http.get<ActivityFilteredResponse>(
+      `${this.base(projectId)}/${taskId}/activity`,
+      { params },
+    );
   }
 }

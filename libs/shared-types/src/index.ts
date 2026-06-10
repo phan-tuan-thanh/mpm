@@ -57,6 +57,16 @@ export {
 } from './module.types';
 
 export {
+  SubItemTreeNode,
+  SubItemsTreeResponse,
+  ActivityFilterType,
+  ActivityFilteredResponse,
+  SectionCollapseState,
+  PropertySaveQueueItem,
+  CreateSubItemDto,
+} from './task-detail.types';
+
+export {
   ProjectStatus,
   ProjectAuditEvent,
   Project,

@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { Task, TaskType, TaskPriority } from './entities/task.entity';
 import { Project } from '../project/entities/project.entity';
+import type { SubItemTreeNode, SubItemsTreeResponse } from '@mpm/shared-types';
 
 @Injectable()
 export class TaskQueryService {
@@ -135,5 +136,203 @@ export class TaskQueryService {
       .orderBy('t.backlogOrder', 'ASC')
       .limit(20)
       .getMany();
+  }
+
+  /**
+   * Lấy cây con (sub-items tree) của một task theo dạng phân cấp.
+   * Dùng recursive CTE để lấy tất cả descendants đến depth tối đa.
+   */
+  async getChildrenTree(
+    projectId: string,
+    taskId: string,
+    depth: number = 5,
+  ): Promise<SubItemsTreeResponse> {
+    // Kiểm tra task tồn tại trong project
+    const task = await this.taskRepo.findOne({
+      where: { id: taskId, projectId },
+      select: ['id'],
+    });
+    if (!task) throw new NotFoundException('Task not found');
+
+    // Giới hạn depth tối đa là 5
+    const maxDepth = Math.min(Math.max(depth, 1), 5);
+
+    // Recursive CTE lấy tất cả descendants với depth tracking
+    const rows: Array<{
+      id: string;
+      task_id: string;
+      title: string;
+      type: TaskType;
+      priority: TaskPriority;
+      state_id: string;
+      parent_id: string | null;
+      due_date: string | null;
+      backlog_order: number;
+      depth: number;
+      state_name: string;
+      state_color: string;
+      state_group: string;
+    }> = await this.dataSource.query(
+      `
+      WITH RECURSIVE task_tree AS (
+        SELECT
+          t.id,
+          t.task_id,
+          t.title,
+          t.type,
+          t.priority,
+          t.state_id,
+          t.parent_id,
+          t.due_date,
+          t.backlog_order,
+          1 AS depth
+        FROM tasks t
+        WHERE t.parent_id = $1
+          AND t.project_id = $2
+        UNION ALL
+        SELECT
+          c.id,
+          c.task_id,
+          c.title,
+          c.type,
+          c.priority,
+          c.state_id,
+          c.parent_id,
+          c.due_date,
+          c.backlog_order,
+          tt.depth + 1 AS depth
+        FROM tasks c
+        INNER JOIN task_tree tt ON c.parent_id = tt.id
+        WHERE tt.depth < $3
+          AND c.project_id = $2
+      )
+      SELECT
+        tt.id,
+        tt.task_id,
+        tt.title,
+        tt.type,
+        tt.priority,
+        tt.state_id,
+        tt.parent_id,
+        tt.due_date,
+        tt.backlog_order,
+        tt.depth,
+        ps.name AS state_name,
+        ps.color AS state_color,
+        ps."group" AS state_group
+      FROM task_tree tt
+      LEFT JOIN project_states ps ON ps.id = tt.state_id
+      ORDER BY tt.depth ASC, tt.backlog_order ASC
+      `,
+      [taskId, projectId, maxDepth],
+    );
+
+    // Lấy assignees cho tất cả tasks trong tree
+    const taskIds = rows.map((r) => r.id);
+    let assigneeMap: Map<string, Array<{ userId: string; displayName: string; email: string; avatarUrl: string | null; assignedAt: Date }>> = new Map();
+
+    if (taskIds.length > 0) {
+      const assigneeRows: Array<{
+        task_id: string;
+        user_id: string;
+        display_name: string;
+        email: string;
+        avatar_url: string | null;
+        assigned_at: Date;
+      }> = await this.dataSource.query(
+        `
+        SELECT
+          ta.task_id,
+          u.id AS user_id,
+          u.display_name,
+          u.email,
+          u.avatar_url,
+          ta.assigned_at
+        FROM task_assignees ta
+        INNER JOIN users u ON u.id = ta.user_id
+        WHERE ta.task_id = ANY($1)
+        `,
+        [taskIds],
+      );
+
+      for (const row of assigneeRows) {
+        const list = assigneeMap.get(row.task_id) ?? [];
+        list.push({
+          userId: row.user_id,
+          displayName: row.display_name,
+          email: row.email,
+          avatarUrl: row.avatar_url,
+          assignedAt: row.assigned_at,
+        });
+        assigneeMap.set(row.task_id, list);
+      }
+    }
+
+    // Build flat node map
+    const nodeMap = new Map<string, SubItemTreeNode>();
+    for (const row of rows) {
+      nodeMap.set(row.id, {
+        id: row.id,
+        taskId: row.task_id,
+        title: row.title,
+        type: row.type as TaskType,
+        priority: row.priority as TaskPriority,
+        stateId: row.state_id,
+        state: row.state_name
+          ? { id: row.state_id, name: row.state_name, color: row.state_color, group: row.state_group }
+          : undefined,
+        assignees: (assigneeMap.get(row.id) ?? []).map((a) => ({
+          userId: a.userId,
+          displayName: a.displayName,
+          email: a.email,
+          avatarUrl: a.avatarUrl,
+          assignedAt: a.assignedAt,
+        })),
+        dueDate: row.due_date,
+        children: [],
+        childrenCount: 0,
+        doneCount: 0,
+        expanded: true,
+      });
+    }
+
+    // Build tree structure — connect children to parents
+    const directChildren: SubItemTreeNode[] = [];
+    for (const row of rows) {
+      const node = nodeMap.get(row.id)!;
+      if (row.parent_id === taskId) {
+        // Direct child of the requested task
+        directChildren.push(node);
+      } else {
+        // Nested descendant — attach to parent node
+        const parentNode = nodeMap.get(row.parent_id!);
+        if (parentNode) {
+          parentNode.children.push(node);
+        }
+      }
+    }
+
+    // Calculate childrenCount and doneCount for each node (bottom-up)
+    // Process in reverse depth order so leaves are calculated first
+    const sortedByDepthDesc = [...rows].sort((a, b) => b.depth - a.depth);
+    for (const row of sortedByDepthDesc) {
+      const node = nodeMap.get(row.id)!;
+      node.childrenCount = node.children.length;
+      node.doneCount = node.children.filter(
+        (child) => child.state?.group === 'completed',
+      ).length;
+    }
+
+    // Calculate top-level totalCount and doneCount (direct children only)
+    const totalCount = directChildren.length;
+    const doneCount = directChildren.filter(
+      (child) => child.state?.group === 'completed',
+    ).length;
+
+    return {
+      items: directChildren,
+      totalCount,
+      doneCount,
+    };
   }
 }
