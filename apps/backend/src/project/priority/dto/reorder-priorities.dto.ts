@@ -1,11 +1,11 @@
-import { IsArray, ValidateNested, IsString, IsNumber } from 'class-validator';
+import { IsArray, ValidateNested, IsUUID, IsInt } from 'class-validator';
 import { Type } from 'class-transformer';
 
 class ReorderPriorityItem {
-  @IsString()
+  @IsUUID()
   priorityId!: string;
 
-  @IsNumber()
+  @IsInt()
   order!: number;
 }
 

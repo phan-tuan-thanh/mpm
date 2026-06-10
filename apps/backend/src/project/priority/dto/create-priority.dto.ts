@@ -1,7 +1,7 @@
-import { IsString, MaxLength, Matches } from 'class-validator';
+import { IsString, IsNotEmpty, MaxLength, Matches } from 'class-validator';
 
 export class CreatePriorityDto {
-  @IsString() @MaxLength(50)
+  @IsString() @IsNotEmpty() @MaxLength(50)
   name!: string;
 
   @IsString() @MaxLength(50) @Matches(/^[a-z0-9_-]+$/)
