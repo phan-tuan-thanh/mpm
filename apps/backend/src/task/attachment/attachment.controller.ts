@@ -1,9 +1,11 @@
 import {
+  Body,
   Controller,
   Delete,
   Get,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
   Res,
   UploadedFile,
@@ -28,8 +30,28 @@ export class AttachmentController {
     @Param('taskId', ParseUUIDPipe) taskId: string,
     @CurrentUser() user: RequestUser,
     @UploadedFile() file: Express.Multer.File,
+    @Body('title') title?: string,
   ) {
-    return this.attachmentService.upload(taskId, projectId, user.id, file);
+    return this.attachmentService.upload(taskId, projectId, user.id, file, title);
+  }
+
+  @Patch()
+  @ProjectRoles('Scrum_Master', 'Product_Owner', 'Developer', 'QA')
+  async batchUpdate(
+    @Param('taskId', ParseUUIDPipe) taskId: string,
+    @Body() dto: { items: Array<{ id: string; title?: string | null; sortOrder?: number }> },
+  ) {
+    await this.attachmentService.batchUpdate(taskId, dto.items ?? []);
+    return { ok: true };
+  }
+
+  @Patch(':attachmentId')
+  @ProjectRoles('Scrum_Master', 'Product_Owner', 'Developer', 'QA')
+  async updateAttachment(
+    @Param('attachmentId', ParseUUIDPipe) attachmentId: string,
+    @Body('title') title: string | null,
+  ) {
+    return this.attachmentService.updateTitle(attachmentId, title ?? null);
   }
 
   @Get(':attachmentId')

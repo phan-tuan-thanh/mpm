@@ -5,6 +5,7 @@ import { TaskService } from '../services/task.service';
 import { LabelStore } from './label.store';
 import type {
   Task,
+  TaskAttachment,
   TaskListItem,
   TaskActivity,
   Label,
@@ -90,6 +91,54 @@ export class TaskStore {
       .subscribe((task) => {
         if (task) this.currentTask.set(task);
       });
+  }
+
+  addAttachment(attachment: TaskAttachment): void {
+    this.currentTask.update(task => {
+      if (!task) return task;
+      return {
+        ...task,
+        attachments: [...(task.attachments ?? []), attachment],
+        attachmentCount: (task.attachmentCount ?? 0) + 1,
+      };
+    });
+  }
+
+  batchUpdateAttachments(items: Array<{ id: string; title?: string | null; sortOrder?: number }>): void {
+    this.currentTask.update(task => {
+      if (!task) return task;
+      const map = new Map(items.map(i => [i.id, i]));
+      return {
+        ...task,
+        attachments: (task.attachments ?? []).map(a => {
+          const u = map.get(a.id);
+          return u ? { ...a, ...u } : a;
+        }),
+      };
+    });
+  }
+
+  updateAttachmentTitle(attachmentId: string, title: string | null): void {
+    this.currentTask.update(task => {
+      if (!task) return task;
+      return {
+        ...task,
+        attachments: (task.attachments ?? []).map(a =>
+          a.id === attachmentId ? { ...a, title } : a,
+        ),
+      };
+    });
+  }
+
+  removeAttachment(attachmentId: string): void {
+    this.currentTask.update(task => {
+      if (!task) return task;
+      return {
+        ...task,
+        attachments: (task.attachments ?? []).filter(a => a.id !== attachmentId),
+        attachmentCount: Math.max(0, (task.attachmentCount ?? 0) - 1),
+      };
+    });
   }
 
   createTask(projectId: string, dto: CreateTaskDto): Promise<Task | null> {

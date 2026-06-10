@@ -64,6 +64,8 @@ export interface TaskAttachment {
   id: string;
   taskId: string;
   originalName: string;
+  title?: string | null;
+  sortOrder?: number;
   storagePath: string;
   mimeType: string;
   sizeBytes: number;

@@ -201,6 +201,8 @@ import { RichTextEditorComponent } from '../../../shared/components/rich-text-ed
                   [attachments]="task()!.attachments ?? []"
                   (upload)="onFileUpload($event)"
                   (delete)="deleteAttachment($event)"
+                  (deleteGroup)="deleteAttachmentGroup($event)"
+                  (batchUpdate)="onBatchUpdateAttachments($event)"
                 />
                 <app-task-links
                   [links]="task()!.links ?? []"
@@ -289,6 +291,8 @@ import { RichTextEditorComponent } from '../../../shared/components/rich-text-ed
                     [attachments]="task()!.attachments ?? []"
                     (upload)="onFileUpload($event)"
                     (delete)="deleteAttachment($event)"
+                    (deleteGroup)="deleteAttachmentGroup($event)"
+                    (batchUpdate)="onBatchUpdateAttachments($event)"
                   />
                   <app-task-links
                     [links]="task()!.links ?? []"
@@ -680,19 +684,20 @@ export class TaskDetailPanelComponent implements OnInit, OnChanges, OnDestroy {
 
   // ─── Attachment & Link Events ───────────────────────────────────────────
 
-  protected onFileUpload(files: FileList): void {
+  protected onFileUpload(event: { files: FileList; title: string }): void {
     const t = this.task();
     if (!t) return;
-    for (const file of Array.from(files)) {
-      this.attachmentService.upload(this.projectId(), t.id, file).subscribe({
-        next: () => this.taskStore.loadTask(this.projectId(), t.taskId),
+    const title = event.title || undefined;
+    Array.from(event.files).forEach(file => {
+      this.attachmentService.upload(this.projectId(), t.id, file, title).subscribe({
+        next: (attachment) => this.taskStore.addAttachment(attachment),
         error: (err) =>
           this.messageService.add({
             severity: 'error',
             summary: err.error?.message ?? 'Upload thất bại',
           }),
       });
-    }
+    });
   }
 
   protected addLink(event: { url: string; title?: string }): void {
@@ -713,8 +718,27 @@ export class TaskDetailPanelComponent implements OnInit, OnChanges, OnDestroy {
     if (t) {
       this.attachmentService
         .delete(this.projectId(), t.id, att.id)
-        .subscribe(() => this.taskStore.loadTask(this.projectId(), t.taskId));
+        .subscribe(() => this.taskStore.removeAttachment(att.id));
     }
+  }
+
+  protected deleteAttachmentGroup(atts: TaskAttachment[]): void {
+    const t = this.task();
+    if (!t) return;
+    atts.forEach(att => {
+      this.attachmentService
+        .delete(this.projectId(), t.id, att.id)
+        .subscribe(() => this.taskStore.removeAttachment(att.id));
+    });
+  }
+
+  protected onBatchUpdateAttachments(items: Array<{ id: string; title?: string | null; sortOrder?: number }>): void {
+    const t = this.task();
+    if (!t || !items.length) return;
+    this.taskStore.batchUpdateAttachments(items);
+    this.attachmentService
+      .batchUpdate(this.projectId(), t.id, items)
+      .subscribe({ error: () => this.taskStore.loadTask(this.projectId(), t.taskId) });
   }
 
   protected deleteLink(link: TaskLink): void {

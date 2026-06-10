@@ -20,6 +20,12 @@ export class TaskAttachment {
   @Column({ name: 'original_name', type: 'varchar', length: 255 })
   originalName!: string;
 
+  @Column({ name: 'title', type: 'varchar', length: 255, nullable: true })
+  title!: string | null;
+
+  @Column({ name: 'sort_order', type: 'integer', default: 0 })
+  sortOrder!: number;
+
   @Column({ name: 'storage_path', type: 'varchar', length: 500 })
   storagePath!: string;
 
