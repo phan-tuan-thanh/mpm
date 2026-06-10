@@ -21,7 +21,7 @@ import { TaskRelation } from './task-relation.entity';
 import { TaskActivity } from './task-activity.entity';
 
 export type TaskType = 'epic' | 'story' | 'task' | 'subtask';
-export type TaskPriority = 'urgent' | 'high' | 'medium' | 'low' | 'none';
+export type TaskPriority = string;
 
 @Entity('tasks')
 export class Task {

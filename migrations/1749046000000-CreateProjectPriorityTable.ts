@@ -25,10 +25,6 @@ export class CreateProjectPriorityTable1749046000000 implements MigrationInterfa
       )
     `);
 
-    await queryRunner.query(`
-      CREATE INDEX "IDX_project_priority_project_id" ON "project_priority" ("project_id")
-    `);
-
     // Convert tasks.priority from enum to varchar so dynamic values can be stored
     await queryRunner.query(`
       ALTER TABLE "tasks" ALTER COLUMN "priority" TYPE VARCHAR(50) USING "priority"::text
@@ -36,8 +32,13 @@ export class CreateProjectPriorityTable1749046000000 implements MigrationInterfa
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`ALTER TABLE "tasks" ALTER COLUMN "priority" TYPE task_priority_enum USING "priority"::task_priority_enum`);
-    await queryRunner.query(`DROP INDEX "IDX_project_priority_project_id"`);
+    // Re-create the enum type before converting back
+    await queryRunner.query(`
+      CREATE TYPE "task_priority_enum" AS ENUM ('urgent', 'high', 'medium', 'low', 'none')
+    `);
+    await queryRunner.query(`
+      ALTER TABLE "tasks" ALTER COLUMN "priority" TYPE task_priority_enum USING "priority"::task_priority_enum
+    `);
     await queryRunner.query(`DROP TABLE "project_priority"`);
   }
 }
