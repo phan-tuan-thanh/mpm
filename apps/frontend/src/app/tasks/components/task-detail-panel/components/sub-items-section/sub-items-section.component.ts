@@ -82,7 +82,7 @@ import { SubItemQuickToolbarComponent } from '../sub-item-quick-toolbar/sub-item
       <app-sub-item-tree
         [items]="items"
         (itemClicked)="subItemClicked.emit($event)"
-        (reordered)="reordered.emit($event)"
+        (saveRequested)="saveRequested.emit($event)"
       />
     }
 
@@ -184,8 +184,11 @@ export class SubItemsSectionComponent {
   /** Emits task ID when a sub-item row is clicked */
   @Output() subItemClicked = new EventEmitter<string>();
 
-  /** Emits after drag-drop reorder */
-  @Output() reordered = new EventEmitter<{ taskId: string; newIndex: number }>();
+  /** Emits when user confirms drag-drop changes */
+  @Output() saveRequested = new EventEmitter<{
+    moves: Array<{ taskId: string; newParentId: string | null; oldParentId: string | null }>;
+    parentOrders: Array<{ parentId: string | null; childIds: string[] }>;
+  }>();
 
   @ViewChild('toolbar') toolbarRef?: SubItemQuickToolbarComponent;
   @ViewChild('titleInput') titleInputRef?: ElementRef<HTMLInputElement>;
