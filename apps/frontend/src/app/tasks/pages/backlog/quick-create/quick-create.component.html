@@ -324,7 +324,7 @@
 <!-- Priority -->
 <p-popover #priorityPopover>
   <div style="min-width: 120px; padding: 2px">
-    @for (p of priorityOptions; track p.value) {
+    @for (p of priorityOptions(); track p.value) {
       <button class="pop-item" [class.selected]="selectedPriority() === p.value"
         style="padding: 5px 10px; font-size: 12px"
         (click)="selectedPriority.set(p.value); priorityPopover.hide()">

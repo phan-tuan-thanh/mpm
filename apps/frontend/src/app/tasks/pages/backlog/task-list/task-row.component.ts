@@ -8,14 +8,8 @@ import { TooltipModule } from 'primeng/tooltip';
 import { TaskListItem, TaskType, TaskPriority, DisplayProperties, DEFAULT_DISPLAY_PROPS, Label } from '@mpm/shared-types';
 import { LayoutService } from '../../../../layout/services/layout.service';
 import { TaskStore } from '../../../state/task.store';
-
-const PRIORITY_CONFIG = {
-  urgent: { icon: 'pi pi-flag', color: '#EF4444', label: 'Urgent' },
-  high:   { icon: 'pi pi-flag', color: '#F97316', label: 'High' },
-  medium: { icon: 'pi pi-flag', color: '#EAB308', label: 'Medium' },
-  low:    { icon: 'pi pi-flag', color: '#3B82F6', label: 'Low' },
-  none:   { icon: 'pi pi-flag', color: '#D1D5DB', label: 'None' },
-} as Record<TaskPriority, { icon: string; color: string; label: string }>;
+import { ProjectStore } from '../../../../projects/state/project.store';
+import { PriorityConfigService } from '../../../services/priority-config.service';
 
 const TYPE_CONFIG = {
   epic: { icon: 'pi pi-bolt', color: '#8B5CF6' },
@@ -155,6 +149,8 @@ const AVATAR_PALETTE = [
 export class TaskRowComponent {
   protected readonly layoutService = inject(LayoutService);
   private readonly taskStore = inject(TaskStore);
+  private readonly projectStore = inject(ProjectStore);
+  private readonly priorityConfigService = inject(PriorityConfigService);
 
   @Input({ required: true }) task!: TaskListItem;
   @Input() depth = 0;
@@ -173,8 +169,12 @@ export class TaskRowComponent {
 
   protected typeIcon(t: TaskType): string { return TYPE_CONFIG[t]?.icon ?? 'pi pi-circle'; }
   protected typeColor(t: TaskType): string { return TYPE_CONFIG[t]?.color ?? '#9CA3AF'; }
-  protected priorityIcon(p: TaskPriority): string { return PRIORITY_CONFIG[p]?.icon ?? 'pi pi-circle'; }
-  protected priorityColor(p: TaskPriority): string { return PRIORITY_CONFIG[p]?.color ?? '#D1D5DB'; }
+  protected priorityIcon(p: TaskPriority): string {
+    return this.priorityConfigService.getConfig(this.projectStore.currentProject()?.id ?? '', p).icon;
+  }
+  protected priorityColor(p: TaskPriority): string {
+    return this.priorityConfigService.getConfig(this.projectStore.currentProject()?.id ?? '', p).color;
+  }
 
   protected isOverdue(d: string | null): boolean { return !!d && new Date(d) < new Date(); }
   protected formatDate(d: string): string {

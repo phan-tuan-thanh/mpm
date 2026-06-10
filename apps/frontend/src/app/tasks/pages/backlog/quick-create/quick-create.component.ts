@@ -19,6 +19,7 @@ import { InputNumberModule } from 'primeng/inputnumber';
 
 import { RichTextEditorComponent } from '../../../../shared/components/rich-text-editor/rich-text-editor.component';
 import { ProjectStore } from '../../../../projects/state/project.store';
+import { PriorityConfigService } from '../../../services/priority-config.service';
 import { TaskStore } from '../../../state/task.store';
 import { LabelStore } from '../../../state/label.store';
 import { ModuleStore } from '../../../state/module.store';
@@ -33,14 +34,6 @@ import type { TaskType, TaskPriority, CreateTaskDto, TiptapDoc, Task, TaskAttach
 import { firstValueFrom } from 'rxjs';
 
 // ─── Static option sets ──────────────────────────────────────────────────────
-
-const PRIORITY_OPTIONS: { label: string; value: TaskPriority; icon: string; color: string }[] = [
-  { label: 'Urgent', value: 'urgent', icon: 'pi pi-flag', color: '#EF4444' },
-  { label: 'High',   value: 'high',   icon: 'pi pi-flag', color: '#F97316' },
-  { label: 'Medium', value: 'medium', icon: 'pi pi-flag', color: '#EAB308' },
-  { label: 'Low',    value: 'low',    icon: 'pi pi-flag', color: '#3B82F6' },
-  { label: 'None',   value: 'none',   icon: 'pi pi-flag', color: '#9CA3AF' },
-];
 
 const TYPE_OPTIONS: { label: string; value: TaskType; icon: string; color: string }[] = [
   { label: 'Epic',    value: 'epic',    icon: 'pi pi-bolt',         color: '#8B5CF6' },
@@ -84,6 +77,7 @@ export class QuickCreateComponent implements OnChanges {
   private readonly linkService = inject(LinkService);
   private readonly taskService = inject(TaskService);
   private readonly messageService = inject(MessageService);
+  private readonly priorityConfigService = inject(PriorityConfigService);
 
   @Input() visible = false;
   @Input() parentId?: string;
@@ -187,7 +181,9 @@ export class QuickCreateComponent implements OnChanges {
   protected readonly selectedStateId = signal('');
 
   // ─── Option lists ────────────────────────────────────────────────────────
-  protected readonly priorityOptions = PRIORITY_OPTIONS;
+  protected readonly priorityOptions = computed(() =>
+    this.priorityConfigService.getOptions(this.projectStore.currentProject()?.id ?? '')
+  );
 
   protected readonly availableTypes = computed(() => {
     const activeParentId = this.selectedParentId();
@@ -224,9 +220,10 @@ export class QuickCreateComponent implements OnChanges {
     this.stateOptions().find((s) => s.id === this.selectedStateId())?.name ?? 'State',
   );
 
-  protected readonly selectedPriorityConfig = computed(() =>
-    PRIORITY_OPTIONS.find((p) => p.value === this.selectedPriority()) ?? PRIORITY_OPTIONS[4],
-  );
+  protected readonly selectedPriorityConfig = computed(() => {
+    const opts = this.priorityOptions();
+    return opts.find((p) => p.value === this.selectedPriority()) ?? opts[opts.length - 1];
+  });
 
   protected readonly selectedTypeConfig = computed(() =>
     TYPE_OPTIONS.find((t) => t.value === this.selectedType()) ?? TYPE_OPTIONS[2],

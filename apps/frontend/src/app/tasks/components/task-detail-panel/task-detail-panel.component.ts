@@ -40,6 +40,7 @@ import { LinkService } from '../../services/link.service';
 import { RelationService } from '../../services/relation.service';
 import { LayoutService } from '../../../layout/services/layout.service';
 import { TaskDetailStateService } from './services/task-detail-state.service';
+import { PriorityConfigService, PriorityOption } from '../../services/priority-config.service';
 import type {
   Task,
   TaskActivity,
@@ -476,18 +477,52 @@ import { RichTextEditorComponent } from '../../../shared/components/rich-text-ed
         </p-popover>
 
         <!-- Priority Popover -->
-        <p-popover #priorityPopover>
-          <div style="min-width: 120px; padding: 2px; display: flex; flex-direction: column; gap: 2px">
-            @for (p of PRIORITY_OPTIONS; track p.value) {
-              <button class="pop-item" [class.selected]="(task()?.priority ?? 'none') === p.value"
-                style="padding: 5px 10px; font-size: 12px; border-radius: 4px"
-                (click)="selectPriority(p.value); priorityPopover.hide()">
-                <i [class]="p.icon" [style.color]="p.color" style="font-size: 11px"></i>
-                <span style="flex: 1; text-align: left; font-size: 12px">{{ p.label }}</span>
-                @if ((task()?.priority ?? 'none') === p.value) {
-                  <i class="pi pi-check" style="font-size: 10px; color: #6366f1; flex-shrink: 0"></i>
-                }
+        <p-popover #priorityPopover (onHide)="priorityEditMode.set(false)">
+          <div [style.min-width]="priorityEditMode() ? '260px' : '140px'" style="padding: 2px; display: flex; flex-direction: column; gap: 2px">
+            @if (!priorityEditMode()) {
+              @for (p of priorityOptions(); track p.value) {
+                <button class="pop-item" [class.selected]="(task()?.priority ?? 'none') === p.value"
+                  style="padding: 5px 10px; font-size: 12px; border-radius: 4px"
+                  (click)="selectPriority(p.value); priorityPopover.hide()">
+                  <i [class]="p.icon" [style.color]="p.color" style="font-size: 11px"></i>
+                  <span style="flex: 1; text-align: left; font-size: 12px">{{ p.label }}</span>
+                  @if ((task()?.priority ?? 'none') === p.value) {
+                    <i class="pi pi-check" style="font-size: 10px; color: #6366f1; flex-shrink: 0"></i>
+                  }
+                </button>
+              }
+              <div style="height: 1px; background: var(--surface-200); margin: 4px 0" class="dark:bg-surface-700"></div>
+              <button class="pop-item" style="padding: 5px 10px; font-size: 11px; border-radius: 4px; color: var(--text-color-secondary)"
+                (click)="openPriorityEdit()">
+                <i class="pi pi-sliders-h" style="font-size: 11px"></i>
+                <span>Tùy chỉnh...</span>
               </button>
+            } @else {
+              <div style="padding: 4px 8px 6px; font-size: 11px; font-weight: 600; color: var(--text-color-secondary); display: flex; justify-content: space-between; align-items: center">
+                <span>Tùy chỉnh mức ưu tiên</span>
+                <button class="pop-item" style="padding: 2px 6px; font-size: 11px; width: auto; color: var(--text-color-secondary)"
+                  (click)="resetPriorityConfig()" pTooltip="Khôi phục mặc định">
+                  <i class="pi pi-refresh" style="font-size: 10px"></i>
+                </button>
+              </div>
+              @for (p of priorityEditDraft(); track p.value; let i = $index) {
+                <div style="display: flex; align-items: center; gap: 6px; padding: 3px 8px">
+                  <input type="color" [value]="p.color"
+                    (input)="onPriorityColorInput(i, $any($event.target).value)"
+                    style="width: 22px; height: 22px; border: 1px solid var(--surface-300); border-radius: 4px; cursor: pointer; padding: 1px; flex-shrink: 0; background: transparent" />
+                  <input type="text" [value]="p.label"
+                    (input)="onPriorityLabelInput(i, $any($event.target).value)"
+                    style="flex: 1; border: 1px solid var(--surface-200); border-radius: 4px; padding: 3px 6px; font-size: 12px; background: var(--surface-0); color: var(--text-color); outline: none"
+                    class="dark:border-surface-700 dark:bg-surface-900" />
+                  <i [class]="p.icon" [style.color]="p.color" style="font-size: 11px; flex-shrink: 0"></i>
+                </div>
+              }
+              <div style="display: flex; gap: 4px; padding: 6px 8px 2px">
+                <button pButton label="Lưu" size="small" style="flex: 1; font-size: 11px"
+                  (click)="savePriorityConfig(); priorityPopover.hide()"></button>
+                <button pButton label="Hủy" severity="secondary" size="small" style="flex: 1; font-size: 11px"
+                  (click)="priorityEditMode.set(false)"></button>
+              </div>
             }
           </div>
         </p-popover>
@@ -666,6 +701,7 @@ export class TaskDetailPanelComponent implements OnInit, OnChanges, OnDestroy {
   private readonly router = inject(Router);
   private readonly messageService = inject(MessageService);
   protected readonly layoutService = inject(LayoutService);
+  private readonly priorityConfigService = inject(PriorityConfigService);
   private readonly destroy$ = new Subject<void>();
   private readonly injector = inject(Injector);
 
@@ -728,13 +764,43 @@ export class TaskDetailPanelComponent implements OnInit, OnChanges, OnDestroy {
   });
 
   // ─── Metadata Row & Popovers Helpers ─────────────────────────────────────
-  protected readonly PRIORITY_OPTIONS = [
-    { label: 'Urgent', value: 'urgent', icon: 'pi pi-flag', color: '#EF4444' },
-    { label: 'High',   value: 'high',   icon: 'pi pi-flag', color: '#F97316' },
-    { label: 'Medium', value: 'medium', icon: 'pi pi-flag', color: '#EAB308' },
-    { label: 'Low',    value: 'low',    icon: 'pi pi-flag', color: '#3B82F6' },
-    { label: 'None',   value: 'none',   icon: 'pi pi-flag', color: '#9CA3AF' },
-  ];
+  protected readonly priorityOptions = computed(() =>
+    this.priorityConfigService.getOptions(this.projectId())
+  );
+
+  protected readonly priorityEditMode = signal(false);
+  protected readonly priorityEditDraft = signal<PriorityOption[]>([]);
+
+  protected openPriorityEdit(): void {
+    this.priorityEditDraft.set(this.priorityOptions().map(p => ({ ...p })));
+    this.priorityEditMode.set(true);
+  }
+
+  protected onPriorityColorInput(index: number, color: string): void {
+    this.priorityEditDraft.update(draft => {
+      const next = [...draft];
+      next[index] = { ...next[index], color };
+      return next;
+    });
+  }
+
+  protected onPriorityLabelInput(index: number, label: string): void {
+    this.priorityEditDraft.update(draft => {
+      const next = [...draft];
+      next[index] = { ...next[index], label };
+      return next;
+    });
+  }
+
+  protected savePriorityConfig(): void {
+    this.priorityConfigService.saveOptions(this.projectId(), this.priorityEditDraft());
+    this.priorityEditMode.set(false);
+  }
+
+  protected resetPriorityConfig(): void {
+    this.priorityConfigService.resetOptions(this.projectId());
+    this.priorityEditMode.set(false);
+  }
 
   protected readonly selectedStateName = computed(() => {
     const t = this.task();
@@ -750,7 +816,8 @@ export class TaskDetailPanelComponent implements OnInit, OnChanges, OnDestroy {
 
   protected readonly selectedPriorityConfig = computed(() => {
     const val = this.task()?.priority ?? 'none';
-    return this.PRIORITY_OPTIONS.find((p) => p.value === val) ?? this.PRIORITY_OPTIONS[4];
+    const opts = this.priorityOptions();
+    return opts.find((p) => p.value === val) ?? opts[opts.length - 1];
   });
 
   protected readonly selectedParentTitle = computed(() => {

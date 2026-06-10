@@ -3,15 +3,9 @@ import { CommonModule } from '@angular/common';
 import { TooltipModule } from 'primeng/tooltip';
 import { LayoutService } from '../../../../layout/services/layout.service';
 import { TaskStore } from '../../../state/task.store';
+import { ProjectStore } from '../../../../projects/state/project.store';
+import { PriorityConfigService } from '../../../services/priority-config.service';
 import type { TaskListItem, DisplayProperties, Label } from '@mpm/shared-types';
-
-const PRIORITY_CONFIG: Record<string, { icon: string; color: string }> = {
-  urgent: { icon: 'pi pi-flag', color: '#EF4444' },
-  high:   { icon: 'pi pi-flag', color: '#F97316' },
-  medium: { icon: 'pi pi-flag', color: '#EAB308' },
-  low:    { icon: 'pi pi-flag', color: '#3B82F6' },
-  none:   { icon: 'pi pi-flag', color: '#D1D5DB' },
-};
 
 @Component({
   standalone: true,
@@ -164,6 +158,8 @@ const PRIORITY_CONFIG: Record<string, { icon: string; color: string }> = {
 export class BoardCardComponent {
   protected readonly ls = inject(LayoutService);
   private readonly taskStore = inject(TaskStore);
+  private readonly projectStore = inject(ProjectStore);
+  private readonly priorityConfigService = inject(PriorityConfigService);
 
   @Input({ required: true }) task!: TaskListItem;
   @Input() displayProps!: DisplayProperties;
@@ -179,8 +175,12 @@ export class BoardCardComponent {
     const map: Record<string, string> = { epic: '#8B5CF6', story: '#3B82F6', task: '#10B981', subtask: '#6B7280' };
     return map[this.task.type] ?? '#9CA3AF';
   }
-  protected get priorityIcon(): string { return PRIORITY_CONFIG[this.task.priority]?.icon ?? 'pi pi-circle'; }
-  protected get priorityColor(): string { return PRIORITY_CONFIG[this.task.priority]?.color ?? '#D1D5DB'; }
+  protected get priorityIcon(): string {
+    return this.priorityConfigService.getConfig(this.projectStore.currentProject()?.id ?? '', this.task.priority ?? 'none').icon;
+  }
+  protected get priorityColor(): string {
+    return this.priorityConfigService.getConfig(this.projectStore.currentProject()?.id ?? '', this.task.priority ?? 'none').color;
+  }
 
   protected isScoped(name: string): boolean { return name.includes('::'); }
   protected getScope(name: string): string { return name.split('::')[0].trim(); }
