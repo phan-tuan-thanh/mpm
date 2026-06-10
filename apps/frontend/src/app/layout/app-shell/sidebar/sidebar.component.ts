@@ -282,7 +282,8 @@ export class SidebarComponent implements OnInit {
     { label: 'Cấu hình chung', icon: 'pi-sliders-h',            route: [] as string[], exact: true,  danger: false },
     { label: 'Thành viên',     icon: 'pi-users',                 route: ['members'],   exact: false, danger: false },
     { label: 'Trạng thái',     icon: 'pi-list',                  route: ['states'],    exact: false, danger: false },
-    { label: 'Ước lượng',      icon: 'pi-chart-bar',             route: ['estimates'], exact: false, danger: false },
+    { label: 'Ước lượng',      icon: 'pi-chart-bar',             route: ['estimates'],  exact: false, danger: false },
+    { label: 'Mức ưu tiên',   icon: 'pi-flag',                  route: ['priorities'], exact: false, danger: false },
     { label: 'Tính năng',      icon: 'pi-toggle-on',             route: ['features'],  exact: false, danger: false },
     { label: 'Danger Zone',    icon: 'pi-exclamation-triangle',  route: ['danger'],    exact: false, danger: true  },
   ];
