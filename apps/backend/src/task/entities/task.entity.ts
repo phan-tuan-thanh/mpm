@@ -46,8 +46,8 @@ export class Task {
   @Column({ name: 'description_plain', type: 'text', nullable: true })
   descriptionPlain!: string | null;
 
-  @Column({ type: 'enum', enum: ['urgent', 'high', 'medium', 'low', 'none'], enumName: 'task_priority_enum', default: 'none' })
-  priority!: TaskPriority;
+  @Column({ type: 'varchar', length: 50, default: 'none' })
+  priority!: string;
 
   @Column({ name: 'state_id', type: 'uuid' })
   stateId!: string;
