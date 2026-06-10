@@ -75,23 +75,38 @@
         <div
           cdkDropList
           [cdkDropListData]="statesForGroup(group)"
+          [cdkDropListSortingDisabled]="true"
           (cdkDropListDropped)="onDrop($event, group)"
           class="space-y-2 min-h-[40px]"
         >
           @for (state of statesForGroup(group); track state.id) {
+
+            <!-- Ghost: stays in original position while dragging -->
+            @if (draggedStateId === state.id) {
+              <div class="opacity-25 pointer-events-none flex items-center justify-between p-3 rounded-lg border border-gray-100 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-sm">
+                <div class="flex items-center gap-3 flex-1 min-w-0">
+                  <span class="w-5 h-5 rounded-full flex-shrink-0 border border-gray-200 dark:border-surface-700" [style.background-color]="state.color"></span>
+                  <span class="text-sm font-semibold text-gray-800 dark:text-surface-100 truncate">{{ state.name }}</span>
+                </div>
+              </div>
+            }
+
             <div
               cdkDrag
               [cdkDragDisabled]="isReadOnly()"
-              class="flex items-center justify-between p-3 rounded-lg border border-gray-100 dark:border-surface-800 hover:border-gray-200 dark:hover:border-surface-700 bg-white dark:bg-surface-900 shadow-sm transition group"
+              [cdkDragData]="state"
+              class="flex items-center justify-between p-3 rounded-lg border border-gray-100 dark:border-surface-800 hover:border-gray-200 dark:hover:border-surface-700 bg-white dark:bg-surface-900 shadow-sm transition group relative cursor-grab active:cursor-grabbing"
+              (cdkDragStarted)="onStateDragStart(state.id)"
+              (cdkDragEnded)="onStateDragEnd()"
+              (mouseenter)="hoveredStateId = state.id"
+              (mouseleave)="hoveredStateId === state.id ? hoveredStateId = null : null"
             >
-              <div class="flex items-center gap-3 flex-1 min-w-0">
-                <!-- Drag handle -->
-                @if (!isReadOnly()) {
-                  <div cdkDragHandle class="cursor-grab text-gray-400 dark:text-surface-500 hover:text-gray-600 dark:hover:text-surface-300 px-1">
-                    <i class="pi pi-bars text-sm"></i>
-                  </div>
-                }
+              <!-- Line indicator: shows drop position -->
+              @if (draggedStateId && hoveredStateId === state.id && draggedStateId !== state.id) {
+                <div class="h-0.5 bg-indigo-600 dark:bg-indigo-500 w-full absolute top-0 left-0 right-0 z-20 rounded-full"></div>
+              }
 
+              <div class="flex items-center gap-3 flex-1 min-w-0">
                 <!-- Color Picker -->
                 <div class="relative flex-shrink-0">
                   <input
@@ -99,6 +114,7 @@
                     [ngModel]="state.color"
                     (change)="onUpdateColor(state, $any($event.target).value)"
                     [disabled]="isReadOnly()"
+                    (pointerdown)="$event.stopPropagation()"
                     class="w-6 h-6 rounded-full border-none cursor-pointer p-0 bg-transparent flex-shrink-0"
                   />
                 </div>
@@ -111,6 +127,7 @@
                   (blur)="onUpdateName(state, $any($event.target).value)"
                   (keydown.enter)="onUpdateName(state, $any($event.target).value); $any($event.target).blur()"
                   [disabled]="isReadOnly()"
+                  (pointerdown)="$event.stopPropagation()"
                   class="bg-transparent border-none focus:bg-gray-50 dark:focus:bg-surface-800 focus:ring-1 focus:ring-indigo-500 rounded px-2 py-0.5 text-sm font-semibold text-gray-800 dark:text-surface-100 hover:bg-gray-50 dark:hover:bg-surface-800 transition w-full max-w-xs"
                 />
 
@@ -135,6 +152,7 @@
                     icon="pi pi-star"
                     class="p-button-text p-button-sm text-gray-300 hover:text-amber-500 p-0 h-6 w-6 opacity-0 group-hover:opacity-100 transition"
                     tooltipPosition="top"
+                    (pointerdown)="$event.stopPropagation()"
                     (click)="onSetDefault(state)"
                   ></button>
                 }
@@ -149,27 +167,33 @@
                   severity="danger"
                   [outlined]="true"
                   class="p-0 h-8 w-8 text-xs opacity-0 group-hover:opacity-100 transition"
+                  (pointerdown)="$event.stopPropagation()"
                   (click)="onDeleteState(state)"
                 ></button>
               }
 
-              <!-- Drag preview: lightweight ghost following the cursor -->
+              <!-- Drag preview: compact clone follows cursor -->
               <div *cdkDragPreview
-                class="flex items-center gap-3 px-3 rounded-lg border border-gray-200 dark:border-surface-700 bg-white dark:bg-surface-800 shadow-xl pointer-events-none select-none"
-                style="min-width: 280px; height: 50px; box-sizing: border-box;"
+                class="flex items-center gap-3 px-3 rounded-lg border border-indigo-300 dark:border-indigo-700 bg-white dark:bg-surface-800 shadow-xl pointer-events-none select-none"
+                style="min-width: 240px; height: 44px; box-sizing: border-box;"
               >
-                <i class="pi pi-bars text-gray-300 dark:text-surface-600 text-sm flex-shrink-0"></i>
-                <span class="w-5 h-5 rounded-full flex-shrink-0 border border-gray-200 dark:border-surface-700" [style.background-color]="state.color"></span>
+                <span class="w-4 h-4 rounded-full flex-shrink-0" [style.background-color]="state.color"></span>
                 <span class="text-sm font-semibold text-gray-800 dark:text-surface-100 flex-1 truncate">{{ state.name }}</span>
               </div>
 
-              <!-- Placeholder shown in the list while item is being dragged -->
-              <div *cdkDragPlaceholder
-                class="rounded-lg border-2 border-dashed border-indigo-300 dark:border-indigo-700 bg-indigo-50/40 dark:bg-indigo-950/20"
-                style="height: 50px; box-sizing: border-box;"
-              ></div>
+              <!-- Empty placeholder: CDK anchor, not visible -->
+              <div *cdkDragPlaceholder></div>
             </div>
           }
+
+          <!-- End drop zone: drop after the last item -->
+          <div class="relative" style="min-height: 16px;"
+               (mouseenter)="hoveredStateId = 'end-' + group"
+               (mouseleave)="hoveredStateId === 'end-' + group ? hoveredStateId = null : null">
+            @if (draggedStateId && hoveredStateId === 'end-' + group) {
+              <div class="h-0.5 bg-indigo-600 dark:bg-indigo-500 w-full absolute top-0 left-0 right-0 rounded-full"></div>
+            }
+          </div>
 
           <!-- Add State Inline Form -->
           @if (showAddForm[group]) {

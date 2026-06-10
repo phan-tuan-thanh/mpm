@@ -211,3 +211,40 @@ export interface AddMemberDto {
 export interface UpdateMemberRoleDto {
   projectRole: ProjectRole;
 }
+
+export interface ProjectPriority {
+  id: string;
+  projectId: string;
+  name: string;
+  value: string;
+  colorLight: string;
+  colorDark: string;
+  icon: string;
+  order: number;
+  isSystem: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CreatePriorityDto {
+  name: string;
+  value: string;
+  colorLight: string;
+  colorDark: string;
+  icon: string;
+}
+
+export interface UpdatePriorityDto {
+  name?: string;
+  colorLight?: string;
+  colorDark?: string;
+  icon?: string;
+}
+
+export interface ReorderPrioritiesDto {
+  items: { priorityId: string; order: number }[];
+}
+
+export interface DeletePriorityDto {
+  migrateToValue: string;
+}

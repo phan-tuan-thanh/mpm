@@ -5,8 +5,9 @@
   opacity: 0.97;
 }
 
-::ng-deep .cdk-drop-list-dragging .cdk-drag:not(.cdk-drag-placeholder) {
-  transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
+/* No transition during active drag — items stay put (ghost pattern) */
+::ng-deep .cdk-drop-list-dragging .cdk-drag {
+  transition: none !important;
 }
 
 ::ng-deep .cdk-drag-animating {
