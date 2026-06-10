@@ -541,11 +541,11 @@ export class SubItemTreeComponent implements OnChanges, OnDestroy {
 
   getPriorityIconClass(priority: string): string {
     switch (priority) {
-      case 'urgent': return 'pi pi-exclamation-circle text-red-500';
-      case 'high':   return 'pi pi-arrow-up text-orange-500';
-      case 'medium': return 'pi pi-minus text-yellow-500';
-      case 'low':    return 'pi pi-arrow-down text-blue-400';
-      default:       return 'pi pi-minus text-gray-300 dark:text-surface-600';
+      case 'urgent': return 'pi pi-flag text-red-500';
+      case 'high':   return 'pi pi-flag text-orange-500';
+      case 'medium': return 'pi pi-flag text-yellow-500';
+      case 'low':    return 'pi pi-flag text-blue-400';
+      default:       return 'pi pi-flag text-gray-300 dark:text-surface-600';
     }
   }
 

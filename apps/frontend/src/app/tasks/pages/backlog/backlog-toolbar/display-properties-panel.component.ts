@@ -17,7 +17,7 @@ import { DisplayProperties, DEFAULT_DISPLAY_PROPS } from '@mpm/shared-types';
     ToggleSwitchModule, RadioButtonModule, InputNumberModule, SelectModule,
   ],
   styles: [`
-    :host { display:block; width:360px; overflow:hidden; box-sizing:border-box; }
+    :host { display:block; width:480px; box-sizing:border-box; }
     .sec-hdr {
       font-size:9px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
       padding:5px 10px; border-bottom:1px solid var(--surface-border);
@@ -28,7 +28,7 @@ import { DisplayProperties, DEFAULT_DISPLAY_PROPS } from '@mpm/shared-types';
     .sp { width:76px; min-width:76px; flex-shrink:0; }
     .sp ::ng-deep .p-inputnumber,
     .sp ::ng-deep .p-inputnumber-input { width:100% !important; }
-    .sel-cell { display:grid; grid-template-columns:40px 1fr; align-items:center; gap:6px; padding:5px 10px; }
+    .sel-cell { display:grid; grid-template-columns:52px 1fr; align-items:center; gap:6px; padding:5px 10px; }
     .sel-cell > span { font-size:11px; color:var(--text-color-secondary); white-space:nowrap; }
     .sel-cell ::ng-deep .p-select { width:100% !important; min-width:0 !important; }
     .box { border:1px solid var(--surface-border); border-radius:8px; overflow:hidden; }
@@ -121,14 +121,14 @@ import { DisplayProperties, DEFAULT_DISPLAY_PROPS } from '@mpm/shared-types';
 
           <div class="vdiv" style="background:rgba(59,130,246,0.04);">
             <div class="sec-hdr hdiv" style="background:rgba(59,130,246,0.1); color:#3b82f6;">View</div>
-            <div class="sel-cell hdiv"><span>Group</span><p-select [options]="groupByOptions" [ngModel]="selectedGroupBy" optionLabel="label" optionValue="value" styleClass="text-xs" (ngModelChange)="groupByChange.emit($event)" /></div>
-            <div class="sel-cell"><span>Order</span><p-select [options]="orderByOptions" [ngModel]="selectedOrderBy" optionLabel="label" optionValue="value" styleClass="text-xs" (ngModelChange)="orderByChange.emit($event)" /></div>
+            <div class="sel-cell hdiv"><span>Group</span><p-select [options]="groupByOptions" [ngModel]="selectedGroupBy" optionLabel="label" optionValue="value" styleClass="text-xs" appendTo="body" (ngModelChange)="groupByChange.emit($event)" /></div>
+            <div class="sel-cell"><span>Order</span><p-select [options]="orderByOptions" [ngModel]="selectedOrderBy" optionLabel="label" optionValue="value" styleClass="text-xs" appendTo="body" (ngModelChange)="orderByChange.emit($event)" /></div>
           </div>
 
           <div style="background:rgba(20,184,166,0.04);">
             <div class="sec-hdr hdiv" style="background:rgba(20,184,166,0.1); color:#14b8a6;">Open task as</div>
-            <div class="sel-cell hdiv"><span>Create</span><p-select [options]="creationModeOptions" [ngModel]="displayProps.taskCreationViewMode || 'popup'" optionLabel="label" optionValue="value" styleClass="text-xs" (ngModelChange)="onToggle('taskCreationViewMode',$event)" /></div>
-            <div class="sel-cell"><span>Detail</span><p-select [options]="detailModeOptions" [ngModel]="displayProps.taskDetailViewMode || 'right-pane'" optionLabel="label" optionValue="value" styleClass="text-xs" (ngModelChange)="onToggle('taskDetailViewMode',$event)" /></div>
+            <div class="sel-cell hdiv"><span>Create</span><p-select [options]="creationModeOptions" [ngModel]="displayProps.taskCreationViewMode || 'popup'" optionLabel="label" optionValue="value" styleClass="text-xs" appendTo="body" (ngModelChange)="onToggle('taskCreationViewMode',$event)" /></div>
+            <div class="sel-cell"><span>Detail</span><p-select [options]="detailModeOptions" [ngModel]="displayProps.taskDetailViewMode || 'right-pane'" optionLabel="label" optionValue="value" styleClass="text-xs" appendTo="body" (ngModelChange)="onToggle('taskDetailViewMode',$event)" /></div>
           </div>
 
         </div>

@@ -12,6 +12,7 @@ import {
   NgZone,
   ElementRef,
   inject,
+  HostListener,
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
@@ -48,6 +49,23 @@ export class RichTextEditorComponent implements ControlValueAccessor, OnInit, On
   @Output() blurEditor = new EventEmitter<void>();
 
   editor!: Editor;
+
+  @Input() customColorProfiles?: { label: string; value: string; light: string; dark: string }[];
+
+  protected readonly colorProfiles = computed(() => {
+    return this.customColorProfiles ?? [
+      { label: 'Đỏ', value: 'var(--rte-color-red)', light: '#e11d48', dark: '#fb7185' },
+      { label: 'Cam', value: 'var(--rte-color-orange)', light: '#ea580c', dark: '#fb923c' },
+      { label: 'Vàng', value: 'var(--rte-color-yellow)', light: '#ca8a04', dark: '#fde047' },
+      { label: 'Lục', value: 'var(--rte-color-green)', light: '#16a34a', dark: '#4ade80' },
+      { label: 'Lam', value: 'var(--rte-color-blue)', light: '#2563eb', dark: '#60a5fa' },
+      { label: 'Tím', value: 'var(--rte-color-purple)', light: '#9333ea', dark: '#c084fc' },
+      { label: 'Hồng', value: 'var(--rte-color-pink)', light: '#db2777', dark: '#f472b6' },
+      { label: 'Xám', value: 'var(--rte-color-gray)', light: '#4b5563', dark: '#9ca3af' },
+    ];
+  });
+
+  protected readonly showColorDropdown = signal(false);
 
   private readonly prefService = inject(EditorPreferenceService);
   private readonly _toolbarOverride = signal<ToolbarMode | undefined>(undefined);
@@ -146,6 +164,24 @@ export class RichTextEditorComponent implements ControlValueAccessor, OnInit, On
   toggleHighlight(): void { (this.editor.chain().focus() as any).toggleHighlight().run(); }
   toggleSubscript(): void { (this.editor.chain().focus() as any).toggleSubscript().run(); }
   toggleSuperscript(): void { (this.editor.chain().focus() as any).toggleSuperscript().run(); }
+  setColor(color: string): void {
+    (this.editor.chain().focus() as any).setColor(color).run();
+    this.showColorDropdown.set(false);
+  }
+  unsetColor(): void {
+    (this.editor.chain().focus() as any).unsetColor().run();
+    this.showColorDropdown.set(false);
+  }
+  toggleColorDropdown(event: Event): void {
+    event.stopPropagation();
+    this.showColorDropdown.update(v => !v);
+  }
+  @HostListener('document:click', ['$event'])
+  onClickOutside(event: MouseEvent): void {
+    if (!this.elRef.nativeElement.contains(event.target)) {
+      this.showColorDropdown.set(false);
+    }
+  }
   setHeading(level: 1 | 2 | 3): void { this.editor.chain().focus().toggleHeading({ level }).run(); }
   toggleBulletList(): void { this.editor.chain().focus().toggleBulletList().run(); }
   toggleOrderedList(): void { this.editor.chain().focus().toggleOrderedList().run(); }

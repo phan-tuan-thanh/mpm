@@ -35,11 +35,11 @@ import { firstValueFrom } from 'rxjs';
 // ─── Static option sets ──────────────────────────────────────────────────────
 
 const PRIORITY_OPTIONS: { label: string; value: TaskPriority; icon: string; color: string }[] = [
-  { label: 'Urgent', value: 'urgent', icon: 'pi pi-angle-double-up', color: '#EF4444' },
-  { label: 'High',   value: 'high',   icon: 'pi pi-angle-up',        color: '#F97316' },
-  { label: 'Medium', value: 'medium', icon: 'pi pi-minus',           color: '#EAB308' },
-  { label: 'Low',    value: 'low',    icon: 'pi pi-angle-down',      color: '#3B82F6' },
-  { label: 'None',   value: 'none',   icon: 'pi pi-circle',          color: '#9CA3AF' },
+  { label: 'Urgent', value: 'urgent', icon: 'pi pi-flag', color: '#EF4444' },
+  { label: 'High',   value: 'high',   icon: 'pi pi-flag', color: '#F97316' },
+  { label: 'Medium', value: 'medium', icon: 'pi pi-flag', color: '#EAB308' },
+  { label: 'Low',    value: 'low',    icon: 'pi pi-flag', color: '#3B82F6' },
+  { label: 'None',   value: 'none',   icon: 'pi pi-flag', color: '#9CA3AF' },
 ];
 
 const TYPE_OPTIONS: { label: string; value: TaskType; icon: string; color: string }[] = [

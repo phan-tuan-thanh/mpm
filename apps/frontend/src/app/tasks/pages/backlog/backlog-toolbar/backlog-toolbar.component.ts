@@ -63,7 +63,14 @@ export interface BacklogFilter {
         placeholder="Priority"
         styleClass="text-sm"
         (ngModelChange)="emitFilter()"
-      />
+      >
+        <ng-template pTemplate="item" let-opt>
+          <div class="flex items-center gap-2">
+            <i class="pi pi-flag text-xs" [style.color]="opt.color"></i>
+            <span>{{ opt.label }}</span>
+          </div>
+        </ng-template>
+      </p-multiselect>
 
       <!-- State filter -->
       <p-multiselect
@@ -107,7 +114,7 @@ export interface BacklogFilter {
       <!-- Display Properties -->
       <button pButton label="Display" icon="pi pi-sliders-h" severity="secondary" size="small" text
         (click)="displayPopover.toggle($event)" aria-label="Display Properties"></button>
-      <p-popover #displayPopover styleClass="!p-0 !overflow-hidden">
+      <p-popover #displayPopover styleClass="!p-0">
         <app-display-properties-panel
           [displayProps]="displayProps"
           [selectedGroupBy]="selectedGroupBy"
@@ -191,11 +198,11 @@ export class BacklogToolbarComponent {
   ];
 
   readonly priorityOptions = [
-    { label: '🔴 Urgent', value: 'urgent' },
-    { label: '🟠 High', value: 'high' },
-    { label: '🟡 Medium', value: 'medium' },
-    { label: '🔵 Low', value: 'low' },
-    { label: '⚪ None', value: 'none' },
+    { label: 'Urgent', value: 'urgent', color: '#EF4444' },
+    { label: 'High',   value: 'high',   color: '#F97316' },
+    { label: 'Medium', value: 'medium', color: '#EAB308' },
+    { label: 'Low',    value: 'low',    color: '#3B82F6' },
+    { label: 'None',   value: 'none',   color: '#9CA3AF' },
   ];
 
   readonly groupByOptions = [

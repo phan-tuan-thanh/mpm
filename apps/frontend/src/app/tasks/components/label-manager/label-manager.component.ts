@@ -133,6 +133,115 @@ export class LabelManagerComponent implements OnInit {
   protected wsIsExclusive = true;
   protected wsNewDescription = '';
 
+  // Filter
+  protected projSearch = signal('');
+  protected wsSearch = signal('');
+  protected projFilter = signal<'all'|'regular'|'scoped'|'single'|'multi'>('all');
+  protected wsFilter   = signal<'all'|'regular'|'scoped'|'single'|'multi'>('all');
+
+  readonly filterChips: { label: string; value: 'all'|'regular'|'scoped'|'single'|'multi' }[] = [
+    { label: 'Tất cả', value: 'all' },
+    { label: 'Thường',  value: 'regular' },
+    { label: 'Scoped',  value: 'scoped' },
+    { label: 'Single',  value: 'single' },
+    { label: 'Multi',   value: 'multi' },
+  ];
+
+  readonly filteredProjectLabels = computed(() => {
+    const q = this.projSearch().toLowerCase();
+    const f = this.projFilter();
+    return this.projectLabels().filter(l => {
+      if (q && !l.name.toLowerCase().includes(q) && !(l.description ?? '').toLowerCase().includes(q)) return false;
+      const scoped = l.name.includes('::');
+      if (f === 'regular') return !scoped;
+      if (f === 'scoped')  return scoped;
+      if (f === 'single')  return scoped && l.isExclusive !== false;
+      if (f === 'multi')   return scoped && l.isExclusive === false;
+      return true;
+    });
+  });
+
+  readonly filteredWsLabels = computed(() => {
+    const q = this.wsSearch().toLowerCase();
+    const f = this.wsFilter();
+    return this.workspaceLabels().filter(l => {
+      if (q && !l.name.toLowerCase().includes(q) && !(l.description ?? '').toLowerCase().includes(q)) return false;
+      const scoped = l.name.includes('::');
+      if (f === 'regular') return !scoped;
+      if (f === 'scoped')  return scoped;
+      if (f === 'single')  return scoped && l.isExclusive !== false;
+      if (f === 'multi')   return scoped && l.isExclusive === false;
+      return true;
+    });
+  });
+
+  protected setProjSearch(val: string): void { this.projSearch.set(val); this.projPage.set(0); this.projSelected.set(new Set()); }
+  protected setWsSearch(val: string): void { this.wsSearch.set(val); this.wsPage.set(0); this.wsSelected.set(new Set()); }
+  protected setProjFilter(val: 'all'|'regular'|'scoped'|'single'|'multi'): void { this.projFilter.set(val); this.projPage.set(0); this.projSelected.set(new Set()); }
+  protected setWsFilter(val: 'all'|'regular'|'scoped'|'single'|'multi'): void { this.wsFilter.set(val); this.wsPage.set(0); this.wsSelected.set(new Set()); }
+
+  // Pagination
+  readonly PAGE_SIZE = 8;
+  readonly projPage = signal(0);
+  readonly wsPage = signal(0);
+
+  readonly paginatedProjectLabels = computed(() => {
+    const all = this.filteredProjectLabels();
+    const start = this.projPage() * this.PAGE_SIZE;
+    return all.slice(start, start + this.PAGE_SIZE);
+  });
+
+  readonly paginatedWsLabels = computed(() => {
+    const all = this.filteredWsLabels();
+    const start = this.wsPage() * this.PAGE_SIZE;
+    return all.slice(start, start + this.PAGE_SIZE);
+  });
+
+  readonly projTotalPages = computed(() => Math.max(1, Math.ceil(this.filteredProjectLabels().length / this.PAGE_SIZE)));
+  readonly wsTotalPages = computed(() => Math.max(1, Math.ceil(this.filteredWsLabels().length / this.PAGE_SIZE)));
+
+  protected projEndIdx(): number { return Math.min((this.projPage() + 1) * this.PAGE_SIZE, this.filteredProjectLabels().length); }
+  protected wsEndIdx(): number { return Math.min((this.wsPage() + 1) * this.PAGE_SIZE, this.filteredWsLabels().length); }
+  protected pageRange(total: number): number[] { return Array.from({ length: total }, (_, i) => i); }
+
+  // Multi-select
+  protected projSelected = signal<Set<string>>(new Set());
+  protected wsSelected = signal<Set<string>>(new Set());
+
+  protected isProjSelected(id: string): boolean { return this.projSelected().has(id); }
+  protected isWsSelected(id: string): boolean { return this.wsSelected().has(id); }
+
+  readonly projAllPageSelected = computed(() => {
+    const page = this.paginatedProjectLabels();
+    return page.length > 0 && page.every(l => this.projSelected().has(l.id));
+  });
+
+  readonly wsAllPageSelected = computed(() => {
+    const page = this.paginatedWsLabels();
+    return page.length > 0 && page.every(l => this.wsSelected().has(l.id));
+  });
+
+  protected toggleProjSelect(id: string): void {
+    this.projSelected.update(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  }
+  protected toggleWsSelect(id: string): void {
+    this.wsSelected.update(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  }
+
+  protected toggleProjSelectAll(): void {
+    const page = this.paginatedProjectLabels();
+    const allSel = this.projAllPageSelected();
+    this.projSelected.update(s => { const n = new Set(s); allSel ? page.forEach(l => n.delete(l.id)) : page.forEach(l => n.add(l.id)); return n; });
+  }
+  protected toggleWsSelectAll(): void {
+    const page = this.paginatedWsLabels();
+    const allSel = this.wsAllPageSelected();
+    this.wsSelected.update(s => { const n = new Set(s); allSel ? page.forEach(l => n.delete(l.id)) : page.forEach(l => n.add(l.id)); return n; });
+  }
+
+  protected clearProjSelection(): void { this.projSelected.set(new Set()); }
+  protected clearWsSelection(): void { this.wsSelected.set(new Set()); }
+
   ngOnInit(): void {
     this.newColor = this.getRandomPresetColor();
     this.wsNewColor = this.getRandomPresetColor();
@@ -141,6 +250,14 @@ export class LabelManagerComponent implements OnInit {
 
   open(): void {
     this.visible = true;
+    this.projPage.set(0);
+    this.wsPage.set(0);
+    this.projSearch.set('');
+    this.wsSearch.set('');
+    this.projFilter.set('all');
+    this.wsFilter.set('all');
+    this.projSelected.set(new Set());
+    this.wsSelected.set(new Set());
     this.newColor = this.getRandomPresetColor();
     this.wsNewColor = this.getRandomPresetColor();
     if (this.projectId) this.labelStore.loadLabels(this.projectId);
@@ -277,6 +394,28 @@ export class LabelManagerComponent implements OnInit {
     });
   }
 
+  protected confirmBulkDeleteProj(): void {
+    const ids = Array.from(this.projSelected());
+    if (!ids.length) return;
+    this.confirmService.confirm({
+      message: `Xóa ${ids.length} label đã chọn? Labels sẽ bị bỏ khỏi tất cả tasks liên quan.`,
+      header: 'Xóa nhiều labels',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: `Xóa ${ids.length} labels`,
+      rejectLabel: 'Hủy',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: async () => {
+        let ok = 0;
+        for (const id of ids) {
+          const success = await this.labelStore.deleteLabel(this.projectId, id);
+          if (success) ok++;
+        }
+        this.projSelected.set(new Set());
+        this.messageService.add({ severity: 'success', summary: 'Thành công', detail: `Đã xóa ${ok}/${ids.length} labels` });
+      },
+    });
+  }
+
   // --- Workspace Label Operations (admin only) ---
 
   protected async createWsLabel(): Promise<void> {
@@ -339,6 +478,28 @@ export class LabelManagerComponent implements OnInit {
 
   protected cancelWsEdit(): void {
     this.wsEditingId.set(null);
+  }
+
+  protected confirmBulkDeleteWs(): void {
+    const ids = Array.from(this.wsSelected());
+    if (!ids.length) return;
+    this.confirmService.confirm({
+      message: `Xóa ${ids.length} workspace label đã chọn? Labels sẽ bị bỏ khỏi tất cả tasks liên quan.`,
+      header: 'Xóa nhiều workspace labels',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: `Xóa ${ids.length} labels`,
+      rejectLabel: 'Hủy',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: async () => {
+        let ok = 0;
+        for (const id of ids) {
+          const success = await this.labelStore.deleteWorkspaceLabel(this.workspaceId, id);
+          if (success) { this.wsLabels.update(prev => prev.filter(l => l.id !== id)); ok++; }
+        }
+        this.wsSelected.set(new Set());
+        this.messageService.add({ severity: 'success', summary: 'Thành công', detail: `Đã xóa ${ok}/${ids.length} workspace labels` });
+      },
+    });
   }
 
   protected confirmDeleteWsLabel(label: Label & { taskCount: number }): void {

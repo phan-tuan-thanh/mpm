@@ -63,12 +63,12 @@
   padding: 3px 8px;
   cursor: pointer;
   user-select: none;
-  background: var(--surface-50, #f9fafb);
+  background: #fff;
   transition: background 0.12s;
 }
 .type-pill:hover { background: var(--surface-100, #f3f4f6); }
-:host-context(.dark) .type-pill { background: var(--surface-800, #1e293b); border-color: var(--surface-600, #475569); }
-:host-context(.dark) .type-pill:hover { background: var(--surface-700, #334155); }
+:host-context(.dark) .type-pill { background: var(--surface-700, #334155); border-color: var(--surface-600, #475569); }
+:host-context(.dark) .type-pill:hover { background: var(--surface-600, #475569); }
 
 /* ── Assignee avatar ── */
 .avatar-xs {

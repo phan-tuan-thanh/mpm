@@ -10,11 +10,11 @@ import { LayoutService } from '../../../../layout/services/layout.service';
 import { TaskStore } from '../../../state/task.store';
 
 const PRIORITY_CONFIG = {
-  urgent: { icon: 'pi pi-angle-double-up', color: '#EF4444', label: 'Urgent' },
-  high: { icon: 'pi pi-angle-up', color: '#F97316', label: 'High' },
-  medium: { icon: 'pi pi-minus', color: '#EAB308', label: 'Medium' },
-  low: { icon: 'pi pi-angle-down', color: '#3B82F6', label: 'Low' },
-  none: { icon: 'pi pi-circle', color: '#D1D5DB', label: 'None' }
+  urgent: { icon: 'pi pi-flag', color: '#EF4444', label: 'Urgent' },
+  high:   { icon: 'pi pi-flag', color: '#F97316', label: 'High' },
+  medium: { icon: 'pi pi-flag', color: '#EAB308', label: 'Medium' },
+  low:    { icon: 'pi pi-flag', color: '#3B82F6', label: 'Low' },
+  none:   { icon: 'pi pi-flag', color: '#D1D5DB', label: 'None' },
 } as Record<TaskPriority, { icon: string; color: string; label: string }>;
 
 const TYPE_CONFIG = {

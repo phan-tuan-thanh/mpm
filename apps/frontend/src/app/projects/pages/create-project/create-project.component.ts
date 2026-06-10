@@ -52,7 +52,7 @@ export class CreateProjectComponent implements OnInit, OnDestroy {
   emoji = '🚀';
   network: ProjectNetwork = ProjectNetwork.SECRET;
   leadId: string | null = null;
-  timezone = 'Asia/Ho_Chi_Minh';
+  timezone = 'Asia/Saigon';
   stateTemplate: StateTemplate = 'blank';
 
   // Workspace templates state
