@@ -3,7 +3,8 @@
   position: relative;
   border: 1px solid var(--p-surface-200, #e5e7eb);
   border-radius: 8px;
-  overflow: hidden;
+  /* overflow: visible so absolutely-positioned bubble/floating menus can spill outside */
+  overflow: visible;
 }
 
 :host-context(.dark) .rte-wrapper {
@@ -19,6 +20,7 @@
   padding: 4px 6px;
   border-bottom: 1px solid var(--p-surface-200, #e5e7eb);
   background: var(--p-surface-50, #f9fafb);
+  border-radius: 7px 7px 0 0;
 }
 
 :host-context(.dark) .rte-toolbar {
@@ -94,6 +96,8 @@
 :host ::ng-deep .rte-content {
   display: block;
   min-height: 120px;
+  border-radius: 0 0 7px 7px;
+  overflow: hidden;
 }
 
 :host ::ng-deep .tiptap {
@@ -212,7 +216,7 @@
 
 /* ── Bubble menu ────────────────────────────────────────── */
 .rte-bubble-menu {
-  position: fixed;
+  position: absolute;
   display: flex;
   align-items: center;
   gap: 2px;
@@ -233,7 +237,7 @@
 
 /* ── Floating menu ──────────────────────────────────────── */
 .rte-floating-menu {
-  position: fixed;
+  position: absolute;
   display: flex;
   align-items: center;
   gap: 2px;

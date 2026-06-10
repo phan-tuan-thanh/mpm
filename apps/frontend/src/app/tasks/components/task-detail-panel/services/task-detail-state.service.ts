@@ -90,8 +90,8 @@ export class TaskDetailStateService {
   }
 
   /** Load activity entries via TaskStore. */
-  loadActivity(projectId: string, taskId: string, filter: ActivityFilterType, page = 1): void {
-    this.taskStore.loadActivity(projectId, taskId, filter, page);
+  loadActivity(projectId: string, taskId: string, filter: ActivityFilterType, page = 1, limit = 20): void {
+    this.taskStore.loadActivity(projectId, taskId, filter, page, limit);
   }
 
   /** Load more activity entries (next page) via TaskStore. */

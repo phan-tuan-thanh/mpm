@@ -41,15 +41,21 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <!-- Tab Bar -->
-    <div class="border-b border-gray-200 dark:border-surface-700 mb-3" role="tablist" aria-label="Activity tabs">
-      <div class="flex gap-0.5 overflow-x-auto -mb-px">
+    <div class="border-b border-gray-200 dark:border-surface-700" [class.mb-2]="compact" [class.mb-3]="!compact" role="tablist" aria-label="Activity tabs">
+      <div class="flex gap-0 overflow-x-auto -mb-px">
         @for (tab of tabs; track tab.value) {
           <button
             type="button"
             role="tab"
             [attr.aria-selected]="activeFilter === tab.value"
             [attr.aria-controls]="'activity-tabpanel-' + tab.value"
-            class="px-3 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+            class="font-medium whitespace-nowrap border-b-2 transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+            [class.px-3]="!compact"
+            [class.py-2]="!compact"
+            [class.text-sm]="!compact"
+            [class.px-2]="compact"
+            [class.py-1.5]="compact"
+            [class.text-xs]="compact"
             [class.border-primary-500]="activeFilter === tab.value"
             [class.text-primary-600]="activeFilter === tab.value"
             [class.dark:text-primary-400]="activeFilter === tab.value"
@@ -63,19 +69,18 @@ import {
             (keydown.enter)="onTabClick(tab.value)"
             (keydown.space)="onTabClick(tab.value); $event.preventDefault()"
           >
-            <i [class]="tab.icon + ' mr-1.5 text-xs'" aria-hidden="true"></i>
-            {{ tab.label }}
+            <i [class]="tab.icon + (compact ? ' text-[10px]' : ' mr-1.5 text-xs')" aria-hidden="true"></i>
+            @if (!compact) { {{ tab.label }} }
           </button>
         }
       </div>
     </div>
 
-    <!-- Tab Content -->
+    <!-- Tab Content — parent container handles scrolling; no internal overflow -->
     <div
       [id]="'activity-tabpanel-' + activeFilter"
       role="tabpanel"
       [attr.aria-label]="currentTabLabel"
-      class="flex-1 overflow-y-auto min-h-0"
     >
       <!-- Properties Tab (projected content) -->
       @if (activeFilter === 'properties') {
@@ -83,13 +88,13 @@ import {
       } @else {
         <!-- Loading Skeleton -->
         @if (loading && entries.length === 0) {
-          <div class="space-y-3 px-1" aria-busy="true" aria-label="Đang tải hoạt động...">
-            @for (i of skeletonRows; track i) {
-              <div class="flex items-start gap-3 py-2">
-                <p-skeleton shape="circle" size="2rem" />
-                <div class="flex-1 space-y-2">
-                  <p-skeleton width="60%" height="0.875rem" />
-                  <p-skeleton width="40%" height="0.75rem" />
+          <div class="space-y-2 px-1" aria-busy="true" aria-label="Đang tải hoạt động...">
+            @for (i of effectiveSkeletonRows; track i) {
+              <div class="flex items-start gap-2 py-1.5">
+                <p-skeleton shape="circle" [size]="compact ? '1.5rem' : '2rem'" />
+                <div class="flex-1 space-y-1.5">
+                  <p-skeleton width="60%" [height]="compact ? '0.75rem' : '0.875rem'" />
+                  <p-skeleton width="40%" height="0.625rem" />
                 </div>
               </div>
             }
@@ -100,22 +105,22 @@ import {
         @if (!loading || entries.length > 0) {
           @if (entries.length === 0) {
             <!-- Empty State -->
-            <div class="flex flex-col items-center justify-center py-12 text-center" role="status">
-              <i [class]="emptyStateIcon + ' text-3xl text-gray-300 dark:text-surface-600 mb-3'" aria-hidden="true"></i>
-              <p class="text-sm text-gray-400 dark:text-surface-500">{{ emptyStateMessage }}</p>
+            <div class="flex flex-col items-center justify-center py-8 text-center" role="status">
+              <i [class]="emptyStateIcon + ' text-2xl text-gray-300 dark:text-surface-600 mb-2'" aria-hidden="true"></i>
+              <p class="text-xs text-gray-400 dark:text-surface-500">{{ emptyStateMessage }}</p>
             </div>
           } @else {
             <!-- Activity Entries -->
             <div class="divide-y divide-gray-100 dark:divide-surface-700">
               @for (entry of entries; track entry.id) {
-                <app-activity-entry [entry]="entry" />
+                <app-activity-entry [entry]="entry" [compact]="compact" />
               }
             </div>
 
             <!-- Loading More Indicator -->
             @if (loading && entries.length > 0) {
-              <div class="flex items-center justify-center py-3" aria-busy="true">
-                <i class="pi pi-spin pi-spinner text-gray-400 text-sm mr-2" aria-hidden="true"></i>
+              <div class="flex items-center justify-center py-2" aria-busy="true">
+                <i class="pi pi-spin pi-spinner text-gray-400 text-xs mr-1.5" aria-hidden="true"></i>
                 <span class="text-xs text-gray-400 dark:text-surface-500">Đang tải thêm...</span>
               </div>
             }
@@ -131,10 +136,7 @@ import {
   `,
   styles: `
     :host {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      min-height: 0;
+      display: block;
     }
   `,
 })
@@ -157,6 +159,9 @@ export class ActivityPanelComponent implements AfterViewInit, OnDestroy, OnChang
   /** Whether to show the Properties tab (true in drawer/popup mode) */
   @Input() showPropertiesTab = false;
 
+  /** Compact layout — smaller tabs, denser entries; auto-enabled in drawer/popup */
+  @Input() compact = false;
+
   /** Emitted when the user changes the active tab filter */
   @Output() filterChanged = new EventEmitter<ActivityFilterType | 'properties'>();
 
@@ -168,6 +173,11 @@ export class ActivityPanelComponent implements AfterViewInit, OnDestroy, OnChang
 
   /** Skeleton placeholder row count */
   readonly skeletonRows = [1, 2, 3, 4, 5];
+  readonly compactSkeletonRows = [1, 2, 3];
+
+  get effectiveSkeletonRows(): number[] {
+    return this.compact ? this.compactSkeletonRows : this.skeletonRows;
+  }
 
   /** Computed tabs list */
   tabs: ActivityTab[] = [];

@@ -1,7 +1,9 @@
 import {
   Component,
   OnInit,
+  OnChanges,
   OnDestroy,
+  SimpleChanges,
   inject,
   signal,
   computed,
@@ -75,34 +77,42 @@ import { RichTextEditorComponent } from '../../../shared/components/rich-text-ed
   ],
   providers: [MessageService, TaskDetailStateService],
   template: `
-    @if (viewMode === 'popup') {
-      <p-dialog
-        [(visible)]="isVisible"
-        [modal]="true"
-        [closable]="false"
-        [showHeader]="false"
-        styleClass="qc-dialog"
-        [style]="{ width: '750px', height: '90vh', padding: '0' }"
-        [contentStyle]="{ padding: '0', borderRadius: '14px', overflow: 'hidden' }"
-        [dismissableMask]="true"
-        (onHide)="onClose()"
-      >
+    <!-- Always rendered — avoids abrupt @if teardown that calls disableModality()→detectChanges() during ngOnDestroy -->
+    <p-dialog
+      [visible]="isVisible() && viewMode === 'popup'"
+      (visibleChange)="onDialogVisibleChange($event)"
+      [transitionOptions]="'0ms'"
+      [modal]="true"
+      [closable]="false"
+      [showHeader]="false"
+      styleClass="qc-dialog"
+      [style]="{ width: '750px', height: '90vh', padding: '0' }"
+      [contentStyle]="{ padding: '0', borderRadius: '14px', overflow: 'hidden' }"
+      [dismissableMask]="true"
+      (onHide)="onDialogHide()"
+    >
+      @if (viewMode === 'popup') {
         <ng-container *ngTemplateOutlet="detailTpl"></ng-container>
-      </p-dialog>
-    } @else if (viewMode === 'right-pane') {
-      <p-drawer
-        [(visible)]="isVisible"
-        position="right"
-        [modal]="false"
-        [style]="{ width: '680px', padding: '0' }"
-        [dismissableMask]="true"
-        [showHeader]="false"
-        (onClose)="onClose()"
-      >
+      }
+    </p-dialog>
+
+    <p-drawer
+      [visible]="isVisible() && viewMode === 'right-pane'"
+      (visibleChange)="onDrawerVisibleChange($event)"
+      position="right"
+      [modal]="false"
+      [style]="{ width: '680px', padding: '0' }"
+      [dismissible]="true"
+      [showCloseIcon]="false"
+      (onHide)="onDrawerClose()"
+    >
+      @if (viewMode === 'right-pane') {
         <ng-container *ngTemplateOutlet="detailTpl"></ng-container>
-      </p-drawer>
-    } @else if (viewMode === 'full-page') {
-      <div class="w-full h-full bg-white dark:bg-surface-900 overflow-hidden flex flex-col border border-gray-100 dark:border-surface-700 rounded-xl shadow-sm">
+      }
+    </p-drawer>
+
+    @if (viewMode === 'full-page' && isVisible()) {
+      <div class="absolute inset-0 z-10 bg-white dark:bg-surface-900 overflow-hidden flex flex-col border border-gray-100 dark:border-surface-700 rounded-xl shadow-sm">
         <ng-container *ngTemplateOutlet="detailTpl"></ng-container>
       </div>
     }
@@ -157,9 +167,10 @@ import { RichTextEditorComponent } from '../../../shared/components/rich-text-ed
         @if (task()) {
           <!-- ─── Single Column Layout (Drawer / Popup) — Req 8.2, 8.3 ─── -->
           @if (viewMode !== 'full-page') {
-            <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Single scrollable column — title + all content + activity in one scroll -->
+            <div class="flex-1 overflow-y-auto min-h-0">
               <!-- Title -->
-              <div class="px-4 py-3 border-b border-gray-150 dark:border-surface-700 flex-shrink-0">
+              <div class="px-4 py-3 border-b border-gray-100 dark:border-surface-700">
                 <app-task-title-inline
                   [title]="task()!.title"
                   [viewMode]="viewMode === 'right-pane' ? 'drawer' : 'popup'"
@@ -167,18 +178,80 @@ import { RichTextEditorComponent } from '../../../shared/components/rich-text-ed
                 />
               </div>
 
-              <!-- Activity Panel with Properties tab (showPropertiesTab=true) -->
-              <div class="flex-1 overflow-hidden flex flex-col">
+              <!-- Description -->
+              <div class="px-4 pt-4 pb-3 border-b border-gray-100 dark:border-surface-700">
+                <label class="text-xs font-semibold text-gray-400 dark:text-surface-500 uppercase tracking-wide mb-2 block">Mô tả</label>
+                @if (showRte()) {
+                  <app-rich-text-editor
+                    [ngModel]="task()?.description"
+                    (ngModelChange)="onDescriptionChange($event)"
+                    placeholder="Thêm mô tả..."
+                    (blurEditor)="saveDescription()"
+                  />
+                } @else {
+                  <div class="min-h-[4rem] rounded-lg border border-gray-200 dark:border-surface-700 bg-gray-50 dark:bg-surface-800"></div>
+                }
+              </div>
+
+              <!-- Attachments & Links -->
+              <div class="px-4 py-3 border-b border-gray-100 dark:border-surface-700 flex flex-col gap-3">
+                <app-task-attachments
+                  [projectId]="projectId()"
+                  [taskId]="task()!.id"
+                  [attachments]="task()!.attachments ?? []"
+                  (upload)="onFileUpload($event)"
+                  (delete)="deleteAttachment($event)"
+                />
+                <app-task-links
+                  [links]="task()!.links ?? []"
+                  (add)="addLink($event)"
+                  (delete)="deleteLink($event)"
+                />
+              </div>
+
+              <!-- Sub-Items -->
+              <div class="px-4 py-3 border-b border-gray-100 dark:border-surface-700">
+                <app-sub-items-section
+                  [items]="stateService.subItemsTree()"
+                  [totalCount]="stateService.subItemsTotalCount()"
+                  [doneCount]="stateService.subItemsDoneCount()"
+                  [members]="memberOptions()"
+                  [projectId]="projectId()"
+                  [taskId]="task()!.id"
+                  (createSubItem)="onCreateSubItem($event)"
+                  (subItemClicked)="openChildTask($event)"
+                />
+              </div>
+
+              <!-- Activity + Properties tab (compact, no internal scroll — parent div scrolls) -->
+              <div class="px-4 pt-3 pb-6">
                 <app-activity-panel
                   [entries]="stateService.activityEntries()"
                   [loading]="stateService.activityLoading()"
                   [hasMore]="stateService.activityHasMore()"
-                  [activeFilter]="stateService.activityFilter()"
+                  [activeFilter]="activeActivityTab()"
                   [viewMode]="viewMode === 'right-pane' ? 'drawer' : 'popup'"
                   [showPropertiesTab]="true"
+                  [compact]="true"
                   (filterChanged)="onActivityFilterChanged($event)"
                   (loadMore)="onActivityLoadMore()"
-                />
+                >
+                  <div activityPanelProperties>
+                    <app-properties-sidebar
+                      [task]="task()"
+                      [states]="stateOptions()"
+                      [members]="memberOptions()"
+                      [labels]="labelOptions()"
+                      [modules]="moduleOptions()"
+                      [availableParentTasks]="taskStore.tasks()"
+                      [collapseState]="stateService.sectionCollapseState()"
+                      (propertyChanged)="onPropertyChanged($event)"
+                      (parentChanged)="onParentChanged($event)"
+                      (parentClicked)="openChildTask($event)"
+                      (sectionToggled)="onSectionToggled($event)"
+                    />
+                  </div>
+                </app-activity-panel>
               </div>
             </div>
           } @else {
@@ -193,14 +266,19 @@ import { RichTextEditorComponent } from '../../../shared/components/rich-text-ed
                   (titleSaved)="onTitleSaved($event)"
                 />
 
-                <!-- Description -->
+                <!-- Description — showRte deferred via setTimeout so Tiptap init doesn't block the mode-switch CD cycle -->
                 <div>
                   <label class="text-xs font-semibold text-gray-400 dark:text-surface-500 uppercase tracking-wide mb-2 block">Mô tả</label>
-                  <app-rich-text-editor
-                    [ngModel]="task()?.description"
-                    placeholder="Thêm mô tả..."
-                    (blurEditor)="saveDescription($event)"
-                  ></app-rich-text-editor>
+                  @if (showRte()) {
+                    <app-rich-text-editor
+                      [ngModel]="task()?.description"
+                      (ngModelChange)="onDescriptionChange($event)"
+                      placeholder="Thêm mô tả..."
+                      (blurEditor)="saveDescription()"
+                    ></app-rich-text-editor>
+                  } @else {
+                    <div class="min-h-[5rem] rounded-lg border border-gray-200 dark:border-surface-700 bg-gray-50 dark:bg-surface-800"></div>
+                  }
                 </div>
 
                 <!-- Attachments & Links -->
@@ -239,9 +317,10 @@ import { RichTextEditorComponent } from '../../../shared/components/rich-text-ed
                     [entries]="stateService.activityEntries()"
                     [loading]="stateService.activityLoading()"
                     [hasMore]="stateService.activityHasMore()"
-                    [activeFilter]="stateService.activityFilter()"
+                    [activeFilter]="activeActivityTab()"
                     viewMode="full-page"
                     [showPropertiesTab]="false"
+                    [compact]="false"
                     (filterChanged)="onActivityFilterChanged($event)"
                     (loadMore)="onActivityLoadMore()"
                   />
@@ -250,25 +329,35 @@ import { RichTextEditorComponent } from '../../../shared/components/rich-text-ed
 
               <!-- Right Column: Properties Sidebar (Req 8.1, 8.4, 8.5) -->
               <div
-                class="border-l border-gray-100 dark:border-surface-700 bg-gray-50/30 dark:bg-surface-900/30 overflow-y-auto flex-shrink-0 transition-all duration-200 ease-in-out"
-                [style.width]="stateService.sidebarExpanded() ? '320px' : '0px'"
+                class="border-l border-gray-100 dark:border-surface-700 bg-gray-50/30 dark:bg-surface-900/30 flex-shrink-0 relative overflow-hidden"
+                [style.width]="stateService.sidebarExpanded() ? sidebarWidth() + 'px' : '0px'"
                 [style.opacity]="stateService.sidebarExpanded() ? '1' : '0'"
-                [style.overflow]="stateService.sidebarExpanded() ? 'auto' : 'hidden'"
+                [style.transition]="isResizing() ? 'opacity 200ms' : 'opacity 200ms, width 200ms ease-in-out'"
               >
-                <div class="p-5 w-80">
-                  <app-properties-sidebar
-                    [task]="task()"
-                    [states]="stateOptions()"
-                    [members]="memberOptions()"
-                    [labels]="labelOptions()"
-                    [modules]="moduleOptions()"
-                    [availableParentTasks]="taskStore.tasks()"
-                    [collapseState]="stateService.sectionCollapseState()"
-                    (propertyChanged)="onPropertyChanged($event)"
-                    (parentChanged)="onParentChanged($event)"
-                    (parentClicked)="openChildTask($event)"
-                    (sectionToggled)="onSectionToggled($event)"
-                  />
+                <!-- Drag-resize handle on the left edge -->
+                @if (stateService.sidebarExpanded()) {
+                  <div
+                    class="absolute left-0 top-0 bottom-0 w-1 z-10 cursor-col-resize select-none hover:bg-indigo-400/50 active:bg-indigo-500/60 transition-colors"
+                    (mousedown)="onResizeStart($event)"
+                  ></div>
+                }
+                <!-- Scrollable content -->
+                <div class="h-full overflow-y-auto">
+                  <div class="p-5 w-full box-border" [style.min-width]="sidebarWidth() + 'px'">
+                    <app-properties-sidebar
+                      [task]="task()"
+                      [states]="stateOptions()"
+                      [members]="memberOptions()"
+                      [labels]="labelOptions()"
+                      [modules]="moduleOptions()"
+                      [availableParentTasks]="taskStore.tasks()"
+                      [collapseState]="stateService.sectionCollapseState()"
+                      (propertyChanged)="onPropertyChanged($event)"
+                      (parentChanged)="onParentChanged($event)"
+                      (parentClicked)="openChildTask($event)"
+                      (sectionToggled)="onSectionToggled($event)"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -279,7 +368,7 @@ import { RichTextEditorComponent } from '../../../shared/components/rich-text-ed
     <p-toast />
   `,
 })
-export class TaskDetailPanelComponent implements OnInit, OnDestroy {
+export class TaskDetailPanelComponent implements OnInit, OnChanges, OnDestroy {
   // ─── Injected Services ──────────────────────────────────────────────────
   readonly taskStore = inject(TaskStore);
   readonly projectStore = inject(ProjectStore);
@@ -304,10 +393,22 @@ export class TaskDetailPanelComponent implements OnInit, OnDestroy {
   // ─── Component State ────────────────────────────────────────────────────
   readonly task = this.taskStore.currentTask;
   readonly isVisible = signal(false);
+  /** Delayed true so Tiptap init happens in a separate macrotask from the mode-switch CD cycle */
+  protected readonly showRte = signal(false);
+  private _showRteTimer?: ReturnType<typeof setTimeout>;
   protected readonly currentUserId = computed(() => this.authStore.currentUser()?.id ?? '');
+  private isDestroying = false;
 
   /** Signal accessor for save status — passed to TaskHeaderComponent */
   readonly saveStatusSignal = computed(() => this.taskStore.saveStatus());
+
+  /** Active tab in the activity panel — separate from the API filter so 'properties' tab works */
+  protected readonly activeActivityTab = signal<ActivityFilterType | 'properties'>('all');
+
+  /** Width of the properties sidebar in pixels; persisted to localStorage */
+  protected readonly sidebarWidth = signal(this.loadSidebarWidth());
+  /** True while the user is dragging the resize handle — suppresses width CSS transition */
+  protected readonly isResizing = signal(false);
 
   // ─── Computed options for child components ─────────────────────────────
   protected readonly projectId = computed(() => this.projectStore.currentProject()?.id ?? '');
@@ -334,9 +435,23 @@ export class TaskDetailPanelComponent implements OnInit, OnDestroy {
         lastLoadedTaskId = taskId;
         untracked(() => {
           this.stateService.loadSubItemsTree(projectId, taskId);
-          this.stateService.loadActivity(projectId, taskId, 'all');
+          const limit = this.viewMode === 'full-page' ? 20 : 15;
+          this.stateService.loadActivity(projectId, taskId, 'all', 1, limit);
         });
       }
+    });
+
+    // Show RTE when panel becomes visible; hide when it closes
+    effect(() => {
+      const visible = this.isVisible();
+      untracked(() => {
+        clearTimeout(this._showRteTimer);
+        if (visible) {
+          this._showRteTimer = setTimeout(() => this.showRte.set(true));
+        } else {
+          this.showRte.set(false);
+        }
+      });
     });
   }
 
@@ -360,6 +475,7 @@ export class TaskDetailPanelComponent implements OnInit, OnDestroy {
       distinctUntilChanged(([pA, projA], [pB, projB]) => pA['taskId'] === pB['taskId'] && projA === projB),
     ).subscribe(([params, projectId]) => {
       const taskId = params['taskId'];
+      this._pendingDescription = undefined; // reset on any task navigation
       if (taskId) {
         this.isVisible.set(true);
         this.taskStore.loadTask(projectId, taskId);
@@ -372,7 +488,21 @@ export class TaskDetailPanelComponent implements OnInit, OnDestroy {
     });
   }
 
+  ngOnChanges(changes: SimpleChanges): void {
+    if (!changes['viewMode']) return;
+    // Template branches change on viewMode switch — reset and re-defer RTE init
+    // to avoid blocking the mode-switch CD cycle regardless of which mode we switch to
+    clearTimeout(this._showRteTimer);
+    this.showRte.set(false);
+    if (this.isVisible()) {
+      this._showRteTimer = setTimeout(() => this.showRte.set(true));
+    }
+  }
+
   ngOnDestroy(): void {
+    this.isDestroying = true;
+    clearTimeout(this._showRteTimer);
+    this.isVisible.set(false);
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -382,6 +512,68 @@ export class TaskDetailPanelComponent implements OnInit, OnDestroy {
   /** Toggle sidebar and persist state (Req 8.4, 8.7) */
   protected toggleSidebar(): void {
     this.stateService.toggleSidebar();
+  }
+
+  // ─── Sidebar Resize ─────────────────────────────────────────────────────
+
+  private loadSidebarWidth(): number {
+    try {
+      const saved = localStorage.getItem('task-detail-sidebar-width');
+      if (saved) return Math.max(240, Math.min(640, parseInt(saved, 10)));
+    } catch { /* ignore */ }
+    return 360;
+  }
+
+  private saveSidebarWidth(w: number): void {
+    try { localStorage.setItem('task-detail-sidebar-width', String(w)); } catch { /* ignore */ }
+  }
+
+  protected onResizeStart(e: MouseEvent): void {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startWidth = this.sidebarWidth();
+    this.isResizing.set(true);
+
+    const onMove = (ev: MouseEvent) => {
+      const newWidth = Math.max(240, Math.min(640, startWidth + (startX - ev.clientX)));
+      this.sidebarWidth.set(newWidth);
+    };
+
+    const onUp = () => {
+      this.isResizing.set(false);
+      this.saveSidebarWidth(this.sidebarWidth());
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  }
+
+  protected onDialogVisibleChange(visible: boolean): void {
+    if (!visible && this.viewMode === 'popup' && !this.isDestroying) {
+      this.isVisible.set(false);
+      this.onClose();
+    }
+  }
+
+  protected onDrawerVisibleChange(visible: boolean): void {
+    if (!visible && this.viewMode === 'right-pane' && !this.isDestroying) {
+      this.isVisible.set(false);
+      this.onClose();
+    }
+  }
+
+  protected onDialogHide(): void {
+    if (this.isDestroying) return;
+    if (this.viewMode !== 'popup') return;
+    this.onClose();
+  }
+
+  protected onDrawerClose(): void {
+    if (this.isDestroying) return;
+    if (this.viewMode !== 'right-pane') return;
+    this.onClose();
   }
 
   protected onClose(): void {
@@ -403,10 +595,18 @@ export class TaskDetailPanelComponent implements OnInit, OnDestroy {
 
   // ─── Description ────────────────────────────────────────────────────────
 
-  protected saveDescription(desc: TiptapDoc | null | undefined): void {
+  private _pendingDescription: TiptapDoc | null | undefined = undefined;
+
+  protected onDescriptionChange(val: TiptapDoc | null): void {
+    this._pendingDescription = val;
+  }
+
+  protected saveDescription(): void {
+    if (this._pendingDescription === undefined) return;
     const t = this.task();
-    if (t && desc !== undefined) {
-      this.taskStore.updateTask(this.projectId(), t.id, { description: desc ?? null });
+    if (t) {
+      this.taskStore.updateTask(this.projectId(), t.id, { description: this._pendingDescription });
+      this._pendingDescription = undefined;
     }
   }
 
@@ -463,7 +663,7 @@ export class TaskDetailPanelComponent implements OnInit, OnDestroy {
   // ─── Activity Events ────────────────────────────────────────────────────
 
   protected onActivityFilterChanged(filter: ActivityFilterType | 'properties'): void {
-    // 'properties' tab is handled by ActivityPanel internally
+    this.activeActivityTab.set(filter);
     if (filter === 'properties') return;
     const t = this.task();
     if (t) {

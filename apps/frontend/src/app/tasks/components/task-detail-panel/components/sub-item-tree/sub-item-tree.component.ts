@@ -3,6 +3,8 @@ import {
   Input,
   Output,
   EventEmitter,
+  OnChanges,
+  SimpleChanges,
   signal,
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
@@ -206,7 +208,7 @@ const INDENT_PX = 20;
     }
   `],
 })
-export class SubItemTreeComponent {
+export class SubItemTreeComponent implements OnChanges {
   /** Tree data — hierarchical sub-item nodes */
   @Input() items: SubItemTreeNode[] = [];
 
@@ -225,16 +227,20 @@ export class SubItemTreeComponent {
   /** Track expanded state per node ID — all expanded by default */
   private readonly expandedNodes = signal<Set<string>>(new Set());
 
-  /** Whether all nodes have been initialized as expanded */
-  private initialized = false;
+  /**
+   * Initialize expanded state when items arrive.
+   * Done in ngOnChanges (NOT inside the template-called isExpanded getter) so we never
+   * write a signal that the template reads during change detection — that anti-pattern
+   * re-dirties the view and destabilizes CD on the recursive tree render.
+   */
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['items'] && this.items.length > 0 && this.expandedNodes().size === 0) {
+      this.initExpandedState(this.items);
+    }
+  }
 
   /** Check if a node is expanded. Default: expanded (true) unless explicitly collapsed. */
   isExpanded(nodeId: string): boolean {
-    // Lazy init: all nodes expanded by default
-    if (!this.initialized && this.items.length > 0) {
-      this.initExpandedState(this.items);
-      this.initialized = true;
-    }
     return this.expandedNodes().has(nodeId);
   }
 

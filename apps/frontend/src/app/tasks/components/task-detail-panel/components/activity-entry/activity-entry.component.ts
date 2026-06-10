@@ -59,18 +59,20 @@ function parseStateValue(json: string | null): StateTransitionValue | null {
   selector: 'app-activity-entry',
   imports: [RelativeTimePipe, StateTransitionComponent],
   template: `
-    <div class="flex items-start gap-3 py-2">
-      <!-- Avatar (32px circular) -->
+    <div class="flex items-start" [class.gap-3]="!compact" [class.gap-2]="compact" [class.py-2]="!compact" [class.py-1.5]="compact">
+      <!-- Avatar (32px normal / 24px compact) -->
       <div class="shrink-0">
         @if (entry.actorAvatar) {
           <img
             [src]="entry.actorAvatar"
             [alt]="entry.actorName ?? 'User'"
-            class="w-8 h-8 rounded-full object-cover"
+            [class]="compact ? 'w-6 h-6 rounded-full object-cover' : 'w-8 h-8 rounded-full object-cover'"
           />
         } @else {
           <div
-            class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold select-none"
+            [class]="compact
+              ? 'w-6 h-6 rounded-full flex items-center justify-center text-white text-[9px] font-semibold select-none'
+              : 'w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold select-none'"
             [style.background-color]="avatarColor()"
             [attr.aria-label]="entry.actorName ?? 'User'"
           >
@@ -81,14 +83,14 @@ function parseStateValue(json: string | null): StateTransitionValue | null {
 
       <!-- Content -->
       <div class="flex-1 min-w-0">
-        <div class="flex items-center flex-wrap gap-x-1.5 gap-y-0.5">
+        <div class="flex items-center flex-wrap gap-x-1 gap-y-0.5">
           <!-- Username -->
-          <span class="text-sm font-semibold text-gray-800 dark:text-surface-100">
+          <span [class]="compact ? 'text-xs font-semibold text-gray-800 dark:text-surface-100' : 'text-sm font-semibold text-gray-800 dark:text-surface-100'">
             {{ entry.actorName ?? 'Người dùng' }}
           </span>
 
           <!-- Action Description -->
-          <span class="text-sm text-gray-600 dark:text-surface-300">
+          <span [class]="compact ? 'text-xs text-gray-600 dark:text-surface-300' : 'text-sm text-gray-600 dark:text-surface-300'">
             {{ actionText() }}
           </span>
 
@@ -101,14 +103,14 @@ function parseStateValue(json: string | null): StateTransitionValue | null {
           }
 
           <!-- Relative Time -->
-          <span class="text-xs text-gray-400 dark:text-surface-500 ml-auto whitespace-nowrap">
+          <span class="text-[10px] text-gray-400 dark:text-surface-500 ml-auto whitespace-nowrap">
             {{ entry.createdAt | relativeTime }}
           </span>
         </div>
 
         <!-- Comment content (for comment_added) -->
         @if (entry.entryType === 'comment_added' && entry.comment) {
-          <p class="mt-1 text-sm text-gray-700 dark:text-surface-200 break-words line-clamp-3">
+          <p [class]="compact ? 'mt-0.5 text-xs text-gray-700 dark:text-surface-200 break-words line-clamp-2' : 'mt-1 text-sm text-gray-700 dark:text-surface-200 break-words line-clamp-3'">
             {{ entry.comment }}
           </p>
         }
@@ -118,6 +120,7 @@ function parseStateValue(json: string | null): StateTransitionValue | null {
 })
 export class ActivityEntryComponent {
   @Input({ required: true }) entry!: TaskActivity;
+  @Input() compact = false;
 
   /** First letter of actor name for avatar fallback */
   readonly initial = signal('?');

@@ -167,6 +167,17 @@ export interface PropertyFieldConfig {
     :host ::ng-deep .p-datepicker,
     :host ::ng-deep .p-inputnumber {
       font-size: 0.875rem;
+      width: 100%;
+      max-width: 100%;
+    }
+
+    /* p-inputnumber with showButtons: the inner <input> keeps its intrinsic
+       (size-attr) width and pushes the stepper buttons past the column.
+       Force it to shrink so the whole control fits the sidebar width. */
+    :host ::ng-deep .p-inputnumber input,
+    :host ::ng-deep .p-inputnumber .p-inputnumber-input {
+      width: 100%;
+      min-width: 0;
     }
 
     :host ::ng-deep .p-select.p-disabled,
@@ -187,11 +198,29 @@ export class InlinePropertyEditorComponent implements OnDestroy {
   /** Current value of the field */
   @Input() set value(v: unknown) {
     // Chỉ update nếu không đang save (tránh overwrite giá trị tạm)
-    if (!this.saveQueue.isSaving(this.config?.field ?? '')) {
-      this._previousValue = v;
-      this.currentValue.set(v);
-      this.syncDateValue(v);
+    if (this.saveQueue.isSaving(this.config?.field ?? '')) return;
+    // Bỏ qua nếu giá trị không đổi. QUAN TRỌNG cho multi-select: parent binding
+    // `[value]="getFieldValue(field)"` trả về một MẢNG MỚI mỗi lần CD chạy
+    // (vd assigneeIds = task.assignees.map(...)). Nếu không so sánh, mỗi CD sẽ
+    // gọi currentValue.set() → ghi signal trong lúc CD → lên lịch CD lại →
+    // vòng lặp vô hạn → treo trình duyệt.
+    if (this.valuesEqual(v, this._previousValue)) return;
+    this._previousValue = v;
+    this.currentValue.set(v);
+    this.syncDateValue(v);
+  }
+
+  /** Shallow equality — handles arrays by element so new-but-equal refs don't retrigger CD */
+  private valuesEqual(a: unknown, b: unknown): boolean {
+    if (a === b) return true;
+    if (Array.isArray(a) && Array.isArray(b)) {
+      if (a.length !== b.length) return false;
+      for (let i = 0; i < a.length; i++) {
+        if (a[i] !== b[i]) return false;
+      }
+      return true;
     }
+    return false;
   }
 
   /** Emit when value changes — parent uses to persist via API */

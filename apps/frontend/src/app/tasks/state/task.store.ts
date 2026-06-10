@@ -257,13 +257,14 @@ export class TaskStore {
    * Load activity entries for a given task with filter and pagination.
    * Replaces the current activity entries (used for initial load or filter change).
    */
-  loadActivity(projectId: string, taskId: string, filter: ActivityFilterType, page = 1): void {
+  loadActivity(projectId: string, taskId: string, filter: ActivityFilterType, page = 1, limit = 20): void {
     this.activityLoading.set(true);
     this.activityFilter.set(filter);
     this.activityPage.set(page);
+    this._activityLimit = limit;
 
     this.taskService
-      .getActivityFiltered(projectId, taskId, filter, page, 30)
+      .getActivityFiltered(projectId, taskId, filter, page, limit)
       .pipe(
         catchError(() => {
           this.activityEntries.set([]);
@@ -285,6 +286,8 @@ export class TaskStore {
    * Load the next page of activity entries and append to existing list.
    * Used for infinite scroll / "load more" functionality.
    */
+  private _activityLimit = 20;
+
   loadMoreActivity(projectId: string, taskId: string): void {
     if (!this.activityHasMore() || this.activityLoading()) return;
 
@@ -292,7 +295,7 @@ export class TaskStore {
     this.activityLoading.set(true);
 
     this.taskService
-      .getActivityFiltered(projectId, taskId, this.activityFilter(), nextPage, 30)
+      .getActivityFiltered(projectId, taskId, this.activityFilter(), nextPage, this._activityLimit)
       .pipe(
         catchError(() => {
           this.activityHasMore.set(false);

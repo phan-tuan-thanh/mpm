@@ -10,6 +10,7 @@ import {
   computed,
   forwardRef,
   NgZone,
+  ElementRef,
   inject,
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
@@ -65,6 +66,7 @@ export class RichTextEditorComponent implements ControlValueAccessor, OnInit, On
   private pendingValue: TiptapDoc | null = null;
 
   private readonly zone = inject(NgZone);
+  private readonly elRef = inject(ElementRef);
 
   ngOnInit(): void {
     this.editor = new Editor({
@@ -89,20 +91,14 @@ export class RichTextEditorComponent implements ControlValueAccessor, OnInit, On
         this.zone.run(() => {
           this.hasSelection.set(sel);
           if (sel) {
-            const dom = editor.view.dom.getBoundingClientRect();
-            this.bubbleTop.set(dom.top - 44);
-            this.bubbleLeft.set(dom.left);
+            this.updateBubblePos(editor, from, to);
           }
           // Floating menu: empty paragraph
           const node = editor.state.selection.$anchor.parent;
           const empty = node.childCount === 0 && node.type.name === 'paragraph';
           this.showFloating.set(empty);
           if (empty) {
-            try {
-              const coords = editor.view.coordsAtPos(editor.state.selection.from);
-              this.floatingTop.set(coords.top);
-              this.floatingLeft.set(coords.left);
-            } catch {}
+            this.updateFloatingPos(editor);
           }
         });
       },
@@ -207,5 +203,41 @@ export class RichTextEditorComponent implements ControlValueAccessor, OnInit, On
       const url = URL.createObjectURL(file);
       this.editor.chain().focus().setImage({ src: url }).run();
     }
+  }
+
+  // ── Menu positioning (absolute relative to .rte-wrapper) ─────────────────
+  // Menus use `position: absolute` so they work inside dialogs/drawers that have
+  // CSS transforms — `position: fixed` breaks in transformed ancestors.
+
+  private getWrapperRect(): DOMRect | null {
+    const el = (this.elRef.nativeElement as HTMLElement).querySelector('.rte-wrapper');
+    return el ? el.getBoundingClientRect() : null;
+  }
+
+  private updateBubblePos(editor: Editor, from: number, to: number): void {
+    try {
+      const wr = this.getWrapperRect();
+      if (!wr) return;
+      const startC = editor.view.coordsAtPos(from);
+      const endC = editor.view.coordsAtPos(to > from ? to : from);
+      const menuH = 40;
+      const gap = 4;
+      const aboveTop = startC.top - wr.top - menuH - gap;
+      // Prefer above; if clipped by wrapper top, show below
+      const top = aboveTop >= 0 ? aboveTop : endC.bottom - wr.top + gap;
+      this.bubbleTop.set(top);
+      this.bubbleLeft.set(Math.max(0, startC.left - wr.left));
+    } catch { /* coordsAtPos throws on edge cases */ }
+  }
+
+  private updateFloatingPos(editor: Editor): void {
+    try {
+      const wr = this.getWrapperRect();
+      if (!wr) return;
+      const coords = editor.view.coordsAtPos(editor.state.selection.from);
+      // Align vertically with the cursor line, 8px to the right of the cursor
+      this.floatingTop.set(coords.top - wr.top);
+      this.floatingLeft.set(coords.right - wr.left + 8);
+    } catch {}
   }
 }

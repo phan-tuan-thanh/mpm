@@ -60,8 +60,8 @@ import { Subject, takeUntil, distinctUntilChanged } from 'rxjs';
         </div>
       }
 
-      <!-- Task list / Board / Full-page views -->
-      <div class="flex-1 overflow-hidden">
+      <!-- Task list / Board (relative container for full-page overlay) -->
+      <div class="flex-1 overflow-hidden relative">
         @if (showQuickCreate() && displayProps().taskCreationViewMode === 'full-page') {
           <div class="h-full p-6 bg-gray-50 dark:bg-surface-950 flex justify-center items-start overflow-y-auto">
             <app-quick-create
@@ -73,13 +73,6 @@ import { Subject, takeUntil, distinctUntilChanged } from 'rxjs';
               (viewModeChange)="onCreationViewModeChange($event)"
             />
           </div>
-        } @else if (currentTaskId() && displayProps().taskDetailViewMode === 'full-page') {
-          <div class="h-full bg-white dark:bg-surface-900 overflow-y-auto">
-            <app-task-detail-panel
-              [viewMode]="'full-page'"
-              (viewModeChange)="onDetailViewModeChange($event)"
-            />
-          </div>
         } @else if (viewMode() === 'board') {
           <app-board
             [tasks]="taskStore.tasks()"
@@ -88,7 +81,7 @@ import { Subject, takeUntil, distinctUntilChanged } from 'rxjs';
             [projectId]="projectId"
             (taskClick)="openDetail($event)"
           />
-        } @else {
+        } @else if (!(currentTaskId() && displayProps().taskDetailViewMode === 'full-page')) {
           <div class="h-full overflow-y-auto">
             <app-task-list
               [tasks]="taskStore.tasks()"
@@ -105,6 +98,12 @@ import { Subject, takeUntil, distinctUntilChanged } from 'rxjs';
             />
           </div>
         }
+
+        <!-- Single always-present task detail panel — mode changes via input, never destroyed -->
+        <app-task-detail-panel
+          [viewMode]="displayProps().taskDetailViewMode || 'right-pane'"
+          (viewModeChange)="onDetailViewModeChange($event)"
+        />
       </div>
 
       <!-- Quick create bar -->
@@ -122,12 +121,6 @@ import { Subject, takeUntil, distinctUntilChanged } from 'rxjs';
 
     <p-confirmDialog />
     <p-toast />
-    @if (!currentTaskId() || displayProps().taskDetailViewMode !== 'full-page') {
-      <app-task-detail-panel
-        [viewMode]="displayProps().taskDetailViewMode || 'right-pane'"
-        (viewModeChange)="onDetailViewModeChange($event)"
-      />
-    }
     <app-label-manager #labelManager [projectId]="projectId" [workspaceId]="workspaceId" />
   `,
 })
