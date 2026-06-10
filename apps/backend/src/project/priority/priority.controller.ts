@@ -39,7 +39,8 @@ export class PriorityController {
   ) {
     const ipAddress = this.extractIpAddress(req);
     const userAgent = req.headers['user-agent'] ?? 'unknown';
-    return this.priorityService.create(projectId, user.id, dto, ipAddress, userAgent);
+    const data = await this.priorityService.create(projectId, user.id, dto, ipAddress, userAgent);
+    return { data };
   }
 
   @Patch('reorder')
@@ -73,7 +74,7 @@ export class PriorityController {
   ) {
     const ipAddress = this.extractIpAddress(req);
     const userAgent = req.headers['user-agent'] ?? 'unknown';
-    return this.priorityService.update(
+    const data = await this.priorityService.update(
       projectId,
       priorityId,
       user.id,
@@ -81,6 +82,7 @@ export class PriorityController {
       ipAddress,
       userAgent,
     );
+    return { data };
   }
 
   @Delete(':priorityId')
