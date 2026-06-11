@@ -20,7 +20,7 @@ export class IconPickerPanelComponent {
     const q = this.search().toLowerCase();
     if (!q) return ICON_GROUPS;
     return ICON_GROUPS
-      .map(g => ({ ...g, icons: g.icons.filter(i => i.toLowerCase().includes(q)) }))
+      .map(g => ({ ...g, icons: g.icons.filter(i => i.icon.toLowerCase().includes(q) || i.name.toLowerCase().includes(q)) }))
       .filter(g => g.icons.length > 0);
   });
 
