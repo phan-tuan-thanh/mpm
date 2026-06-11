@@ -38,13 +38,21 @@ theo mô hình per-section của Notion/Linear, không có nút gạt Xem/Sửa 
 định và **strip thuộc tính `style`**, sẽ làm mất màu chữ/highlight do
 `@tiptap/extension-color` + `text-style` sinh ra (`style="color: …"`), phá vỡ cam kết
 "đọc và sửa nhìn giống hệt nhau". Thay vào đó dùng **DOMPurify** (đã có trong
-dependencies frontend) với allowlist khớp schema TipTap: giữ `class`, `style`
-(color/background-color), `data-type`, `data-checked`, `href`, `src`…, sau đó
-`bypassSecurityTrustHtml`. Viết unit test khóa allowlist này (script/iframe/onerror bị
-loại, style màu được giữ).
+dependencies frontend) với allowlist khớp schema TipTap — chốt danh sách:
+`class`, `style` (color/background-color), `data-type`, `data-checked`, `href`,
+`target`, `rel`, `src`, `alt`, `title`, `colspan`/`rowspan` (table), và `type`/`checked`/
+`disabled` trên `<input>` (taskItem). Sau sanitize mới `bypassSecurityTrustHtml`.
+Viết unit test khóa allowlist này (script/iframe/onerror/`javascript:` bị loại,
+style màu và `checked` được giữ).
+
+**Link ra ngoài**: dùng DOMPurify hook (`afterSanitizeAttributes`) ép mọi `<a>` thành
+`target="_blank" rel="noopener noreferrer"` — nội dung đọc nằm trong panel, mở link đè
+lên app sẽ mất ngữ cảnh làm việc.
 
 Render qua `innerHTML`, tái dùng đúng CSS classes của RTE content — không nhảy layout
-khi chuyển mode. Không mount ProseMirror khi chỉ đọc → panel mở nhẹ hơn.
+khi chuyển mode. Không mount ProseMirror khi chỉ đọc → panel mở nhẹ hơn. Kết quả
+`generateHTML` + sanitize **memoize trong `computed()`** theo input doc/html — không
+chạy lại mỗi chu kỳ change detection.
 
 ### Tương tác trong trạng thái đọc
 
@@ -85,9 +93,12 @@ khác không tự nhảy — tránh mất dữ liệu.
 
 - **Đọc**: `app-rich-text-viewer`, không viền/nền input. Hover → nền sáng nhẹ
   (`hover:bg-gray-50 dark:hover:bg-surface-800`) + nút bút chì nhỏ góc phải trên.
-- **Trống**: placeholder mờ "Thêm mô tả…", click vào edit ngay.
+- **Trống**: placeholder mờ "Thêm mô tả…", click vào edit ngay. Phát hiện "trống" bằng
+  helper `isDocEmpty` (dựa trên `isNodeEmpty` của TipTap) — doc chứa một paragraph rỗng
+  vẫn phải tính là trống.
 - **Trigger edit**: click nội dung HOẶC nút bút chì (cả hai) → swap sang
-  `app-rich-text-editor` (giữ cấu hình hiện tại), tự focus.
+  `app-rich-text-editor` (giữ cấu hình hiện tại), tự focus cuối nội dung
+  (`focus('end')`) — đặt caret theo điểm click không đáng công sức ở v1.
 - **Lưu/thoát kiểu Jira**: nút Lưu (primary) / Hủy (text) dưới editor, fit nội dung.
   `Ctrl+Enter` = Lưu, `Esc` = Hủy. Click ra ngoài KHÔNG lưu, không thoát. Hủy khi dirty
   → confirm "Bỏ thay đổi chưa lưu?" (chủ đích cho user non-tech). Bỏ save-on-blur hiện tại.
@@ -125,9 +136,11 @@ khác không tự nhảy — tránh mất dữ liệu.
   - `generateHTML` round-trip: doc JSON mẫu (đủ node: heading, list, taskList, color,
     link, image) render ra HTML giữ nguyên cấu trúc.
   - DOMPurify: loại `<script>`, `onerror`, `javascript:` href; GIỮ `style` màu chữ,
-    `data-checked`, `class`.
+    `data-checked`, `checked` trên input, `class`; mọi `<a>` có
+    `target="_blank" rel="noopener noreferrer"`.
   - Click link không emit edit; click text emit edit; selection không emit;
-    checkbox emit doc mới với đúng `taskItem` được flip; doc lỗi → fallback.
+    checkbox emit doc mới với đúng `taskItem` được flip; doc lỗi → fallback;
+    `isDocEmpty` đúng với doc rỗng/paragraph rỗng/doc có nội dung.
 - Panel description specs: mặc định trạng thái đọc; click → editor xuất hiện + focus;
   Lưu gọi API rồi về đọc; Hủy dirty có confirm; Esc hủy edit mà KHÔNG đóng panel;
   Ctrl+Enter lưu; lưu lỗi giữ edit.
