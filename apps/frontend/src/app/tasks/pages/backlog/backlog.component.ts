@@ -106,6 +106,7 @@ import { toObservable } from '@angular/core/rxjs-interop';
               (reorder)="onReorder($event)"
               (moveTask)="onMoveTask($event)"
               (newTaskInState)="openQuickCreate($event)"
+              (toggleExpand)="onToggleExpand($event)"
             />
           </div>
         }
@@ -264,7 +265,7 @@ export class BacklogComponent implements OnInit, OnDestroy {
       this.projectId = project!.id;
       this.workspaceId = project!.workspaceId ?? '';
       this.loadDisplayPropsFromStorage();
-      this.taskStore.loadBacklog(this.projectId);
+      this.reloadBacklog();
       this.taskStore.loadLabels(this.projectId);
     });
   }
@@ -287,6 +288,15 @@ export class BacklogComponent implements OnInit, OnDestroy {
       queryParams: { view: mode },
       queryParamsHandling: 'merge',
     });
+    this.reloadBacklog();
+  }
+
+  protected reloadBacklog(): void {
+    if (this.viewMode() === 'list') {
+      this.taskStore.loadBacklog(this.projectId, { parentId: null });
+    } else {
+      this.taskStore.loadBacklog(this.projectId, { parentId: undefined });
+    }
   }
 
   protected async openQuickCreate(stateId?: string): Promise<void> {
@@ -317,19 +327,19 @@ export class BacklogComponent implements OnInit, OnDestroy {
 
   protected onFilterChange(filter: BacklogFilter): void {
     this.taskStore.setFilter(filter as any);
-    this.taskStore.loadBacklog(this.projectId);
+    this.reloadBacklog();
   }
 
   protected onGroupByChange(value: string): void {
     this.selectedGroupBy = value;
     this.taskStore.setGroupBy(value);
-    this.taskStore.loadBacklog(this.projectId);
+    this.reloadBacklog();
   }
 
   protected onOrderByChange(value: string): void {
     this.selectedOrderBy = value;
     this.taskStore.setOrderBy(value);
-    this.taskStore.loadBacklog(this.projectId);
+    this.reloadBacklog();
   }
 
   protected openDetail(task: TaskListItem): void {
@@ -346,6 +356,10 @@ export class BacklogComponent implements OnInit, OnDestroy {
 
   protected onMoveTask(event: { taskId: string; stateId: string; backlogOrder: number }): void {
     this.taskStore.moveToState(this.projectId, event.taskId, event.stateId, event.backlogOrder);
+  }
+
+  protected onToggleExpand(taskId: string): void {
+    this.taskStore.loadChildren(this.projectId, taskId);
   }
 
   protected async onQuickCreate(event: {
@@ -380,7 +394,7 @@ export class BacklogComponent implements OnInit, OnDestroy {
       this.quickCreateStateId.set(undefined);
     }
 
-    this.taskStore.loadBacklog(this.projectId);
+    this.reloadBacklog();
   }
 
   protected onBulkDelete(): void {
@@ -393,7 +407,7 @@ export class BacklogComponent implements OnInit, OnDestroy {
       acceptButtonStyleClass: 'p-button-danger',
       accept: () => {
         this.taskStore.bulkDelete(this.projectId);
-        this.taskStore.loadBacklog(this.projectId);
+        this.reloadBacklog();
       },
     });
   }

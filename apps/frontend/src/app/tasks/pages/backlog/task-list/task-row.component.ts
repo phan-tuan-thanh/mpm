@@ -50,16 +50,16 @@ import { IconDisplayComponent } from '../../../../shared/components/icon-display
       <span class="flex-shrink-0" [style.width.px]="depth * 20" style="padding-left:4px"><span class="block w-3 h-px bg-gray-200 dark:bg-surface-700"></span></span>
     }
     <span class="text-xs font-mono text-gray-400 dark:text-surface-500 flex-shrink-0 mr-2" style="width:58px">{{ task.taskId }}</span>
-    @if (childCount > 0) {
+    @if (task.subItemCount > 0) {
       <button class="flex items-center justify-center flex-shrink-0 w-4 h-4 rounded hover:bg-gray-200 dark:hover:bg-surface-800 mr-2" (click)="$event.stopPropagation(); toggleExpand.emit(task.id)">
         <i class="pi text-[9px] text-gray-500 dark:text-surface-400" [class.pi-chevron-right]="!isExpanded" [class.pi-chevron-down]="isExpanded"></i>
       </button>
     }
     <i class="flex-shrink-0 text-xs mr-2" [class]="typeIcon(task.type)" [style.color]="typeColor(task.type)" [pTooltip]="task.type"></i>
     <span class="flex-1 text-sm text-gray-800 dark:text-surface-100 truncate">{{ task.title }}</span>
-    @if (displayProps.showSubItemCount && childCount > 0) {
-      <span class="flex items-center gap-0.5 text-xs text-gray-400 dark:text-surface-500 flex-shrink-0 mr-2" [pTooltip]="childCount + ' sub-items'">
-        <i class="pi pi-sitemap text-[10px]"></i>{{ childCount }}
+    @if (displayProps.showSubItemCount && task.subItemCount > 0) {
+      <span class="flex items-center gap-0.5 text-xs text-gray-400 dark:text-surface-500 flex-shrink-0 mr-2" [pTooltip]="task.subItemCount + ' sub-items'">
+        <i class="pi pi-sitemap text-[10px]"></i>{{ task.subItemCount }}
       </span>
     }
     @if (displayProps.showLabels && task.labels?.length) {

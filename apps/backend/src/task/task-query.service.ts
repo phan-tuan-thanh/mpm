@@ -31,7 +31,7 @@ export class TaskQueryService {
     } = {},
   ): Promise<{ data: Task[]; total: number; page: number; pageSize: number }> {
     const page = query.page ?? 1;
-    const limit = Math.min(query.limit ?? 50, 200);
+    const limit = Math.min(query.limit ?? 50, 1000);
 
     // Lấy workspace_id của project để filter modules theo scope
     const project = await this.dataSource

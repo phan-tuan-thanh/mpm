@@ -61,13 +61,29 @@ export class TaskStore {
     this.isLoading.set(true);
     this.error.set(null);
 
+    const currentFilter = this.filter();
+    const hasActiveFilters = !!(
+      (currentFilter.search || query?.search) ||
+      (currentFilter.assigneeIds?.length || query?.assigneeIds?.length) ||
+      (currentFilter.labelIds?.length || query?.labelIds?.length) ||
+      (currentFilter.priorities?.length || query?.priorities?.length) ||
+      (currentFilter.stateIds?.length || query?.stateIds?.length) ||
+      (currentFilter.types?.length || query?.types?.length) ||
+      (currentFilter.sprintId || query?.sprintId)
+    );
+
     const q: TaskQueryDto = {
-      ...this.filter(),
+      parentId: hasActiveFilters ? undefined : null,
+      ...currentFilter,
       ...query,
       groupBy: this.groupBy() as TaskQueryDto['groupBy'],
       orderBy: this.orderBy() as TaskQueryDto['orderBy'],
       page: this.page(),
     };
+
+    if (query && 'parentId' in query) {
+      q.parentId = query.parentId;
+    }
 
     this.taskService
       .getTasks(projectId, q)
@@ -81,6 +97,25 @@ export class TaskStore {
       .subscribe((res) => {
         this.tasks.set(res.data);
         this.total.set(res.total);
+      });
+  }
+
+  loadChildren(projectId: string, parentId: string): void {
+    const alreadyLoaded = this.tasks().some((t) => t.parentId === parentId);
+    if (alreadyLoaded) return;
+
+    this.taskService
+      .getTasks(projectId, { parentId })
+      .pipe(
+        catchError(() => of({ data: [], total: 0, page: 1, pageSize: 50 })),
+      )
+      .subscribe((res) => {
+        if (res && res.data.length > 0) {
+          this.tasks.update((prev) => {
+            const newTasks = res.data.filter(nt => !prev.some(pt => pt.id === nt.id));
+            return [...prev, ...newTasks];
+          });
+        }
       });
   }
 

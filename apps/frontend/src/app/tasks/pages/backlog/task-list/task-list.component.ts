@@ -149,7 +149,7 @@ function flattenTask(
                          (click)="taskClick.emit(row.task)"
                          (mouseenter)="hoveredTaskId = row.task.id; hoveredStateId = group.state.id"
                          (mouseleave)="hoveredTaskId === row.task.id ? hoveredTaskId = null : null">
-                      <app-task-row [task]="row.task" [depth]="0" [childCount]="row.childCount" [isSelected]="selectedIds.has(row.task.id)" [isExpanded]="expandedTasks().has(row.task.id)" [displayProps]="displayProps" (selectionToggle)="selectionToggle.emit($event)" (toggleExpand)="toggleExpand($event)" (taskMenuClick)="taskMenuClick.emit($event)" />
+                      <app-task-row [task]="row.task" [depth]="0" [childCount]="row.childCount" [isSelected]="selectedIds.has(row.task.id)" [isExpanded]="expandedTasks().has(row.task.id)" [displayProps]="displayProps" (selectionToggle)="selectionToggle.emit($event)" (toggleExpand)="onToggleExpand($event)" (taskMenuClick)="taskMenuClick.emit($event)" />
                     </div>
 
                     <div *cdkDragPreview class="flex items-center bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 shadow-xl rounded-lg px-3 gap-2 pointer-events-none select-none" style="min-width: 300px; max-width: 450px; height: 38px; box-sizing: border-box;">
@@ -165,7 +165,7 @@ function flattenTask(
                        style="height:38px"
                        [ngClass]="selectedIds.has(row.task.id) ? 'bg-indigo-50 dark:bg-indigo-950/30' : ''"
                        (click)="taskClick.emit(row.task)">
-                    <app-task-row [task]="row.task" [depth]="row.depth" [childCount]="row.childCount" [isSelected]="selectedIds.has(row.task.id)" [isExpanded]="expandedTasks().has(row.task.id)" [displayProps]="displayProps" (selectionToggle)="selectionToggle.emit($event)" (toggleExpand)="toggleExpand($event)" (taskMenuClick)="taskMenuClick.emit($event)" />
+                    <app-task-row [task]="row.task" [depth]="row.depth" [childCount]="row.childCount" [isSelected]="selectedIds.has(row.task.id)" [isExpanded]="expandedTasks().has(row.task.id)" [displayProps]="displayProps" (selectionToggle)="selectionToggle.emit($event)" (toggleExpand)="onToggleExpand($event)" (taskMenuClick)="taskMenuClick.emit($event)" />
                   </div>
                 }
 
@@ -209,6 +209,7 @@ export class TaskListComponent {
   @Output() reorder = new EventEmitter<ReorderTaskItem[]>();
   @Output() newTaskInState = new EventEmitter<string | undefined>();
   @Output() moveTask = new EventEmitter<{ taskId: string; stateId: string; backlogOrder: number }>();
+  @Output() toggleExpand = new EventEmitter<string>();
 
   protected readonly collapsedGroups = signal(new Set<string>());
   protected readonly expandedTasks = signal(new Set<string>());
@@ -308,7 +309,17 @@ export class TaskListComponent {
   }
 
   protected toggleGroup(id: string): void { this.collapsedGroups.update((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; }); }
-  protected toggleExpand(id: string): void { this.expandedTasks.update((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; }); }
+  protected onToggleExpand(id: string): void {
+    const isExpanding = !this.expandedTasks().has(id);
+    this.expandedTasks.update((s) => {
+      const n = new Set(s);
+      n.has(id) ? n.delete(id) : n.add(id);
+      return n;
+    });
+    if (isExpanding) {
+      this.toggleExpand.emit(id);
+    }
+  }
 
   protected onDrop(event: CdkDragDrop<unknown>, destNodes: TaskNode[], destStateId: string): void {
     const movedTaskId = this.draggedTaskId;
