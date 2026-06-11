@@ -43,6 +43,8 @@ export class TaskDetailStateService {
   // ─── Sidebar ───────────────────────────────────────────────────────────
 
   readonly sidebarExpanded = signal(true);
+  /** Vùng đang ở chế độ edit (read-mode design). null = tất cả đang ở chế độ đọc. */
+  readonly editingSection = signal<'description' | null>(null);
   readonly sectionCollapseState = signal<SectionCollapseState>({
     details: true,
     structure: true,

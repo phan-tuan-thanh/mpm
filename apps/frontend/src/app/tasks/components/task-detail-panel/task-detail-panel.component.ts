@@ -61,7 +61,7 @@ import { ActivityPanelComponent } from './components/activity-panel/activity-pan
 import { PropertiesSidebarComponent } from './components/properties-sidebar/properties-sidebar.component';
 import { TaskAttachmentsComponent } from './components/task-attachments.component';
 import { TaskLinksComponent } from './components/task-links.component';
-import { RichTextEditorComponent } from '../../../shared/components/rich-text-editor/rich-text-editor.component';
+import { TaskDescriptionSectionComponent } from './components/task-description-section/task-description-section.component';
 import { SprintService } from '../../../projects/sprints/services/sprint.service';
 
 import { IconDisplayComponent } from '../../../shared/components/icon-display/icon-display.component';
@@ -87,7 +87,7 @@ import { IconDisplayComponent } from '../../../shared/components/icon-display/ic
     ActivityPanelComponent,
     TaskAttachmentsComponent,
     TaskLinksComponent,
-    RichTextEditorComponent,
+    TaskDescriptionSectionComponent,
     IconDisplayComponent,
   ],
   providers: [MessageService, TaskDetailStateService],
@@ -188,7 +188,8 @@ import { IconDisplayComponent } from '../../../shared/components/icon-display/ic
       styleClass="qc-dialog"
       [style]="{ width: '750px', height: '90vh', padding: '0' }"
       [contentStyle]="{ padding: '0', borderRadius: '14px', overflow: 'hidden' }"
-      [dismissableMask]="true"
+      [closeOnEscape]="stateService.editingSection() === null"
+      [dismissableMask]="stateService.editingSection() === null"
       (onHide)="onDialogHide()"
     >
       @if (viewMode === 'popup') {
@@ -202,7 +203,8 @@ import { IconDisplayComponent } from '../../../shared/components/icon-display/ic
       position="right"
       [modal]="false"
       [style]="{ width: '680px', padding: '0' }"
-      [dismissible]="true"
+      [closeOnEscape]="stateService.editingSection() === null"
+      [dismissible]="stateService.editingSection() === null"
       [showCloseIcon]="false"
       (onHide)="onDrawerClose()"
     >
@@ -407,15 +409,16 @@ import { IconDisplayComponent } from '../../../shared/components/icon-display/ic
               </div>
             </div>
 
-            <!-- Description -->
+            <!-- Description: đọc mặc định, click để sửa (read-mode design) -->
             <div class="px-4 pt-4 pb-3 border-b border-gray-100 dark:border-surface-700">
               <label class="text-xs font-semibold text-gray-400 dark:text-surface-500 uppercase tracking-wide mb-2 block">Mô tả</label>
               @if (showRte()) {
-                <app-rich-text-editor
-                  [ngModel]="task()?.description"
-                  (ngModelChange)="onDescriptionChange($event)"
-                  placeholder="Thêm mô tả..."
-                  (blurEditor)="saveDescription()"
+                <app-task-description-section
+                  [doc]="task()?.description ?? null"
+                  [saveStatus]="stateService.saveStatus()"
+                  (saveRequested)="onDescriptionSave($event)"
+                  (checkboxToggled)="onDescriptionSave($event)"
+                  (editingChange)="stateService.editingSection.set($event ? 'description' : null)"
                 />
               } @else {
                 <div class="min-h-[4rem] rounded-lg border border-gray-200 dark:border-surface-700 bg-gray-50 dark:bg-surface-800"></div>
@@ -1055,7 +1058,6 @@ export class TaskDetailPanelComponent implements OnInit, OnChanges, OnDestroy {
       distinctUntilChanged(([pA, projA], [pB, projB]) => pA['taskId'] === pB['taskId'] && projA === projB),
     ).subscribe(([params, projectId]) => {
       const taskId = params['taskId'];
-      this._pendingDescription = undefined; // reset on any task navigation
       if (taskId) {
         this.isVisible.set(true);
         this.taskStore.loadTask(projectId, taskId);
@@ -1176,18 +1178,10 @@ export class TaskDetailPanelComponent implements OnInit, OnChanges, OnDestroy {
 
   // ─── Description ────────────────────────────────────────────────────────
 
-  private _pendingDescription: TiptapDoc | null | undefined = undefined;
-
-  protected onDescriptionChange(val: TiptapDoc | null): void {
-    this._pendingDescription = val;
-  }
-
-  protected saveDescription(): void {
-    if (this._pendingDescription === undefined) return;
+  protected onDescriptionSave(doc: TiptapDoc | null): void {
     const t = this.task();
     if (t) {
-      this.taskStore.updateTask(this.projectId(), t.id, { description: this._pendingDescription });
-      this._pendingDescription = undefined;
+      this.taskStore.updateTask(this.projectId(), t.id, { description: doc });
     }
   }
 

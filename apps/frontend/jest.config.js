@@ -8,6 +8,7 @@ module.exports = {
   testEnvironment: 'jsdom',
   rootDir: '.',
   testMatch: ['<rootDir>/src/**/*.spec.ts'],
+  setupFilesAfterEnv: ['<rootDir>/src/setup-jest.ts'],
   moduleNameMapper: {
     '@mpm/shared-types': '<rootDir>/../../libs/shared-types/src/index.ts',
     '^lowlight$': '<rootDir>/src/app/testing/lowlight-mock.ts',
