@@ -70,7 +70,7 @@ function flattenTask(
     }
 
     ::ng-deep .cdk-drop-list-dragging .cdk-drag {
-      transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+      transition: none !important;
     }
 
     ::ng-deep .cdk-drag-animating {

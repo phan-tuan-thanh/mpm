@@ -14,24 +14,40 @@
   </div>
 
   <!-- Priority list with CDK drag drop -->
-  <div cdkDropList (cdkDropListDropped)="onDrop($event)" class="space-y-1">
+  <div cdkDropList [cdkDropListSortingDisabled]="true" (cdkDropListDropped)="onDrop($event)" class="space-y-1">
     @for (p of priorities(); track p.id) {
+
+      <!-- Ghost: stays in original position while dragging -->
+      @if (draggedId === p.id) {
+        <div class="opacity-25 pointer-events-none flex items-center gap-3 px-3 py-2 rounded-lg border border-gray-200 dark:border-surface-700 bg-white dark:bg-surface-900">
+          <span class="w-4 h-4 rounded-full shrink-0" [style.background-color]="p.colorLight"></span>
+          <i [class]="p.icon" class="text-sm shrink-0" [style.color]="p.colorLight"></i>
+          <span class="flex-1 text-sm font-medium text-gray-800 dark:text-surface-100">{{ p.name }}</span>
+        </div>
+      }
+
       <div
         cdkDrag
         [cdkDragDisabled]="isReadOnly() || !!editingId()"
-        class="flex items-center gap-3 px-3 py-2 rounded-lg border border-gray-200 dark:border-surface-700 bg-white dark:bg-surface-900 group"
-        [class.opacity-50]="draggedId === p.id"
+        [cdkDragData]="p"
+        class="flex items-center gap-3 px-3 py-2 rounded-lg border border-gray-200 dark:border-surface-700 bg-white dark:bg-surface-900 group relative cursor-grab active:cursor-grabbing"
         (cdkDragStarted)="onDragStart(p.id)"
         (cdkDragEnded)="onDragEnd()"
         (mouseenter)="hoveredId = p.id"
+        (mouseleave)="hoveredId === p.id ? hoveredId = null : null"
       >
-        <!-- Drag handle or lock icon -->
+        <!-- Line indicator: shows drop position -->
+        @if (draggedId && hoveredId === p.id && draggedId !== p.id) {
+          <div class="h-0.5 bg-indigo-600 dark:bg-indigo-500 w-full absolute top-0 left-0 right-0 z-20 rounded-full"></div>
+        }
+
+        <!-- Lock icon for system items, drag hint for others -->
         @if (p.isSystem) {
-          <i class="pi pi-lock text-gray-300 dark:text-surface-600 text-xs"></i>
+          <i class="pi pi-lock text-gray-300 dark:text-surface-600 text-xs flex-shrink-0"></i>
         } @else if (!isReadOnly()) {
-          <i class="pi pi-bars text-gray-300 dark:text-surface-600 text-xs cursor-grab opacity-0 group-hover:opacity-100 transition-opacity" cdkDragHandle></i>
+          <i class="pi pi-bars text-gray-300 dark:text-surface-600 text-xs flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"></i>
         } @else {
-          <span class="w-4"></span>
+          <span class="w-4 flex-shrink-0"></span>
         }
 
         @if (editingId() === p.id) {
@@ -42,6 +58,7 @@
               [dark]="editDraft().colorDark"
               (lightChange)="editDraft.update(d => ({ ...d, colorLight: $event }))"
               (darkChange)="editDraft.update(d => ({ ...d, colorDark: $event }))"
+              (pointerdown)="$event.stopPropagation()"
             />
             <p-popover #iconPop>
               <app-icon-picker-panel
@@ -51,17 +68,19 @@
             </p-popover>
             <button type="button"
               class="w-8 h-8 flex items-center justify-center rounded border border-gray-200 dark:border-surface-600 hover:bg-gray-50 dark:hover:bg-surface-800 cursor-pointer"
+              (pointerdown)="$event.stopPropagation()"
               (click)="iconPop.toggle($event)">
               <i [class]="editDraft().icon" class="text-sm"></i>
             </button>
             <input pInputText type="text" class="flex-1 text-sm min-w-32"
               [ngModel]="editDraft().name"
               (ngModelChange)="editDraft.update(d => ({ ...d, name: $event }))"
+              (pointerdown)="$event.stopPropagation()"
             />
           </div>
           <div class="flex gap-1 shrink-0">
-            <button pButton type="button" icon="pi pi-check" class="p-button-text p-button-sm p-button-success" (click)="saveEdit(p)"></button>
-            <button pButton type="button" icon="pi pi-times" class="p-button-text p-button-sm p-button-secondary" (click)="cancelEdit()"></button>
+            <button pButton type="button" icon="pi pi-check" class="p-button-text p-button-sm p-button-success" (pointerdown)="$event.stopPropagation()" (click)="saveEdit(p)"></button>
+            <button pButton type="button" icon="pi pi-times" class="p-button-text p-button-sm p-button-secondary" (pointerdown)="$event.stopPropagation()" (click)="cancelEdit()"></button>
           </div>
         } @else {
           <!-- Display row -->
@@ -74,15 +93,37 @@
           }
           @if (!isReadOnly()) {
             <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button pButton type="button" icon="pi pi-pencil" class="p-button-text p-button-sm" pTooltip="Chỉnh sửa" (click)="startEdit(p)"></button>
+              <button pButton type="button" icon="pi pi-pencil" class="p-button-text p-button-sm" pTooltip="Chỉnh sửa" (pointerdown)="$event.stopPropagation()" (click)="startEdit(p)"></button>
               @if (!p.isSystem) {
-                <button pButton type="button" icon="pi pi-trash" class="p-button-text p-button-sm p-button-danger" pTooltip="Xóa" (click)="openDeleteDialog(p)"></button>
+                <button pButton type="button" icon="pi pi-trash" class="p-button-text p-button-sm p-button-danger" pTooltip="Xóa" (pointerdown)="$event.stopPropagation()" (click)="openDeleteDialog(p)"></button>
               }
             </div>
           }
         }
+
+        <!-- Drag preview: compact clone follows cursor -->
+        <div *cdkDragPreview
+          class="flex items-center gap-2 px-3 rounded-lg border border-indigo-300 dark:border-indigo-700 bg-white dark:bg-surface-800 shadow-xl pointer-events-none select-none"
+          style="min-width: 200px; height: 40px; box-sizing: border-box;"
+        >
+          <span class="w-4 h-4 rounded-full shrink-0" [style.background-color]="p.colorLight"></span>
+          <i [class]="p.icon" class="text-sm shrink-0" [style.color]="p.colorLight"></i>
+          <span class="text-sm font-medium text-gray-800 dark:text-surface-100 truncate">{{ p.name }}</span>
+        </div>
+
+        <!-- Empty placeholder: CDK anchor, not visible -->
+        <div *cdkDragPlaceholder></div>
       </div>
     }
+
+    <!-- End drop zone: drop after the last item -->
+    <div class="relative" style="min-height: 16px;"
+         (mouseenter)="hoveredId = 'end'"
+         (mouseleave)="hoveredId === 'end' ? hoveredId = null : null">
+      @if (draggedId && hoveredId === 'end') {
+        <div class="h-0.5 bg-indigo-600 dark:bg-indigo-500 w-full absolute top-0 left-0 right-0 rounded-full"></div>
+      }
+    </div>
   </div>
 
   <!-- Add form -->
@@ -131,6 +172,7 @@
   (visibleChange)="displayDeleteDialog.set($event)"
   [modal]="true"
   [style]="{ width: '420px' }"
+  [contentStyle]="{ overflow: 'visible' }"
 >
   @if (priorityToDelete()) {
     <div class="space-y-4">
