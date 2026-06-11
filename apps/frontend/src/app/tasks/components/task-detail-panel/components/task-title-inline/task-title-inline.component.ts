@@ -29,8 +29,8 @@ import {
     @if (!isEditing()) {
       <!-- Display mode -->
       <h1
-        class="cursor-pointer rounded px-1 -mx-1 transition-colors duration-150
-               hover:bg-gray-100 dark:hover:bg-surface-800"
+        class="cursor-text rounded-lg px-1 -mx-1 transition-colors duration-150
+               hover:bg-gray-50 dark:hover:bg-surface-800"
         [class.text-2xl]="viewMode === 'full-page'"
         [class.font-bold]="viewMode === 'full-page'"
         [class.text-lg]="viewMode !== 'full-page'"
