@@ -93,4 +93,9 @@ export {
   MigrateStateDto,
   UpdateEstimateConfigDto,
   UpdateFeaturesDto,
+  ProjectPriority,
+  CreatePriorityDto,
+  UpdatePriorityDto,
+  ReorderPrioritiesDto,
+  DeletePriorityDto,
 } from './project.types';

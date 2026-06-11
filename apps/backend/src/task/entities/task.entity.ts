@@ -21,7 +21,7 @@ import { TaskRelation } from './task-relation.entity';
 import { TaskActivity } from './task-activity.entity';
 
 export type TaskType = 'epic' | 'story' | 'task' | 'subtask';
-export type TaskPriority = 'urgent' | 'high' | 'medium' | 'low' | 'none';
+export type TaskPriority = string;
 
 @Entity('tasks')
 export class Task {
@@ -46,8 +46,8 @@ export class Task {
   @Column({ name: 'description_plain', type: 'text', nullable: true })
   descriptionPlain!: string | null;
 
-  @Column({ type: 'enum', enum: ['urgent', 'high', 'medium', 'low', 'none'], enumName: 'task_priority_enum', default: 'none' })
-  priority!: TaskPriority;
+  @Column({ type: 'varchar', length: 50, default: 'none' })
+  priority!: string;
 
   @Column({ name: 'state_id', type: 'uuid' })
   stateId!: string;

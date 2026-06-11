@@ -4,6 +4,7 @@ import { Project } from './entities/project.entity';
 import { ProjectState } from './entities/project-state.entity';
 import { ProjectEstimateConfig } from './entities/project-estimate-config.entity';
 import { WorkspaceStateTemplate } from './entities/workspace-state-template.entity';
+import { ProjectPriority } from './entities/project-priority.entity';
 import { ProjectMember } from '../auth/entities/project-member.entity';
 import { User } from '../auth/entities/user.entity';
 import { Task } from '../task/entities/task.entity';
@@ -31,6 +32,9 @@ import { EstimateConfigService } from './estimate/estimate-config.service';
 import { CoverController } from './cover/cover.controller';
 import { CoverService } from './cover/cover.service';
 
+import { PriorityController } from './priority/priority.controller';
+import { PriorityService } from './priority/priority.service';
+
 import { AuthModule } from '../auth/auth.module';
 import { AuditModule } from '../audit/audit.module';
 
@@ -41,6 +45,7 @@ import { AuditModule } from '../audit/audit.module';
       ProjectState,
       ProjectEstimateConfig,
       WorkspaceStateTemplate,
+      ProjectPriority,
       ProjectMember,
       User,
       Task,
@@ -56,6 +61,7 @@ import { AuditModule } from '../audit/audit.module';
     StateTemplateController,
     EstimateConfigController,
     CoverController,
+    PriorityController,
   ],
   providers: [
     ProjectService,
@@ -68,6 +74,7 @@ import { AuditModule } from '../audit/audit.module';
     StateTemplateService,
     EstimateConfigService,
     CoverService,
+    PriorityService,
   ],
   exports: [
     ProjectService,
@@ -80,6 +87,7 @@ import { AuditModule } from '../audit/audit.module';
     StateTemplateService,
     EstimateConfigService,
     CoverService,
+    PriorityService,
   ],
 })
 export class ProjectModule {}

@@ -1,0 +1,159 @@
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="flex justify-between items-center">
+    <div>
+      <h2 class="text-base font-bold text-gray-900 dark:text-surface-0">Mức ưu tiên</h2>
+      <p class="text-xs text-gray-400 dark:text-surface-500 mt-0.5">Kéo để sắp xếp thứ tự hiển thị.</p>
+    </div>
+    @if (!isReadOnly()) {
+      <button pButton type="button" icon="pi pi-plus" label="Thêm mức"
+        class="p-button-outlined p-button-sm font-semibold text-xs py-1"
+        (click)="showAddForm.set(true)">
+      </button>
+    }
+  </div>
+
+  <!-- Priority list with CDK drag drop -->
+  <div cdkDropList (cdkDropListDropped)="onDrop($event)" class="space-y-1">
+    @for (p of priorities(); track p.id) {
+      <div
+        cdkDrag
+        [cdkDragDisabled]="isReadOnly() || !!editingId()"
+        class="flex items-center gap-3 px-3 py-2 rounded-lg border border-gray-200 dark:border-surface-700 bg-white dark:bg-surface-900 group"
+        [class.opacity-50]="draggedId === p.id"
+        (cdkDragStarted)="onDragStart(p.id)"
+        (cdkDragEnded)="onDragEnd()"
+        (mouseenter)="hoveredId = p.id"
+      >
+        <!-- Drag handle or lock icon -->
+        @if (p.isSystem) {
+          <i class="pi pi-lock text-gray-300 dark:text-surface-600 text-xs"></i>
+        } @else if (!isReadOnly()) {
+          <i class="pi pi-bars text-gray-300 dark:text-surface-600 text-xs cursor-grab opacity-0 group-hover:opacity-100 transition-opacity" cdkDragHandle></i>
+        } @else {
+          <span class="w-4"></span>
+        }
+
+        @if (editingId() === p.id) {
+          <!-- Inline edit row -->
+          <div class="flex items-center gap-2 flex-1 flex-wrap">
+            <app-color-pair-picker
+              [light]="editDraft().colorLight"
+              [dark]="editDraft().colorDark"
+              (lightChange)="editDraft.update(d => ({ ...d, colorLight: $event }))"
+              (darkChange)="editDraft.update(d => ({ ...d, colorDark: $event }))"
+            />
+            <p-popover #iconPop>
+              <app-icon-picker-panel
+                [value]="editDraft().icon"
+                (valueChange)="editDraft.update(d => ({ ...d, icon: $event })); iconPop.hide()"
+              />
+            </p-popover>
+            <button type="button"
+              class="w-8 h-8 flex items-center justify-center rounded border border-gray-200 dark:border-surface-600 hover:bg-gray-50 dark:hover:bg-surface-800 cursor-pointer"
+              (click)="iconPop.toggle($event)">
+              <i [class]="editDraft().icon" class="text-sm"></i>
+            </button>
+            <input pInputText type="text" class="flex-1 text-sm min-w-32"
+              [ngModel]="editDraft().name"
+              (ngModelChange)="editDraft.update(d => ({ ...d, name: $event }))"
+            />
+          </div>
+          <div class="flex gap-1 shrink-0">
+            <button pButton type="button" icon="pi pi-check" class="p-button-text p-button-sm p-button-success" (click)="saveEdit(p)"></button>
+            <button pButton type="button" icon="pi pi-times" class="p-button-text p-button-sm p-button-secondary" (click)="cancelEdit()"></button>
+          </div>
+        } @else {
+          <!-- Display row -->
+          <span class="w-4 h-4 rounded-full shrink-0 border border-gray-200 dark:border-surface-600"
+            [style.background-color]="p.colorLight"></span>
+          <i [class]="p.icon" class="text-sm shrink-0" [style.color]="p.colorLight"></i>
+          <span class="flex-1 text-sm font-medium text-gray-800 dark:text-surface-100">{{ p.name }}</span>
+          @if (p.isSystem) {
+            <span class="text-xs text-gray-400 dark:text-surface-500 italic mr-1">Hệ thống</span>
+          }
+          @if (!isReadOnly()) {
+            <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button pButton type="button" icon="pi pi-pencil" class="p-button-text p-button-sm" pTooltip="Chỉnh sửa" (click)="startEdit(p)"></button>
+              @if (!p.isSystem) {
+                <button pButton type="button" icon="pi pi-trash" class="p-button-text p-button-sm p-button-danger" pTooltip="Xóa" (click)="openDeleteDialog(p)"></button>
+              }
+            </div>
+          }
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Add form -->
+  @if (showAddForm()) {
+    <div class="p-4 rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30 space-y-3">
+      <h3 class="text-sm font-semibold text-gray-700 dark:text-surface-200">Thêm mức ưu tiên mới</h3>
+      <div class="flex items-center gap-3 flex-wrap">
+        <app-color-pair-picker
+          [light]="addDraft().colorLight"
+          [dark]="addDraft().colorDark"
+          (lightChange)="addDraft.update(d => ({ ...d, colorLight: $event }))"
+          (darkChange)="addDraft.update(d => ({ ...d, colorDark: $event }))"
+        />
+        <p-popover #addIconPop>
+          <app-icon-picker-panel
+            [value]="addDraft().icon"
+            (valueChange)="addDraft.update(d => ({ ...d, icon: $event })); addIconPop.hide()"
+          />
+        </p-popover>
+        <button type="button"
+          class="w-8 h-8 flex items-center justify-center rounded border border-gray-200 dark:border-surface-600 hover:bg-gray-100 dark:hover:bg-surface-800 cursor-pointer"
+          (click)="addIconPop.toggle($event)">
+          <i [class]="addDraft().icon" class="text-sm"></i>
+        </button>
+        <input pInputText type="text" placeholder="Tên (vd: Critical)" class="flex-[2] min-w-0 text-sm"
+          [ngModel]="addDraft().name"
+          (ngModelChange)="addDraft.update(d => ({ ...d, name: $event, value: $event.toLowerCase().replace(/[^a-z0-9_-]/g, '-') }))"
+        />
+        <input pInputText type="text" placeholder="Slug (vd: critical)" class="flex-1 min-w-0 text-sm font-mono"
+          [ngModel]="addDraft().value"
+          (ngModelChange)="addDraft.update(d => ({ ...d, value: $event }))"
+        />
+      </div>
+      <div class="flex gap-2 justify-end">
+        <button pButton type="button" label="Hủy" class="p-button-text p-button-sm" (click)="showAddForm.set(false)"></button>
+        <button pButton type="button" label="Thêm" class="p-button-sm" [disabled]="!addDraft().name.trim() || !addDraft().value.trim()" (click)="submitAdd()"></button>
+      </div>
+    </div>
+  }
+</div>
+
+<!-- Delete confirmation dialog -->
+<p-dialog
+  header="Xóa mức ưu tiên"
+  [visible]="displayDeleteDialog()"
+  (visibleChange)="displayDeleteDialog.set($event)"
+  [modal]="true"
+  [style]="{ width: '420px' }"
+>
+  @if (priorityToDelete()) {
+    <div class="space-y-4">
+      <p class="text-sm text-gray-600 dark:text-surface-300">
+        Công việc đang dùng mức <strong>{{ priorityToDelete()!.name }}</strong> sẽ được chuyển sang:
+      </p>
+      <p-select
+        [options]="migrationTargets()"
+        optionLabel="name"
+        optionValue="value"
+        placeholder="Chọn mức thay thế..."
+        [ngModel]="selectedMigrateValue()"
+        (ngModelChange)="selectedMigrateValue.set($event)"
+        class="w-full"
+      />
+    </div>
+  }
+  <ng-template pTemplate="footer">
+    <button pButton type="button" label="Hủy" class="p-button-text" (click)="displayDeleteDialog.set(false)"></button>
+    <button pButton type="button" label="Xác nhận xóa" class="p-button-danger"
+      [disabled]="!selectedMigrateValue()"
+      [loading]="isDeleting()"
+      (click)="confirmDelete()">
+    </button>
+  </ng-template>
+</p-dialog>

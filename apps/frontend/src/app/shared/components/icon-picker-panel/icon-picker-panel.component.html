@@ -1,0 +1,38 @@
+<div class="p-2 w-72">
+  <input
+    pInputText
+    type="text"
+    placeholder="Tìm icon..."
+    class="w-full mb-3 text-sm"
+    [ngModel]="search()"
+    (ngModelChange)="search.set($event)"
+  />
+  <div class="max-h-64 overflow-y-auto space-y-3">
+    @for (group of filteredGroups(); track group.label) {
+      <div>
+        <p class="text-xs text-gray-400 dark:text-surface-500 uppercase tracking-wider mb-1 px-1">{{ group.label }}</p>
+        <div class="grid grid-cols-4 gap-1">
+          @for (item of group.icons; track item.icon) {
+            <button
+              type="button"
+              class="flex flex-col items-center gap-0.5 py-1.5 px-1 rounded cursor-pointer transition-colors border-2"
+              [class.border-blue-500]="value === item.icon"
+              [class.bg-blue-50]="value === item.icon"
+              [class.dark:bg-blue-900]="value === item.icon"
+              [class.border-transparent]="value !== item.icon"
+              [class.hover:bg-gray-100]="value !== item.icon"
+              [class.dark:hover:bg-surface-700]="value !== item.icon"
+              (click)="select(item.icon)"
+            >
+              <i [class]="item.icon" class="text-base"></i>
+              <span class="text-[10px] leading-tight text-gray-500 dark:text-surface-400 text-center whitespace-nowrap overflow-hidden text-ellipsis w-full">{{ item.label }}</span>
+            </button>
+          }
+        </div>
+      </div>
+    }
+    @if (filteredGroups().length === 0) {
+      <p class="text-xs text-gray-400 text-center py-3">Không tìm thấy icon</p>
+    }
+  </div>
+</div>

@@ -156,6 +156,14 @@ const routes = [
                 title: 'Ước lượng — Agile PM',
               },
               {
+                path: 'priorities',
+                loadComponent: () =>
+                  import('./app/projects/pages/project-settings/priorities-tab/priorities-tab.component').then(
+                    (m) => m.PrioritiesTabComponent
+                  ),
+                title: 'Mức ưu tiên — Agile PM',
+              },
+              {
                 path: 'features',
                 loadComponent: () =>
                   import('./app/projects/pages/project-settings/features-tab/features-tab.component').then(

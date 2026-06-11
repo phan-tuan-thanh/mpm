@@ -11,7 +11,7 @@ import { SelectModule } from 'primeng/select';
 import { FluidModule } from 'primeng/fluid';
 import { MessageService } from 'primeng/api';
 import { FormsModule } from '@angular/forms';
-import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
+import { DragDropModule, CdkDragDrop } from '@angular/cdk/drag-drop';
 import { TooltipModule } from 'primeng/tooltip';
 import { StateGroup, ProjectState, WorkspaceStateTemplate } from '@mpm/shared-types';
 import { GROUP_ORDER, getGroupName, getGroupColor, getDefaultColor } from './states-tab.helpers';
@@ -53,6 +53,10 @@ export class StatesTabComponent implements OnInit {
 
   // Inline editing temp name store
   private originalNameTemp = '';
+
+  // Drag & Drop state
+  draggedStateId: string | null = null;
+  hoveredStateId: string | null = null;
 
   // Migration Dialog bindings
   displayMigrationDialog = false;
@@ -181,14 +185,43 @@ export class StatesTabComponent implements OnInit {
   getGroupColor = getGroupColor;
   getDefaultColor = getDefaultColor;
 
-  onDrop(event: CdkDragDrop<ProjectState[]>, group: StateGroup): void {
-    if (event.previousIndex === event.currentIndex || this.isReadOnly()) return;
+  onStateDragStart(stateId: string): void {
+    this.draggedStateId = stateId;
+  }
+
+  onStateDragEnd(): void {
+    setTimeout(() => {
+      this.draggedStateId = null;
+      this.hoveredStateId = null;
+    }, 100);
+  }
+
+  onDrop(_event: CdkDragDrop<ProjectState[]>, group: StateGroup): void {
+    if (this.isReadOnly()) return;
 
     const project = this.projectStore.currentProject();
     if (!project) return;
 
+    const draggedId = this.draggedStateId;
+    const hoveredId = this.hoveredStateId;
+
+    this.draggedStateId = null;
+    this.hoveredStateId = null;
+
+    if (!draggedId || !hoveredId || draggedId === hoveredId) return;
+
     const currentList = [...this.statesForGroup(group)];
-    moveItemInArray(currentList, event.previousIndex, event.currentIndex);
+    const draggedIdx = currentList.findIndex(s => s.id === draggedId);
+    if (draggedIdx === -1) return;
+
+    const [dragged] = currentList.splice(draggedIdx, 1);
+
+    if (hoveredId.startsWith('end-')) {
+      currentList.push(dragged);
+    } else {
+      const targetIdx = currentList.findIndex(s => s.id === hoveredId);
+      currentList.splice(targetIdx === -1 ? currentList.length : targetIdx, 0, dragged);
+    }
 
     const reorderItems = currentList.map((state, idx) => ({
       stateId: state.id,

@@ -179,7 +179,7 @@ export class BoardCardComponent {
     return this.priorityConfigService.getConfig(this.projectStore.currentProject()?.id ?? '', this.task.priority ?? 'none').icon;
   }
   protected get priorityColor(): string {
-    return this.priorityConfigService.getConfig(this.projectStore.currentProject()?.id ?? '', this.task.priority ?? 'none').color;
+    return this.priorityConfigService.getConfig(this.projectStore.currentProject()?.id ?? '', this.task.priority ?? 'none').colorLight;
   }
 
   protected isScoped(name: string): boolean { return name.includes('::'); }

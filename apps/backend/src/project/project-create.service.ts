@@ -8,6 +8,7 @@ import { ProjectState } from './entities/project-state.entity';
 import { ProjectEstimateConfig } from './entities/project-estimate-config.entity';
 import { AuditService } from '../audit/audit.service';
 import { StateTemplateService } from './state-template/state-template.service';
+import { PriorityService } from './priority/priority.service';
 import { AuthEvent } from '../auth/constants/auth-events';
 import { CreateProjectDto } from './dto';
 import { ProjectNetwork, EstimateType, StateGroup } from '@mpm/shared-types';
@@ -26,6 +27,7 @@ export class ProjectCreateService {
     private readonly userRepository: Repository<User>,
     private readonly auditService: AuditService,
     private readonly stateTemplateService: StateTemplateService,
+    private readonly priorityService: PriorityService,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -81,6 +83,8 @@ export class ProjectCreateService {
         projectId: saved.id, estimateType: EstimateType.POINTS, values: [0, 0.5, 1, 2, 3, 5, 8, 13, 21],
       });
       await queryRunner.manager.save(ProjectEstimateConfig, pec);
+
+      await this.priorityService.seedDefaults(saved.id, queryRunner.manager);
 
       await queryRunner.commitTransaction();
 

@@ -97,8 +97,8 @@
 
         <!-- Priority -->
         <button class="meta-pill" [class.active]="false" (click)="priorityPopover.toggle($event)">
-          <i [class]="selectedPriorityConfig().icon" [style.color]="selectedPriorityConfig().color" style="font-size: 11px"></i>
-          <span>{{ selectedPriorityConfig().label }}</span>
+          <i [class]="selectedPriorityConfig().icon" [style.color]="selectedPriorityConfig().colorLight" style="font-size: 11px"></i>
+          <span>{{ selectedPriorityConfig().name }}</span>
         </button>
 
         <div class="meta-divider"></div>
@@ -328,8 +328,8 @@
       <button class="pop-item" [class.selected]="selectedPriority() === p.value"
         style="padding: 5px 10px; font-size: 12px"
         (click)="selectedPriority.set(p.value); priorityPopover.hide()">
-        <i [class]="p.icon" [style.color]="p.color" style="font-size: 11px"></i>
-        <span>{{ p.label }}</span>
+        <i [class]="p.icon" [style.color]="p.colorLight" style="font-size: 11px"></i>
+        <span>{{ p.name }}</span>
         @if (selectedPriority() === p.value) {
           <i class="pi pi-check" style="margin-left: auto; font-size: 10px"></i>
         }

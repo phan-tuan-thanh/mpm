@@ -4,7 +4,7 @@ export type TiptapDoc = Record<string, any>;
 
 export type TaskType = 'epic' | 'story' | 'task' | 'subtask';
 
-export type TaskPriority = 'urgent' | 'high' | 'medium' | 'low' | 'none';
+export type TaskPriority = string;
 
 export type TaskRelationType = 'blocking' | 'blocked_by' | 'relates_to' | 'duplicate_of';
 

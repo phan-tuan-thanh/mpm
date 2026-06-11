@@ -1,5 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { ProjectService } from '../services/project.service';
+import { PriorityConfigService } from '../../tasks/services/priority-config.service';
 import {
   Project,
   ProjectListItem,
@@ -15,6 +16,7 @@ import { of } from 'rxjs';
 })
 export class ProjectStore {
   private readonly projectService = inject(ProjectService);
+  private readonly priorityConfigService = inject(PriorityConfigService);
 
   // States
   readonly projects = signal<ProjectListItem[]>([]);
@@ -74,6 +76,7 @@ export class ProjectStore {
           // Auto load states and estimate config when project is loaded
           this.loadStates(data.id);
           this.loadEstimateConfig(data.id);
+          this.priorityConfigService.loadPriorities(data.id);
           if (onSuccess) {
             onSuccess(data);
           }
@@ -90,6 +93,7 @@ export class ProjectStore {
     if (project) {
       this.loadStates(project.id);
       this.loadEstimateConfig(project.id);
+      this.priorityConfigService.loadPriorities(project.id);
     } else {
       this.currentProjectStates.set(null);
       this.currentEstimateConfig.set(null);
