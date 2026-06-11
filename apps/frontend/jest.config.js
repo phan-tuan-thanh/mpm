@@ -10,5 +10,6 @@ module.exports = {
   testMatch: ['<rootDir>/src/**/*.spec.ts'],
   moduleNameMapper: {
     '@mpm/shared-types': '<rootDir>/../../libs/shared-types/src/index.ts',
+    '^lowlight$': '<rootDir>/src/app/testing/lowlight-mock.ts',
   },
 };
