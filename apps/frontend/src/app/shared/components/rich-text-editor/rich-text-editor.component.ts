@@ -42,6 +42,8 @@ import { EditorPreferenceService } from '../../services/editor-preference.servic
 })
 export class RichTextEditorComponent implements ControlValueAccessor, OnInit, OnDestroy {
   @Input() placeholder = '';
+  /** Tự focus cuối nội dung sau khi editor khởi tạo (dùng cho click-to-edit). */
+  @Input() autofocus = false;
   @Input() set toolbarMode(v: ToolbarMode | undefined) { this._toolbarOverride.set(v); }
   @Input() features: RteFeatures = RTE_FULL;
   @Input() uploadImage?: (file: File) => Observable<string>;
@@ -125,6 +127,10 @@ export class RichTextEditorComponent implements ControlValueAccessor, OnInit, On
     if (this.pendingValue !== null) {
       this.editor.commands.setContent(this.pendingValue, { emitUpdate: false });
       this.pendingValue = null;
+    }
+
+    if (this.autofocus) {
+      setTimeout(() => this.editor?.commands.focus('end'));
     }
   }
 
