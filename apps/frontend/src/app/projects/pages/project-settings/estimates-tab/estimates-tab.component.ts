@@ -23,10 +23,19 @@ import { EstimateType } from '@mpm/shared-types';
     FormsModule,
   ],
   template: `
-    <div class="space-y-5">
-      <!-- Section 1: Estimate Type Selection -->
-      <div class="space-y-3">
-        <label class="text-sm font-semibold text-gray-700 dark:text-surface-200">Loại ước lượng</label>
+    <!-- 2-column layout: main content left, preview + actions right -->
+    <div class="flex flex-col xl:flex-row gap-5 items-start">
+
+      <!-- Left: Loại + Giá trị -->
+      <div class="flex-1 min-w-0 space-y-5">
+
+      <!-- ── Loại ước lượng ── -->
+      <div class="bg-surface-0 dark:bg-surface-900 rounded-xl border border-surface-100 dark:border-surface-800 shadow-sm overflow-hidden">
+        <div class="px-5 py-3.5 border-b border-surface-100 dark:border-surface-800">
+          <h2 class="text-sm font-bold text-gray-900 dark:text-surface-0">Loại ước lượng</h2>
+          <p class="text-xs text-gray-400 dark:text-surface-500 mt-0.5">Chọn cách đo độ phức tạp công việc của dự án.</p>
+        </div>
+        <div class="p-5">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <!-- Points Card -->
           <div
@@ -73,12 +82,24 @@ import { EstimateType } from '@mpm/shared-types';
             <span class="text-xs text-gray-400 dark:text-surface-500 mt-1">Ước lượng trực tiếp theo số giờ làm việc (0.5h, 1h, 2h, 4h, etc.).</span>
           </div>
         </div>
+        </div>
       </div>
 
-      <!-- Section 2: Template Selection -->
+      <!-- ── Giá trị ước lượng ── -->
+      <div class="bg-surface-0 dark:bg-surface-900 rounded-xl border border-surface-100 dark:border-surface-800 shadow-sm overflow-hidden">
+        <div class="px-5 py-3.5 border-b border-surface-100 dark:border-surface-800 flex items-start justify-between gap-3">
+          <div>
+            <h2 class="text-sm font-bold text-gray-900 dark:text-surface-0">Giá trị ước lượng</h2>
+            <p class="text-xs text-gray-400 dark:text-surface-500 mt-0.5">Bộ giá trị có thể gán cho task khi ước lượng.</p>
+          </div>
+          <span class="text-xs text-gray-400 dark:text-surface-500 font-medium whitespace-nowrap">Từ 2 đến 12 phần tử</span>
+        </div>
+        <div class="p-5 space-y-4">
+
+      <!-- Template Selection -->
       @if (hasTemplates(tempType) && !isReadOnly()) {
-        <div class="bg-gray-50 dark:bg-surface-800 rounded-xl p-4 border border-gray-100 dark:border-surface-700 space-y-3">
-          <label for="template" class="text-sm font-semibold text-gray-700 dark:text-surface-200">Mẫu giá trị gợi ý (Templates)</label>
+        <div class="flex flex-col gap-1.5">
+          <label for="template" class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wider">Mẫu giá trị gợi ý</label>
           <div class="flex gap-3">
             <button
               type="button"
@@ -113,13 +134,7 @@ import { EstimateType } from '@mpm/shared-types';
         </div>
       }
 
-      <!-- Section 3: Custom Values Chips Editor -->
-      <div class="space-y-3">
-        <div class="flex justify-between items-center">
-          <label class="text-sm font-semibold text-gray-700 dark:text-surface-200">Các giá trị ước lượng (Values)</label>
-          <span class="text-xs text-gray-400 dark:text-surface-500 font-medium">Từ 2 đến 12 phần tử</span>
-        </div>
-
+      <!-- Values Chips Editor -->
         <div class="border border-gray-200 dark:border-surface-700 rounded-xl p-4 bg-white dark:bg-surface-800 flex flex-wrap gap-2 items-center">
           @for (val of tempValues; track $index) {
             <span class="inline-flex items-center gap-1.5 bg-indigo-50 border border-indigo-100 rounded-lg px-2.5 py-1 text-sm font-bold text-indigo-700">
@@ -146,12 +161,23 @@ import { EstimateType } from '@mpm/shared-types';
             />
           }
         </div>
+        </div>
       </div>
 
-      <!-- Section 4: Preview Mockup -->
-      <div class="bg-white dark:bg-surface-900 rounded-xl border border-gray-200 dark:border-surface-800 p-5 space-y-4">
-        <h3 class="text-sm font-bold text-gray-800 dark:text-surface-100 border-b border-gray-50 dark:border-surface-800 pb-2">Xem trước (Preview)</h3>
-        <div class="max-w-md border border-gray-100 dark:border-surface-700 rounded-xl p-4 bg-gray-50/50 dark:bg-surface-800 space-y-3">
+      </div>
+
+      <!-- Right: Xem trước + actions -->
+      <div class="w-full xl:w-1/3 xl:min-w-[20rem] xl:max-w-[24rem] flex-shrink-0">
+        <div class="xl:sticky xl:top-4 space-y-4">
+
+      <!-- ── Xem trước ── -->
+      <div class="bg-surface-0 dark:bg-surface-900 rounded-xl border border-surface-100 dark:border-surface-800 shadow-sm overflow-hidden">
+        <div class="px-5 py-3.5 border-b border-surface-100 dark:border-surface-800">
+          <h2 class="text-sm font-bold text-gray-900 dark:text-surface-0">Xem trước</h2>
+          <p class="text-xs text-gray-400 dark:text-surface-500 mt-0.5">Giao diện ước lượng khi gán cho task.</p>
+        </div>
+        <div class="p-5">
+        <div class="border border-gray-100 dark:border-surface-700 rounded-xl p-4 bg-gray-50/50 dark:bg-surface-800 space-y-3">
           <div class="flex flex-col gap-2">
             <div class="flex justify-between items-center text-xs font-bold text-gray-500 dark:text-surface-400">
               <span>Task Estimate:</span>
@@ -178,11 +204,12 @@ import { EstimateType } from '@mpm/shared-types';
             }
           </div>
         </div>
+        </div>
       </div>
 
       <!-- Form actions -->
       @if (!isReadOnly()) {
-        <div class="flex justify-end gap-3 pt-3 border-t border-gray-100 dark:border-surface-800">
+        <div class="flex justify-end gap-3">
           <button
             pButton
             type="button"
@@ -201,6 +228,9 @@ import { EstimateType } from '@mpm/shared-types';
           ></button>
         </div>
       }
+
+        </div>
+      </div>
     </div>
   `,
 })

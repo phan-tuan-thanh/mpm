@@ -1,4 +1,5 @@
-import { Component, OnInit, inject, computed, signal } from '@angular/core';
+import { Component, OnInit, inject, computed, signal, effect } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { ProjectStore } from '../../../../state/project.store';
 import { ProjectService } from '../../../../services/project.service';
 import { AuthService } from '../../../../../auth/services/auth.service';
@@ -61,8 +62,8 @@ import { IconDisplayComponent } from '../../../../../shared/components/icon-disp
               <!-- Cover image -->
               <div class="flex flex-col gap-2">
                 <div class="relative group rounded-lg overflow-hidden border border-gray-200 dark:border-surface-700 bg-gray-50 dark:bg-surface-800 h-32 flex items-center justify-center">
-                  @if (coverImageUrl()) {
-                    <img [src]="coverImageUrl()" class="w-full h-full object-cover" />
+                  @if (coverPreviewUrl()) {
+                    <img [src]="coverPreviewUrl()" class="w-full h-full object-cover" />
                     @if (!isReadOnly()) {
                       <div class="absolute inset-0 bg-black/45 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition duration-200">
                         <button pButton type="button" icon="pi pi-trash" severity="danger" size="small" label="Xóa ảnh bìa" [fluid]="false" (click)="onDeleteCover()"></button>
@@ -123,13 +124,14 @@ import { IconDisplayComponent } from '../../../../../shared/components/icon-disp
         </div>
 
         <!-- Right: metadata card (sticky) -->
-        <div class="w-full xl:w-72 flex-shrink-0">
+        <div class="w-full xl:w-1/3 xl:min-w-[20rem] xl:max-w-[24rem] flex-shrink-0">
           <div class="xl:sticky xl:top-4 space-y-4">
 
           <!-- Card: Thông tin dự án -->
           <div class="bg-surface-0 dark:bg-surface-900 rounded-xl border border-surface-100 dark:border-surface-800 shadow-sm overflow-hidden">
-            <div class="px-4 py-3 border-b border-surface-100 dark:border-surface-800">
+            <div class="px-5 py-3.5 border-b border-surface-100 dark:border-surface-800">
               <h2 class="text-sm font-bold text-gray-900 dark:text-surface-0">Thông tin dự án</h2>
+              <p class="text-xs text-gray-400 dark:text-surface-500 mt-0.5">Mã, quyền riêng tư và người phụ trách dự án.</p>
             </div>
             <div class="p-4 space-y-4">
 
@@ -291,6 +293,30 @@ export class GeneralInfoTabComponent implements OnInit {
   readonly coverImageUrl = computed(() => {
     return this.projectStore.currentProject()?.coverImageUrl || null;
   });
+
+  /** Endpoint cover yêu cầu Bearer token nên <img src> trực tiếp sẽ bị 401 —
+      fetch blob qua HttpClient (interceptor gắn token) rồi hiển thị bằng object URL. */
+  private readonly http = inject(HttpClient);
+  readonly coverPreviewUrl = signal<string | null>(null);
+
+  constructor() {
+    effect((onCleanup) => {
+      const url = this.coverImageUrl();
+      if (!url) {
+        this.coverPreviewUrl.set(null);
+        return;
+      }
+      const sub = this.http.get(url, { responseType: 'blob' }).subscribe({
+        next: (blob) => this.coverPreviewUrl.set(URL.createObjectURL(blob)),
+        error: () => this.coverPreviewUrl.set(null),
+      });
+      onCleanup(() => {
+        sub.unsubscribe();
+        const prev = this.coverPreviewUrl();
+        if (prev) URL.revokeObjectURL(prev);
+      });
+    });
+  }
 
   readonly projectKey = computed(() => {
     return this.projectStore.currentProject()?.key || '';

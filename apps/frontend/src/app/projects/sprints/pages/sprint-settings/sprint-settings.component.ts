@@ -48,7 +48,7 @@ import {
           <p-skeleton height="12rem" borderRadius="12px" />
           <p-skeleton height="18rem" borderRadius="12px" />
         </div>
-        <div class="w-full xl:w-72 flex-shrink-0">
+        <div class="w-full xl:w-1/3 xl:min-w-[20rem] xl:max-w-[24rem] flex-shrink-0">
           <p-skeleton height="10rem" borderRadius="12px" />
         </div>
       </div>
@@ -205,13 +205,14 @@ import {
             </div>
 
             <!-- Right: Capacity + Save changes -->
-            <div class="w-full xl:w-72 flex-shrink-0">
+            <div class="w-full xl:w-1/3 xl:min-w-[20rem] xl:max-w-[24rem] flex-shrink-0">
               <div class="xl:sticky xl:top-4 space-y-4">
 
                 <!-- ── Capacity ── -->
                 <div class="bg-surface-0 dark:bg-surface-900 rounded-xl border border-surface-100 dark:border-surface-800 shadow-sm overflow-hidden">
                   <div class="px-5 py-3.5 border-b border-surface-100 dark:border-surface-800">
                     <h2 class="text-sm font-bold text-gray-900 dark:text-surface-0">Capacity</h2>
+                    <p class="text-xs text-gray-400 dark:text-surface-500 mt-0.5">Cách tính năng lực sprint khi lập kế hoạch.</p>
                   </div>
                   <div class="p-5">
                     <div class="flex flex-col gap-1.5">
@@ -223,7 +224,6 @@ import {
                           [allowEmpty]="false"
                           optionLabel="label"
                           optionValue="value"
-                          styleClass="w-full"
                           size="small"
                         />
                       </div>
