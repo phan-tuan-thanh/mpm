@@ -60,7 +60,7 @@
               (darkChange)="editDraft.update(d => ({ ...d, colorDark: $event }))"
               (pointerdown)="$event.stopPropagation()"
             />
-            <p-popover #iconPop>
+            <p-popover #iconPop styleClass="!p-0" appendTo="body">
               <app-icon-picker-panel
                 [value]="editDraft().icon"
                 (valueChange)="editDraft.update(d => ({ ...d, icon: $event })); iconPop.hide()"
@@ -100,7 +100,7 @@
             </div>
           }
         }
-
+ 
         <!-- Drag preview: compact clone follows cursor -->
         <div *cdkDragPreview
           class="flex items-center gap-2 px-3 rounded-lg border border-indigo-300 dark:border-indigo-700 bg-white dark:bg-surface-800 shadow-xl pointer-events-none select-none"
@@ -110,12 +110,12 @@
           <i [class]="p.icon" class="text-sm shrink-0" [style.color]="p.colorLight"></i>
           <span class="text-sm font-medium text-gray-800 dark:text-surface-100 truncate">{{ p.name }}</span>
         </div>
-
+ 
         <!-- Empty placeholder: CDK anchor, not visible -->
         <div *cdkDragPlaceholder></div>
       </div>
     }
-
+ 
     <!-- End drop zone: drop after the last item -->
     <div class="relative" style="min-height: 16px;"
          (mouseenter)="hoveredId = 'end'"
@@ -125,7 +125,7 @@
       }
     </div>
   </div>
-
+ 
   <!-- Add form -->
   @if (showAddForm()) {
     <div class="p-4 rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30 space-y-3">
@@ -137,7 +137,7 @@
           (lightChange)="addDraft.update(d => ({ ...d, colorLight: $event }))"
           (darkChange)="addDraft.update(d => ({ ...d, colorDark: $event }))"
         />
-        <p-popover #addIconPop>
+        <p-popover #addIconPop styleClass="!p-0" appendTo="body">
           <app-icon-picker-panel
             [value]="addDraft().icon"
             (valueChange)="addDraft.update(d => ({ ...d, icon: $event })); addIconPop.hide()"
@@ -164,7 +164,7 @@
     </div>
   }
 </div>
-
+ 
 <!-- Delete confirmation dialog -->
 <p-dialog
   header="Xóa mức ưu tiên"
@@ -173,6 +173,7 @@
   [modal]="true"
   [style]="{ width: '420px' }"
   [contentStyle]="{ overflow: 'visible' }"
+  appendTo="body"
 >
   @if (priorityToDelete()) {
     <div class="space-y-4">

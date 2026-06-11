@@ -4,7 +4,6 @@ import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
-import { MultiSelectModule } from 'primeng/multiselect';
 import { PopoverModule, Popover } from 'primeng/popover';
 import { TooltipModule } from 'primeng/tooltip';
 
@@ -27,7 +26,7 @@ export interface BacklogFilter {
 @Component({
   standalone: true,
   selector: 'app-backlog-toolbar',
-  imports: [CommonModule, FormsModule, ButtonModule, InputTextModule, MultiSelectModule, PopoverModule, TooltipModule, DisplayPropertiesPanelComponent],
+  imports: [CommonModule, FormsModule, ButtonModule, InputTextModule, PopoverModule, TooltipModule, DisplayPropertiesPanelComponent],
   template: `
     <div class="flex items-center gap-3 px-4 py-3 border-b border-gray-200 dark:border-surface-700 bg-white dark:bg-surface-900 flex-shrink-0 flex-wrap">
       <h1 class="text-lg font-semibold text-gray-900 dark:text-surface-0 mr-2">Work Items</h1>
@@ -45,44 +44,100 @@ export interface BacklogFilter {
       </div>
 
       <!-- Type filter -->
-      <p-multiselect
-        [options]="typeOptions"
-        [(ngModel)]="selectedTypes"
-        optionLabel="label"
-        optionValue="value"
-        placeholder="Type"
-        styleClass="text-sm"
-        (ngModelChange)="emitFilter()"
-      />
+      <button
+        type="button"
+        (click)="typePop.toggle($event)"
+        class="flex items-center justify-between gap-2 px-3 py-1.5 text-sm border border-surface-200 dark:border-surface-700 rounded-md bg-white dark:bg-surface-900 text-gray-800 dark:text-surface-100 font-semibold cursor-pointer hover:bg-surface-50 dark:hover:bg-surface-800 transition-all select-none"
+      >
+        <span class="truncate">{{ getTypeLabel() }}</span>
+        <div class="flex items-center gap-1">
+          @if (selectedTypes.length) {
+            <i class="pi pi-times text-[10px] opacity-60 hover:opacity-100" (click)="selectedTypes = []; emitFilter(); $event.stopPropagation()"></i>
+          }
+          <i class="pi pi-chevron-down text-[10px] opacity-60 flex-shrink-0"></i>
+        </div>
+      </button>
+      <p-popover #typePop appendTo="body" styleClass="!p-0">
+        <div class="pop-list w-44">
+          @for (opt of typeOptions; track opt.value) {
+            <div
+              (click)="toggleType(opt.value)"
+              class="pop-item justify-between"
+              [class.selected]="selectedTypes.includes(opt.value)"
+            >
+              <span>{{ opt.label }}</span>
+              @if (selectedTypes.includes(opt.value)) {
+                <i class="pi pi-check text-xs"></i>
+              }
+            </div>
+          }
+        </div>
+      </p-popover>
 
       <!-- Priority filter -->
-      <p-multiselect
-        [options]="priorityOptions"
-        [(ngModel)]="selectedPriorities"
-        optionLabel="label"
-        optionValue="value"
-        placeholder="Priority"
-        styleClass="text-sm"
-        (ngModelChange)="emitFilter()"
+      <button
+        type="button"
+        (click)="priorityPop.toggle($event)"
+        class="flex items-center justify-between gap-2 px-3 py-1.5 text-sm border border-surface-200 dark:border-surface-700 rounded-md bg-white dark:bg-surface-900 text-gray-800 dark:text-surface-100 font-semibold cursor-pointer hover:bg-surface-50 dark:hover:bg-surface-800 transition-all select-none"
       >
-        <ng-template pTemplate="item" let-opt>
-          <div class="flex items-center gap-2">
-            <i class="pi pi-flag text-xs" [style.color]="opt.color"></i>
-            <span>{{ opt.label }}</span>
-          </div>
-        </ng-template>
-      </p-multiselect>
+        <span class="truncate">{{ getPriorityLabel() }}</span>
+        <div class="flex items-center gap-1">
+          @if (selectedPriorities.length) {
+            <i class="pi pi-times text-[10px] opacity-60 hover:opacity-100" (click)="selectedPriorities = []; emitFilter(); $event.stopPropagation()"></i>
+          }
+          <i class="pi pi-chevron-down text-[10px] opacity-60 flex-shrink-0"></i>
+        </div>
+      </button>
+      <p-popover #priorityPop appendTo="body" styleClass="!p-0">
+        <div class="pop-list w-44">
+          @for (opt of priorityOptions; track opt.value) {
+            <div
+              (click)="togglePriority(opt.value)"
+              class="pop-item justify-between"
+              [class.selected]="selectedPriorities.includes(opt.value)"
+            >
+              <span class="flex items-center gap-2">
+                <i class="pi pi-flag text-xs" [style.color]="opt.color"></i>
+                {{ opt.label }}
+              </span>
+              @if (selectedPriorities.includes(opt.value)) {
+                <i class="pi pi-check text-xs"></i>
+              }
+            </div>
+          }
+        </div>
+      </p-popover>
 
       <!-- State filter -->
-      <p-multiselect
-        [options]="stateOptions()"
-        [(ngModel)]="selectedStateIds"
-        optionLabel="name"
-        optionValue="id"
-        placeholder="State"
-        styleClass="text-sm"
-        (ngModelChange)="emitFilter()"
-      />
+      <button
+        type="button"
+        (click)="statePop.toggle($event)"
+        class="flex items-center justify-between gap-2 px-3 py-1.5 text-sm border border-surface-200 dark:border-surface-700 rounded-md bg-white dark:bg-surface-900 text-gray-800 dark:text-surface-100 font-semibold cursor-pointer hover:bg-surface-50 dark:hover:bg-surface-800 transition-all select-none"
+      >
+        <span class="truncate">{{ getStateLabel() }}</span>
+        <div class="flex items-center gap-1">
+          @if (selectedStateIds.length) {
+            <i class="pi pi-times text-[10px] opacity-60 hover:opacity-100" (click)="selectedStateIds = []; emitFilter(); $event.stopPropagation()"></i>
+          }
+          <i class="pi pi-chevron-down text-[10px] opacity-60 flex-shrink-0"></i>
+        </div>
+      </button>
+      <p-popover #statePop appendTo="body" styleClass="!p-0">
+        <div class="pop-list w-48 max-h-60 overflow-y-auto">
+          @for (state of stateOptions(); track state.id) {
+            <div
+              (click)="toggleState(state.id)"
+              class="pop-item justify-between"
+              [class.selected]="selectedStateIds.includes(state.id)"
+            >
+              <span class="truncate">{{ state.name }}</span>
+              @if (selectedStateIds.includes(state.id)) {
+                <i class="pi pi-check text-xs"></i>
+              }
+            </div>
+          }
+        </div>
+      </p-popover>
 
       <!-- Sprint filter -->
       <button
@@ -255,6 +310,51 @@ export class BacklogToolbarComponent {
   protected selectedSprintId: string | null = null;
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
 
+  getTypeLabel(): string {
+    if (!this.selectedTypes.length) return 'Type';
+    if (this.selectedTypes.length === 1) {
+      return this.typeOptions.find((o) => o.value === this.selectedTypes[0])?.label ?? 'Type';
+    }
+    return `Type (${this.selectedTypes.length})`;
+  }
+
+  getPriorityLabel(): string {
+    if (!this.selectedPriorities.length) return 'Priority';
+    if (this.selectedPriorities.length === 1) {
+      return this.priorityOptions.find((o) => o.value === this.selectedPriorities[0])?.label ?? 'Priority';
+    }
+    return `Priority (${this.selectedPriorities.length})`;
+  }
+
+  getStateLabel(): string {
+    if (!this.selectedStateIds.length) return 'State';
+    if (this.selectedStateIds.length === 1) {
+      return this.stateOptions().find((s) => s.id === this.selectedStateIds[0])?.name ?? 'State';
+    }
+    return `State (${this.selectedStateIds.length})`;
+  }
+
+  protected toggleType(value: TaskType): void {
+    this.selectedTypes = this.selectedTypes.includes(value)
+      ? this.selectedTypes.filter((v) => v !== value)
+      : [...this.selectedTypes, value];
+    this.emitFilter();
+  }
+
+  protected togglePriority(value: TaskPriority): void {
+    this.selectedPriorities = this.selectedPriorities.includes(value)
+      ? this.selectedPriorities.filter((v) => v !== value)
+      : [...this.selectedPriorities, value];
+    this.emitFilter();
+  }
+
+  protected toggleState(id: string): void {
+    this.selectedStateIds = this.selectedStateIds.includes(id)
+      ? this.selectedStateIds.filter((v) => v !== id)
+      : [...this.selectedStateIds, id];
+    this.emitFilter();
+  }
+
   getSprintLabel(): string {
     const found = this.sprintOptions().find((o) => o.value === this.selectedSprintId);
     return found ? found.label : 'Sprint';
@@ -276,14 +376,14 @@ export class BacklogToolbarComponent {
     return Object.values(grouped).flat();
   };
 
-  readonly typeOptions = [
+  readonly typeOptions: { label: string; value: TaskType }[] = [
     { label: '⚡ Epic', value: 'epic' },
     { label: '📖 Story', value: 'story' },
     { label: '✅ Task', value: 'task' },
     { label: '↳ Subtask', value: 'subtask' },
   ];
 
-  readonly priorityOptions = [
+  readonly priorityOptions: { label: string; value: TaskPriority; color: string }[] = [
     { label: 'Urgent', value: 'urgent', color: '#EF4444' },
     { label: 'High',   value: 'high',   color: '#F97316' },
     { label: 'Medium', value: 'medium', color: '#EAB308' },

@@ -60,6 +60,7 @@ import { FormsModule } from '@angular/forms';
         [style]="{ width: '450px' }"
         [draggable]="false"
         [resizable]="false"
+        appendTo="body"
       >
         <div class="space-y-4 py-2 text-xs text-gray-600 dark:text-surface-300">
           <div class="rounded-lg bg-red-50 border border-red-100 p-3 text-red-700 flex gap-2">

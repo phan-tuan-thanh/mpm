@@ -324,13 +324,13 @@ export class SidebarComponent implements OnInit {
   readonly isOnSprints = toSignal(
     this.router.events.pipe(
       filter(e => e instanceof NavigationEnd),
-      map(() => this.router.url.includes('/sprints'))
+      map(() => this.router.url.includes('/sprints') && !this.router.url.includes('/settings'))
     ),
-    { initialValue: this.router.url.includes('/sprints') }
+    { initialValue: this.router.url.includes('/sprints') && !this.router.url.includes('/settings') }
   );
 
   readonly isSettingsOpen = signal<boolean>(this.router.url.includes('/settings'));
-  readonly isSprintsOpen = signal<boolean>(this.router.url.includes('/sprints'));
+  readonly isSprintsOpen = signal<boolean>(this.router.url.includes('/sprints') && !this.router.url.includes('/settings'));
 
   constructor() {
     effect(() => {
@@ -374,15 +374,11 @@ export class SidebarComponent implements OnInit {
     { label: 'Danh sách', icon: 'pi-list',      route: 'list' },
     { label: 'Dashboard', icon: 'pi-chart-line', route: 'dashboard' },
     { label: 'Velocity',  icon: 'pi-chart-bar',  route: 'velocity' },
-    { label: 'Cấu hình',  icon: 'pi-sliders-h',  route: 'settings' },
   ];
 
   readonly settingsSubItems = [
-    { label: 'Cấu hình chung', icon: 'pi-sliders-h',            route: [] as string[], exact: true,  danger: false },
+    { label: 'Cấu hình chung', icon: 'pi-sliders-h',            route: [] as string[], exact: false, danger: false },
     { label: 'Thành viên',     icon: 'pi-users',                 route: ['members'],   exact: false, danger: false },
-    { label: 'Trạng thái',     icon: 'pi-list',                  route: ['states'],    exact: false, danger: false },
-    { label: 'Ước lượng',      icon: 'pi-chart-bar',             route: ['estimates'],  exact: false, danger: false },
-    { label: 'Mức ưu tiên',   icon: 'pi-flag',                  route: ['priorities'], exact: false, danger: false },
     { label: 'Tính năng',      icon: 'pi-toggle-on',             route: ['features'],  exact: false, danger: false },
     { label: 'Danger Zone',    icon: 'pi-exclamation-triangle',  route: ['danger'],    exact: false, danger: true  },
   ];

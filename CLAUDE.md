@@ -86,3 +86,7 @@ KHÔNG sử dụng component select truyền thống (`<select>` mặc định h
 ### Sliders / InputNumber (BẮT BUỘC)
 KHÔNG sử dụng component nhập số thông thường (`<input type="number">` mặc định hoặc `<p-inputnumber>`) cho các cấu hình số lượng, giới hạn trong UI. Bắt buộc phải thiết kế dạng thanh trượt `<p-slider>` kết hợp một nhãn hiển thị số lượng hiện tại bên phải để người dùng dễ thao tác trực quan (giống như trong Display Properties).
 
+### Segment Switchers / Toggle Buttons (BẮT BUỘC)
+Đối với các cấu hình lựa chọn 1 trong 2 (hoặc tối đa 3) tùy chọn loại trừ lẫn nhau (ví dụ: Terminology, Capacity Mode, Theme Presets...), KHÔNG sử dụng dropdown hay các nút bấm rời rạc. Bắt buộc phải sử dụng bộ chuyển đổi phân đoạn `<p-selectbutton>` (`SelectButtonModule`) hiển thị các tùy chọn sát nhau trên một hàng ngang để tối ưu giao diện và đem lại trải nghiệm tương tác mượt mà.
+
+

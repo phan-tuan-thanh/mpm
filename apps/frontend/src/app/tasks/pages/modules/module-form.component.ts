@@ -41,6 +41,7 @@ export interface ModuleFormData {
       [closable]="true"
       [style]="{ width: '500px' }"
       (onHide)="onCancel()"
+      appendTo="body"
     >
       <div class="flex flex-col gap-4 pt-2">
         <!-- Name -->

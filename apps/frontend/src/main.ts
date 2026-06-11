@@ -173,6 +173,48 @@ const routes = [
                     (m) => m.GeneralTabComponent
                   ),
                 title: 'Cấu hình chung — Agile PM',
+                children: [
+                  {
+                    path: '',
+                    redirectTo: 'info',
+                    pathMatch: 'full' as const,
+                  },
+                  {
+                    path: 'info',
+                    loadComponent: () =>
+                      import('./app/projects/pages/project-settings/general-tab/components/general-info-tab.component').then(
+                        (m) => m.GeneralInfoTabComponent
+                      ),
+                  },
+                  {
+                    path: 'sprints',
+                    loadComponent: () =>
+                      import('./app/projects/sprints/pages/sprint-settings/sprint-settings.component').then(
+                        (m) => m.SprintSettingsComponent
+                      ),
+                  },
+                  {
+                    path: 'states',
+                    loadComponent: () =>
+                      import('./app/projects/pages/project-settings/states-tab/states-tab.component').then(
+                        (m) => m.StatesTabComponent
+                      ),
+                  },
+                  {
+                    path: 'estimates',
+                    loadComponent: () =>
+                      import('./app/projects/pages/project-settings/estimates-tab/estimates-tab.component').then(
+                        (m) => m.EstimatesTabComponent
+                      ),
+                  },
+                  {
+                    path: 'priorities',
+                    loadComponent: () =>
+                      import('./app/projects/pages/project-settings/priorities-tab/priorities-tab.component').then(
+                        (m) => m.PrioritiesTabComponent
+                      ),
+                  },
+                ],
               },
               {
                 path: 'members',
@@ -181,30 +223,6 @@ const routes = [
                     (m) => m.MembersTabComponent
                   ),
                 title: 'Thành viên — Agile PM',
-              },
-              {
-                path: 'states',
-                loadComponent: () =>
-                  import('./app/projects/pages/project-settings/states-tab/states-tab.component').then(
-                    (m) => m.StatesTabComponent
-                  ),
-                title: 'Trạng thái — Agile PM',
-              },
-              {
-                path: 'estimates',
-                loadComponent: () =>
-                  import('./app/projects/pages/project-settings/estimates-tab/estimates-tab.component').then(
-                    (m) => m.EstimatesTabComponent
-                  ),
-                title: 'Ước lượng — Agile PM',
-              },
-              {
-                path: 'priorities',
-                loadComponent: () =>
-                  import('./app/projects/pages/project-settings/priorities-tab/priorities-tab.component').then(
-                    (m) => m.PrioritiesTabComponent
-                  ),
-                title: 'Mức ưu tiên — Agile PM',
               },
               {
                 path: 'features',
