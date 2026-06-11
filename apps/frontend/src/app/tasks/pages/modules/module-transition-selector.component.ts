@@ -1,6 +1,6 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { SelectModule } from 'primeng/select';
+import { PopoverModule } from 'primeng/popover';
 import { FormsModule } from '@angular/forms';
 import type { ModuleLifecycleStatus } from '@mpm/shared-types';
 import { ModuleStatusBadgeComponent, STATUS_CONFIG } from './module-status-badge.component';
@@ -8,33 +8,32 @@ import { ModuleStatusBadgeComponent, STATUS_CONFIG } from './module-status-badge
 @Component({
   standalone: true,
   selector: 'app-module-transition-selector',
-  imports: [CommonModule, SelectModule, FormsModule, ModuleStatusBadgeComponent],
+  imports: [CommonModule, PopoverModule, FormsModule, ModuleStatusBadgeComponent],
   template: `
     @if (isTerminal) {
       <app-module-status-badge [status]="currentStatus" />
     } @else {
-      <p-select
-        [options]="transitionOptions"
-        optionLabel="label"
-        optionValue="value"
-        [placeholder]="'Chuyển trạng thái...'"
-        [ngModel]="null"
-        (ngModelChange)="onSelect($event)"
-        [style]="{ minWidth: '180px' }"
+      <button
+        type="button"
+        (click)="transitionPop.toggle($event)"
+        class="flex items-center justify-between gap-2 px-3 py-1.5 text-xs font-semibold border border-surface-200 dark:border-surface-700 rounded-md bg-white dark:bg-surface-800 text-gray-800 dark:text-surface-100 cursor-pointer hover:bg-surface-50 dark:hover:bg-surface-700 transition-all select-none h-[34px] min-w-[180px]"
       >
-        <ng-template #selectedItem let-item>
-          <span class="flex items-center gap-1">
-            <i [class]="item.icon + ' text-xs'" [style.color]="item.color"></i>
-            {{ item.label }}
-          </span>
-        </ng-template>
-        <ng-template #item let-item>
-          <span class="flex items-center gap-2">
-            <i [class]="item.icon + ' text-xs'" [style.color]="item.color"></i>
-            {{ item.label }}
-          </span>
-        </ng-template>
-      </p-select>
+        <span class="truncate">Chuyển trạng thái...</span>
+        <i class="pi pi-chevron-down text-[10px] opacity-60 flex-shrink-0"></i>
+      </button>
+      <p-popover #transitionPop appendTo="body" styleClass="!p-0">
+        <div class="pop-list w-48">
+          @for (item of transitionOptions; track item.value) {
+            <div
+              (click)="onSelect(item.value); transitionPop.hide()"
+              class="pop-item flex items-center gap-2"
+            >
+              <i [class]="item.icon + ' text-xs'" [style.color]="item.color"></i>
+              <span>{{ item.label }}</span>
+            </div>
+          }
+        </div>
+      </p-popover>
     }
   `,
 })

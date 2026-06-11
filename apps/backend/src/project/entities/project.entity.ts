@@ -95,6 +95,13 @@ export class Project {
   @Column({ name: 'feature_time_tracking', type: 'boolean', default: false })
   featureTimeTracking!: boolean;
 
+  @Column({
+    name: 'sprint_settings',
+    type: 'jsonb',
+    default: () => `'{"terminology":"sprint","maxActiveSprints":1,"defaultDurationWeeks":2,"capacityMode":"total"}'`,
+  })
+  sprintSettings!: Record<string, any>;
+
   // Relations
   @ManyToOne(() => User)
   @JoinColumn({ name: 'owner_id' })

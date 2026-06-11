@@ -1,15 +1,15 @@
-import { Component, Input, Output, EventEmitter, inject, ViewChild } from '@angular/core';
+import { Component, Input, Output, EventEmitter, inject, ViewChild, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
-import { SelectModule } from 'primeng/select';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { PopoverModule, Popover } from 'primeng/popover';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { ProjectStore } from '../../../../projects/state/project.store';
+import { SprintService } from '../../../../projects/sprints/services/sprint.service';
 import { DisplayPropertiesPanelComponent } from './display-properties-panel.component';
 import type { TaskQueryDto, TaskType, TaskPriority, DisplayProperties } from '@mpm/shared-types';
 import { DEFAULT_DISPLAY_PROPS } from '@mpm/shared-types';
@@ -21,12 +21,13 @@ export interface BacklogFilter {
   priorities?: TaskPriority[];
   assigneeIds?: string[];
   labelIds?: string[];
+  sprintId?: string;
 }
 
 @Component({
   standalone: true,
   selector: 'app-backlog-toolbar',
-  imports: [CommonModule, FormsModule, ButtonModule, InputTextModule, SelectModule, MultiSelectModule, PopoverModule, TooltipModule, DisplayPropertiesPanelComponent],
+  imports: [CommonModule, FormsModule, ButtonModule, InputTextModule, MultiSelectModule, PopoverModule, TooltipModule, DisplayPropertiesPanelComponent],
   template: `
     <div class="flex items-center gap-3 px-4 py-3 border-b border-gray-200 dark:border-surface-700 bg-white dark:bg-surface-900 flex-shrink-0 flex-wrap">
       <h1 class="text-lg font-semibold text-gray-900 dark:text-surface-0 mr-2">Work Items</h1>
@@ -83,27 +84,79 @@ export interface BacklogFilter {
         (ngModelChange)="emitFilter()"
       />
 
+      <!-- Sprint filter -->
+      <button
+        type="button"
+        (click)="sprintPop.toggle($event)"
+        class="flex items-center justify-between gap-2 px-3 py-1.5 text-sm border border-surface-200 dark:border-surface-700 rounded-md bg-white dark:bg-surface-900 text-gray-800 dark:text-surface-100 font-semibold cursor-pointer hover:bg-surface-50 dark:hover:bg-surface-800 transition-all select-none"
+      >
+        <span class="truncate">{{ getSprintLabel() }}</span>
+        <div class="flex items-center gap-1">
+          @if (selectedSprintId) {
+            <i class="pi pi-times text-[10px] opacity-60 hover:opacity-100" (click)="selectedSprintId = null; emitFilter(); $event.stopPropagation()"></i>
+          }
+          <i class="pi pi-chevron-down text-[10px] opacity-60 flex-shrink-0"></i>
+        </div>
+      </button>
+      <p-popover #sprintPop appendTo="body" styleClass="!p-0">
+        <div class="pop-list w-48 max-h-60 overflow-y-auto">
+          @for (opt of sprintOptions(); track opt.value) {
+            <div
+              (click)="selectedSprintId = opt.value; emitFilter(); sprintPop.hide()"
+              class="pop-item"
+              [class.selected]="selectedSprintId === opt.value"
+            >
+              {{ opt.label }}
+            </div>
+          }
+        </div>
+      </p-popover>
+
       <!-- Group by -->
-      <p-select
-        [options]="groupByOptions"
-        [(ngModel)]="selectedGroupBy"
-        optionLabel="label"
-        optionValue="value"
-        placeholder="Group by"
-        styleClass="text-sm"
-        (ngModelChange)="groupByChange.emit($event)"
-      />
+      <button
+        type="button"
+        (click)="groupByPop.toggle($event)"
+        class="flex items-center justify-between gap-2 px-3 py-1.5 text-sm border border-surface-200 dark:border-surface-700 rounded-md bg-white dark:bg-surface-900 text-gray-800 dark:text-surface-100 font-semibold cursor-pointer hover:bg-surface-50 dark:hover:bg-surface-800 transition-all select-none"
+      >
+        <span class="truncate">Group: {{ getGroupByLabel() }}</span>
+        <i class="pi pi-chevron-down text-[10px] opacity-60 flex-shrink-0"></i>
+      </button>
+      <p-popover #groupByPop appendTo="body" styleClass="!p-0">
+        <div class="pop-list w-40">
+          @for (opt of groupByOptions; track opt.value) {
+            <div
+              (click)="selectedGroupBy = opt.value; groupByChange.emit(opt.value); groupByPop.hide()"
+              class="pop-item"
+              [class.selected]="selectedGroupBy === opt.value"
+            >
+              {{ opt.label }}
+            </div>
+          }
+        </div>
+      </p-popover>
 
       <!-- Order by -->
-      <p-select
-        [options]="orderByOptions"
-        [(ngModel)]="selectedOrderBy"
-        optionLabel="label"
-        optionValue="value"
-        placeholder="Order by"
-        styleClass="text-sm"
-        (ngModelChange)="orderByChange.emit($event)"
-      />
+      <button
+        type="button"
+        (click)="orderByPop.toggle($event)"
+        class="flex items-center justify-between gap-2 px-3 py-1.5 text-sm border border-surface-200 dark:border-surface-700 rounded-md bg-white dark:bg-surface-900 text-gray-800 dark:text-surface-100 font-semibold cursor-pointer hover:bg-surface-50 dark:hover:bg-surface-800 transition-all select-none"
+      >
+        <span class="truncate">Order: {{ getOrderByLabel() }}</span>
+        <i class="pi pi-chevron-down text-[10px] opacity-60 flex-shrink-0"></i>
+      </button>
+      <p-popover #orderByPop appendTo="body" styleClass="!p-0">
+        <div class="pop-list w-40">
+          @for (opt of orderByOptions; track opt.value) {
+            <div
+              (click)="selectedOrderBy = opt.value; orderByChange.emit(opt.value); orderByPop.hide()"
+              class="pop-item"
+              [class.selected]="selectedOrderBy === opt.value"
+            >
+              {{ opt.label }}
+            </div>
+          }
+        </div>
+      </p-popover>
 
       <!-- Clear filters -->
       @if (hasActiveFilters()) {
@@ -163,6 +216,23 @@ export interface BacklogFilter {
 })
 export class BacklogToolbarComponent {
   private readonly projectStore = inject(ProjectStore);
+  private readonly sprintService = inject(SprintService);
+
+  constructor() {
+    // Load sprints khi project sẵn sàng / thay đổi (cache chung trong SprintService)
+    effect(() => {
+      const project = this.projectStore.currentProject();
+      if (project) this.sprintService.loadProjectSprints(project.id);
+    });
+  }
+
+  protected readonly sprintOptions = () => [
+    { label: 'Chưa có sprint', value: 'none' },
+    ...this.sprintService.openSprints().map((s) => ({
+      label: s.status === 'active' ? `${s.name} (đang chạy)` : s.name,
+      value: s.id,
+    })),
+  ];
 
   @Input() displayProps: DisplayProperties = DEFAULT_DISPLAY_PROPS;
   @Input() selectedGroupBy = 'none';
@@ -182,7 +252,23 @@ export class BacklogToolbarComponent {
   protected selectedTypes: TaskType[] = [];
   protected selectedPriorities: TaskPriority[] = [];
   protected selectedStateIds: string[] = [];
+  protected selectedSprintId: string | null = null;
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
+
+  getSprintLabel(): string {
+    const found = this.sprintOptions().find((o) => o.value === this.selectedSprintId);
+    return found ? found.label : 'Sprint';
+  }
+
+  getGroupByLabel(): string {
+    const found = this.groupByOptions.find((o) => o.value === this.selectedGroupBy);
+    return found ? found.label : 'Group by';
+  }
+
+  getOrderByLabel(): string {
+    const found = this.orderByOptions.find((o) => o.value === this.selectedOrderBy);
+    return found ? found.label : 'Order by';
+  }
 
   protected readonly stateOptions = () => {
     const grouped = this.projectStore.currentProjectStates();
@@ -234,11 +320,12 @@ export class BacklogToolbarComponent {
       types: this.selectedTypes.length ? this.selectedTypes : undefined,
       priorities: this.selectedPriorities.length ? this.selectedPriorities : undefined,
       stateIds: this.selectedStateIds.length ? this.selectedStateIds : undefined,
+      sprintId: this.selectedSprintId ?? undefined,
     });
   }
 
   protected hasActiveFilters(): boolean {
-    return !!(this.searchText || this.selectedTypes.length || this.selectedPriorities.length || this.selectedStateIds.length);
+    return !!(this.searchText || this.selectedTypes.length || this.selectedPriorities.length || this.selectedStateIds.length || this.selectedSprintId);
   }
 
   protected clearFilters(): void {
@@ -246,6 +333,7 @@ export class BacklogToolbarComponent {
     this.selectedTypes = [];
     this.selectedPriorities = [];
     this.selectedStateIds = [];
+    this.selectedSprintId = null;
     this.emitFilter();
   }
 }

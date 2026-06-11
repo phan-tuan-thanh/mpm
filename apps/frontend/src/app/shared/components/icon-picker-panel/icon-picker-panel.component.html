@@ -1,38 +1,103 @@
-<div class="p-2 w-72">
+<div class="p-2 w-80">
+  <!-- Tabs header -->
+  <div class="flex border-b border-surface-200 dark:border-surface-700 mb-3 px-1 text-xs">
+    <button
+      type="button"
+      class="pb-2 px-3 font-semibold transition-colors duration-150 cursor-pointer border-none bg-transparent"
+      [class.text-indigo-600]="activeTab() === 'icon'"
+      [class.dark:text-indigo-400]="activeTab() === 'icon'"
+      [class.border-b-2]="activeTab() === 'icon'"
+      [class.border-indigo-600]="activeTab() === 'icon'"
+      [class.dark:border-indigo-400]="activeTab() === 'icon'"
+      [class.text-gray-400]="activeTab() !== 'icon'"
+      [class.dark:text-surface-500]="activeTab() !== 'icon'"
+      (click)="activeTab.set('icon')"
+    >
+      Biểu tượng
+    </button>
+    <button
+      type="button"
+      class="pb-2 px-3 font-semibold transition-colors duration-150 cursor-pointer border-none bg-transparent"
+      [class.text-indigo-600]="activeTab() === 'emoji'"
+      [class.dark:text-indigo-400]="activeTab() === 'emoji'"
+      [class.border-b-2]="activeTab() === 'emoji'"
+      [class.border-indigo-600]="activeTab() === 'emoji'"
+      [class.dark:border-indigo-400]="activeTab() === 'emoji'"
+      [class.text-gray-400]="activeTab() !== 'emoji'"
+      [class.dark:text-surface-500]="activeTab() !== 'emoji'"
+      (click)="activeTab.set('emoji')"
+    >
+      Emoji
+    </button>
+  </div>
+
+  <!-- Shared search input -->
   <input
     pInputText
     type="text"
-    placeholder="Tìm icon..."
+    [placeholder]="activeTab() === 'icon' ? 'Tìm icon...' : 'Tìm emoji...'"
     class="w-full mb-3 text-sm"
     [ngModel]="search()"
     (ngModelChange)="search.set($event)"
   />
-  <div class="max-h-64 overflow-y-auto space-y-3">
-    @for (group of filteredGroups(); track group.label) {
-      <div>
-        <p class="text-xs text-gray-400 dark:text-surface-500 uppercase tracking-wider mb-1 px-1">{{ group.label }}</p>
-        <div class="grid grid-cols-4 gap-1">
-          @for (item of group.icons; track item.icon) {
-            <button
-              type="button"
-              class="flex flex-col items-center gap-0.5 py-1.5 px-1 rounded cursor-pointer transition-colors border-2"
-              [class.border-blue-500]="value === item.icon"
-              [class.bg-blue-50]="value === item.icon"
-              [class.dark:bg-blue-900]="value === item.icon"
-              [class.border-transparent]="value !== item.icon"
-              [class.hover:bg-gray-100]="value !== item.icon"
-              [class.dark:hover:bg-surface-700]="value !== item.icon"
-              (click)="select(item.icon)"
-            >
-              <i [class]="item.icon" class="text-base"></i>
-              <span class="text-[10px] leading-tight text-gray-500 dark:text-surface-400 text-center whitespace-nowrap overflow-hidden text-ellipsis w-full">{{ item.label }}</span>
-            </button>
-          }
+
+  @if (activeTab() === 'icon') {
+    <div class="max-h-64 overflow-y-auto space-y-3">
+      @for (group of filteredGroups(); track group.label) {
+        <div>
+          <p class="text-xs text-gray-400 dark:text-surface-500 uppercase tracking-wider mb-1 px-1">{{ group.label }}</p>
+          <div class="grid grid-cols-4 gap-1">
+            @for (item of group.icons; track item.icon) {
+              <button
+                type="button"
+                class="flex flex-col items-center gap-0.5 py-1.5 px-1 rounded cursor-pointer transition-colors border-2"
+                [class.border-blue-500]="value === item.icon"
+                [class.bg-blue-50]="value === item.icon"
+                [class.dark:bg-blue-900]="value === item.icon"
+                [class.border-transparent]="value !== item.icon"
+                [class.hover:bg-gray-100]="value !== item.icon"
+                [class.dark:hover:bg-surface-700]="value !== item.icon"
+                (click)="select(item.icon)"
+              >
+                <i [class]="item.icon" class="text-base"></i>
+                <span class="text-[10px] leading-tight text-gray-500 dark:text-surface-400 text-center whitespace-nowrap overflow-hidden text-ellipsis w-full">{{ item.label }}</span>
+              </button>
+            }
+          </div>
         </div>
-      </div>
-    }
-    @if (filteredGroups().length === 0) {
-      <p class="text-xs text-gray-400 text-center py-3">Không tìm thấy icon</p>
-    }
-  </div>
+      }
+      @if (filteredGroups().length === 0) {
+        <p class="text-xs text-gray-400 text-center py-3">Không tìm thấy icon</p>
+      }
+    </div>
+  } @else {
+    <div class="max-h-64 overflow-y-auto space-y-3">
+      @for (group of filteredEmojis(); track group.label) {
+        <div>
+          <p class="text-xs text-gray-400 dark:text-surface-500 uppercase tracking-wider mb-1 px-1">{{ group.label }}</p>
+          <div class="grid grid-cols-4 gap-1">
+            @for (item of group.icons; track item.emoji) {
+              <button
+                type="button"
+                class="flex flex-col items-center gap-0.5 py-1.5 px-1 rounded cursor-pointer transition-colors border-2"
+                [class.border-blue-500]="value === item.emoji"
+                [class.bg-blue-50]="value === item.emoji"
+                [class.dark:bg-blue-900]="value === item.emoji"
+                [class.border-transparent]="value !== item.emoji"
+                [class.hover:bg-gray-100]="value !== item.emoji"
+                [class.dark:hover:bg-surface-700]="value !== item.emoji"
+                (click)="selectEmoji(item.emoji)"
+              >
+                <span class="text-lg leading-none">{{ item.emoji }}</span>
+                <span class="text-[10px] leading-tight text-gray-500 dark:text-surface-400 text-center whitespace-nowrap overflow-hidden text-ellipsis w-full">{{ item.label }}</span>
+              </button>
+            }
+          </div>
+        </div>
+      }
+      @if (filteredEmojis().length === 0) {
+        <p class="text-xs text-gray-400 text-center py-3">Không tìm thấy emoji</p>
+      }
+    </div>
+  }
 </div>

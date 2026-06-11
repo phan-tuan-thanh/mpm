@@ -179,15 +179,30 @@
       <p class="text-sm text-gray-600 dark:text-surface-300">
         Công việc đang dùng mức <strong>{{ priorityToDelete()!.name }}</strong> sẽ được chuyển sang:
       </p>
-      <p-select
-        [options]="migrationTargets()"
-        optionLabel="name"
-        optionValue="value"
-        placeholder="Chọn mức thay thế..."
-        [ngModel]="selectedMigrateValue()"
-        (ngModelChange)="selectedMigrateValue.set($event)"
-        class="w-full"
-      />
+      <div class="relative">
+        <button
+          type="button"
+          (click)="migPop.toggle($event)"
+          class="w-full flex items-center justify-between gap-2 px-3 py-2 text-sm border border-surface-200 dark:border-surface-700 rounded-lg bg-white dark:bg-surface-900 text-gray-800 dark:text-surface-100 font-semibold cursor-pointer hover:bg-surface-50 dark:hover:bg-surface-800 transition-all select-none h-[38px]"
+        >
+          <span class="truncate">{{ getMigrationTargetLabel() }}</span>
+          <i class="pi pi-chevron-down text-xs opacity-60 flex-shrink-0"></i>
+        </button>
+        <p-popover #migPop appendTo="body" styleClass="!p-0">
+          <div class="pop-list w-64 max-h-48 overflow-y-auto">
+            @for (opt of migrationTargets(); track opt.id) {
+              <div
+                (click)="selectedMigrateValue.set(opt.value); migPop.hide()"
+                class="pop-item flex items-center gap-2"
+                [class.selected]="selectedMigrateValue() === opt.value"
+              >
+                <i [class]="opt.icon" [style.color]="opt.colorLight"></i>
+                <span>{{ opt.name }}</span>
+              </div>
+            }
+          </div>
+        </p-popover>
+      </div>
     </div>
   }
   <ng-template pTemplate="footer">

@@ -144,6 +144,7 @@ export interface TaskListItem {
   parent?: TaskParentRef | null;
   reporterId: string;
   cycleId: string | null;
+  sprintId?: string | null;
   subItemCount: number;
   attachmentCount: number;
   linkCount: number;
@@ -213,6 +214,7 @@ export interface UpdateTaskDto {
   dueDate?: string | null;
   parentId?: string | null;
   isDraft?: boolean;
+  sprintId?: string | null;
 }
 
 export interface ReorderTaskItem {
@@ -272,6 +274,8 @@ export interface TaskQueryDto {
   page?: number;
   limit?: number;
   parentId?: string | null;
+  /** UUID sprint hoặc 'none' = task chưa thuộc sprint */
+  sprintId?: string;
 }
 
 // ─── Modules ──────────────────────────────────────────────────────────────────
@@ -319,6 +323,7 @@ export interface DisplayProperties {
   showParent: boolean;
   showState: boolean;
   showModules: boolean;
+  showSprint?: boolean;
   alwaysShowLabels: boolean;
   labelMode: 'badge' | 'dot';
   maxLabels: number;   // 1–4
@@ -339,6 +344,7 @@ export const DEFAULT_DISPLAY_PROPS: DisplayProperties = {
   showParent: true,
   showState: true,
   showModules: true,
+  showSprint: true,
   alwaysShowLabels: false,
   labelMode: 'badge',
   maxLabels: 2,

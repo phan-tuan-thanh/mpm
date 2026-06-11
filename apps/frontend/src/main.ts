@@ -73,12 +73,55 @@ const routes = [
           },
           {
             path: 'cycles',
+            redirectTo: 'sprints',
+          },
+          {
+            path: 'sprints',
             canActivate: [projectFeatureGuard],
+            data: { feature: 'cycles' },
             loadComponent: () =>
-              import('./app/projects/pages/feature-placeholder.component').then(
-                (m) => m.FeaturePlaceholderComponent
+              import('./app/projects/sprints/pages/sprint-shell/sprint-shell.component').then(
+                (m) => m.SprintShellComponent
               ),
-            data: { feature: 'cycles', title: 'Sprints/Cycles' },
+            children: [
+              {
+                path: '',
+                redirectTo: 'list',
+                pathMatch: 'full' as const,
+              },
+              {
+                path: 'list',
+                loadComponent: () =>
+                  import('./app/projects/sprints/pages/sprint-list/sprint-list.component').then(
+                    (m) => m.SprintListComponent
+                  ),
+                title: 'Sprints — Agile PM',
+              },
+              {
+                path: 'dashboard',
+                loadComponent: () =>
+                  import('./app/projects/sprints/pages/sprint-dashboard/sprint-dashboard.component').then(
+                    (m) => m.SprintDashboardComponent
+                  ),
+                title: 'Sprint Dashboard — Agile PM',
+              },
+              {
+                path: 'velocity',
+                loadComponent: () =>
+                  import('./app/projects/sprints/pages/sprint-velocity/sprint-velocity.component').then(
+                    (m) => m.SprintVelocityComponent
+                  ),
+                title: 'Sprint Velocity — Agile PM',
+              },
+              {
+                path: 'settings',
+                loadComponent: () =>
+                  import('./app/projects/sprints/pages/sprint-settings/sprint-settings.component').then(
+                    (m) => m.SprintSettingsComponent
+                  ),
+                title: 'Sprint Settings — Agile PM',
+              },
+            ],
           },
           {
             path: 'modules',

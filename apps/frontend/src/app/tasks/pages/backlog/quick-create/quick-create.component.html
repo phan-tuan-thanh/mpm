@@ -507,14 +507,27 @@
 
 <!-- Estimate -->
 <p-popover #estimatePopover>
-  <div style="padding: 6px 8px; display: flex; align-items: center; gap: 6px; width: 160px">
-    <p-inputnumber [(ngModel)]="estimateValue" [min]="0" [maxFractionDigits]="1"
-      styleClass="w-full flex-1" inputStyleClass="w-full text-xs" placeholder="Story points" [autofocus]="true"
-      (keydown.enter)="estimatePopover.hide()" />
-    @if (estimateValue !== null) {
-      <button pButton icon="pi pi-times" severity="secondary" [text]="true" size="small"
-        pTooltip="Xóa" (click)="estimateValue = null; estimatePopover.hide()" style="flex-shrink: 0; width: 24px; height: 24px; padding: 0"></button>
-    }
+  <div style="padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; width: 180px">
+    <div class="flex items-center justify-between text-xs font-semibold text-gray-500 mb-1">
+      <span>Ước lượng</span>
+      <span class="text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50 dark:bg-indigo-950/40 px-1.5 py-0.5 rounded">
+        {{ estimateValue !== null ? estimateValue : 0 }} pts
+      </span>
+    </div>
+    <div class="flex items-center gap-3 py-1">
+      <p-slider 
+        [ngModel]="estimateValue || 0" 
+        (ngModelChange)="estimateValue = $event"
+        [min]="0" 
+        [max]="20" 
+        [step]="0.5" 
+        class="w-full flex-1"
+      ></p-slider>
+      @if (estimateValue !== null) {
+        <button pButton icon="pi pi-times" severity="secondary" [text]="true" size="small"
+          pTooltip="Xóa" (click)="estimateValue = null; estimatePopover.hide()" style="flex-shrink: 0; width: 20px; height: 20px; padding: 0"></button>
+      }
+    </div>
   </div>
 </p-popover>
 

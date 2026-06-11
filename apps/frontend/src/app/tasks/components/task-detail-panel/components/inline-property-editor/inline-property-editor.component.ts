@@ -8,13 +8,14 @@ import {
   inject,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { SelectModule } from 'primeng/select';
+import { PopoverModule } from 'primeng/popover';
+import { SliderModule } from 'primeng/slider';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { DatePickerModule } from 'primeng/datepicker';
-import { InputNumberModule } from 'primeng/inputnumber';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { TooltipModule } from 'primeng/tooltip';
 import { MessageService } from 'primeng/api';
+import { CommonModule } from '@angular/common';
 
 import { PropertySaveQueue } from './property-save-queue';
 
@@ -50,6 +51,8 @@ export interface PropertyFieldConfig {
   max?: number;
   /** Step for number fields */
   step?: number;
+  /** Show clear (×) button on dropdown — value becomes null */
+  showClear?: boolean;
 }
 
 /**
@@ -68,11 +71,12 @@ export interface PropertyFieldConfig {
   standalone: true,
   selector: 'app-inline-property-editor',
   imports: [
+    CommonModule,
     FormsModule,
-    SelectModule,
+    PopoverModule,
+    SliderModule,
     MultiSelectModule,
     DatePickerModule,
-    InputNumberModule,
     ProgressSpinnerModule,
     TooltipModule,
   ],
@@ -88,16 +92,44 @@ export interface PropertyFieldConfig {
         @switch (config.type) {
           <!-- ═══ Dropdown (State, Priority) ═══ -->
           @case ('dropdown') {
-            <p-select
-              [options]="config.options ?? []"
-              [ngModel]="currentValue()"
-              [optionLabel]="config.optionLabel ?? 'label'"
-              [optionValue]="config.optionValue ?? 'value'"
-              [placeholder]="config.placeholder ?? 'Chọn...'"
+            <button
+              type="button"
+              (click)="inlinePop.toggle($event)"
               [disabled]="isSaving()"
-              styleClass="w-full text-sm"
-              (ngModelChange)="onValueChange($event)"
-            />
+              class="w-full flex items-center justify-between gap-2 px-3 py-1.5 text-sm border border-surface-200 dark:border-surface-700 rounded bg-white dark:bg-surface-900 text-gray-800 dark:text-surface-100 cursor-pointer hover:bg-surface-50 dark:hover:bg-surface-800 transition-all select-none disabled:opacity-50"
+            >
+              <div class="flex items-center gap-1.5 min-w-0">
+                @if (getSelectedOption()?.icon) {
+                  <i [class]="getSelectedOption()?.icon" [style.color]="getSelectedOption()?.color" class="text-xs"></i>
+                }
+                <span class="truncate">{{ getSelectedOptionLabel() }}</span>
+              </div>
+              <i class="pi pi-chevron-down text-xs opacity-60 flex-shrink-0"></i>
+            </button>
+            <p-popover #inlinePop appendTo="body" styleClass="!p-0">
+              <div class="pop-list w-48">
+                @if (config.showClear) {
+                  <div
+                    (click)="onValueChange(null); inlinePop.hide()"
+                    class="pop-item text-red-500 font-medium"
+                  >
+                    Bỏ chọn
+                  </div>
+                }
+                @for (opt of config.options ?? []; track getOptionValue(opt)) {
+                  <div
+                    (click)="onValueChange(getOptionValue(opt)); inlinePop.hide()"
+                    class="pop-item flex items-center gap-2"
+                    [class.selected]="currentValue() === getOptionValue(opt)"
+                  >
+                    @if (opt.icon) {
+                      <i [class]="opt.icon" [style.color]="opt.color" class="text-xs"></i>
+                    }
+                    <span>{{ getOptionLabel(opt) }}</span>
+                  </div>
+                }
+              </div>
+            </p-popover>
           }
 
           <!-- ═══ Multi-Select (Assignees, Labels, Modules) ═══ -->
@@ -129,18 +161,24 @@ export interface PropertyFieldConfig {
             />
           }
 
-          <!-- ═══ Number Input (Estimate: 0.5-100, step 0.5) ═══ -->
+          <!-- ═══ Slider Input (Estimate: 0.5-100, step 0.5) ═══ -->
           @case ('number') {
-            <p-inputnumber
-              [ngModel]="currentValue()"
-              [min]="config.min ?? 0.5"
-              [max]="config.max ?? 100"
-              [step]="config.step ?? 0.5"
-              [disabled]="isSaving()"
-              [showButtons]="true"
-              styleClass="w-full text-sm"
-              (ngModelChange)="onValueChange($event)"
-            />
+            <div class="flex items-center gap-3 w-full">
+              <span class="text-xs font-semibold text-gray-700 dark:text-surface-300 w-12 text-right shrink-0">
+                {{ currentValue() ?? 0 }} pts
+              </span>
+              <div class="flex-1 flex items-center h-[34px] px-2 border border-surface-200 dark:border-surface-700 rounded bg-white dark:bg-surface-900">
+                <p-slider
+                  [ngModel]="currentValue() ?? 0"
+                  [min]="config.min ?? 0"
+                  [max]="config.max ?? 20"
+                  [step]="config.step ?? 0.5"
+                  [disabled]="isSaving()"
+                  class="w-full flex-1"
+                  (ngModelChange)="onValueChange($event)"
+                />
+              </div>
+            </div>
           }
         }
 
@@ -162,28 +200,17 @@ export interface PropertyFieldConfig {
       display: block;
     }
 
-    :host ::ng-deep .p-select,
+    :host ::ng-deep .p-popover,
     :host ::ng-deep .p-multiselect,
     :host ::ng-deep .p-datepicker,
-    :host ::ng-deep .p-inputnumber {
+    :host ::ng-deep .p-slider {
       font-size: 0.875rem;
       width: 100%;
       max-width: 100%;
     }
 
-    /* p-inputnumber with showButtons: the inner <input> keeps its intrinsic
-       (size-attr) width and pushes the stepper buttons past the column.
-       Force it to shrink so the whole control fits the sidebar width. */
-    :host ::ng-deep .p-inputnumber input,
-    :host ::ng-deep .p-inputnumber .p-inputnumber-input {
-      width: 100%;
-      min-width: 0;
-    }
-
-    :host ::ng-deep .p-select.p-disabled,
     :host ::ng-deep .p-multiselect.p-disabled,
-    :host ::ng-deep .p-datepicker.p-disabled,
-    :host ::ng-deep .p-inputnumber.p-disabled {
+    :host ::ng-deep .p-datepicker.p-disabled {
       opacity: 0.7;
     }
   `],
@@ -194,6 +221,30 @@ export class InlinePropertyEditorComponent implements OnDestroy {
 
   /** Field configuration — determines which editor to render */
   @Input({ required: true }) config!: PropertyFieldConfig;
+
+  getOptionLabel(opt: any): string {
+    const labelField = this.config.optionLabel ?? 'label';
+    return opt[labelField];
+  }
+
+  getOptionValue(opt: any): any {
+    const valueField = this.config.optionValue ?? 'value';
+    return opt[valueField];
+  }
+
+  getSelectedOption(): PropertyFieldOption | undefined {
+    const val = this.currentValue();
+    return (this.config?.options ?? []).find(o => this.getOptionValue(o) === val);
+  }
+
+  getSelectedOptionLabel(): string {
+    const val = this.currentValue();
+    if (val === null || val === undefined) {
+      return this.config.placeholder ?? 'Chọn...';
+    }
+    const opt = this.getSelectedOption();
+    return opt ? this.getOptionLabel(opt) : (this.config.placeholder ?? 'Chọn...');
+  }
 
   /** Current value of the field */
   @Input() set value(v: unknown) {

@@ -3,13 +3,13 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
-import { SelectModule } from 'primeng/select';
+import { PopoverModule } from 'primeng/popover';
 import type { Task } from '@mpm/shared-types';
 
 @Component({
   standalone: true,
   selector: 'app-task-relations-tab',
-  imports: [CommonModule, FormsModule, ButtonModule, InputTextModule, SelectModule],
+  imports: [CommonModule, FormsModule, ButtonModule, InputTextModule, PopoverModule],
   template: `
     <div class="p-2 space-y-4 text-sm">
       @for (group of relationGroups(); track group.type) {
@@ -30,7 +30,27 @@ import type { Task } from '@mpm/shared-types';
         <h4 class="text-xs text-gray-500 mb-2">Thêm relation</h4>
         <div class="flex gap-2">
           <input pInputText class="flex-1 text-sm" placeholder="Task ID..." [(ngModel)]="newRelationTaskId" />
-          <p-select [options]="relationTypeOptions" [(ngModel)]="newRelationType" optionLabel="label" optionValue="value" styleClass="text-sm" />
+          <button
+            type="button"
+            (click)="relTypePop.toggle($event)"
+            class="flex items-center justify-between gap-2 px-3 py-1.5 text-sm border border-surface-200 dark:border-surface-700 rounded-md bg-white dark:bg-surface-900 text-gray-800 dark:text-surface-100 font-semibold cursor-pointer hover:bg-surface-50 dark:hover:bg-surface-800 transition-all select-none"
+          >
+            <span class="truncate text-xs">{{ getRelationTypeLabel() }}</span>
+            <i class="pi pi-chevron-down text-[10px] opacity-60 flex-shrink-0"></i>
+          </button>
+          <p-popover #relTypePop appendTo="body" styleClass="!p-0">
+            <div class="pop-list w-36">
+              @for (opt of relationTypeOptions; track opt.value) {
+                <div
+                  (click)="newRelationType = opt.value; relTypePop.hide()"
+                  class="pop-item"
+                  [class.selected]="newRelationType === opt.value"
+                >
+                  {{ opt.label }}
+                </div>
+              }
+            </div>
+          </p-popover>
           <button pButton label="Thêm" size="small" (click)="onAdd()" [disabled]="!newRelationTaskId.trim()"></button>
         </div>
       </div>
@@ -55,6 +75,11 @@ export class TaskRelationsTabComponent {
     { label: 'Relates to', value: 'relates_to' },
     { label: 'Duplicate of', value: 'duplicate_of' },
   ];
+
+  getRelationTypeLabel(): string {
+    const found = this.relationTypeOptions.find((o) => o.value === this.newRelationType);
+    return found ? found.label : 'Relates to';
+  }
 
   protected readonly relationGroups = computed(() => {
     const t = this._task();

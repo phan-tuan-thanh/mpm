@@ -28,6 +28,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { PopoverModule } from 'primeng/popover';
 import { DatePickerModule } from 'primeng/datepicker';
 import { InputNumberModule } from 'primeng/inputnumber';
+import { SliderModule } from 'primeng/slider';
 import { MessageService } from 'primeng/api';
 
 import { TaskStore } from '../../state/task.store';
@@ -61,6 +62,9 @@ import { PropertiesSidebarComponent } from './components/properties-sidebar/prop
 import { TaskAttachmentsComponent } from './components/task-attachments.component';
 import { TaskLinksComponent } from './components/task-links.component';
 import { RichTextEditorComponent } from '../../../shared/components/rich-text-editor/rich-text-editor.component';
+import { SprintService } from '../../../projects/sprints/services/sprint.service';
+
+import { IconDisplayComponent } from '../../../shared/components/icon-display/icon-display.component';
 
 @Component({
   standalone: true,
@@ -76,6 +80,7 @@ import { RichTextEditorComponent } from '../../../shared/components/rich-text-ed
     PopoverModule,
     DatePickerModule,
     InputNumberModule,
+    SliderModule,
     TaskHeaderComponent,
     TaskTitleInlineComponent,
     SubItemsSectionComponent,
@@ -83,6 +88,7 @@ import { RichTextEditorComponent } from '../../../shared/components/rich-text-ed
     TaskAttachmentsComponent,
     TaskLinksComponent,
     RichTextEditorComponent,
+    IconDisplayComponent,
   ],
   providers: [MessageService, TaskDetailStateService],
   styles: [`
@@ -127,7 +133,7 @@ import { RichTextEditorComponent } from '../../../shared/components/rich-text-ed
       width: 18px;
       height: 18px;
       border-radius: 50%;
-      background: #6366f1;
+      background: var(--p-primary-color);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -154,10 +160,10 @@ import { RichTextEditorComponent } from '../../../shared/components/rich-text-ed
       transition: background 0.12s;
       text-align: left;
     }
-    .pop-item:hover { background: var(--surface-50, #f9fafb); }
-    .pop-item.selected { background: #eef2ff; color: #4f46e5; }
-    :host-context(.dark) .pop-item:hover { background: var(--surface-800, #1e293b); }
-    :host-context(.dark) .pop-item.selected { background: rgba(99, 102, 241, 0.2); color: #a5b4fc; }
+    /* Dùng PrimeNG design tokens — tự đổi theo light/dark kể cả khi popover bị portal ra ngoài host
+       (KHÔNG dùng :host-context(.dark): fail khi overlay appendTo body) */
+    .pop-item:hover { background: var(--p-content-hover-background, #f9fafb); }
+    .pop-item.selected { background: var(--p-highlight-background, #eef2ff); color: var(--p-highlight-color, var(--p-primary-600)); }
 
     /* ── Metadata separator ── */
     .meta-divider {
@@ -340,14 +346,14 @@ import { RichTextEditorComponent } from '../../../shared/components/rich-text-ed
 
                 <!-- Parent Task -->
                 <button class="meta-pill" [class.active]="(task()?.parentId) !== null" (click)="parentPopover.toggle($event)">
-                  <i class="pi pi-sitemap" style="font-size: 11px" [style.color]="(task()?.parentId) !== null ? '#6366f1' : undefined"></i>
-                  <span [style.color]="(task()?.parentId) !== null ? '#6366f1' : undefined">{{ selectedParentTitle() }}</span>
+                  <i class="pi pi-sitemap" style="font-size: 11px" [style.color]="(task()?.parentId) !== null ? 'var(--p-primary-color)' : undefined"></i>
+                  <span [style.color]="(task()?.parentId) !== null ? 'var(--p-primary-color)' : undefined">{{ selectedParentTitle() }}</span>
                 </button>
 
                 <!-- Start date -->
                 <button class="meta-pill" [class.active]="!!(task()?.startDate)" (click)="startDatePopover.toggle($event)">
-                  <i class="pi pi-calendar" style="font-size: 11px" [style.color]="(task()?.startDate) ? '#6366f1' : undefined"></i>
-                  <span [style.color]="(task()?.startDate) ? '#6366f1' : undefined">
+                  <i class="pi pi-calendar" style="font-size: 11px" [style.color]="(task()?.startDate) ? 'var(--p-primary-color)' : undefined"></i>
+                  <span [style.color]="(task()?.startDate) ? 'var(--p-primary-color)' : undefined">
                     {{ (task()?.startDate) ? (task()?.startDate | date:'dd/MM/yy') : 'Bắt đầu' }}
                   </span>
                 </button>
@@ -355,16 +361,16 @@ import { RichTextEditorComponent } from '../../../shared/components/rich-text-ed
                 <!-- Due date -->
                 <button class="meta-pill" [class.active]="!!(task()?.dueDate)" (click)="dueDatePopover.toggle($event)">
                   <i class="pi pi-calendar" style="font-size: 11px"
-                    [style.color]="isOverdue() ? '#ef4444' : (task()?.dueDate) ? '#6366f1' : undefined"></i>
-                  <span [style.color]="isOverdue() ? '#ef4444' : (task()?.dueDate) ? '#6366f1' : undefined">
+                    [style.color]="isOverdue() ? '#ef4444' : (task()?.dueDate) ? 'var(--p-primary-color)' : undefined"></i>
+                  <span [style.color]="isOverdue() ? '#ef4444' : (task()?.dueDate) ? 'var(--p-primary-color)' : undefined">
                     {{ (task()?.dueDate) ? (task()?.dueDate | date:'dd/MM/yy') : 'Hết hạn' }}
                   </span>
                 </button>
 
                 <!-- Estimate -->
                 <button class="meta-pill" [class.active]="(task()?.estimateValue) !== null" (click)="estimatePopover.toggle($event)">
-                  <i class="pi pi-stopwatch" style="font-size: 11px" [style.color]="(task()?.estimateValue) !== null ? '#6366f1' : undefined"></i>
-                  <span [style.color]="(task()?.estimateValue) !== null ? '#6366f1' : undefined">
+                  <i class="pi pi-stopwatch" style="font-size: 11px" [style.color]="(task()?.estimateValue) !== null ? 'var(--p-primary-color)' : undefined"></i>
+                  <span [style.color]="(task()?.estimateValue) !== null ? 'var(--p-primary-color)' : undefined">
                     {{ (task()?.estimateValue) !== null ? (task()?.estimateValue) + ' pts' : 'Estimate' }}
                   </span>
                 </button>
@@ -373,12 +379,12 @@ import { RichTextEditorComponent } from '../../../shared/components/rich-text-ed
 
                 <!-- Modules -->
                 <button class="meta-pill" [class.active]="selectedModuleIds().length > 0" (click)="modulePopover.toggle($event)">
-                  <i class="pi pi-box" style="font-size: 11px" [style.color]="selectedModuleIds().length > 0 ? '#6366f1' : undefined"></i>
+                  <i class="pi pi-box" style="font-size: 11px" [style.color]="selectedModuleIds().length > 0 ? 'var(--p-primary-color)' : undefined"></i>
                   @if (selectedModuleIds().length) {
                     <div class="flex items-center gap-1">
                       @for (id of selectedModuleIds().slice(0, 2); track id) {
                         <span class="text-[10px] px-1.5 py-px rounded-full font-medium bg-white dark:bg-surface-800 border border-gray-200 dark:border-surface-700"
-                              [style.color]="'#6366f1'">
+                              [style.color]="'var(--p-primary-color)'">
                           {{ moduleOptions().find(m => m.id === id)?.name || id }}
                         </span>
                       }
@@ -389,6 +395,14 @@ import { RichTextEditorComponent } from '../../../shared/components/rich-text-ed
                   } @else {
                     <span>Modules</span>
                   }
+                </button>
+
+                <div class="meta-divider"></div>
+
+                <!-- Sprint -->
+                <button class="meta-pill" [class.active]="!!(task()?.sprintId)" (click)="sprintPopover.toggle($event)">
+                  <app-icon-display [icon]="sprintIconClass()" class="text-[11px] flex-shrink-0" [style.color]="(task()?.sprintId) ? 'var(--p-primary-color)' : undefined"></app-icon-display>
+                  <span [style.color]="(task()?.sprintId) ? 'var(--p-primary-color)' : undefined">{{ currentSprintName() }}</span>
                 </button>
               </div>
             </div>
@@ -470,7 +484,7 @@ import { RichTextEditorComponent } from '../../../shared/components/rich-text-ed
                   [style.background]="s.color"></span>
                 <span style="flex: 1; text-align: left; font-size: 12px">{{ s.name }}</span>
                 @if (task()?.stateId === s.id) {
-                  <i class="pi pi-check" style="font-size: 10px; color: #6366f1; flex-shrink: 0"></i>
+                  <i class="pi pi-check" style="font-size: 10px; color: var(--p-primary-color); flex-shrink: 0"></i>
                 }
               </button>
             }
@@ -487,7 +501,7 @@ import { RichTextEditorComponent } from '../../../shared/components/rich-text-ed
                 <i [class]="p.icon" [style.color]="p.colorLight" style="font-size: 11px"></i>
                 <span style="flex: 1; text-align: left; font-size: 12px">{{ p.name }}</span>
                 @if ((task()?.priority ?? 'none') === p.value) {
-                  <i class="pi pi-check" style="font-size: 10px; color: #6366f1; flex-shrink: 0"></i>
+                  <i class="pi pi-check" style="font-size: 10px; color: var(--p-primary-color); flex-shrink: 0"></i>
                 }
               </button>
             }
@@ -513,7 +527,7 @@ import { RichTextEditorComponent } from '../../../shared/components/rich-text-ed
                   <div class="avatar-xs">{{ getMemberInitial(m.userId) }}</div>
                   <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px">{{ m.displayName }}</span>
                   @if (selectedAssigneeIds().includes(m.userId)) {
-                    <i class="pi pi-check" style="font-size: 10px; color: #6366f1; flex-shrink: 0"></i>
+                    <i class="pi pi-check" style="font-size: 10px; color: var(--p-primary-color); flex-shrink: 0"></i>
                   }
                 </button>
               }
@@ -541,7 +555,7 @@ import { RichTextEditorComponent } from '../../../shared/components/rich-text-ed
                     [style.background]="l.color"></span>
                   <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px">{{ l.name }}</span>
                   @if (selectedLabelIds().includes(l.id)) {
-                    <i class="pi pi-check" style="font-size: 10px; color: #6366f1; flex-shrink: 0"></i>
+                    <i class="pi pi-check" style="font-size: 10px; color: var(--p-primary-color); flex-shrink: 0"></i>
                   }
                 </button>
               }
@@ -562,7 +576,7 @@ import { RichTextEditorComponent } from '../../../shared/components/rich-text-ed
                 <i class="pi pi-times text-gray-400" style="font-size: 11px"></i>
                 <span style="flex: 1; font-size: 12px; color: var(--text-color-secondary)">Không có parent</span>
                 @if (task()?.parentId === null) {
-                  <i class="pi pi-check" style="font-size: 10px; color: #6366f1; flex-shrink: 0"></i>
+                  <i class="pi pi-check" style="font-size: 10px; color: var(--p-primary-color); flex-shrink: 0"></i>
                 }
               </button>
               @if (!filteredParents().length && parentSearch()) {
@@ -579,7 +593,7 @@ import { RichTextEditorComponent } from '../../../shared/components/rich-text-ed
                     {{ p.taskId }} {{ p.title }}
                   </span>
                   @if (task()?.parentId === p.id) {
-                    <i class="pi pi-check" style="font-size: 10px; color: #6366f1; flex-shrink: 0"></i>
+                    <i class="pi pi-check" style="font-size: 10px; color: var(--p-primary-color); flex-shrink: 0"></i>
                   }
                 </button>
               }
@@ -613,15 +627,27 @@ import { RichTextEditorComponent } from '../../../shared/components/rich-text-ed
 
         <!-- Estimate Popover -->
         <p-popover #estimatePopover>
-          <div style="padding: 6px 8px; display: flex; align-items: center; gap: 6px; width: 160px">
-            <p-inputnumber [ngModel]="task()?.estimateValue" [min]="0" [maxFractionDigits]="1"
-              styleClass="w-full flex-1" inputStyleClass="w-full text-xs" placeholder="Story points" [autofocus]="true"
-              (ngModelChange)="onEstimateChange($event)"
-              (keydown.enter)="estimatePopover.hide()" />
-            @if (task()?.estimateValue !== null) {
-              <button pButton icon="pi pi-times" severity="secondary" [text]="true" size="small"
-                pTooltip="Xóa" (click)="onEstimateChange(null); estimatePopover.hide()" style="flex-shrink: 0; width: 24px; height: 24px; padding: 0"></button>
-            }
+          <div style="padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; width: 180px">
+            <div class="flex items-center justify-between text-xs font-semibold text-gray-500 mb-1">
+              <span>Ước lượng</span>
+              <span class="text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50 dark:bg-indigo-950/40 px-1.5 py-0.5 rounded">
+                {{ task()?.estimateValue !== null ? task()?.estimateValue : 0 }} pts
+              </span>
+            </div>
+            <div class="flex items-center gap-3 py-1">
+              <p-slider 
+                [ngModel]="task()?.estimateValue || 0" 
+                (ngModelChange)="onEstimateChange($event)"
+                [min]="0" 
+                [max]="20" 
+                [step]="0.5" 
+                class="w-full flex-1"
+              ></p-slider>
+              @if (task()?.estimateValue !== null) {
+                <button pButton icon="pi pi-times" severity="secondary" [text]="true" size="small"
+                  pTooltip="Xóa" (click)="onEstimateChange(null); estimatePopover.hide()" style="flex-shrink: 0; width: 20px; height: 20px; padding: 0"></button>
+              }
+            </div>
           </div>
         </p-popover>
 
@@ -641,8 +667,40 @@ import { RichTextEditorComponent } from '../../../shared/components/rich-text-ed
                   <i class="pi pi-box text-gray-400" style="font-size: 11px"></i>
                   <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px">{{ m.name }}</span>
                   @if (selectedModuleIds().includes(m.id)) {
-                    <i class="pi pi-check" style="font-size: 10px; color: #6366f1; flex-shrink: 0"></i>
+                    <i class="pi pi-check" style="font-size: 10px; color: var(--p-primary-color); flex-shrink: 0"></i>
                   }
+                </button>
+              }
+            </div>
+          </div>
+        </p-popover>
+
+        <!-- Sprint Popover -->
+        <p-popover #sprintPopover>
+          <div style="min-width: 180px; max-width: 240px; padding: 2px; display: flex; flex-direction: column; gap: 2px">
+            <div style="max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 1px">
+              @if (!availableSprints().length) {
+                <p style="padding: 6px; font-size: 11px; color: var(--text-color-secondary); text-align: center">
+                  Chưa có sprint planning/active
+                </p>
+              }
+              @for (s of availableSprints(); track s.id) {
+                <button class="pop-item" [class.selected]="task()?.sprintId === s.id"
+                  style="padding: 5px 10px; font-size: 12px; border-radius: 4px"
+                  (click)="setSprint(s.id); sprintPopover.hide()">
+                  <span style="width: 8px; height: 8px; border-radius: 9999px; flex-shrink: 0"
+                    [style.background]="s.status === 'active' ? '#22c55e' : '#facc15'"></span>
+                  <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px">{{ s.name }}</span>
+                  @if (task()?.sprintId === s.id) {
+                    <i class="pi pi-check" style="font-size: 10px; color: var(--p-primary-color); flex-shrink: 0"></i>
+                  }
+                </button>
+              }
+              @if (task()?.sprintId) {
+                <button class="pop-item" style="padding: 5px 10px; font-size: 12px; border-radius: 4px; color: #ef4444"
+                  (click)="setSprint(null); sprintPopover.hide()">
+                  <i class="pi pi-times" style="font-size: 10px; flex-shrink: 0"></i>
+                  <span style="font-size: 12px">Gỡ khỏi sprint</span>
                 </button>
               }
             </div>
@@ -662,6 +720,7 @@ export class TaskDetailPanelComponent implements OnInit, OnChanges, OnDestroy {
   private readonly authStore = inject(AuthStore);
   private readonly attachmentService = inject(AttachmentService);
   private readonly taskService = inject(TaskService);
+  private readonly sprintService = inject(SprintService);
   private readonly linkService = inject(LinkService);
   private readonly relationService = inject(RelationService);
   private readonly route = inject(ActivatedRoute);
@@ -687,6 +746,19 @@ export class TaskDetailPanelComponent implements OnInit, OnChanges, OnDestroy {
 
   /** Signal accessor for save status — passed to TaskHeaderComponent */
   readonly saveStatusSignal = computed(() => this.taskStore.saveStatus());
+
+  /** Sprints (planning/active) cho popover gán sprint — cache chung từ SprintService */
+  protected readonly availableSprints = computed(() => this.sprintService.openSprints());
+
+  protected readonly currentSprintName = computed(() => {
+    const id = this.task()?.sprintId;
+    if (!id) return 'Sprint';
+    return this.sprintService.sprintById().get(id)?.name ?? 'Sprint';
+  });
+
+  protected readonly sprintIconClass = computed(
+    () => this.sprintService.projectSettings()?.icon ?? 'pi-flag',
+  );
 
   /** Active tab in the activity panel — separate from the API filter so 'properties' tab works */
   protected readonly activeActivityTab = signal<ActivityFilterType | 'properties'>('all');
@@ -923,6 +995,13 @@ export class TaskDetailPanelComponent implements OnInit, OnChanges, OnDestroy {
     }
   }
 
+  protected setSprint(sprintId: string | null): void {
+    const t = this.task();
+    if (t) {
+      this.taskStore.updateTask(this.projectId(), t.id, { sprintId });
+    }
+  }
+
   // ─── Constructor Effects ────────────────────────────────────────────────
   constructor() {
     // Effect: chỉ trigger khi task ID hoặc projectId thay đổi — KHÔNG phải
@@ -983,6 +1062,7 @@ export class TaskDetailPanelComponent implements OnInit, OnChanges, OnDestroy {
         this.projectStore.loadMembers(projectId);
         this.moduleStore.loadModules(projectId);
         this.taskStore.loadLabels(projectId);
+        this.sprintService.loadProjectSprints(projectId);
       } else {
         this.isVisible.set(false);
       }

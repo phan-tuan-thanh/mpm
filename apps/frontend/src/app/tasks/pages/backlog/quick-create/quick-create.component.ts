@@ -16,6 +16,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { PopoverModule } from 'primeng/popover';
 import { InputNumberModule } from 'primeng/inputnumber';
+import { SliderModule } from 'primeng/slider';
 
 import { RichTextEditorComponent } from '../../../../shared/components/rich-text-editor/rich-text-editor.component';
 import { ProjectStore } from '../../../../projects/state/project.store';
@@ -57,7 +58,7 @@ import { DrawerModule } from 'primeng/drawer';
     CommonModule, FormsModule,
     DialogModule, DrawerModule, ButtonModule, InputTextModule,
     SelectModule, MultiSelectModule,
-    DatePickerModule, TooltipModule, ToggleSwitchModule, PopoverModule, InputNumberModule,
+    DatePickerModule, TooltipModule, ToggleSwitchModule, PopoverModule, InputNumberModule, SliderModule,
     RichTextEditorComponent,
     TaskAttachmentsComponent,
     TaskLinksComponent,

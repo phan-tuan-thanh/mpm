@@ -4,7 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
-import { SelectModule } from 'primeng/select';
 import { PopoverModule } from 'primeng/popover';
 import { TooltipModule } from 'primeng/tooltip';
 import { DragDropModule, CdkDragDrop } from '@angular/cdk/drag-drop';
@@ -29,7 +28,7 @@ interface EditDraft {
   selector: 'app-priorities-tab',
   imports: [
     CommonModule, FormsModule, ButtonModule, DialogModule,
-    InputTextModule, SelectModule, PopoverModule, TooltipModule,
+    InputTextModule, PopoverModule, TooltipModule,
     DragDropModule, ColorPairPickerComponent, IconPickerPanelComponent,
   ],
   templateUrl: './priorities-tab.component.html',
@@ -56,6 +55,11 @@ export class PrioritiesTabComponent implements OnInit {
   readonly migrationTargets = signal<ProjectPriority[]>([]);
   readonly selectedMigrateValue = signal<string | null>(null);
   readonly isDeleting = signal(false);
+
+  getMigrationTargetLabel(): string {
+    const found = this.migrationTargets().find((t) => t.value === this.selectedMigrateValue());
+    return found ? found.name : 'Chọn mức thay thế...';
+  }
 
   draggedId: string | null = null;
   hoveredId: string | null = null;

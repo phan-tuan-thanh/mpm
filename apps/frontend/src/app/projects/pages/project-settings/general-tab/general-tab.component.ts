@@ -7,12 +7,14 @@ import { InputTextModule } from 'primeng/inputtext';
 import { ButtonModule } from 'primeng/button';
 import { FluidModule } from 'primeng/fluid';
 import { ChipModule } from 'primeng/chip';
-import { SelectModule } from 'primeng/select';
 import { MessageService } from 'primeng/api';
 import { FormsModule } from '@angular/forms';
 import { ProjectNetwork } from '@mpm/shared-types';
 import type { TiptapDoc } from '@mpm/shared-types';
 import { RichTextEditorComponent } from '../../../../shared/components/rich-text-editor/rich-text-editor.component';
+import { PopoverModule } from 'primeng/popover';
+import { IconPickerPanelComponent } from '../../../../shared/components/icon-picker-panel/icon-picker-panel.component';
+import { IconDisplayComponent } from '../../../../shared/components/icon-display/icon-display.component';
 
 @Component({
   standalone: true,
@@ -23,9 +25,11 @@ import { RichTextEditorComponent } from '../../../../shared/components/rich-text
     ButtonModule,
     FluidModule,
     ChipModule,
-    SelectModule,
     FormsModule,
     RichTextEditorComponent,
+    PopoverModule,
+    IconPickerPanelComponent,
+    IconDisplayComponent,
   ],
   template: `
     <form (submit)="onSubmit($event)">
@@ -45,7 +49,7 @@ import { RichTextEditorComponent } from '../../../../shared/components/rich-text
         <div class="flex-1 min-w-0 space-y-5">
 
           <!-- Card: Nhận diện dự án -->
-          <div class="bg-surface-0 dark:bg-surface-900 rounded-xl border border-surface-100 dark:border-surface-800 shadow-sm overflow-hidden">
+          <div class="bg-surface-0 dark:bg-surface-900 rounded-xl border border-surface-100 dark:border-surface-800 shadow-sm">
             <div class="px-5 py-3.5 border-b border-surface-100 dark:border-surface-800">
               <h2 class="text-sm font-bold text-gray-900 dark:text-surface-0">Nhận diện dự án</h2>
               <p class="text-xs text-gray-400 dark:text-surface-500 mt-0.5">Tên, biểu tượng và ảnh bìa hiển thị cho toàn bộ thành viên.</p>
@@ -84,20 +88,15 @@ import { RichTextEditorComponent } from '../../../../shared/components/rich-text
                   <label class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wider">Icon</label>
                   <button
                     pButton type="button"
-                    [label]="emoji || '🚀'"
                     [disabled]="isReadOnly() || isSubmitting()"
-                    (click)="showEmojiPicker.set(!showEmojiPicker())"
+                    (click)="op.toggle($event)"
                     class="h-10 w-12 text-lg flex items-center justify-center p-0 border border-gray-200 dark:border-surface-700 bg-white dark:bg-surface-800"
-                  ></button>
-                  @if (showEmojiPicker()) {
-                    <div class="absolute left-0 top-16 bg-white dark:bg-surface-800 border border-gray-200 dark:border-surface-700 rounded-xl shadow-xl p-3 z-50 w-64">
-                      <div class="grid grid-cols-5 gap-2 max-h-48 overflow-y-auto">
-                        @for (e of commonEmojis; track e) {
-                          <button type="button" class="h-8 w-8 text-lg rounded hover:bg-gray-100 dark:hover:bg-surface-700 transition flex items-center justify-center cursor-pointer border-none bg-transparent" (click)="selectEmoji(e)">{{ e }}</button>
-                        }
-                      </div>
-                    </div>
-                  }
+                  >
+                    <app-icon-display [icon]="emoji || '🚀'" class="text-lg"></app-icon-display>
+                  </button>
+                  <p-popover #op styleClass="!p-0" appendTo="body">
+                    <app-icon-picker-panel [value]="emoji" (valueChange)="emoji = $event; op.hide()"></app-icon-picker-panel>
+                  </p-popover>
                 </div>
                 <div class="flex-1 flex flex-col gap-1.5 max-w-lg">
                   <label for="name" class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wider">Tên dự án <span class="text-red-500 normal-case">*</span></label>
@@ -163,14 +162,69 @@ import { RichTextEditorComponent } from '../../../../shared/components/rich-text
 
               <!-- Lead -->
               <div class="flex flex-col gap-1.5">
-                <label for="leadId" class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wider">Người phụ trách</label>
-                <p-select id="leadId" [options]="leadOptions()" [(ngModel)]="leadId" name="leadId" optionLabel="label" optionValue="value" [filter]="true" filterPlaceholder="Tìm kiếm..." appendTo="body" [disabled]="isReadOnly() || isSubmitting()" placeholder="Chọn người phụ trách" styleClass="w-full"></p-select>
+                <label class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wider">Người phụ trách</label>
+                <button
+                  type="button"
+                  (click)="leadPop.toggle($event)"
+                  [disabled]="isReadOnly() || isSubmitting()"
+                  class="w-full flex items-center justify-between gap-2 px-3 py-2 text-sm border border-surface-200 dark:border-surface-700 rounded-lg bg-white dark:bg-surface-900 text-gray-800 dark:text-surface-100 font-semibold cursor-pointer hover:bg-surface-50 dark:hover:bg-surface-800 transition-all select-none disabled:opacity-50 disabled:cursor-not-allowed h-[38px]"
+                >
+                  <span class="truncate">{{ getLeadLabel() }}</span>
+                  <i class="pi pi-chevron-down text-xs opacity-60 flex-shrink-0"></i>
+                </button>
+                <p-popover #leadPop appendTo="body" styleClass="!p-0">
+                  <div class="pop-list w-64 max-h-60 overflow-y-auto">
+                    @for (opt of leadOptions(); track opt.value) {
+                      <div
+                        (click)="leadId = opt.value; leadPop.hide()"
+                        class="pop-item"
+                        [class.selected]="leadId === opt.value"
+                      >
+                        {{ opt.label }}
+                      </div>
+                    }
+                  </div>
+                </p-popover>
               </div>
 
               <!-- Timezone -->
               <div class="flex flex-col gap-1.5">
-                <label for="timezone" class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wider">Múi giờ <span class="normal-case font-normal">(theo IANA)</span></label>
-                <p-select id="timezone" [options]="timezoneOptions" [(ngModel)]="timezone" name="timezone" optionLabel="label" optionValue="value" [filter]="true" appendTo="body" [disabled]="isReadOnly() || isSubmitting()" placeholder="Chọn múi giờ" styleClass="w-full"></p-select>
+                <label class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wider">Múi giờ <span class="normal-case font-normal">(theo IANA)</span></label>
+                <button
+                  type="button"
+                  (click)="timezonePop.toggle($event); timezoneSearch.set('')"
+                  [disabled]="isReadOnly() || isSubmitting()"
+                  class="w-full flex items-center justify-between gap-2 px-3 py-2 text-sm border border-surface-200 dark:border-surface-700 rounded-lg bg-white dark:bg-surface-900 text-gray-800 dark:text-surface-100 font-semibold cursor-pointer hover:bg-surface-50 dark:hover:bg-surface-800 transition-all select-none disabled:opacity-50 disabled:cursor-not-allowed h-[38px]"
+                >
+                  <span class="truncate">{{ getTimezoneLabel() }}</span>
+                  <i class="pi pi-chevron-down text-xs opacity-60 flex-shrink-0"></i>
+                </button>
+                <p-popover #timezonePop appendTo="body" styleClass="!p-0">
+                  <div class="p-2 border-b border-surface-100 dark:border-surface-800 bg-surface-50 dark:bg-surface-900">
+                    <input
+                      type="text"
+                      pInputText
+                      placeholder="Tìm kiếm múi giờ..."
+                      class="w-full text-xs p-1"
+                      [ngModel]="timezoneSearch()"
+                      (ngModelChange)="timezoneSearch.set($event)"
+                      (click)="$event.stopPropagation()"
+                    />
+                  </div>
+                  <div class="pop-list w-72 max-h-60 overflow-y-auto">
+                    @for (opt of filteredTimezoneOptions(); track opt.value) {
+                      <div
+                        (click)="timezone = opt.value; timezonePop.hide()"
+                        class="pop-item"
+                        [class.selected]="timezone === opt.value"
+                      >
+                        {{ opt.label }}
+                      </div>
+                    } @empty {
+                      <div class="p-3 text-xs text-gray-400 text-center">Không tìm thấy múi giờ</div>
+                    }
+                  </div>
+                </p-popover>
               </div>
 
             </div>
@@ -211,12 +265,6 @@ export class GeneralTabComponent implements OnInit {
 
   readonly isSubmitting = signal<boolean>(false);
   readonly isUploadingCover = signal<boolean>(false);
-  readonly showEmojiPicker = signal<boolean>(false);
-
-  readonly commonEmojis = [
-    '🚀', '💻', '🎨', '📝', '📊', '🔍', '⚙️', '📅', '👥', '🔔',
-    '📎', '🔒', '🌍', '💡', '🔥', '✨', '⚡️', '🛠️', '📦', '🎯',
-  ];
 
   readonly coverImageUrl = computed(() => {
     return this.projectStore.currentProject()?.coverImageUrl || null;
@@ -239,6 +287,25 @@ export class GeneralTabComponent implements OnInit {
     label: tz,
     value: tz,
   }));
+
+  readonly timezoneSearch = signal<string>('');
+  readonly filteredTimezoneOptions = computed(() => {
+    const query = this.timezoneSearch().toLowerCase().trim();
+    if (!query) return this.timezoneOptions;
+    return this.timezoneOptions.filter(
+      (o) => o.label.toLowerCase().includes(query) || o.value.toLowerCase().includes(query)
+    );
+  });
+
+  getTimezoneLabel(): string {
+    const found = this.timezoneOptions.find((o) => o.value === this.timezone);
+    return found ? found.label : 'Chọn múi giờ';
+  }
+
+  getLeadLabel(): string {
+    const found = this.leadOptions().find((o) => o.value === this.leadId);
+    return found ? found.label : 'Chọn người phụ trách';
+  }
 
   // Kiểm tra quyền read-only
   readonly isReadOnly = computed(() => {
@@ -268,11 +335,6 @@ export class GeneralTabComponent implements OnInit {
       // Load members for dropdown selection
       this.projectStore.loadMembers(project.id);
     }
-  }
-
-  selectEmoji(e: string): void {
-    this.emoji = e;
-    this.showEmojiPicker.set(false);
   }
 
   onCoverFileSelected(event: Event): void {

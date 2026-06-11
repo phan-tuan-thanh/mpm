@@ -2,10 +2,13 @@ import { Component, OnInit, OnDestroy, inject, signal, computed, ViewChild } fro
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 
+import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
+import { DialogModule } from 'primeng/dialog';
+import { PopoverModule } from 'primeng/popover';
 
 import { TaskStore } from '../../state/task.store';
 import { ProjectStore } from '../../../projects/state/project.store';
@@ -18,6 +21,8 @@ import { BoardComponent } from './board/board.component';
 import { QuickCreateComponent } from './quick-create/quick-create.component';
 import { TaskDetailPanelComponent } from '../../components/task-detail-panel/task-detail-panel.component';
 import { LabelManagerComponent } from '../../components/label-manager/label-manager.component';
+import { SprintService } from '../../../projects/sprints/services/sprint.service';
+import type { Sprint } from '../../../projects/sprints/models/sprint.models';
 import type { TaskListItem, CreateTaskDto, ReorderTaskItem, DisplayProperties, Task } from '@mpm/shared-types';
 import { DEFAULT_DISPLAY_PROPS } from '@mpm/shared-types';
 import { Subject, takeUntil, filter, distinctUntilChanged } from 'rxjs';
@@ -27,8 +32,8 @@ import { toObservable } from '@angular/core/rxjs-interop';
   standalone: true,
   selector: 'app-backlog',
   imports: [
-    CommonModule,
-    ButtonModule, ConfirmDialogModule, ToastModule,
+    CommonModule, FormsModule,
+    ButtonModule, ConfirmDialogModule, ToastModule, DialogModule, PopoverModule,
     BacklogToolbarComponent, TaskListComponent, BoardComponent, QuickCreateComponent,
     TaskDetailPanelComponent, LabelManagerComponent,
   ],
@@ -56,9 +61,11 @@ import { toObservable } from '@angular/core/rxjs-interop';
           <span class="font-medium text-indigo-700 dark:text-indigo-300">
             {{ taskStore.selectionCount() }} task đã chọn
           </span>
-          <button pButton label="Xóa" icon="pi pi-trash" severity="danger" size="small"
+          <button pButton label="Thêm vào Sprint" icon="pi pi-flag" size="small" [fluid]="false"
+            [outlined]="true" (click)="openAddToSprint()"></button>
+          <button pButton label="Xóa" icon="pi pi-trash" severity="danger" size="small" [fluid]="false"
             (click)="onBulkDelete()"></button>
-          <button pButton label="Bỏ chọn" severity="secondary" size="small" text
+          <button pButton label="Bỏ chọn" severity="secondary" size="small" text [fluid]="false"
             (click)="taskStore.clearSelection()"></button>
         </div>
       }
@@ -128,6 +135,65 @@ import { toObservable } from '@angular/core/rxjs-interop';
     <p-confirmDialog />
     <p-toast />
     <app-label-manager #labelManager [projectId]="projectId" [workspaceId]="workspaceId" />
+
+    <!-- Add to Sprint Dialog -->
+    <p-dialog
+      [(visible)]="showSprintDialog"
+      header="Thêm vào Sprint"
+      [modal]="true"
+      [style]="{ width: '420px' }"
+      [closable]="true"
+    >
+      <div class="space-y-3 py-1">
+        <p class="text-sm text-gray-700 dark:text-surface-200">
+          Thêm <strong class="text-gray-900 dark:text-surface-0">{{ taskStore.selectionCount() }} task</strong> đã chọn vào sprint:
+        </p>
+
+        @if (availableSprints().length === 0 && !sprintsLoading()) {
+          <div class="flex items-center gap-2 p-3 rounded-lg bg-gray-50 dark:bg-surface-800 text-sm text-gray-500 dark:text-surface-400">
+            <i class="pi pi-info-circle"></i>
+            Chưa có sprint nào ở trạng thái planning/active. Tạo sprint trước.
+          </div>
+        } @else {
+          <button
+            type="button"
+            (click)="targetSprintPop.toggle($event)"
+            class="w-full flex items-center justify-between gap-2 px-3 py-2 text-sm border border-surface-200 dark:border-surface-700 rounded-lg bg-white dark:bg-surface-900 text-gray-800 dark:text-surface-100 font-semibold cursor-pointer hover:bg-surface-50 dark:hover:bg-surface-800 transition-all select-none h-[38px]"
+          >
+            <span class="truncate">{{ getTargetSprintLabel() }}</span>
+            <i class="pi pi-chevron-down text-xs opacity-60 flex-shrink-0"></i>
+          </button>
+          <p-popover #targetSprintPop appendTo="body" styleClass="!p-0">
+            <div class="pop-list w-64 max-h-60 overflow-y-auto">
+              @for (sprint of availableSprints(); track sprint.id) {
+                <div
+                  (click)="targetSprintId = sprint.id; targetSprintPop.hide()"
+                  class="pop-item flex items-center gap-2"
+                  [class.selected]="targetSprintId === sprint.id"
+                >
+                  <span class="w-2 h-2 rounded-full"
+                    [class]="sprint.status === 'active' ? 'bg-green-500' : 'bg-yellow-400'"></span>
+                  <span class="text-sm font-semibold">{{ sprint.name }}</span>
+                  <span class="text-xs text-gray-400 dark:text-surface-500">
+                    ({{ sprint.status === 'active' ? 'Đang chạy' : 'Lên kế hoạch' }})
+                  </span>
+                </div>
+              }
+            </div>
+          </p-popover>
+        }
+      </div>
+
+      <ng-template pTemplate="footer">
+        <div class="flex justify-end gap-2">
+          <button pButton type="button" label="Hủy" severity="secondary" size="small"
+            [fluid]="false" [outlined]="true" (click)="showSprintDialog.set(false)"></button>
+          <button pButton type="button" label="Thêm vào Sprint" icon="pi pi-flag" size="small"
+            [fluid]="false" [disabled]="!targetSprintId || addingToSprint()"
+            [loading]="addingToSprint()" (click)="doAddToSprint()"></button>
+        </div>
+      </ng-template>
+    </p-dialog>
   `,
 })
 export class BacklogComponent implements OnInit, OnDestroy {
@@ -135,6 +201,7 @@ export class BacklogComponent implements OnInit, OnDestroy {
 
   readonly taskStore = inject(TaskStore);
   private readonly projectStore = inject(ProjectStore);
+  private readonly sprintService = inject(SprintService);
   private readonly layoutService = inject(LayoutService);
   private readonly attachmentService = inject(AttachmentService);
   private readonly linkService = inject(LinkService);
@@ -155,6 +222,18 @@ export class BacklogComponent implements OnInit, OnDestroy {
   protected viewMode = signal<'list' | 'board'>('list');
 
   protected readonly displayProps = signal<DisplayProperties>(DEFAULT_DISPLAY_PROPS);
+
+  // Add-to-sprint dialog state
+  protected showSprintDialog = signal(false);
+  protected sprintsLoading = signal(false);
+  protected addingToSprint = signal(false);
+  protected availableSprints = signal<Sprint[]>([]);
+  protected targetSprintId: string | null = null;
+
+  getTargetSprintLabel(): string {
+    const found = this.availableSprints().find((s) => s.id === this.targetSprintId);
+    return found ? found.name : 'Chọn sprint...';
+  }
 
   // Phải khai báo ở class field để toObservable() chạy trong injection context
   private readonly currentProject$ = toObservable(this.projectStore.currentProject);
@@ -322,6 +401,56 @@ export class BacklogComponent implements OnInit, OnDestroy {
 
   protected openLabelManager(): void {
     this.labelManager.open();
+  }
+
+  protected openAddToSprint(): void {
+    this.targetSprintId = null;
+    this.showSprintDialog.set(true);
+    this.sprintsLoading.set(true);
+    // Sprint planning + active đều nhận task được
+    this.sprintService.getSprints(this.projectId, { limit: 50 }).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (res) => {
+        this.availableSprints.set(res.data.filter((s) => s.status !== 'completed'));
+        this.sprintsLoading.set(false);
+      },
+      error: () => {
+        this.availableSprints.set([]);
+        this.sprintsLoading.set(false);
+      },
+    });
+  }
+
+  protected doAddToSprint(): void {
+    if (!this.targetSprintId) return;
+    const taskIds = Array.from(this.taskStore.selectedTaskIds());
+    const sprintName = this.availableSprints().find((s) => s.id === this.targetSprintId)?.name ?? '';
+
+    this.addingToSprint.set(true);
+    this.sprintService
+      .addTasks(this.projectId, this.targetSprintId, taskIds)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.addingToSprint.set(false);
+          this.showSprintDialog.set(false);
+          this.taskStore.clearSelection();
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Thành công',
+            detail: `Đã thêm ${taskIds.length} task vào sprint "${sprintName}"`,
+            life: 3000,
+          });
+        },
+        error: (err) => {
+          this.addingToSprint.set(false);
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Lỗi',
+            detail: err?.error?.message ?? 'Không thể thêm task vào sprint',
+            life: 5000,
+          });
+        },
+      });
   }
 
   protected onCreationViewModeChange(mode: 'right-pane' | 'full-page' | 'popup'): void {

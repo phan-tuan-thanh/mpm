@@ -12,7 +12,7 @@ import { filter } from 'rxjs/operators';
   selector: 'app-app-shell',
   imports: [CommonModule, RouterOutlet, SidebarComponent, TopbarComponent],
   template: `
-    <div class="flex flex-col h-screen w-screen overflow-hidden bg-surface-50 dark:bg-surface-950 font-sans antialiased text-[#2d3748] dark:text-surface-100 transition-colors duration-200">
+    <div class="flex flex-col h-screen w-screen overflow-hidden bg-surface-50 dark:bg-surface-950 font-sans antialiased text-surface-700 dark:text-surface-100 transition-colors duration-200">
       <!-- Top Header Bar matching Sakai template -->
       <app-topbar class="flex-shrink-0" />
 
@@ -71,13 +71,21 @@ import { filter } from 'rxjs/operators';
           }
 
           <main
-            class="flex-1 min-w-0 bg-surface-50 dark:bg-surface-950"
+            class="flex-1 min-w-0 bg-surface-100 dark:bg-surface-950"
             [class.overflow-hidden]="layoutService.fullBleed()"
+            [class.p-2]="layoutService.fullBleed()"
             [class.overflow-y-auto]="!layoutService.fullBleed()"
             [class.p-4]="!layoutService.fullBleed()"
             [class.sm:p-6]="!layoutService.fullBleed()"
           >
-            <router-outlet />
+            <!-- fullBleed: trang là card bo góc trên ground (Sakai ground/card hierarchy) -->
+            <div
+              [class]="layoutService.fullBleed()
+                ? 'h-full rounded-xl border border-surface-200 dark:border-surface-800 overflow-hidden shadow-sm bg-surface-0 dark:bg-surface-900'
+                : ''"
+            >
+              <router-outlet />
+            </div>
           </main>
         }
       </div>

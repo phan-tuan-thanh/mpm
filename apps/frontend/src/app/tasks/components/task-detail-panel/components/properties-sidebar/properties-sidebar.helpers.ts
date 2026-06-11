@@ -71,15 +71,23 @@ export function buildDetailFields(
   ];
 }
 
+/** Tham chiếu sprint tối giản cho dropdown gán sprint */
+export interface SprintRef {
+  id: string;
+  name: string;
+  status: string;
+}
+
 /**
  * Builds PropertyFieldConfig[] for the "Cấu trúc" (Structure) section.
  *
- * Fields: Labels, Modules (Req 3.3)
+ * Fields: Labels, Modules (Req 3.3), Sprint
  * Note: Parent task is handled separately by ParentNavigationComponent.
  */
 export function buildStructureFields(
   labels: Label[],
   modules: ProjectModule[],
+  sprints: SprintRef[] = [],
 ): PropertyFieldConfig[] {
   return [
     {
@@ -102,6 +110,17 @@ export function buildStructureFields(
         value: m.id,
       })),
       placeholder: 'Chọn module...',
+    },
+    {
+      field: 'sprintId',
+      label: 'Sprint',
+      type: 'dropdown',
+      options: sprints.map((s) => ({
+        label: s.status === 'active' ? `${s.name} (đang chạy)` : s.name,
+        value: s.id,
+      })),
+      placeholder: 'Chọn sprint...',
+      showClear: true,
     },
   ];
 }
@@ -131,6 +150,8 @@ export function getTaskFieldValue(task: Task | null, field: string): unknown {
       return task.labels?.map((l) => l.id) ?? [];
     case 'moduleIds':
       return task.modules?.map((m) => m.id) ?? [];
+    case 'sprintId':
+      return task.sprintId ?? null;
     default:
       return null;
   }

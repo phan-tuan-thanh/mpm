@@ -77,17 +77,17 @@ import type { ToolbarMode } from '../../../shared/components/rich-text-editor/rt
           <!-- Dropdown Menu -->
           @if (isProfileMenuOpen()) {
             <div
-              class="absolute right-0 mt-2 w-64 bg-white dark:bg-surface-900 border border-[#e2e8f0] dark:border-surface-800 rounded-xl shadow-xl py-2 z-50 animate-fadein"
+              class="absolute right-0 mt-2 w-64 bg-white dark:bg-surface-900 border border-surface-200 dark:border-surface-800 rounded-xl shadow-xl py-2 z-50 animate-fadein"
               (click)="$event.stopPropagation()"
             >
-              <div class="px-4 py-3 border-b border-[#f1f5f9] dark:border-surface-800">
+              <div class="px-4 py-3 border-b border-surface-100 dark:border-surface-800">
                 <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Tài khoản</p>
                 <p class="text-sm font-semibold text-gray-800 dark:text-surface-0 truncate mt-1">{{ userEmail() }}</p>
                 <p class="text-xs text-gray-400 dark:text-surface-400 mt-0.5">{{ userRole() }}</p>
               </div>
 
               <!-- Editor toolbar preference -->
-              <div class="px-4 py-3 border-b border-[#f1f5f9] dark:border-surface-800">
+              <div class="px-4 py-3 border-b border-surface-100 dark:border-surface-800">
                 <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Kiểu soạn thảo</p>
                 <div class="flex gap-1">
                   @for (opt of editorModes; track opt.mode) {
@@ -115,7 +115,7 @@ import type { ToolbarMode } from '../../../shared/components/rich-text-editor/rt
                     <i class="pi pi-shield"></i>
                     <span>Trang quản trị</span>
                   </button>
-                  <div class="my-1 border-t border-[#f1f5f9] dark:border-surface-800"></div>
+                  <div class="my-1 border-t border-surface-100 dark:border-surface-800"></div>
                 }
                 <button
                   (click)="logout()"

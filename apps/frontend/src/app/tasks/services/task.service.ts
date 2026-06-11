@@ -39,6 +39,7 @@ export class TaskService {
     if (query.page) params = params.set('page', String(query.page));
     if (query.limit) params = params.set('limit', String(query.limit));
     if (query.parentId !== undefined) params = params.set('parentId', query.parentId === null ? 'null' : query.parentId);
+    if (query.sprintId) params = params.set('sprintId', query.sprintId);
     return this.http.get<TaskListResponse>(this.base(projectId), { params });
   }
 

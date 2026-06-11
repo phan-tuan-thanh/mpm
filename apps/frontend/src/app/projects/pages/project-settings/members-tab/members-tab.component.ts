@@ -4,7 +4,7 @@ import { ProjectService } from '../../../services/project.service';
 import { AuthService } from '../../../../auth/services/auth.service';
 import { CommonModule } from '@angular/common';
 import { TableModule } from 'primeng/table';
-import { SelectModule } from 'primeng/select';
+import { PopoverModule } from 'primeng/popover';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { ButtonModule } from 'primeng/button';
@@ -20,7 +20,7 @@ import { MemberResponse, ProjectRole } from '@mpm/shared-types';
   imports: [
     CommonModule,
     TableModule,
-    SelectModule,
+    PopoverModule,
     DialogModule,
     InputTextModule,
     ButtonModule,
@@ -38,17 +38,17 @@ import { MemberResponse, ProjectRole } from '@mpm/shared-types';
         </div>
         <div class="flex items-center gap-3">
           <!-- Search inline -->
-          <span class="p-input-icon-left">
-            <i class="pi pi-search text-gray-400 dark:text-surface-500"></i>
+          <div class="relative">
+            <i class="pi pi-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-surface-500 text-sm"></i>
             <input
               type="text"
               pInputText
               [(ngModel)]="searchTerm"
               (ngModelChange)="onSearchChange($event)"
               placeholder="Tìm tên hoặc email..."
-              class="text-sm w-56"
+              class="text-sm w-56 !pl-9"
             />
-          </span>
+          </div>
           @if (!isReadOnly()) {
             <button pButton (click)="showAddDialog()" label="Thêm thành viên" icon="pi pi-plus" size="small"></button>
           }
@@ -88,15 +88,27 @@ import { MemberResponse, ProjectRole } from '@mpm/shared-types';
               <td class="py-2.5 px-4 text-gray-500 dark:text-surface-400 font-medium">{{ member.email }}</td>
               <td class="py-2.5 px-4 overflow-visible">
                 @if (!isReadOnly() && member.userId !== currentUserId()) {
-                  <p-select
-                    [options]="roleOptions"
-                    [ngModel]="member.projectRole"
-                    (onChange)="onRoleChange(member, $event.value)"
-                    optionLabel="label"
-                    optionValue="value"
-                    class="text-xs py-0.5"
-                    [style]="{ width: '130px' }"
-                  ></p-select>
+                  <button
+                    type="button"
+                    (click)="rolePop.toggle($event)"
+                    class="flex items-center justify-between gap-1 px-2.5 py-1 text-xs border border-surface-200 dark:border-surface-700 rounded-md bg-white dark:bg-surface-900 text-gray-800 dark:text-surface-100 font-semibold cursor-pointer hover:bg-surface-50 dark:hover:bg-surface-800 transition-all select-none w-[130px] h-[28px]"
+                  >
+                    <span class="truncate">{{ formatRole(member.projectRole) }}</span>
+                    <i class="pi pi-chevron-down text-[10px] opacity-60 flex-shrink-0"></i>
+                  </button>
+                  <p-popover #rolePop appendTo="body" styleClass="!p-0">
+                    <div class="pop-list w-36">
+                      @for (opt of roleOptions; track opt.value) {
+                        <div
+                          (click)="onRoleChange(member, opt.value); rolePop.hide()"
+                          class="pop-item"
+                          [class.selected]="member.projectRole === opt.value"
+                        >
+                          {{ opt.label }}
+                        </div>
+                      }
+                    </div>
+                  </p-popover>
                 } @else {
                   <span class="inline-flex items-center rounded-md bg-gray-100 dark:bg-surface-700 px-2.5 py-0.5 text-xs font-semibold text-gray-600 dark:text-surface-300">
                     {{ formatRole(member.projectRole) }}
@@ -148,12 +160,27 @@ import { MemberResponse, ProjectRole } from '@mpm/shared-types';
           <!-- Role Field -->
           <div class="flex flex-col gap-1.5">
             <label class="font-semibold text-gray-700 dark:text-surface-200">Vai trò</label>
-            <p-select
-              [options]="roleOptions"
-              [(ngModel)]="newMemberRole"
-              optionLabel="label"
-              optionValue="value"
-            ></p-select>
+            <button
+              type="button"
+              (click)="addRolePop.toggle($event)"
+              class="w-full flex items-center justify-between gap-2 px-3 py-2 text-sm border border-surface-200 dark:border-surface-700 rounded-lg bg-white dark:bg-surface-900 text-gray-800 dark:text-surface-100 font-semibold cursor-pointer hover:bg-surface-50 dark:hover:bg-surface-800 transition-all select-none h-[38px]"
+            >
+              <span class="truncate">{{ formatRole(newMemberRole) }}</span>
+              <i class="pi pi-chevron-down text-xs opacity-60 flex-shrink-0"></i>
+            </button>
+            <p-popover #addRolePop appendTo="body" styleClass="!p-0">
+              <div class="pop-list w-48">
+                @for (opt of roleOptions; track opt.value) {
+                  <div
+                    (click)="newMemberRole = opt.value; addRolePop.hide()"
+                    class="pop-item"
+                    [class.selected]="newMemberRole === opt.value"
+                  >
+                    {{ opt.label }}
+                  </div>
+                }
+              </div>
+            </p-popover>
           </div>
         </p-fluid>
 

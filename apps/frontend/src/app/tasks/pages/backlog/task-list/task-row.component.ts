@@ -10,6 +10,7 @@ import { LayoutService } from '../../../../layout/services/layout.service';
 import { TaskStore } from '../../../state/task.store';
 import { ProjectStore } from '../../../../projects/state/project.store';
 import { PriorityConfigService } from '../../../services/priority-config.service';
+import { SprintService } from '../../../../projects/sprints/services/sprint.service';
 
 const TYPE_CONFIG = {
   epic: { icon: 'pi pi-bolt', color: '#8B5CF6' },
@@ -23,12 +24,15 @@ const AVATAR_PALETTE = [
   ['#FEF3C7', '#92400E'], ['#FCE7F3', '#9D174D'], ['#FFE4E6', '#9F1239']
 ];
 
+import { IconDisplayComponent } from '../../../../shared/components/icon-display/icon-display.component';
+
 @Component({
   selector: 'app-task-row',
   standalone: true,
   imports: [
     CommonModule, FormsModule, DragDropModule,
-    ButtonModule, CheckboxModule, TooltipModule
+    ButtonModule, CheckboxModule, TooltipModule,
+    IconDisplayComponent
   ],
   styles: [`
     :host { display: flex; align-items: center; width: 100%; }
@@ -124,6 +128,13 @@ const AVATAR_PALETTE = [
         }
       </div>
     }
+    @if (displayProps.showSprint !== false && task.sprintId && sprintName(task.sprintId)) {
+      <span class="inline-flex items-center gap-1 text-xs px-1.5 py-px rounded bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-900 text-indigo-600 dark:text-indigo-400 max-w-[96px] flex-shrink-0 mr-2 cursor-default"
+            [pTooltip]="'Sprint: ' + sprintName(task.sprintId)">
+        <app-icon-display [icon]="sprintIcon()" class="text-[10px] flex-shrink-0"></app-icon-display>
+        <span class="truncate" style="max-width:80px">{{ sprintName(task.sprintId) }}</span>
+      </span>
+    }
     @if (displayProps.showEstimate && task.estimateValue != null) {
       <span class="flex items-center gap-0.5 text-xs text-gray-400 dark:text-surface-500 flex-shrink-0 mr-2" pTooltip="Estimate"><i class="pi pi-hourglass text-[10px]"></i>{{ task.estimateValue }}</span>
     }
@@ -151,6 +162,15 @@ export class TaskRowComponent {
   private readonly taskStore = inject(TaskStore);
   private readonly projectStore = inject(ProjectStore);
   private readonly priorityConfigService = inject(PriorityConfigService);
+  private readonly sprintService = inject(SprintService);
+
+  protected sprintName(sprintId: string): string | null {
+    return this.sprintService.sprintById().get(sprintId)?.name ?? null;
+  }
+
+  protected sprintIcon(): string {
+    return this.sprintService.projectSettings()?.icon ?? 'pi-flag';
+  }
 
   @Input({ required: true }) task!: TaskListItem;
   @Input() depth = 0;

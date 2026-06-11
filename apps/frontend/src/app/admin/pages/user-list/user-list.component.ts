@@ -2,7 +2,7 @@ import { Component, OnInit, inject, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TableModule } from 'primeng/table';
-import { SelectModule } from 'primeng/select';
+import { PopoverModule } from 'primeng/popover';
 import { ButtonModule } from 'primeng/button';
 import { AvatarModule } from 'primeng/avatar';
 import { FluidModule } from 'primeng/fluid';
@@ -18,7 +18,7 @@ import { AuthService } from '../../../auth/services/auth.service';
     CommonModule,
     FormsModule,
     TableModule,
-    SelectModule,
+    PopoverModule,
     ButtonModule,
     AvatarModule,
     FluidModule,
@@ -44,16 +44,16 @@ import { AuthService } from '../../../auth/services/auth.service';
         <!-- Search and statistics -->
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <p-fluid class="block w-full md:max-w-md">
-            <span class="p-input-icon-left">
-              <i class="pi pi-search text-gray-400"></i>
+            <div class="relative w-full">
+              <i class="pi pi-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-surface-500 text-sm"></i>
               <input
                 type="text"
                 pInputText
                 [(ngModel)]="searchTerm"
                 placeholder="Tìm theo tên hoặc email..."
-                class="w-full text-sm"
+                class="w-full text-sm !pl-9"
               />
-            </span>
+            </div>
           </p-fluid>
 
           <!-- Stats Quick View -->
@@ -118,15 +118,27 @@ import { AuthService } from '../../../auth/services/auth.service';
                 <!-- System Role Dropdown -->
                 <td class="py-2.5 px-4 overflow-visible">
                   @if (user.id !== currentUserId()) {
-                    <p-select
-                      [options]="roleOptions"
-                      [ngModel]="user.systemRole"
-                      (onChange)="onRoleChange(user, $event.value)"
-                      optionLabel="label"
-                      optionValue="value"
-                      class="text-xs py-0.5"
-                      [style]="{ width: '120px' }"
-                    ></p-select>
+                    <button
+                      type="button"
+                      (click)="rolePop.toggle($event)"
+                      class="flex items-center justify-between gap-1.5 px-2 py-1 text-xs border border-surface-200 dark:border-surface-700 rounded bg-white dark:bg-surface-800 text-gray-800 dark:text-surface-100 cursor-pointer hover:bg-surface-50 dark:hover:bg-surface-700 transition-all select-none w-[120px]"
+                    >
+                      <span class="truncate">{{ getRoleLabel(user.systemRole) }}</span>
+                      <i class="pi pi-chevron-down text-[9px] opacity-60 flex-shrink-0"></i>
+                    </button>
+                    <p-popover #rolePop appendTo="body" styleClass="!p-0">
+                      <div class="pop-list w-32">
+                        @for (opt of roleOptions; track opt.value) {
+                          <div
+                            (click)="onRoleChange(user, opt.value); rolePop.hide()"
+                            class="pop-item"
+                            [class.selected]="user.systemRole === opt.value"
+                          >
+                            {{ opt.label }}
+                          </div>
+                        }
+                      </div>
+                    </p-popover>
                   } @else {
                     <span class="inline-flex items-center rounded-md bg-indigo-50 dark:bg-indigo-950/40 px-2.5 py-0.5 text-xs font-semibold text-indigo-700 dark:text-indigo-400">
                       {{ user.systemRole }}
@@ -243,6 +255,11 @@ export class UserListComponent implements OnInit {
   readonly activeAdminCount = computed(() => {
     return this.users().filter((u) => u.systemRole === 'Admin' && u.isActive).length;
   });
+
+  getRoleLabel(role: string): string {
+    const found = this.roleOptions.find((o) => o.value === role);
+    return found ? found.label : role;
+  }
 
   ngOnInit(): void {
     this.loadUsers();

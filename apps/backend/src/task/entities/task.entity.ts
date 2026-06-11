@@ -79,6 +79,9 @@ export class Task {
   @Column({ name: 'cycle_id', type: 'uuid', nullable: true })
   cycleId!: string | null;
 
+  @Column({ name: 'sprint_id', type: 'uuid', nullable: true })
+  sprintId!: string | null;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 
