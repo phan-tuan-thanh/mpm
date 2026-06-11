@@ -9,6 +9,52 @@ Tối ưu task detail cho việc **đọc nội dung mạch lạc**: mặc đị
 sạch (không toolbar, không viền input), chỉ chuyển sang edit khi người dùng chủ động —
 theo mô hình per-section của Notion/Linear, không có nút gạt Xem/Sửa toàn cục.
 
+## User Stories
+
+### US-1: Đọc mô tả task sạch sẽ
+**Là** thành viên dự án, **tôi muốn** mở task detail và đọc mô tả như một trang tài liệu
+(không toolbar, không khung soạn thảo), **để** nắm nội dung công việc nhanh và không bị
+phân tâm bởi các control chỉnh sửa.
+
+Tiêu chí chấp nhận:
+- [ ] Mở task detail → mô tả hiển thị dạng đọc: không toolbar, không viền input.
+- [ ] Mọi định dạng giữ nguyên như khi soạn: màu chữ, highlight, căn lề, font, ảnh đã
+      resize, bảng, checklist. (Ngoại lệ duy nhất: code block không có màu cú pháp.)
+- [ ] Bôi đen để copy nội dung không làm bật chế độ sửa.
+- [ ] Click link trong mô tả → mở tab mới, không bật chế độ sửa.
+- [ ] Panel mở nhanh hơn hiện tại (không khởi tạo editor khi chỉ đọc).
+
+### US-2: Chuyển sang sửa khi cần
+**Là** thành viên dự án, **tôi muốn** click vào mô tả (hoặc nút bút chì) để sửa, có nút
+Lưu/Hủy rõ ràng, **để** chỉnh nội dung một cách chủ động mà không sợ lưu nhầm.
+
+Tiêu chí chấp nhận:
+- [ ] Hover vùng mô tả → nền đổi nhẹ + hiện nút bút chì góc phải.
+- [ ] Click nội dung hoặc nút bút chì → editor đầy đủ toolbar xuất hiện, focus sẵn.
+- [ ] Có nút Lưu / Hủy dưới editor; `Ctrl+Enter` = Lưu, `Esc` = Hủy.
+- [ ] Click ra ngoài KHÔNG tự lưu, KHÔNG thoát chế độ sửa.
+- [ ] Hủy khi có thay đổi → hỏi xác nhận "Bỏ thay đổi chưa lưu?".
+- [ ] Bấm Esc khi đang sửa chỉ hủy sửa, KHÔNG đóng panel.
+- [ ] Lưu thất bại → báo lỗi, nội dung đang gõ còn nguyên, bấm Lưu lại được.
+- [ ] Mô tả trống → hiện "Thêm mô tả…", click vào sửa ngay.
+
+### US-3: Tick checklist ngay khi đọc
+**Là** thành viên dự án, **tôi muốn** tick/bỏ tick các mục checklist trong mô tả ngay ở
+chế độ đọc, **để** cập nhật tiến độ nhanh mà không phải vào chế độ sửa.
+
+Tiêu chí chấp nhận:
+- [ ] Click checkbox trong mô tả ở chế độ đọc → trạng thái đổi ngay và được lưu.
+- [ ] Lưu thất bại → checkbox trở về trạng thái cũ + báo lỗi.
+- [ ] Tick checkbox không làm bật chế độ sửa.
+
+### US-4: Đọc comment đồng nhất (liên quan thiết kế comment)
+**Là** thành viên dự án, **tôi muốn** nội dung comment hiển thị cùng kiểu đọc sạch như
+mô tả, **để** trải nghiệm đọc thống nhất trong toàn task detail.
+
+Tiêu chí chấp nhận:
+- [ ] Comment render tĩnh bằng cùng viewer, mọi định dạng giữ nguyên.
+- [ ] Bấm Sửa trong menu ⋯ mới chuyển comment đó thành editor với Lưu/Hủy.
+
 ## Hiện trạng
 
 - Title (`task-title-inline`): đã có pattern display/edit, click để sửa — giữ nguyên.
@@ -39,11 +85,14 @@ theo mô hình per-section của Notion/Linear, không có nút gạt Xem/Sửa 
 `@tiptap/extension-color` + `text-style` sinh ra (`style="color: …"`), phá vỡ cam kết
 "đọc và sửa nhìn giống hệt nhau". Thay vào đó dùng **DOMPurify** (đã có trong
 dependencies frontend) với allowlist khớp schema TipTap — chốt danh sách:
-`class`, `style` (color/background-color), `data-type`, `data-checked`, `href`,
-`target`, `rel`, `src`, `alt`, `title`, `colspan`/`rowspan` (table), và `type`/`checked`/
-`disabled` trên `<input>` (taskItem). Sau sanitize mới `bypassSecurityTrustHtml`.
-Viết unit test khóa allowlist này (script/iframe/onerror/`javascript:` bị loại,
-style màu và `checked` được giữ).
+`class`, `style` (giới hạn property: `color`, `background-color`, `text-align`,
+`font-family` — khớp các extension Color, Highlight multicolor, TextAlign, FontFamily
+đang bật trong rte-extensions.ts), `data-type`, `data-checked`, `href`, `target`,
+`rel`, `src`, `alt`, `title`, `width`/`height` (ảnh đã resize), `colspan`/`rowspan`
+(table), và `type`/`checked`/`disabled` trên `<input>` (taskItem). Tag `<mark>`
+(Highlight) phải được giữ. Sau sanitize mới `bypassSecurityTrustHtml`.
+Viết unit test khóa allowlist này (script/iframe/onerror/`javascript:` bị loại;
+style màu, `text-align`, `font-family`, `checked`, `<mark>`, `width` được giữ).
 
 **Link ra ngoài**: dùng DOMPurify hook (`afterSanitizeAttributes`) ép mọi `<a>` thành
 `target="_blank" rel="noopener noreferrer"` — nội dung đọc nằm trong panel, mở link đè
@@ -129,6 +178,10 @@ khác không tự nhảy — tránh mất dữ liệu.
 - Doc JSON chứa node không có trong bộ extensions (dữ liệu cũ/lỗi) → `generateHTML`
   throw: bọc try/catch, fallback hiển thị thông báo "Không hiển thị được mô tả, bấm để
   sửa" thay vì vỡ panel.
+- **Code block không có syntax highlight ở chế độ đọc** (khác biệt có chủ đích ở v1):
+  `CodeBlockLowlight` tô màu bằng decoration của editor lúc runtime, `generateHTML` chỉ
+  xuất `<pre><code>` thuần. Chấp nhận code đen trắng khi đọc — không chạy lowlight thủ
+  công (công sức không xứng giá trị). Đây KHÔNG phải bug.
 
 ## Testing
 
