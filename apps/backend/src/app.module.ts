@@ -8,6 +8,7 @@ import { ProjectModule } from './project/project.module';
 import { AuditModule } from './audit/audit.module';
 import { AdminModule } from './admin/admin.module';
 import { TaskModule } from './task/task.module';
+import { SprintModule } from './sprint/sprint.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { TaskModule } from './task/task.module';
     AuditModule,
     AdminModule,
     TaskModule,
+    SprintModule,
   ],
 })
 export class AppModule {}

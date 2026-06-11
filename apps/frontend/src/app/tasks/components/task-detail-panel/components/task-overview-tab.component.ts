@@ -1,9 +1,9 @@
 import { Component, Input, Output, EventEmitter, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { SelectModule } from 'primeng/select';
+import { PopoverModule } from 'primeng/popover';
 import { DatePickerModule } from 'primeng/datepicker';
-import { InputNumberModule } from 'primeng/inputnumber';
+import { SliderModule } from 'primeng/slider';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { TooltipModule } from 'primeng/tooltip';
 import { TaskAttachmentsComponent } from './task-attachments.component';
@@ -22,7 +22,7 @@ const PRIORITY_OPTIONS = [
   standalone: true,
   selector: 'app-task-overview-tab',
   imports: [
-    CommonModule, FormsModule, SelectModule, DatePickerModule, InputNumberModule,
+    CommonModule, FormsModule, PopoverModule, DatePickerModule, SliderModule,
     MultiSelectModule, TooltipModule, TaskAttachmentsComponent, TaskLinksComponent, RichTextEditorComponent,
   ],
   template: `
@@ -30,13 +30,55 @@ const PRIORITY_OPTIONS = [
       <div class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm p-2">
         <div>
           <label class="text-xs text-gray-500 uppercase tracking-wide mb-1 block">State</label>
-          <p-select [options]="stateOptions" [(ngModel)]="editStateId" optionLabel="name" optionValue="id"
-            placeholder="Chọn state" styleClass="w-full text-sm" (ngModelChange)="saveField.emit({ field: 'stateId', value: $event })" />
+          <button
+            type="button"
+            (click)="statePop.toggle($event)"
+            class="w-full flex items-center justify-between gap-2 px-3 py-2 text-sm border border-surface-200 dark:border-surface-700 rounded-lg bg-white dark:bg-surface-900 text-gray-800 dark:text-surface-100 font-semibold cursor-pointer hover:bg-surface-50 dark:hover:bg-surface-800 transition-all select-none h-[38px]"
+          >
+            <span class="flex items-center gap-2 truncate">
+              <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" [style.background-color]="getStateColor(editStateId)"></span>
+              <span>{{ getStateName(editStateId) }}</span>
+            </span>
+            <i class="pi pi-chevron-down text-xs opacity-60 flex-shrink-0"></i>
+          </button>
+          <p-popover #statePop appendTo="body" styleClass="!p-0">
+            <div class="pop-list w-48 max-h-60 overflow-y-auto">
+              @for (s of stateOptions; track s.id) {
+                <div
+                  (click)="editStateId = s.id; saveField.emit({ field: 'stateId', value: s.id }); statePop.hide()"
+                  class="pop-item flex items-center gap-2"
+                  [class.selected]="editStateId === s.id"
+                >
+                  <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" [style.background-color]="s.color"></span>
+                  <span>{{ s.name }}</span>
+                </div>
+              }
+            </div>
+          </p-popover>
         </div>
         <div>
           <label class="text-xs text-gray-500 uppercase tracking-wide mb-1 block">Priority</label>
-          <p-select [options]="priorityOptions" [(ngModel)]="editPriority" optionLabel="label" optionValue="value"
-            placeholder="Chọn priority" styleClass="w-full text-sm" (ngModelChange)="saveField.emit({ field: 'priority', value: $event })" />
+          <button
+            type="button"
+            (click)="priorityPop.toggle($event)"
+            class="w-full flex items-center justify-between gap-2 px-3 py-2 text-sm border border-surface-200 dark:border-surface-700 rounded-lg bg-white dark:bg-surface-900 text-gray-800 dark:text-surface-100 font-semibold cursor-pointer hover:bg-surface-50 dark:hover:bg-surface-800 transition-all select-none h-[38px]"
+          >
+            <span class="truncate">{{ getPriorityLabel(editPriority) }}</span>
+            <i class="pi pi-chevron-down text-xs opacity-60 flex-shrink-0"></i>
+          </button>
+          <p-popover #priorityPop appendTo="body" styleClass="!p-0">
+            <div class="pop-list w-40">
+              @for (p of priorityOptions; track p.value) {
+                <div
+                  (click)="editPriority = p.value; saveField.emit({ field: 'priority', value: p.value }); priorityPop.hide()"
+                  class="pop-item"
+                  [class.selected]="editPriority === p.value"
+                >
+                  {{ p.label }}
+                </div>
+              }
+            </div>
+          </p-popover>
         </div>
         <div class="col-span-2">
           <label class="text-xs text-gray-500 uppercase tracking-wide mb-1 block">Assignees</label>
@@ -109,9 +151,17 @@ const PRIORITY_OPTIONS = [
           </p-multiselect>
         </div>
         <div>
-          <label class="text-xs text-gray-500 uppercase tracking-wide mb-1 block">Estimate</label>
-          <p-inputnumber [(ngModel)]="editEstimate" [min]="0" styleClass="w-full text-sm"
-            (onBlur)="saveField.emit({ field: 'estimateValue', value: editEstimate })" />
+          <label class="text-xs text-gray-500 uppercase tracking-wide mb-1 block">Estimate: {{ editEstimate || 0 }} pts</label>
+          <div class="flex items-center gap-2 h-[38px] px-2 border border-surface-200 dark:border-surface-700 rounded-lg bg-white dark:bg-surface-900">
+            <p-slider 
+              [ngModel]="editEstimate || 0" 
+              (ngModelChange)="editEstimate = $event; saveField.emit({ field: 'estimateValue', value: $event })"
+              [min]="0" 
+              [max]="20" 
+              [step]="0.5" 
+              class="w-full flex-1"
+            ></p-slider>
+          </div>
         </div>
         <div>
           <label class="text-xs text-gray-500 uppercase tracking-wide mb-1 block">Bắt đầu</label>
@@ -242,6 +292,21 @@ export class TaskOverviewTabComponent {
 
   protected formatDateToISO(date: Date | null): string | null {
     return date ? date.toISOString().split('T')[0] : null;
+  }
+
+  getStateName(stateId: string): string {
+    const found = this.stateOptions.find((s) => s.id === stateId);
+    return found ? found.name : 'Chọn state';
+  }
+
+  getStateColor(stateId: string): string {
+    const found = this.stateOptions.find((s) => s.id === stateId);
+    return found ? found.color : '#9CA3AF';
+  }
+
+  getPriorityLabel(priority: string): string {
+    const found = this.priorityOptions.find((p) => p.value === priority);
+    return found ? found.label : 'Chọn priority';
   }
 
   protected onBlurDescription(): void {

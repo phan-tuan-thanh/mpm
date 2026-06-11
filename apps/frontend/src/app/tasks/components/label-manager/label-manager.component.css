@@ -125,8 +125,8 @@
   line-height: 18px;
 }
 .mode-btn + .mode-btn { border-left: 1px solid var(--surface-border); }
-.mode-btn.active { background: rgba(99,102,241,0.12); color: #6366f1; }
-:host-context(.dark) .mode-btn.active { background: rgba(99,102,241,0.22); color: #818cf8; }
+.mode-btn.active { background: rgba(99,102,241,0.12); color: var(--p-primary-color); }
+:host-context(.dark) .mode-btn.active { background: rgba(99,102,241,0.22); color: var(--p-primary-400); }
 
 .mode-badge {
   font-size: 10px;
@@ -136,9 +136,9 @@
   flex-shrink: 0;
   letter-spacing: 0.02em;
 }
-.mode-badge--single { background: rgba(99,102,241,0.08); color: #6366f1; }
+.mode-badge--single { background: rgba(99,102,241,0.08); color: var(--p-primary-color); }
 .mode-badge--multi  { background: rgba(245,158,11,0.1);  color: #d97706; }
-:host-context(.dark) .mode-badge--single { background: rgba(99,102,241,0.18); color: #818cf8; }
+:host-context(.dark) .mode-badge--single { background: rgba(99,102,241,0.18); color: var(--p-primary-400); }
 :host-context(.dark) .mode-badge--multi  { background: rgba(245,158,11,0.15); color: #fbbf24; }
 
 .create-card {
@@ -158,7 +158,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.09em;
-  color: #6366f1;
+  color: var(--p-primary-color);
 }
 :host-context(.dark) .create-card-header { background: rgba(99,102,241,0.12); }
 .create-card-body { padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
@@ -205,7 +205,7 @@
   background: transparent;
 }
 .color-dot:hover { transform: scale(1.18); }
-.color-dot.selected { border-color: #6366f1; box-shadow: 0 0 0 2.5px rgba(99,102,241,0.3); }
+.color-dot.selected { border-color: var(--p-primary-color); box-shadow: 0 0 0 2.5px rgba(99,102,241,0.3); }
 .color-dot-custom {
   background: var(--surface-100, #f3f4f6) !important;
   border-style: dashed !important;
@@ -240,9 +240,9 @@
   line-height: 18px;
 }
 .filter-chip:hover { background: var(--surface-100, #f3f4f6); color: var(--text-color); }
-.filter-chip.active { background: rgba(99,102,241,0.12); color: #6366f1; border-color: rgba(99,102,241,0.3); }
+.filter-chip.active { background: rgba(99,102,241,0.12); color: var(--p-primary-color); border-color: rgba(99,102,241,0.3); }
 :host-context(.dark) .filter-chip:hover { background: var(--surface-700, #334155); }
-:host-context(.dark) .filter-chip.active { background: rgba(99,102,241,0.22); color: #818cf8; border-color: rgba(99,102,241,0.4); }
+:host-context(.dark) .filter-chip.active { background: rgba(99,102,241,0.22); color: var(--p-primary-400); border-color: rgba(99,102,241,0.4); }
 
 .icon-btn {
   width: 26px;

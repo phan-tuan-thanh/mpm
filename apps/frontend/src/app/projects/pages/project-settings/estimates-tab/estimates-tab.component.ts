@@ -5,7 +5,8 @@ import { AuthService } from '../../../../auth/services/auth.service';
 import { CommonModule } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { FluidModule } from 'primeng/fluid';
-import { SelectModule } from 'primeng/select';
+import { PopoverModule } from 'primeng/popover';
+import { SliderModule } from 'primeng/slider';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { FormsModule } from '@angular/forms';
 import { EstimateType } from '@mpm/shared-types';
@@ -17,16 +18,12 @@ import { EstimateType } from '@mpm/shared-types';
     CommonModule,
     ButtonModule,
     FluidModule,
-    SelectModule,
+    PopoverModule,
+    SliderModule,
     FormsModule,
   ],
   template: `
     <div class="space-y-5">
-      <div>
-        <h2 class="text-base font-bold text-gray-900 dark:text-surface-0">Ước lượng (Estimates)</h2>
-        <p class="text-xs text-gray-400 dark:text-surface-500 mt-0.5">Thiết lập cách nhóm ước lượng khối lượng công việc cho dự án.</p>
-      </div>
-
       <!-- Section 1: Estimate Type Selection -->
       <div class="space-y-3">
         <label class="text-sm font-semibold text-gray-700 dark:text-surface-200">Loại ước lượng</label>
@@ -83,15 +80,27 @@ import { EstimateType } from '@mpm/shared-types';
         <div class="bg-gray-50 dark:bg-surface-800 rounded-xl p-4 border border-gray-100 dark:border-surface-700 space-y-3">
           <label for="template" class="text-sm font-semibold text-gray-700 dark:text-surface-200">Mẫu giá trị gợi ý (Templates)</label>
           <div class="flex gap-3">
-            <p-select
-              id="template"
-              [options]="getTemplates(tempType)"
-              [(ngModel)]="selectedTemplate"
-              optionLabel="label"
-              optionValue="value"
-              placeholder="Chọn mẫu có sẵn"
-              class="w-64"
-            ></p-select>
+            <button
+              type="button"
+              (click)="tplPop.toggle($event)"
+              class="w-64 flex items-center justify-between gap-2 px-3 py-2 text-sm border border-surface-200 dark:border-surface-700 rounded-lg bg-white dark:bg-surface-900 text-gray-800 dark:text-surface-100 font-semibold cursor-pointer hover:bg-surface-50 dark:hover:bg-surface-800 transition-all select-none h-[38px]"
+            >
+              <span class="truncate">{{ getTemplateLabel() }}</span>
+              <i class="pi pi-chevron-down text-xs opacity-60 flex-shrink-0"></i>
+            </button>
+            <p-popover #tplPop appendTo="body" styleClass="!p-0">
+              <div class="pop-list w-64 max-h-60 overflow-y-auto">
+                @for (opt of getTemplates(tempType); track opt.value) {
+                  <div
+                    (click)="selectedTemplate = opt.value; tplPop.hide()"
+                    class="pop-item"
+                    [class.selected]="selectedTemplate === opt.value"
+                  >
+                    {{ opt.label }}
+                  </div>
+                }
+              </div>
+            </p-popover>
             <button
               pButton
               type="button"
@@ -143,16 +152,30 @@ import { EstimateType } from '@mpm/shared-types';
       <div class="bg-white dark:bg-surface-900 rounded-xl border border-gray-200 dark:border-surface-800 p-5 space-y-4">
         <h3 class="text-sm font-bold text-gray-800 dark:text-surface-100 border-b border-gray-50 dark:border-surface-800 pb-2">Xem trước (Preview)</h3>
         <div class="max-w-md border border-gray-100 dark:border-surface-700 rounded-xl p-4 bg-gray-50/50 dark:bg-surface-800 space-y-3">
-          <div class="flex items-center gap-3">
-            <span class="text-xs font-bold text-gray-500 dark:text-surface-400 w-24">Task Estimate:</span>
-            <div class="flex-1">
-              <select class="w-full border border-gray-200 dark:border-surface-700 rounded-lg p-2 text-sm bg-white dark:bg-surface-800 font-semibold text-gray-800 dark:text-surface-100">
-                <option value="">-- Chọn độ phức tạp --</option>
-                @for (val of tempValues; track val) {
-                  <option [value]="val">{{ val }} {{ tempType === EstimateType.TIME ? 'h' : '' }}</option>
-                }
-              </select>
+          <div class="flex flex-col gap-2">
+            <div class="flex justify-between items-center text-xs font-bold text-gray-500 dark:text-surface-400">
+              <span>Task Estimate:</span>
+              <span class="text-sm text-indigo-600 dark:text-indigo-400 font-extrabold">{{ getMockupLabel() }}</span>
             </div>
+
+            @if (tempValues.length > 0) {
+              <div class="flex items-center h-[34px] px-3 border border-surface-200 dark:border-surface-700 rounded bg-white dark:bg-surface-900 mt-1">
+                <p-slider
+                  [ngModel]="getMockupIndex()"
+                  (ngModelChange)="onMockupSliderChange($event)"
+                  [min]="0"
+                  [max]="tempValues.length - 1"
+                  [step]="1"
+                  class="w-full"
+                />
+              </div>
+              <div class="flex justify-between text-[10px] text-gray-400 mt-1 px-1">
+                <span>{{ tempValues[0] }}{{ tempType === EstimateType.TIME ? 'h' : '' }}</span>
+                <span>{{ tempValues[tempValues.length - 1] }}{{ tempType === EstimateType.TIME ? 'h' : '' }}</span>
+              </div>
+            } @else {
+              <p class="text-xs text-gray-400 italic">Thêm giá trị để xem trước thanh trượt.</p>
+            }
           </div>
         </div>
       </div>
@@ -196,6 +219,34 @@ export class EstimatesTabComponent implements OnInit {
   newValueInput = '';
   selectedTemplate: string | null = null;
   readonly isSubmitting = signal<boolean>(false);
+  readonly mockupValue = signal<any>(null);
+
+  getMockupLabel(): string {
+    const val = this.mockupValue();
+    if (val === null || val === undefined) return '--';
+    return `${val}${this.tempType === EstimateType.TIME ? 'h' : ''}`;
+  }
+
+  getMockupIndex(): number {
+    const val = this.mockupValue();
+    if (val === null || val === undefined) return 0;
+    const idx = this.tempValues.indexOf(val);
+    return idx >= 0 ? idx : 0;
+  }
+
+  onMockupSliderChange(index: number): void {
+    if (this.tempValues[index] !== undefined) {
+      this.mockupValue.set(this.tempValues[index]);
+    }
+  }
+
+  resetMockupValue(): void {
+    if (this.tempValues.length > 0) {
+      this.mockupValue.set(this.tempValues[0]);
+    } else {
+      this.mockupValue.set(null);
+    }
+  }
 
   readonly taskCount = computed(() => {
     const stats = this.projectStore.currentProject()?.stateStats;
@@ -238,6 +289,12 @@ export class EstimatesTabComponent implements OnInit {
     }
     this.newValueInput = '';
     this.selectedTemplate = null;
+    this.resetMockupValue();
+  }
+
+  getTemplateLabel(): string {
+    const found = this.getTemplates(this.tempType).find((t) => t.value === this.selectedTemplate);
+    return found ? found.label : 'Chọn mẫu có sẵn';
   }
 
   selectType(type: EstimateType): void {
@@ -291,6 +348,7 @@ export class EstimatesTabComponent implements OnInit {
     } else if (this.selectedTemplate === 'difficulty') {
       this.tempValues = ['Easy', 'Medium', 'Hard'];
     }
+    this.resetMockupValue();
   }
 
   addValue(event: Event): void {
@@ -327,11 +385,13 @@ export class EstimatesTabComponent implements OnInit {
     }
 
     this.newValueInput = '';
+    this.resetMockupValue();
   }
 
   removeValue(index: number): void {
     if (this.isReadOnly()) return;
     this.tempValues.splice(index, 1);
+    this.resetMockupValue();
   }
 
   onSubmit(): void {

@@ -140,7 +140,7 @@ import type { ProjectModule, ModuleLifecycleStatus } from '@mpm/shared-types';
       (cancel)="onFormCancel()"
     />
 
-    <p-confirmDialog />
+    <p-confirmDialog appendTo="body" />
     <p-toast />
   `,
 })

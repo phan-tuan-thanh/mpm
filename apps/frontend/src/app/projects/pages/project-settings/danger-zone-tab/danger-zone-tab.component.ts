@@ -16,13 +16,7 @@ import { FormsModule } from '@angular/forms';
   selector: 'app-danger-zone-tab',
   imports: [CommonModule, ButtonModule, DialogModule, InputTextModule, FluidModule, FormsModule],
   template: `
-    <div class="space-y-4">
-
-      <!-- Header -->
-      <div>
-        <h2 class="text-base font-bold text-red-600 dark:text-red-400">Danger Zone</h2>
-        <p class="text-xs text-gray-400 dark:text-surface-500 mt-0.5">Các thao tác không thể hoàn tác đối với dự án này.</p>
-      </div>
+    <div class="space-y-5">
 
       @if (isReadOnly()) {
         <div class="rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 p-3 flex gap-2 text-xs text-amber-700 dark:text-amber-400 font-medium">
@@ -60,6 +54,7 @@ import { FormsModule } from '@angular/forms';
         [style]="{ width: '450px' }"
         [draggable]="false"
         [resizable]="false"
+        appendTo="body"
       >
         <div class="space-y-4 py-2 text-xs text-gray-600 dark:text-surface-300">
           <div class="rounded-lg bg-red-50 border border-red-100 p-3 text-red-700 flex gap-2">

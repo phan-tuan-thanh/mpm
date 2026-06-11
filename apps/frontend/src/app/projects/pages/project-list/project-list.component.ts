@@ -8,16 +8,18 @@ import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { InputTextModule } from 'primeng/inputtext';
 import { ButtonModule } from 'primeng/button';
-import { SelectModule } from 'primeng/select';
 import { DatePickerModule } from 'primeng/datepicker';
 import { SkeletonModule } from 'primeng/skeleton';
 import { FluidModule } from 'primeng/fluid';
+import { PopoverModule } from 'primeng/popover';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ProjectListItem, ProjectRole } from '@mpm/shared-types';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { FormsModule } from '@angular/forms';
 import { hasActiveFilters, buildQueryParams, parseQueryParams, formatProjectRole } from './project-filter.utils';
+
+import { IconDisplayComponent } from '../../../shared/components/icon-display/icon-display.component';
 
 @Component({
   standalone: true,
@@ -29,13 +31,61 @@ import { hasActiveFilters, buildQueryParams, parseQueryParams, formatProjectRole
     TagModule,
     InputTextModule,
     ButtonModule,
-    SelectModule,
+    PopoverModule,
     DatePickerModule,
     SkeletonModule,
     FluidModule,
     FormsModule,
+    IconDisplayComponent,
   ],
   templateUrl: './project-list.component.html',
+  styles: [`
+    :host ::ng-deep {
+      .p-datatable {
+        background: transparent !important;
+      }
+      .p-datatable-table-container {
+        background: transparent !important;
+      }
+      .p-datatable-thead > tr > th {
+        background: transparent !important;
+        color: inherit !important;
+      }
+      .p-datatable-tbody > tr {
+        background: transparent !important;
+        color: inherit !important;
+      }
+      .p-datatable-tbody > tr > td {
+        background: transparent !important;
+        color: inherit !important;
+      }
+      /* Uniform height for form fields and dropdown buttons */
+      .p-inputtext {
+        height: 38px !important;
+      }
+      .p-datepicker {
+        width: 100%;
+      }
+      /* Mimic Sakai/PrimeNG native input styling for custom dropdown buttons */
+      .pop-select-trigger {
+        background: var(--p-inputtext-background) !important;
+        border: 1px solid var(--p-inputtext-border-color) !important;
+        color: var(--p-inputtext-color) !important;
+        border-radius: var(--p-inputtext-border-radius, 6px) !important;
+        height: 38px !important;
+        padding: 0 0.75rem !important;
+        font-weight: 500 !important;
+        font-size: 0.875rem !important;
+        transition: border-color 0.2s, box-shadow 0.2s;
+      }
+      .pop-select-trigger:hover {
+        border-color: var(--p-inputtext-hover-border-color) !important;
+      }
+      .pop-select-trigger:focus, .pop-select-trigger:active {
+        border-color: var(--p-inputtext-focus-border-color) !important;
+      }
+    }
+  `],
 })
 export class ProjectListComponent implements OnInit, OnDestroy {
   readonly projectStore = inject(ProjectStore);

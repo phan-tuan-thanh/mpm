@@ -24,6 +24,7 @@ import { InlinePropertyEditorComponent } from '../inline-property-editor/inline-
 import { MetadataFooterComponent } from '../metadata-footer/metadata-footer.component';
 import { ParentNavigationComponent } from '../parent-navigation/parent-navigation.component';
 import { buildDetailFields, buildStructureFields, getTaskFieldValue } from './properties-sidebar.helpers';
+import type { SprintRef } from './properties-sidebar.helpers';
 
 /**
  * PropertiesSidebarComponent — Container cho toàn bộ sidebar properties
@@ -127,6 +128,9 @@ export class PropertiesSidebarComponent implements OnChanges {
   /** Danh sách modules */
   @Input() modules: ProjectModule[] = [];
 
+  /** Danh sách sprints (planning/active) cho dropdown gán sprint */
+  @Input() sprints: SprintRef[] = [];
+
   /** Danh sách tasks có thể chọn làm parent */
   @Input() availableParentTasks: TaskListItem[] = [];
 
@@ -157,6 +161,7 @@ export class PropertiesSidebarComponent implements OnChanges {
   private readonly _members = signal<MemberResponse[]>([]);
   private readonly _labels = signal<Label[]>([]);
   private readonly _modules = signal<ProjectModule[]>([]);
+  private readonly _sprints = signal<SprintRef[]>([]);
 
   /** "Chi tiết" section expanded state */
   readonly detailsExpanded = computed(() => this._collapseState()['details'] !== false);
@@ -169,9 +174,9 @@ export class PropertiesSidebarComponent implements OnChanges {
     return buildDetailFields(this._states(), this._members());
   });
 
-  /** PropertyFieldConfig array cho section "Cấu trúc" (Labels, Modules — Req 3.3) */
+  /** PropertyFieldConfig array cho section "Cấu trúc" (Labels, Modules, Sprint — Req 3.3) */
   readonly structureFields = computed<PropertyFieldConfig[]>(() => {
-    return buildStructureFields(this._labels(), this._modules());
+    return buildStructureFields(this._labels(), this._modules(), this._sprints());
   });
 
   // ─── Lifecycle ───────────────────────────────────────────────────────────
@@ -191,6 +196,9 @@ export class PropertiesSidebarComponent implements OnChanges {
     }
     if (changes['modules']) {
       this._modules.set(this.modules);
+    }
+    if (changes['sprints']) {
+      this._sprints.set(this.sprints);
     }
   }
 

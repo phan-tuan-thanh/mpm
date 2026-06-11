@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { DialogModule } from 'primeng/dialog';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
-import { SelectModule } from 'primeng/select';
+import { PopoverModule } from 'primeng/popover';
 import { DatePickerModule } from 'primeng/datepicker';
 import { MODULE_LIFECYCLE_STATUSES, type ProjectModule, type ModuleLifecycleStatus, type TiptapDoc } from '@mpm/shared-types';
 import { RichTextEditorComponent } from '../../../shared/components/rich-text-editor/rich-text-editor.component';
@@ -28,7 +28,7 @@ export interface ModuleFormData {
     DialogModule,
     ButtonModule,
     InputTextModule,
-    SelectModule,
+    PopoverModule,
     DatePickerModule,
     RichTextEditorComponent,
     ModuleTransitionSelectorComponent,
@@ -41,6 +41,7 @@ export interface ModuleFormData {
       [closable]="true"
       [style]="{ width: '500px' }"
       (onHide)="onCancel()"
+      appendTo="body"
     >
       <div class="flex flex-col gap-4 pt-2">
         <!-- Name -->
@@ -80,26 +81,35 @@ export interface ModuleFormData {
             />
           } @else {
             <!-- Create: chọn bất kỳ trong 7 trạng thái, mặc định 'planning' -->
-            <p-select
-              [options]="allStatusOptions"
-              [(ngModel)]="formData.status"
-              optionLabel="label"
-              optionValue="value"
-              placeholder="Chọn trạng thái"
+            <button
+              type="button"
+              (click)="statusPop.toggle($event)"
+              class="w-full flex items-center justify-between gap-2 px-3 py-1.5 text-sm border border-surface-200 dark:border-surface-700 rounded bg-white dark:bg-surface-900 text-gray-800 dark:text-surface-100 cursor-pointer hover:bg-surface-50 dark:hover:bg-surface-800 transition-all select-none"
             >
-              <ng-template #selectedItem let-item>
-                <span class="flex items-center gap-2">
-                  <i [class]="item.icon + ' text-xs'" [style.color]="item.color"></i>
-                  {{ item.label }}
-                </span>
-              </ng-template>
-              <ng-template #item let-item>
-                <span class="flex items-center gap-2">
-                  <i [class]="item.icon + ' text-xs'" [style.color]="item.color"></i>
-                  {{ item.label }}
-                </span>
-              </ng-template>
-            </p-select>
+              <div class="flex items-center gap-2 min-w-0">
+                @if (getSelectedStatusOption(); as opt) {
+                  <i [class]="opt.icon + ' text-xs'" [style.color]="opt.color"></i>
+                  <span class="truncate">{{ opt.label }}</span>
+                } @else {
+                  <span class="text-gray-400">Chọn trạng thái</span>
+                }
+              </div>
+              <i class="pi pi-chevron-down text-xs opacity-60 flex-shrink-0"></i>
+            </button>
+            <p-popover #statusPop appendTo="body" styleClass="!p-0">
+              <div class="pop-list w-64 max-h-56 overflow-y-auto">
+                @for (opt of allStatusOptions; track opt.value) {
+                  <div
+                    (click)="formData.status = opt.value; statusPop.hide()"
+                    class="pop-item flex items-center gap-2"
+                    [class.selected]="formData.status === opt.value"
+                  >
+                    <i [class]="opt.icon + ' text-xs'" [style.color]="opt.color"></i>
+                    <span>{{ opt.label }}</span>
+                  </div>
+                }
+              </div>
+            </p-popover>
           }
         </div>
 
@@ -116,6 +126,7 @@ export interface ModuleFormData {
               dateFormat="dd/mm/yy"
               placeholder="dd/mm/yyyy"
               [showClear]="true"
+              appendTo="body"
             />
           </div>
           <div class="flex flex-col gap-1">
@@ -130,6 +141,7 @@ export interface ModuleFormData {
               placeholder="dd/mm/yyyy"
               [showClear]="true"
               [minDate]="startDateValue!"
+              appendTo="body"
             />
           </div>
         </div>
@@ -170,6 +182,11 @@ export class ModuleFormComponent implements OnChanges {
     icon: STATUS_CONFIG[s].icon,
     color: STATUS_CONFIG[s].color,
   }));
+
+  getSelectedStatusOption(): any {
+    const status = this.formData.status;
+    return this.allStatusOptions.find((o) => o.value === status);
+  }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['visible'] && this.visible) {

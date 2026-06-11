@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, UnprocessableEntityException } from '@ne
 import { DataSource } from 'typeorm';
 import { Task, TaskType, TaskPriority } from './entities/task.entity';
 import { ProjectState } from '../project/entities/project-state.entity';
+import { Sprint } from '../sprint/entities/sprint.entity';
 import { ActivityService } from './activity/activity.service';
 import { AuditService } from '../audit/audit.service';
 import { AuthEvent } from '../auth/constants/auth-events';
@@ -36,6 +37,7 @@ export class TaskUpdateService {
       dueDate?: string | null;
       parentId?: string | null;
       isDraft?: boolean;
+      sprintId?: string | null;
     },
   ): Promise<Task> {
     let capturedChanges: Array<{ field: string; oldValue: string; newValue: string }> = [];
@@ -60,8 +62,14 @@ export class TaskUpdateService {
       await validateAssignees(em, projectId, dto.assigneeIds);
       if (dto.labelIds !== undefined) await validateLabels(em, projectId, dto.labelIds);
 
+      if (dto.sprintId) {
+        const sprint = await em.findOne(Sprint, { where: { id: dto.sprintId, projectId } });
+        if (!sprint) throw new UnprocessableEntityException('Sprint not found in this project');
+        if (sprint.status === 'completed') throw new UnprocessableEntityException('Cannot assign task to a completed sprint');
+      }
+
       const changes: Array<{ field: string; oldValue: string; newValue: string }> = [];
-      const fields: Array<keyof typeof dto> = ['title', 'description', 'type', 'priority', 'estimateValue', 'startDate', 'dueDate', 'parentId'];
+      const fields: Array<keyof typeof dto> = ['title', 'description', 'type', 'priority', 'estimateValue', 'startDate', 'dueDate', 'parentId', 'sprintId'];
       const taskAny = task as any;
 
       for (const field of fields) {

@@ -7,7 +7,7 @@ import { CommonModule } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
-import { SelectModule } from 'primeng/select';
+import { PopoverModule } from 'primeng/popover';
 import { FluidModule } from 'primeng/fluid';
 import { MessageService } from 'primeng/api';
 import { FormsModule } from '@angular/forms';
@@ -24,7 +24,7 @@ import { GROUP_ORDER, getGroupName, getGroupColor, getDefaultColor } from './sta
     ButtonModule,
     DialogModule,
     InputTextModule,
-    SelectModule,
+    PopoverModule,
     FluidModule,
     FormsModule,
     DragDropModule,
@@ -64,6 +64,11 @@ export class StatesTabComponent implements OnInit {
   migrationTargets: ProjectState[] = [];
   selectedMigrationTargetId: string | null = null;
   readonly isMigrating = signal<boolean>(false);
+
+  getMigrationTargetLabel(): string {
+    const found = this.migrationTargets.find((t) => t.id === this.selectedMigrationTargetId);
+    return found ? found.name : 'Chọn trạng thái đích';
+  }
 
   // Compute all states in a single list
   readonly allStatesList = computed(() => {

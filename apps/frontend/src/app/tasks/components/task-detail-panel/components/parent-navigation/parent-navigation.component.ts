@@ -10,7 +10,8 @@ import {
   SimpleChanges,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { SelectModule } from 'primeng/select';
+import { PopoverModule } from 'primeng/popover';
+import { InputTextModule } from 'primeng/inputtext';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -35,7 +36,8 @@ import { TYPE_CONFIG, filterValidParents } from './parent-navigation.helpers';
   selector: 'app-parent-navigation',
   imports: [
     FormsModule,
-    SelectModule,
+    PopoverModule,
+    InputTextModule,
     ButtonModule,
     TooltipModule,
     ConfirmDialogModule,
@@ -74,38 +76,36 @@ import { TYPE_CONFIG, filterValidParents } from './parent-navigation.helpers';
         ></button>
       } @else {
         <!-- Không có parent (Req 10.3) -->
-        @if (!dropdownVisible()) {
-          <div class="flex items-center gap-1.5">
-            <span class="text-sm text-gray-500 dark:text-surface-400">Không có</span>
-            <a
-              class="text-sm text-primary-600 dark:text-primary-400 hover:underline cursor-pointer"
-              (click)="showDropdown()"
-              (keydown.enter)="showDropdown()"
-              tabindex="0"
-            >
-              Thêm parent
-            </a>
-          </div>
-        } @else {
-          <!-- Searchable dropdown (Req 10.3) -->
-          <p-select
-            [options]="filteredTasks()"
-            [filter]="true"
-            filterBy="taskId,title"
-            [filterPlaceholder]="'Tìm task...'"
-            [placeholder]="'Chọn parent task...'"
-            optionLabel="title"
-            optionValue="id"
-            [showClear]="true"
-            [style]="{ width: '100%' }"
-            appendTo="body"
-            (onChange)="onParentSelected($event)"
-            (onHide)="onDropdownHide()"
-            [autoDisplayFirst]="false"
-            [autofocus]="true"
+        <div class="flex items-center gap-1.5">
+          <span class="text-sm text-gray-500 dark:text-surface-400">Không có</span>
+          <button
+            #addParentBtn
+            type="button"
+            class="text-sm text-primary-600 dark:text-primary-400 hover:underline cursor-pointer bg-transparent border-0 p-0 font-medium"
+            (click)="parentPop.toggle($event); showDropdown()"
           >
-            <ng-template #item let-item>
-              <div class="flex items-center gap-2">
+            Thêm parent
+          </button>
+        </div>
+
+        <p-popover #parentPop appendTo="body" styleClass="!p-0" (onHide)="onDropdownHide()">
+          <div class="p-2 border-b border-surface-100 dark:border-surface-800 bg-surface-50 dark:bg-surface-900">
+            <input
+              type="text"
+              pInputText
+              placeholder="Tìm parent task..."
+              class="w-full text-xs p-1"
+              [ngModel]="filterSearch()"
+              (ngModelChange)="filterSearch.set($event)"
+              (click)="$event.stopPropagation()"
+            />
+          </div>
+          <div class="pop-list w-80 max-h-60 overflow-y-auto">
+            @for (item of filteredAndSearchedTasks(); track item.id) {
+              <div
+                (click)="onParentSelected(item.id); parentPop.hide()"
+                class="pop-item flex items-center gap-2"
+              >
                 <i
                   class="text-xs"
                   [class]="getTypeIcon(item.type)"
@@ -114,21 +114,11 @@ import { TYPE_CONFIG, filterValidParents } from './parent-navigation.helpers';
                 <span class="text-xs font-mono text-gray-400">{{ item.taskId }}</span>
                 <span class="text-sm truncate">{{ item.title }}</span>
               </div>
-            </ng-template>
-
-            <ng-template #selectedItem let-item>
-              <div class="flex items-center gap-2" *ngIf="item">
-                <i
-                  class="text-xs"
-                  [class]="getTypeIcon(item.type)"
-                  [style.color]="getTypeColor(item.type)"
-                ></i>
-                <span class="text-xs font-mono">{{ item.taskId }}</span>
-                <span class="text-sm truncate">{{ item.title }}</span>
-              </div>
-            </ng-template>
-          </p-select>
-        }
+            } @empty {
+              <div class="p-3 text-xs text-gray-400 text-center">Không tìm thấy task</div>
+            }
+          </div>
+        </p-popover>
       }
     </div>
 
@@ -159,6 +149,9 @@ export class ParentNavigationComponent implements OnChanges {
   /** Trạng thái dropdown hiển thị */
   readonly dropdownVisible = signal(false);
 
+  /** Search text for filtering parent tasks */
+  readonly filterSearch = signal('');
+
   /** Signal lưu available tasks */
   private readonly _availableTasks = signal<TaskListItem[]>([]);
   private readonly _currentTaskType = signal<TaskType>('task');
@@ -172,6 +165,17 @@ export class ParentNavigationComponent implements OnChanges {
       this._currentTaskId(),
     ),
   );
+
+  /** Filtered and searched list of parent tasks */
+  readonly filteredAndSearchedTasks = computed(() => {
+    const search = this.filterSearch().toLowerCase().trim();
+    const tasks = this.filteredTasks();
+    if (!search) return tasks;
+    return tasks.filter((t) =>
+      t.taskId.toLowerCase().includes(search) ||
+      t.title.toLowerCase().includes(search)
+    );
+  });
 
   /** Icon & color cho parent hiện tại */
   readonly parentTypeIcon = computed(() => {
@@ -203,6 +207,7 @@ export class ParentNavigationComponent implements OnChanges {
   /** Hiển thị dropdown chọn parent */
   showDropdown(): void {
     this.dropdownVisible.set(true);
+    this.filterSearch.set('');
   }
 
   /** Khi user click vào parent link (Req 10.2) */
@@ -213,9 +218,10 @@ export class ParentNavigationComponent implements OnChanges {
   }
 
   /** Khi user chọn parent từ dropdown (Req 10.4) */
-  onParentSelected(event: { value: string | null }): void {
-    if (event.value) {
-      this.parentChanged.emit(event.value);
+  onParentSelected(event: { value: string | null } | string | null): void {
+    const value = (event && typeof event === 'object' && 'value' in event) ? event.value : event;
+    if (value) {
+      this.parentChanged.emit(value);
       this.dropdownVisible.set(false);
     }
   }

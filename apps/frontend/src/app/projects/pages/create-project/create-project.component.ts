@@ -7,7 +7,6 @@ import { AuthService } from '../../../auth/services/auth.service';
 import { CommonModule } from '@angular/common';
 import { InputTextModule } from 'primeng/inputtext';
 import { ButtonModule } from 'primeng/button';
-import { SelectModule } from 'primeng/select';
 import { FluidModule } from 'primeng/fluid';
 import { RadioButtonModule } from 'primeng/radiobutton';
 import { MessageService } from 'primeng/api';
@@ -17,7 +16,11 @@ import { FormsModule } from '@angular/forms';
 import { ProjectNetwork, StateTemplate, WorkspaceStateTemplate } from '@mpm/shared-types';
 import type { TiptapDoc } from '@mpm/shared-types';
 import { RichTextEditorComponent } from '../../../shared/components/rich-text-editor/rich-text-editor.component';
-import { COMMON_EMOJIS, TIMEZONE_OPTIONS, suggestProjectKey } from './create-project.constants';
+import { TIMEZONE_OPTIONS, suggestProjectKey } from './create-project.constants';
+import { PopoverModule } from 'primeng/popover';
+import { IconPickerPanelComponent } from '../../../shared/components/icon-picker-panel/icon-picker-panel.component';
+
+import { IconDisplayComponent } from '../../../shared/components/icon-display/icon-display.component';
 
 @Component({
   standalone: true,
@@ -27,11 +30,13 @@ import { COMMON_EMOJIS, TIMEZONE_OPTIONS, suggestProjectKey } from './create-pro
     RouterLink,
     InputTextModule,
     ButtonModule,
-    SelectModule,
     FluidModule,
     RadioButtonModule,
     FormsModule,
     RichTextEditorComponent,
+    PopoverModule,
+    IconPickerPanelComponent,
+    IconDisplayComponent,
   ],
   templateUrl: './create-project.component.html',
 })
@@ -59,10 +64,6 @@ export class CreateProjectComponent implements OnInit, OnDestroy {
   readonly workspaceTemplates = signal<WorkspaceStateTemplate[]>([]);
   readonly hasWorkspaceTemplates = computed(() => this.workspaceTemplates().length > 0);
 
-  // UI States
-  showEmojiPicker = signal<boolean>(false);
-  readonly commonEmojis = COMMON_EMOJIS;
-
   // Lead options computed (only current user for new projects)
   readonly leadOptions = computed(() => {
     const user = this.authService.currentUser();
@@ -74,6 +75,24 @@ export class CreateProjectComponent implements OnInit, OnDestroy {
 
   // Timezone options
   readonly timezoneOptions = TIMEZONE_OPTIONS;
+  readonly timezoneSearch = signal<string>('');
+  readonly filteredTimezoneOptions = computed(() => {
+    const query = this.timezoneSearch().toLowerCase().trim();
+    if (!query) return this.timezoneOptions;
+    return this.timezoneOptions.filter(
+      (o) => o.label.toLowerCase().includes(query) || o.value.toLowerCase().includes(query)
+    );
+  });
+
+  getTimezoneLabel(): string {
+    const found = this.timezoneOptions.find((o) => o.value === this.timezone);
+    return found ? found.label : 'Chọn múi giờ';
+  }
+
+  getLeadLabel(): string {
+    const found = this.leadOptions().find((o) => o.value === this.leadId);
+    return found ? found.label : 'Chọn người phụ trách';
+  }
 
   // Form States
   keyEditedByUser = false;
@@ -120,11 +139,6 @@ export class CreateProjectComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.keyCheckSubscription?.unsubscribe();
-  }
-
-  selectEmoji(e: string): void {
-    this.emoji = e;
-    this.showEmojiPicker.set(false);
   }
 
   onNameChange(val: string): void {

@@ -91,7 +91,7 @@ const PRIORITY_OPTIONS: PriorityOption[] = [
         <i
           class="pi pi-calendar"
           style="font-size: 12px"
-          [style.color]="selectedDueDate() ? '#6366f1' : undefined"
+          [style.color]="selectedDueDate() ? 'var(--p-primary-color)' : undefined"
         ></i>
         @if (selectedDueDate()) {
           <span class="text-[10px] text-indigo-500 font-medium ml-0.5">
@@ -227,7 +227,7 @@ const PRIORITY_OPTIONS: PriorityOption[] = [
       width: 16px;
       height: 16px;
       border-radius: 50%;
-      background: #6366f1;
+      background: var(--p-primary-color);
       color: #fff;
       font-size: 9px;
       font-weight: 600;

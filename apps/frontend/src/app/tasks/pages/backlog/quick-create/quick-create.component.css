@@ -75,7 +75,7 @@
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: #6366f1;
+  background: var(--p-primary-color);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -102,10 +102,10 @@
   transition: background 0.12s;
   text-align: left;
 }
-.pop-item:hover { background: var(--surface-50, #f9fafb); }
-.pop-item.selected { background: #eef2ff; color: #4f46e5; }
-:host-context(.dark) .pop-item:hover { background: var(--surface-800, #1e293b); }
-:host-context(.dark) .pop-item.selected { background: rgba(99, 102, 241, 0.2); color: #a5b4fc; }
+/* Dùng PrimeNG design tokens — tự đổi theo light/dark kể cả khi popover bị portal ra ngoài host
+   (KHÔNG dùng :host-context(.dark): fail khi overlay appendTo body) */
+.pop-item:hover { background: var(--p-content-hover-background, #f9fafb); }
+.pop-item.selected { background: var(--p-highlight-background, #eef2ff); color: var(--p-highlight-color, var(--p-primary-600)); }
 
 /* ── Metadata separator ── */
 .meta-divider {

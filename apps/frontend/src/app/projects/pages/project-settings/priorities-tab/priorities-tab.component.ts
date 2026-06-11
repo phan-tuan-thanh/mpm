@@ -4,7 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
-import { SelectModule } from 'primeng/select';
 import { PopoverModule } from 'primeng/popover';
 import { TooltipModule } from 'primeng/tooltip';
 import { DragDropModule, CdkDragDrop } from '@angular/cdk/drag-drop';
@@ -15,6 +14,7 @@ import { PriorityConfigService } from '../../../../tasks/services/priority-confi
 import { AuthService } from '../../../../auth/services/auth.service';
 import { ColorPairPickerComponent } from '../../../../shared/components/color-pair-picker/color-pair-picker.component';
 import { IconPickerPanelComponent } from '../../../../shared/components/icon-picker-panel/icon-picker-panel.component';
+import { IconDisplayComponent } from '../../../../shared/components/icon-display/icon-display.component';
 import { ProjectPriority, CreatePriorityDto } from '@mpm/shared-types';
 
 interface EditDraft {
@@ -29,8 +29,9 @@ interface EditDraft {
   selector: 'app-priorities-tab',
   imports: [
     CommonModule, FormsModule, ButtonModule, DialogModule,
-    InputTextModule, SelectModule, PopoverModule, TooltipModule,
+    InputTextModule, PopoverModule, TooltipModule,
     DragDropModule, ColorPairPickerComponent, IconPickerPanelComponent,
+    IconDisplayComponent,
   ],
   templateUrl: './priorities-tab.component.html',
   styleUrl: './priorities-tab.component.css',
@@ -56,6 +57,11 @@ export class PrioritiesTabComponent implements OnInit {
   readonly migrationTargets = signal<ProjectPriority[]>([]);
   readonly selectedMigrateValue = signal<string | null>(null);
   readonly isDeleting = signal(false);
+
+  getMigrationTargetLabel(): string {
+    const found = this.migrationTargets().find((t) => t.value === this.selectedMigrateValue());
+    return found ? found.name : 'Chọn mức thay thế...';
+  }
 
   draggedId: string | null = null;
   hoveredId: string | null = null;

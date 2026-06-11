@@ -3,6 +3,8 @@
  */
 jest.mock('@angular/forms', () => ({ FormsModule: {} }));
 jest.mock('primeng/select', () => ({ SelectModule: {} }));
+jest.mock('primeng/popover', () => ({ PopoverModule: {} }));
+jest.mock('primeng/inputtext', () => ({ InputTextModule: {} }));
 jest.mock('primeng/button', () => ({ ButtonModule: {} }));
 jest.mock('primeng/tooltip', () => ({ TooltipModule: {} }));
 jest.mock('primeng/confirmdialog', () => ({ ConfirmDialogModule: {} }));

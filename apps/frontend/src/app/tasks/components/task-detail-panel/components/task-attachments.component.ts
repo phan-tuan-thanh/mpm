@@ -33,7 +33,7 @@ interface AttachmentUpdate {
   imports: [CommonModule, FormsModule, ButtonModule, TooltipModule],
   styles: [`
     .drop-line { height: 2px; border-radius: 9999px; transition: background-color 0.1s; background: transparent; }
-    .drop-line.show { background: #6366f1; }
+    .drop-line.show { background: var(--p-primary-color); }
   `],
   template: `
     <div class="mt-4 px-2"

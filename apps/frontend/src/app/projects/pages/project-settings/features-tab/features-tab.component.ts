@@ -3,22 +3,16 @@ import { ProjectStore } from '../../../state/project.store';
 import { ProjectService } from '../../../services/project.service';
 import { AuthService } from '../../../../auth/services/auth.service';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { MessageService } from 'primeng/api';
 
 @Component({
   standalone: true,
   selector: 'app-features-tab',
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule, ToggleSwitchModule],
   template: `
-    <div class="space-y-4">
-
-      <!-- Header -->
-      <div class="flex items-start justify-between">
-        <div>
-          <h2 class="text-base font-bold text-gray-900 dark:text-surface-0">Tính năng (Feature Flags)</h2>
-          <p class="text-xs text-gray-400 dark:text-surface-500 mt-0.5">Bật hoặc tắt các module bổ sung để tối giản hóa giao diện.</p>
-        </div>
-      </div>
+    <div class="space-y-5">
 
       @if (isReadOnly()) {
         <div class="rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 p-3 flex gap-2 text-xs text-amber-700 dark:text-amber-400 font-medium">
@@ -40,12 +34,14 @@ import { MessageService } from 'primeng/api';
                 <p class="text-xs text-gray-400 dark:text-surface-500 max-w-md">{{ feat.description }}</p>
               </div>
             </div>
-            <label class="relative inline-flex items-center select-none flex-shrink-0"
-              [ngClass]="isReadOnly() ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'"
+            <div class="flex-shrink-0 flex items-center"
               [title]="isReadOnly() ? 'Chỉ Scrum Master mới được thay đổi' : ''">
-              <input type="checkbox" [checked]="getFeatureValue(feat.key)" (change)="onToggle(feat.key, $any($event.target).checked)" [disabled]="isReadOnly()" class="sr-only peer" />
-              <div class="w-10 h-6 bg-gray-200 dark:bg-surface-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-            </label>
+              <p-toggleswitch
+                [ngModel]="getFeatureValue(feat.key)"
+                (ngModelChange)="onToggle(feat.key, $event)"
+                [disabled]="isReadOnly()"
+              />
+            </div>
           </div>
         }
       </div>

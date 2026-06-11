@@ -1,6 +1,7 @@
 @layer theme, base, primeng, utilities;
 
 @import "tailwindcss";
+@plugin "tailwindcss-primeui";
 @custom-variant dark (&:where(.dark, .dark *));
 @source "./app/**/*.ts";
 @source "./app/**/*.html";
@@ -19,11 +20,75 @@
   --color-surface-800: var(--p-surface-800);
   --color-surface-900: var(--p-surface-900);
   --color-surface-950: var(--p-surface-950);
-  
+
   --color-muted-color: var(--p-text-muted-color);
+
+  /* Remap "white" + "gray" → PrimeNG surface tokens: nền/viền light mode
+     (bg-white, bg-gray-50, border-gray-200...) tự theo Surface palette chọn
+     ở theme configurator. Mọi palette đều có 0 = #ffffff nên text-white an toàn. */
+  --color-white: var(--p-surface-0);
+  --color-gray-50: var(--p-surface-50);
+  --color-gray-100: var(--p-surface-100);
+  --color-gray-200: var(--p-surface-200);
+  --color-gray-300: var(--p-surface-300);
+  --color-gray-400: var(--p-surface-400);
+  --color-gray-500: var(--p-surface-500);
+  --color-gray-600: var(--p-surface-600);
+  --color-gray-700: var(--p-surface-700);
+  --color-gray-800: var(--p-surface-800);
+  --color-gray-900: var(--p-surface-900);
+  --color-gray-950: var(--p-surface-950);
+
+  /* Remap "indigo" → PrimeNG primary tokens: mọi class indigo-* trong codebase
+     tự động theo màu Primary chọn ở theme configurator (Sakai-style).
+     Code mới nên dùng utilities của tailwindcss-primeui: bg-primary, text-primary... */
+  --color-indigo-50: var(--p-primary-50);
+  --color-indigo-100: var(--p-primary-100);
+  --color-indigo-200: var(--p-primary-200);
+  --color-indigo-300: var(--p-primary-300);
+  --color-indigo-400: var(--p-primary-400);
+  --color-indigo-500: var(--p-primary-500);
+  --color-indigo-600: var(--p-primary-600);
+  --color-indigo-700: var(--p-primary-700);
+  --color-indigo-800: var(--p-primary-800);
+  --color-indigo-900: var(--p-primary-900);
+  --color-indigo-950: var(--p-primary-950);
 }
 
 :root {
   --primary-color: var(--p-primary-color);
 }
+
+/* Custom Popover Dropdown styles */
+.pop-list {
+  min-width: 140px;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.pop-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 6px 10px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  color: inherit;
+  transition: background 0.12s;
+  text-align: left;
+}
+.pop-item:hover {
+  background: var(--p-content-hover-background);
+  color: var(--p-content-hover-color);
+}
+.pop-item.selected {
+  background: var(--p-highlight-background);
+  color: var(--p-highlight-color);
+  font-weight: 500;
+}
+
 

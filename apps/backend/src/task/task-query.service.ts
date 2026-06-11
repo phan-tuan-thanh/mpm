@@ -27,6 +27,7 @@ export class TaskQueryService {
       page?: number;
       limit?: number;
       parentId?: string | null;
+      sprintId?: string;
     } = {},
   ): Promise<{ data: Task[]; total: number; page: number; pageSize: number }> {
     const page = query.page ?? 1;
@@ -58,6 +59,12 @@ export class TaskQueryService {
       .andWhere('t.isDraft = :isDraft', { isDraft: false });
 
     if (query.types?.length) qb.andWhere('t.type IN (:...types)', { types: query.types });
+    if (query.sprintId) {
+      // 'none' = task chưa thuộc sprint nào
+      query.sprintId === 'none'
+        ? qb.andWhere('t.sprintId IS NULL')
+        : qb.andWhere('t.sprintId = :sprintId', { sprintId: query.sprintId });
+    }
     if (query.stateIds?.length) qb.andWhere('t.stateId IN (:...stateIds)', { stateIds: query.stateIds });
     if (query.priorities?.length) qb.andWhere('t.priority IN (:...priorities)', { priorities: query.priorities });
     if (query.parentId !== undefined) {

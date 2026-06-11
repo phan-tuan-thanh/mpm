@@ -27,6 +27,7 @@ export class TaskQueryController {
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('parentId') parentId?: string,
+    @Query('sprintId') sprintId?: string,
   ) {
     return this.taskService.findAll(projectId, {
       types: types?.split(',') as TaskType[] | undefined,
@@ -40,6 +41,7 @@ export class TaskQueryController {
       page: page ? parseInt(page, 10) : undefined,
       limit: limit ? parseInt(limit, 10) : undefined,
       parentId: parentId === 'null' ? null : parentId,
+      sprintId,
     });
   }
 
