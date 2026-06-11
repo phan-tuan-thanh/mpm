@@ -12,15 +12,7 @@ import { MessageService } from 'primeng/api';
   selector: 'app-features-tab',
   imports: [CommonModule, FormsModule, ToggleSwitchModule],
   template: `
-    <div class="space-y-4">
-
-      <!-- Header -->
-      <div class="flex items-start justify-between">
-        <div>
-          <h2 class="text-base font-bold text-gray-900 dark:text-surface-0">Tính năng (Feature Flags)</h2>
-          <p class="text-xs text-gray-400 dark:text-surface-500 mt-0.5">Bật hoặc tắt các module bổ sung để tối giản hóa giao diện.</p>
-        </div>
-      </div>
+    <div class="space-y-5">
 
       @if (isReadOnly()) {
         <div class="rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 p-3 flex gap-2 text-xs text-amber-700 dark:text-amber-400 font-medium">

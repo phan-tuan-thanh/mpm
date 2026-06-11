@@ -9,6 +9,7 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { ProjectStore } from '../../../../projects/state/project.store';
 import { SprintService } from '../../../../projects/sprints/services/sprint.service';
+import { LabelStore } from '../../../state/label.store';
 import { DisplayPropertiesPanelComponent } from './display-properties-panel.component';
 import type { TaskQueryDto, TaskType, TaskPriority, DisplayProperties } from '@mpm/shared-types';
 import { DEFAULT_DISPLAY_PROPS } from '@mpm/shared-types';
@@ -28,12 +29,13 @@ export interface BacklogFilter {
   selector: 'app-backlog-toolbar',
   imports: [CommonModule, FormsModule, ButtonModule, InputTextModule, PopoverModule, TooltipModule, DisplayPropertiesPanelComponent],
   template: `
-    <div class="flex items-center gap-3 px-4 py-3 border-b border-gray-200 dark:border-surface-700 bg-white dark:bg-surface-900 flex-shrink-0 flex-wrap">
-      <h1 class="text-lg font-semibold text-gray-900 dark:text-surface-0 mr-2">Work Items</h1>
+    <!-- Row 1: Title + Search + View toggle + Add task -->
+    <div class="flex items-center gap-3 px-4 pt-3 pb-2 bg-white dark:bg-surface-900 flex-shrink-0">
+      <h1 class="text-lg font-semibold text-gray-900 dark:text-surface-0 shrink-0">Work Items</h1>
 
       <!-- Search -->
-      <div class="relative flex-1 max-w-xs">
-        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
+      <div class="relative flex-1 max-w-sm">
+        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pi pi-search"></span>
         <input
           pInputText
           class="pl-8 w-full text-sm"
@@ -43,19 +45,54 @@ export interface BacklogFilter {
         />
       </div>
 
+      <div class="flex-1"></div>
+
+      <!-- View mode toggle: List / Board -->
+      <div class="flex items-center border border-gray-200 dark:border-surface-700 rounded overflow-hidden shrink-0">
+        <button
+          class="flex items-center justify-center w-8 h-7 transition-colors"
+          [class.bg-indigo-600]="viewMode === 'list'"
+          [class.text-white]="viewMode === 'list'"
+          [class.text-gray-500]="viewMode !== 'list'"
+          pTooltip="List view"
+          (click)="viewModeChange.emit('list')">
+          <i class="pi pi-list text-xs"></i>
+        </button>
+        <button
+          class="flex items-center justify-center w-8 h-7 transition-colors border-l border-gray-200 dark:border-surface-700"
+          [class.bg-indigo-600]="viewMode === 'board'"
+          [class.text-white]="viewMode === 'board'"
+          [class.text-gray-500]="viewMode !== 'board'"
+          pTooltip="Board view"
+          (click)="viewModeChange.emit('board')">
+          <i class="pi pi-th-large text-xs"></i>
+        </button>
+      </div>
+
+      <!-- New task -->
+      <button pButton label="Thêm task" icon="pi pi-plus" size="small" class="shrink-0"
+        (click)="newTaskClick.emit()"></button>
+    </div>
+
+    <!-- Row 2: Filters + Display -->
+    <div class="flex items-center gap-2 px-4 pb-2 pt-1 border-b border-gray-200 dark:border-surface-700 bg-white dark:bg-surface-900 flex-shrink-0 flex-wrap">
+
       <!-- Type filter -->
       <button
         type="button"
         (click)="typePop.toggle($event)"
-        class="flex items-center justify-between gap-2 px-3 py-1.5 text-sm border border-surface-200 dark:border-surface-700 rounded-md bg-white dark:bg-surface-900 text-gray-800 dark:text-surface-100 font-semibold cursor-pointer hover:bg-surface-50 dark:hover:bg-surface-800 transition-all select-none"
+        class="flex items-center gap-1.5 px-2.5 py-1 text-xs border rounded-md cursor-pointer select-none transition-all"
+        [class]="selectedTypes.length
+          ? 'border-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-300 font-semibold'
+          : 'border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 text-gray-600 dark:text-surface-300 hover:bg-surface-50 dark:hover:bg-surface-800'"
       >
-        <span class="truncate">{{ getTypeLabel() }}</span>
-        <div class="flex items-center gap-1">
-          @if (selectedTypes.length) {
-            <i class="pi pi-times text-[10px] opacity-60 hover:opacity-100" (click)="selectedTypes = []; emitFilter(); $event.stopPropagation()"></i>
-          }
-          <i class="pi pi-chevron-down text-[10px] opacity-60 flex-shrink-0"></i>
-        </div>
+        <i class="pi pi-tag text-[10px]"></i>
+        <span>{{ getTypeLabel() }}</span>
+        @if (selectedTypes.length) {
+          <i class="pi pi-times text-[9px] opacity-70 hover:opacity-100 ml-0.5" (click)="selectedTypes = []; emitFilter(); $event.stopPropagation()"></i>
+        } @else {
+          <i class="pi pi-chevron-down text-[9px] opacity-50"></i>
+        }
       </button>
       <p-popover #typePop appendTo="body" styleClass="!p-0">
         <div class="pop-list w-44">
@@ -78,15 +115,18 @@ export interface BacklogFilter {
       <button
         type="button"
         (click)="priorityPop.toggle($event)"
-        class="flex items-center justify-between gap-2 px-3 py-1.5 text-sm border border-surface-200 dark:border-surface-700 rounded-md bg-white dark:bg-surface-900 text-gray-800 dark:text-surface-100 font-semibold cursor-pointer hover:bg-surface-50 dark:hover:bg-surface-800 transition-all select-none"
+        class="flex items-center gap-1.5 px-2.5 py-1 text-xs border rounded-md cursor-pointer select-none transition-all"
+        [class]="selectedPriorities.length
+          ? 'border-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-300 font-semibold'
+          : 'border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 text-gray-600 dark:text-surface-300 hover:bg-surface-50 dark:hover:bg-surface-800'"
       >
-        <span class="truncate">{{ getPriorityLabel() }}</span>
-        <div class="flex items-center gap-1">
-          @if (selectedPriorities.length) {
-            <i class="pi pi-times text-[10px] opacity-60 hover:opacity-100" (click)="selectedPriorities = []; emitFilter(); $event.stopPropagation()"></i>
-          }
-          <i class="pi pi-chevron-down text-[10px] opacity-60 flex-shrink-0"></i>
-        </div>
+        <i class="pi pi-flag text-[10px]"></i>
+        <span>{{ getPriorityLabel() }}</span>
+        @if (selectedPriorities.length) {
+          <i class="pi pi-times text-[9px] opacity-70 hover:opacity-100 ml-0.5" (click)="selectedPriorities = []; emitFilter(); $event.stopPropagation()"></i>
+        } @else {
+          <i class="pi pi-chevron-down text-[9px] opacity-50"></i>
+        }
       </button>
       <p-popover #priorityPop appendTo="body" styleClass="!p-0">
         <div class="pop-list w-44">
@@ -112,15 +152,18 @@ export interface BacklogFilter {
       <button
         type="button"
         (click)="statePop.toggle($event)"
-        class="flex items-center justify-between gap-2 px-3 py-1.5 text-sm border border-surface-200 dark:border-surface-700 rounded-md bg-white dark:bg-surface-900 text-gray-800 dark:text-surface-100 font-semibold cursor-pointer hover:bg-surface-50 dark:hover:bg-surface-800 transition-all select-none"
+        class="flex items-center gap-1.5 px-2.5 py-1 text-xs border rounded-md cursor-pointer select-none transition-all"
+        [class]="selectedStateIds.length
+          ? 'border-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-300 font-semibold'
+          : 'border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 text-gray-600 dark:text-surface-300 hover:bg-surface-50 dark:hover:bg-surface-800'"
       >
-        <span class="truncate">{{ getStateLabel() }}</span>
-        <div class="flex items-center gap-1">
-          @if (selectedStateIds.length) {
-            <i class="pi pi-times text-[10px] opacity-60 hover:opacity-100" (click)="selectedStateIds = []; emitFilter(); $event.stopPropagation()"></i>
-          }
-          <i class="pi pi-chevron-down text-[10px] opacity-60 flex-shrink-0"></i>
-        </div>
+        <i class="pi pi-circle text-[10px]"></i>
+        <span>{{ getStateLabel() }}</span>
+        @if (selectedStateIds.length) {
+          <i class="pi pi-times text-[9px] opacity-70 hover:opacity-100 ml-0.5" (click)="selectedStateIds = []; emitFilter(); $event.stopPropagation()"></i>
+        } @else {
+          <i class="pi pi-chevron-down text-[9px] opacity-50"></i>
+        }
       </button>
       <p-popover #statePop appendTo="body" styleClass="!p-0">
         <div class="pop-list w-48 max-h-60 overflow-y-auto">
@@ -143,15 +186,18 @@ export interface BacklogFilter {
       <button
         type="button"
         (click)="sprintPop.toggle($event)"
-        class="flex items-center justify-between gap-2 px-3 py-1.5 text-sm border border-surface-200 dark:border-surface-700 rounded-md bg-white dark:bg-surface-900 text-gray-800 dark:text-surface-100 font-semibold cursor-pointer hover:bg-surface-50 dark:hover:bg-surface-800 transition-all select-none"
+        class="flex items-center gap-1.5 px-2.5 py-1 text-xs border rounded-md cursor-pointer select-none transition-all"
+        [class]="selectedSprintId
+          ? 'border-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-300 font-semibold'
+          : 'border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 text-gray-600 dark:text-surface-300 hover:bg-surface-50 dark:hover:bg-surface-800'"
       >
-        <span class="truncate">{{ getSprintLabel() }}</span>
-        <div class="flex items-center gap-1">
-          @if (selectedSprintId) {
-            <i class="pi pi-times text-[10px] opacity-60 hover:opacity-100" (click)="selectedSprintId = null; emitFilter(); $event.stopPropagation()"></i>
-          }
-          <i class="pi pi-chevron-down text-[10px] opacity-60 flex-shrink-0"></i>
-        </div>
+        <i class="pi pi-bolt text-[10px]"></i>
+        <span>{{ getSprintLabel() }}</span>
+        @if (selectedSprintId) {
+          <i class="pi pi-times text-[9px] opacity-70 hover:opacity-100 ml-0.5" (click)="selectedSprintId = null; emitFilter(); $event.stopPropagation()"></i>
+        } @else {
+          <i class="pi pi-chevron-down text-[9px] opacity-50"></i>
+        }
       </button>
       <p-popover #sprintPop appendTo="body" styleClass="!p-0">
         <div class="pop-list w-48 max-h-60 overflow-y-auto">
@@ -167,51 +213,63 @@ export interface BacklogFilter {
         </div>
       </p-popover>
 
-      <!-- Group by -->
+      <!-- Label filter -->
       <button
         type="button"
-        (click)="groupByPop.toggle($event)"
-        class="flex items-center justify-between gap-2 px-3 py-1.5 text-sm border border-surface-200 dark:border-surface-700 rounded-md bg-white dark:bg-surface-900 text-gray-800 dark:text-surface-100 font-semibold cursor-pointer hover:bg-surface-50 dark:hover:bg-surface-800 transition-all select-none"
+        (click)="labelPop.toggle($event)"
+        class="flex items-center gap-1.5 px-2.5 py-1 text-xs border rounded-md cursor-pointer select-none transition-all"
+        [class]="selectedLabelIds.length
+          ? 'border-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-300 font-semibold'
+          : 'border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 text-gray-600 dark:text-surface-300 hover:bg-surface-50 dark:hover:bg-surface-800'"
       >
-        <span class="truncate">Group: {{ getGroupByLabel() }}</span>
-        <i class="pi pi-chevron-down text-[10px] opacity-60 flex-shrink-0"></i>
+        <i class="pi pi-tags text-[10px]"></i>
+        <span>{{ getLabelFilterLabel() }}</span>
+        @if (selectedLabelIds.length) {
+          <i class="pi pi-times text-[9px] opacity-70 hover:opacity-100 ml-0.5" (click)="selectedLabelIds = []; emitFilter(); $event.stopPropagation()"></i>
+        } @else {
+          <i class="pi pi-chevron-down text-[9px] opacity-50"></i>
+        }
       </button>
-      <p-popover #groupByPop appendTo="body" styleClass="!p-0">
-        <div class="pop-list w-40">
-          @for (opt of groupByOptions; track opt.value) {
-            <div
-              (click)="selectedGroupBy = opt.value; groupByChange.emit(opt.value); groupByPop.hide()"
-              class="pop-item"
-              [class.selected]="selectedGroupBy === opt.value"
-            >
-              {{ opt.label }}
+      <p-popover #labelPop appendTo="body" styleClass="!p-0">
+        <div class="w-52">
+          <!-- Search inside popover -->
+          <div class="px-2 pt-2 pb-1">
+            <div class="relative">
+              <i class="pi pi-search absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-[10px]"></i>
+              <input
+                class="w-full pl-6 pr-2 py-1 text-xs border border-surface-200 dark:border-surface-700 rounded bg-surface-50 dark:bg-surface-800 text-gray-700 dark:text-surface-200 outline-none focus:border-indigo-400"
+                placeholder="Tìm label..."
+                [ngModel]="labelSearch"
+                (ngModelChange)="labelSearch = $event"
+              />
             </div>
-          }
+          </div>
+          <div class="pop-list max-h-52 overflow-y-auto">
+            @if (filteredLabelOptions().length === 0) {
+              <div class="px-3 py-4 text-xs text-center text-gray-400 dark:text-surface-500">Không tìm thấy label</div>
+            }
+            @for (label of filteredLabelOptions(); track label.id) {
+              <div
+                (click)="toggleLabel(label.id)"
+                class="pop-item justify-between"
+                [class.selected]="selectedLabelIds.includes(label.id)"
+              >
+                <span class="flex items-center gap-2 min-w-0">
+                  <span class="w-2.5 h-2.5 rounded-full shrink-0 ring-1 ring-black/10"
+                    [style.background]="label.color"></span>
+                  <span class="truncate">{{ label.name }}</span>
+                </span>
+                @if (selectedLabelIds.includes(label.id)) {
+                  <i class="pi pi-check text-xs shrink-0"></i>
+                }
+              </div>
+            }
+          </div>
         </div>
       </p-popover>
 
-      <!-- Order by -->
-      <button
-        type="button"
-        (click)="orderByPop.toggle($event)"
-        class="flex items-center justify-between gap-2 px-3 py-1.5 text-sm border border-surface-200 dark:border-surface-700 rounded-md bg-white dark:bg-surface-900 text-gray-800 dark:text-surface-100 font-semibold cursor-pointer hover:bg-surface-50 dark:hover:bg-surface-800 transition-all select-none"
-      >
-        <span class="truncate">Order: {{ getOrderByLabel() }}</span>
-        <i class="pi pi-chevron-down text-[10px] opacity-60 flex-shrink-0"></i>
-      </button>
-      <p-popover #orderByPop appendTo="body" styleClass="!p-0">
-        <div class="pop-list w-40">
-          @for (opt of orderByOptions; track opt.value) {
-            <div
-              (click)="selectedOrderBy = opt.value; orderByChange.emit(opt.value); orderByPop.hide()"
-              class="pop-item"
-              [class.selected]="selectedOrderBy === opt.value"
-            >
-              {{ opt.label }}
-            </div>
-          }
-        </div>
-      </p-popover>
+      <!-- Separator -->
+      <div class="w-px h-4 bg-gray-200 dark:bg-surface-700 mx-1"></div>
 
       <!-- Clear filters -->
       @if (hasActiveFilters()) {
@@ -220,7 +278,7 @@ export interface BacklogFilter {
       }
 
       <!-- Display Properties -->
-      <button pButton label="Display" icon="pi pi-sliders-h" severity="secondary" size="small" text
+      <button pButton label="Hiển thị" icon="pi pi-sliders-h" severity="secondary" size="small" text
         (click)="displayPopover.toggle($event)" aria-label="Display Properties"></button>
       <p-popover #displayPopover styleClass="!p-0">
         <app-display-properties-panel
@@ -232,46 +290,13 @@ export interface BacklogFilter {
           (orderByChange)="orderByChange.emit($event)"
         />
       </p-popover>
-
-      <div class="flex-1"></div>
-
-      <!-- View mode toggle: List / Board -->
-      <div class="flex items-center border border-gray-200 dark:border-surface-700 rounded overflow-hidden">
-        <button
-          class="flex items-center justify-center w-8 h-7 transition-colors"
-          [class.bg-indigo-600]="viewMode === 'list'"
-          [class.text-white]="viewMode === 'list'"
-          [class.text-gray-500]="viewMode !== 'list'"
-          [class.hover:bg-gray-100]="viewMode !== 'list'"
-          pTooltip="List view"
-          (click)="viewModeChange.emit('list')">
-          <i class="pi pi-list text-xs"></i>
-        </button>
-        <button
-          class="flex items-center justify-center w-8 h-7 transition-colors border-l border-gray-200 dark:border-surface-700"
-          [class.bg-indigo-600]="viewMode === 'board'"
-          [class.text-white]="viewMode === 'board'"
-          [class.text-gray-500]="viewMode !== 'board'"
-          [class.hover:bg-gray-100]="viewMode !== 'board'"
-          pTooltip="Board view"
-          (click)="viewModeChange.emit('board')">
-          <i class="pi pi-th-large text-xs"></i>
-        </button>
-      </div>
-
-      <!-- Label manager (SM/PO only) -->
-      <button pButton label="Quản lý Labels" icon="pi pi-tags" severity="secondary" size="small" text
-        (click)="labelManagerClick.emit()"></button>
-
-      <!-- New task -->
-      <button pButton label="Thêm task" icon="pi pi-plus" size="small"
-        (click)="newTaskClick.emit()"></button>
     </div>
   `,
 })
 export class BacklogToolbarComponent {
   private readonly projectStore = inject(ProjectStore);
   private readonly sprintService = inject(SprintService);
+  protected readonly labelStore = inject(LabelStore);
 
   constructor() {
     // Load sprints khi project sẵn sàng / thay đổi (cache chung trong SprintService)
@@ -297,7 +322,6 @@ export class BacklogToolbarComponent {
   @Output() groupByChange = new EventEmitter<string>();
   @Output() orderByChange = new EventEmitter<string>();
   @Output() newTaskClick = new EventEmitter<void>();
-  @Output() labelManagerClick = new EventEmitter<void>();
   @Output() displayPropsChange = new EventEmitter<Partial<DisplayProperties>>();
   @Output() viewModeChange = new EventEmitter<'list' | 'board'>();
 
@@ -308,7 +332,16 @@ export class BacklogToolbarComponent {
   protected selectedPriorities: TaskPriority[] = [];
   protected selectedStateIds: string[] = [];
   protected selectedSprintId: string | null = null;
+  protected selectedLabelIds: string[] = [];
+  protected labelSearch = '';
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
+
+  protected readonly filteredLabelOptions = () => {
+    const q = this.labelSearch.trim().toLowerCase();
+    return this.labelStore.labels().filter(l =>
+      !q || l.name.toLowerCase().includes(q)
+    );
+  };
 
   getTypeLabel(): string {
     if (!this.selectedTypes.length) return 'Type';
@@ -334,6 +367,13 @@ export class BacklogToolbarComponent {
     return `State (${this.selectedStateIds.length})`;
   }
 
+  protected toggleLabel(id: string): void {
+    this.selectedLabelIds = this.selectedLabelIds.includes(id)
+      ? this.selectedLabelIds.filter((v) => v !== id)
+      : [...this.selectedLabelIds, id];
+    this.emitFilter();
+  }
+
   protected toggleType(value: TaskType): void {
     this.selectedTypes = this.selectedTypes.includes(value)
       ? this.selectedTypes.filter((v) => v !== value)
@@ -353,6 +393,14 @@ export class BacklogToolbarComponent {
       ? this.selectedStateIds.filter((v) => v !== id)
       : [...this.selectedStateIds, id];
     this.emitFilter();
+  }
+
+  getLabelFilterLabel(): string {
+    if (!this.selectedLabelIds.length) return 'Label';
+    if (this.selectedLabelIds.length === 1) {
+      return this.labelStore.labels().find(l => l.id === this.selectedLabelIds[0])?.name ?? 'Label';
+    }
+    return `Label (${this.selectedLabelIds.length})`;
   }
 
   getSprintLabel(): string {
@@ -421,11 +469,12 @@ export class BacklogToolbarComponent {
       priorities: this.selectedPriorities.length ? this.selectedPriorities : undefined,
       stateIds: this.selectedStateIds.length ? this.selectedStateIds : undefined,
       sprintId: this.selectedSprintId ?? undefined,
+      labelIds: this.selectedLabelIds.length ? this.selectedLabelIds : undefined,
     });
   }
 
   protected hasActiveFilters(): boolean {
-    return !!(this.searchText || this.selectedTypes.length || this.selectedPriorities.length || this.selectedStateIds.length || this.selectedSprintId);
+    return !!(this.searchText || this.selectedTypes.length || this.selectedPriorities.length || this.selectedStateIds.length || this.selectedSprintId || this.selectedLabelIds.length);
   }
 
   protected clearFilters(): void {
@@ -434,6 +483,7 @@ export class BacklogToolbarComponent {
     this.selectedPriorities = [];
     this.selectedStateIds = [];
     this.selectedSprintId = null;
+    this.selectedLabelIds = [];
     this.emitFilter();
   }
 }

@@ -214,6 +214,14 @@ const routes = [
                         (m) => m.PrioritiesTabComponent
                       ),
                   },
+                  {
+                    path: 'labels',
+                    loadComponent: () =>
+                      import('./app/projects/pages/project-settings/labels-tab/labels-tab.component').then(
+                        (m) => m.LabelsTabComponent
+                      ),
+                    title: 'Labels — Agile PM',
+                  },
                 ],
               },
               {

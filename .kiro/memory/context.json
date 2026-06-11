@@ -68,28 +68,24 @@
   ],
   "notes": [
     "Elasticsearch, S3, CI/CD, Prometheus+Grafana nằm trong roadmap — chưa triển khai ngay",
-    "Authentication qua Authentik (external Identity Provider)",
+    "Authentication qua Authentik (external Identity Provider)"
   ],
-  "lastTask": "module-lifecycle-states — Implementation hoàn thành (chỉ còn tests)",
+  "lastTask": "project-settings-tab-ui-consistency — TOÀN BỘ 10 task COMPLETED (bugfix UI consistency). Bỏ header cấp trang lặp + đồng nhất root spacing space-y-5 ở 7 tab. Bug-condition 15/15 + preservation 28/28 = 43/43 PASS, 0 diagnostics. Spec hoàn tất.",
   "lastModifiedFiles": [
-    "libs/shared-types/src/module.types.ts",
-    "apps/backend/src/task/module/module-lifecycle.service.ts",
-    "apps/backend/src/task/module/module-lifecycle.exceptions.ts",
-    "apps/backend/src/task/module/module-lifecycle-audit.service.ts",
-    "apps/backend/src/task/entities/module-lifecycle-log.entity.ts",
-    "apps/backend/src/task/entities/module.entity.ts",
-    "apps/backend/src/task/module/module.dto.ts",
-    "apps/backend/src/task/module/module.controller.ts",
-    "migrations/1749041000000-ModuleLifecycleEnumAndVersion.ts",
-    "migrations/1749042000000-CreateModuleLifecycleLogs.ts",
-    "apps/frontend/src/app/tasks/pages/modules/module-status-badge.component.ts",
-    "apps/frontend/src/app/tasks/pages/modules/module-transition-selector.component.ts",
-    "apps/frontend/src/app/tasks/pages/modules/module-status-filter.component.ts",
-    "apps/frontend/src/app/tasks/pages/modules/modules.component.ts",
-    "apps/frontend/src/app/tasks/pages/modules/module-card.component.ts",
-    "apps/frontend/src/app/tasks/state/module.store.ts"
+    "apps/frontend/src/app/projects/pages/project-settings/states-tab/states-tab.component.html",
+    "apps/frontend/src/app/projects/pages/project-settings/priorities-tab/priorities-tab.component.html",
+    "apps/frontend/src/app/projects/pages/project-settings/labels-tab/labels-tab.component.ts",
+    "apps/frontend/src/app/projects/pages/project-settings/members-tab/members-tab.component.ts",
+    "apps/frontend/src/app/projects/pages/project-settings/features-tab/features-tab.component.ts",
+    "apps/frontend/src/app/projects/pages/project-settings/danger-zone-tab/danger-zone-tab.component.ts",
+    "apps/frontend/src/app/projects/pages/project-settings/estimates-tab/estimates-tab.component.ts",
+    "apps/frontend/src/app/projects/pages/project-settings/project-settings-tab-consistency.spec.ts",
+    "apps/frontend/src/app/projects/pages/project-settings/project-settings-tab-preservation.spec.ts",
+    "apps/frontend/package.json",
+    "apps/frontend/tsconfig.spec.json"
   ],
   "openIssues": [
+    "LƯU Ý: general-tab.component.ts (parent) có thay đổi STAGED từ change-set tính năng Labels (ngoài phạm vi spec này) — cần tách commit, KHÔNG do bugfix gây ra.",
     "module-lifecycle-states: Thiếu toàn bộ unit tests và property-based tests (11 tasks còn lại)",
     "module-lifecycle-states: Checkpoints 4, 8, 13 chưa verify"
   ]

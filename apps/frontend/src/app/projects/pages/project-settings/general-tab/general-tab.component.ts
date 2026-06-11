@@ -15,10 +15,10 @@ import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
     <div class="space-y-6">
       <div>
         <h1 class="text-2xl font-bold text-gray-900 dark:text-surface-0">
-          Cấu hình dự án
+          Cài đặt dự án
         </h1>
         <p class="text-sm text-gray-500 dark:text-surface-400 mt-1">
-          Quản lý thông tin chung, cấu hình sprint, trạng thái công việc, ước lượng và các mức ưu tiên.
+          Quản lý thông tin chung, cấu hình sprint, trạng thái công việc, labels và các mức ưu tiên.
         </p>
       </div>
 
@@ -48,7 +48,8 @@ export class GeneralTabComponent {
     { label: 'Cấu hình chung', route: ['info'], exact: true },
     { label: 'Cấu hình Sprint', route: ['sprints'], exact: true },
     { label: 'Trạng thái', route: ['states'], exact: true },
-    { label: 'Ước lượng', route: ['estimates'], exact: true },
     { label: 'Mức ưu tiên', route: ['priorities'], exact: true },
+    { label: 'Labels', route: ['labels'], exact: true },
+    { label: 'Ước lượng', route: ['estimates'], exact: true },
   ];
 }

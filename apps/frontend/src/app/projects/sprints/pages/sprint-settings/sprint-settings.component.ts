@@ -42,22 +42,17 @@ import {
     IconDisplayComponent,
   ],
   template: `
-    <div class="flex flex-col h-full">
-
-      <!-- Scrollable form -->
-      <div class="flex-1 overflow-y-auto py-4">
-
-        @if (loading()) {
-          <div class="flex flex-col xl:flex-row gap-5 items-start">
-            <div class="flex-1 min-w-0 space-y-5">
-              <p-skeleton height="12rem" borderRadius="12px" />
-              <p-skeleton height="18rem" borderRadius="12px" />
-            </div>
-            <div class="w-full xl:w-72 flex-shrink-0">
-              <p-skeleton height="10rem" borderRadius="12px" />
-            </div>
-          </div>
-        } @else {
+    @if (loading()) {
+      <div class="flex flex-col xl:flex-row gap-5 items-start">
+        <div class="flex-1 min-w-0 space-y-5">
+          <p-skeleton height="12rem" borderRadius="12px" />
+          <p-skeleton height="18rem" borderRadius="12px" />
+        </div>
+        <div class="w-full xl:w-72 flex-shrink-0">
+          <p-skeleton height="10rem" borderRadius="12px" />
+        </div>
+      </div>
+    } @else {
           <!-- 2-column layout: main content left, metadata right -->
           <div class="flex flex-col xl:flex-row gap-5 items-start">
 
@@ -259,8 +254,6 @@ import {
 
           </div>
         }
-      </div>
-    </div>
   `,
 })
 export class SprintSettingsComponent implements OnInit, OnDestroy {

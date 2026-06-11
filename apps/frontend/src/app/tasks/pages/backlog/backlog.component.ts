@@ -51,7 +51,6 @@ import { toObservable } from '@angular/core/rxjs-interop';
         (orderByChange)="onOrderByChange($event)"
         (displayPropsChange)="updateDisplayProps($event)"
         (newTaskClick)="openQuickCreate()"
-        (labelManagerClick)="openLabelManager()"
         (viewModeChange)="onViewModeChange($event)"
       />
 

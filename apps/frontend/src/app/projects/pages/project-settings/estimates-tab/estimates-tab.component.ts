@@ -24,11 +24,6 @@ import { EstimateType } from '@mpm/shared-types';
   ],
   template: `
     <div class="space-y-5">
-      <div>
-        <h2 class="text-base font-bold text-gray-900 dark:text-surface-0">Ước lượng (Estimates)</h2>
-        <p class="text-xs text-gray-400 dark:text-surface-500 mt-0.5">Thiết lập cách nhóm ước lượng khối lượng công việc cho dự án.</p>
-      </div>
-
       <!-- Section 1: Estimate Type Selection -->
       <div class="space-y-3">
         <label class="text-sm font-semibold text-gray-700 dark:text-surface-200">Loại ước lượng</label>

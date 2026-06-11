@@ -242,11 +242,11 @@ import { IconDisplayComponent } from '../../../shared/components/icon-display/ic
               [ngClass]="isOnSettings()
                 ? 'bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 font-semibold border-l-4 border-indigo-600'
                 : 'text-gray-600 dark:text-surface-400 hover:bg-gray-50 dark:hover:bg-surface-800 hover:text-gray-900 dark:hover:text-surface-100'"
-              [title]="!isExpanded() ? 'Cấu hình' : ''"
+              [title]="!isExpanded() ? 'Cài đặt' : ''"
             >
               <i class="pi pi-cog text-base flex-shrink-0"></i>
               @if (isExpanded()) {
-                <span class="flex-1 text-left">Cấu hình</span>
+                <span class="flex-1 text-left">Cài đặt</span>
                 <i class="pi text-[10px] text-gray-400 dark:text-surface-500 transition-transform duration-200"
                    [ngClass]="isSettingsOpen() ? 'pi-chevron-down' : 'pi-chevron-right'"></i>
               }

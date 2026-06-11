@@ -29,14 +29,9 @@ import { MemberResponse, ProjectRole } from '@mpm/shared-types';
     FormsModule,
   ],
   template: `
-    <div class="space-y-4">
-      <!-- Header row -->
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h2 class="text-base font-bold text-gray-900 dark:text-surface-0">Thành viên dự án</h2>
-          <p class="text-xs text-gray-400 dark:text-surface-500 mt-0.5">Mời thành viên và gán vai trò tương ứng.</p>
-        </div>
-        <div class="flex items-center gap-3">
+    <div class="space-y-5">
+      <!-- Action controls row -->
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3">
           <!-- Search inline -->
           <div class="relative">
             <i class="pi pi-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-surface-500 text-sm"></i>
@@ -52,7 +47,6 @@ import { MemberResponse, ProjectRole } from '@mpm/shared-types';
           @if (!isReadOnly()) {
             <button pButton (click)="showAddDialog()" label="Thêm thành viên" icon="pi pi-plus" size="small"></button>
           }
-        </div>
       </div>
 
       <!-- Members Table -->

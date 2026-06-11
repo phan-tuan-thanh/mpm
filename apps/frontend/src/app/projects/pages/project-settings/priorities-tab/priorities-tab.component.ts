@@ -14,6 +14,7 @@ import { PriorityConfigService } from '../../../../tasks/services/priority-confi
 import { AuthService } from '../../../../auth/services/auth.service';
 import { ColorPairPickerComponent } from '../../../../shared/components/color-pair-picker/color-pair-picker.component';
 import { IconPickerPanelComponent } from '../../../../shared/components/icon-picker-panel/icon-picker-panel.component';
+import { IconDisplayComponent } from '../../../../shared/components/icon-display/icon-display.component';
 import { ProjectPriority, CreatePriorityDto } from '@mpm/shared-types';
 
 interface EditDraft {
@@ -30,6 +31,7 @@ interface EditDraft {
     CommonModule, FormsModule, ButtonModule, DialogModule,
     InputTextModule, PopoverModule, TooltipModule,
     DragDropModule, ColorPairPickerComponent, IconPickerPanelComponent,
+    IconDisplayComponent,
   ],
   templateUrl: './priorities-tab.component.html',
   styleUrl: './priorities-tab.component.css',
