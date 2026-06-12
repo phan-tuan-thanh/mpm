@@ -53,7 +53,9 @@ export class TaskQueryService {
         { workspaceId: workspaceId ?? '00000000-0000-0000-0000-000000000000', projectId },
       )
       .loadRelationCountAndMap('t.subItemCount', 't.children')
-      .loadRelationCountAndMap('t.attachmentCount', 't.attachments')
+      .loadRelationCountAndMap('t.attachmentCount', 't.attachments', 'attachment', (qb) =>
+        qb.where("attachment.source = 'attachment'")
+      )
       .loadRelationCountAndMap('t.linkCount', 't.links')
       .where('t.projectId = :projectId', { projectId })
       .andWhere('t.isDraft = :isDraft', { isDraft: false });
@@ -127,6 +129,11 @@ export class TaskQueryService {
       ],
     });
     if (!task) throw new NotFoundException('Task not found');
+    
+    if (task.attachments) {
+      task.attachments = task.attachments.filter((a) => a.source !== 'comment_image');
+    }
+    
     return task;
   }
 

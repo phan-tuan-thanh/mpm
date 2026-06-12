@@ -44,6 +44,8 @@ export {
   CreateRelationDto,
   CreateCommentDto,
   UpdateCommentDto,
+  TaskComment,
+  TaskCommentReaction,
   TaskQueryDto,
   DisplayProperties,
   DEFAULT_DISPLAY_PROPS,

@@ -17,6 +17,9 @@ export class TaskAttachment {
   @Column({ name: 'task_id', type: 'uuid' })
   taskId!: string;
 
+  @Column({ type: 'varchar', length: 50, default: 'attachment' })
+  source!: 'attachment' | 'comment_image';
+
   @Column({ name: 'original_name', type: 'varchar', length: 255 })
   originalName!: string;
 

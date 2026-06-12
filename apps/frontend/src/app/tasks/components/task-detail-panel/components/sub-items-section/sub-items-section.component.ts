@@ -38,8 +38,18 @@ import { SubItemQuickToolbarComponent } from '../sub-item-quick-toolbar/sub-item
     SubItemQuickToolbarComponent,
   ],
   template: `
-    <div class="flex items-center gap-2.5 mb-3">
-      <h3 class="text-sm font-semibold text-gray-700 dark:text-surface-200">Sub-items</h3>
+    <div class="flex items-center gap-1.5 mb-3">
+      <!-- Collapse toggle button -->
+      <button
+        type="button"
+        class="w-5 h-5 flex items-center justify-center rounded hover:bg-gray-100 dark:hover:bg-surface-800 cursor-pointer text-gray-500 dark:text-surface-400"
+        (click)="expanded.set(!expanded())"
+        [attr.aria-label]="expanded() ? 'Thu gọn sub-items' : 'Mở rộng sub-items'"
+      >
+        <i class="pi pi-chevron-down text-xs transition-transform duration-200" [class.-rotate-90]="!expanded()"></i>
+      </button>
+
+      <h3 class="text-sm font-semibold text-gray-700 dark:text-surface-200 cursor-pointer select-none" (click)="expanded.set(!expanded())">Sub-items</h3>
 
       <!-- Circular progress ring (contains done/total count inside) -->
       @if (totalCount > 0) {
@@ -52,8 +62,8 @@ import { SubItemQuickToolbarComponent } from '../sub-item-quick-toolbar/sub-item
       <!-- Spacer -->
       <div class="flex-1"></div>
 
-      <!-- Add button (shown when not in adding mode and has items) -->
-      @if (!isAddingMode() && items.length > 0) {
+      <!-- Add button (shown when not in adding mode, has items, and is expanded) -->
+      @if (!isAddingMode() && items.length > 0 && expanded()) {
         <button
           pButton
           class="p-button-text p-button-sm"
@@ -67,80 +77,83 @@ import { SubItemQuickToolbarComponent } from '../sub-item-quick-toolbar/sub-item
       }
     </div>
 
-    <!-- ═══ Sub-Items Tree ═══ -->
-    @if (items.length > 0) {
-      <app-sub-item-tree
-        [items]="items"
-        (itemClicked)="subItemClicked.emit($event)"
-        (saveRequested)="saveRequested.emit($event)"
-      />
-    }
-
-    <!-- ═══ Empty State ═══ -->
-    @if (items.length === 0 && !isAddingMode()) {
-      <div class="flex flex-col items-center justify-center py-8 text-center">
-        <i class="pi pi-sitemap text-3xl text-gray-300 dark:text-surface-600 mb-3"></i>
-        <p class="text-sm text-gray-500 dark:text-surface-400 mb-3">
-          Chưa có sub-item nào. Chia nhỏ công việc để dễ theo dõi tiến độ.
-        </p>
-        <button
-          pButton
-          class="p-button-outlined p-button-sm"
-          icon="pi pi-plus"
-          label="Thêm sub-item"
-          (click)="enterAddMode()"
-          aria-label="Thêm sub-item"
-        ></button>
-      </div>
-    }
-
-    <!-- ═══ Inline Add Form ═══ -->
-    @if (isAddingMode()) {
-      <div class="mt-2 border border-surface-200 dark:border-surface-700 rounded-lg p-2.5">
-        <!-- Title input -->
-        <input
-          #titleInput
-          pInputText
-          type="text"
-          class="w-full text-sm"
-          style="height: 32px; padding: 0 10px; border-radius: 6px"
-          placeholder="Nhập tiêu đề sub-item..."
-          [maxlength]="255"
-          [(ngModel)]="newTitle"
-          (keydown.enter)="onSubmit()"
-          (keydown.escape)="onDismiss()"
-          aria-label="Tiêu đề sub-item mới"
+    <!-- ═══ Collapsible Content ═══ -->
+    @if (expanded()) {
+      <!-- ═══ Sub-Items Tree ═══ -->
+      @if (items.length > 0) {
+        <app-sub-item-tree
+          [items]="items"
+          (itemClicked)="subItemClicked.emit($event)"
+          (saveRequested)="saveRequested.emit($event)"
         />
+      }
 
-        <!-- Quick toolbar -->
-        <app-sub-item-quick-toolbar
-          #toolbar
-          [members]="members"
-          (assigneeSelected)="onAssigneeSelected($event)"
-          (prioritySelected)="onPrioritySelected($event)"
-          (dueDateSelected)="onDueDateSelected($event)"
-        />
-
-        <!-- Action buttons -->
-        <div class="flex items-center gap-2 mt-1.5">
+      <!-- ═══ Empty State ═══ -->
+      @if (items.length === 0 && !isAddingMode()) {
+        <div class="flex flex-col items-center justify-center py-8 text-center">
+          <i class="pi pi-sitemap text-3xl text-gray-300 dark:text-surface-600 mb-3"></i>
+          <p class="text-sm text-gray-500 dark:text-surface-400 mb-3">
+            Chưa có sub-item nào. Chia nhỏ công việc để dễ theo dõi tiến độ.
+          </p>
           <button
             pButton
-            class="p-button-sm"
-            icon="pi pi-check"
-            label="Tạo"
-            [disabled]="!newTitle.trim()"
-            (click)="onSubmit()"
-            aria-label="Tạo sub-item"
-          ></button>
-          <button
-            pButton
-            class="p-button-text p-button-sm p-button-secondary"
-            label="Hủy"
-            (click)="onDismiss()"
-            aria-label="Hủy thêm sub-item"
+            class="p-button-outlined p-button-sm"
+            icon="pi pi-plus"
+            label="Thêm sub-item"
+            (click)="enterAddMode()"
+            aria-label="Thêm sub-item"
           ></button>
         </div>
-      </div>
+      }
+
+      <!-- ═══ Inline Add Form ═══ -->
+      @if (isAddingMode()) {
+        <div class="mt-2 border border-surface-200 dark:border-surface-700 rounded-lg p-2.5">
+          <!-- Title input -->
+          <input
+            #titleInput
+            pInputText
+            type="text"
+            class="w-full text-sm"
+            style="height: 32px; padding: 0 10px; border-radius: 6px"
+            placeholder="Nhập tiêu đề sub-item..."
+            [maxlength]="255"
+            [(ngModel)]="newTitle"
+            (keydown.enter)="onSubmit()"
+            (keydown.escape)="onDismiss()"
+            aria-label="Tiêu đề sub-item mới"
+          />
+
+          <!-- Quick toolbar -->
+          <app-sub-item-quick-toolbar
+            #toolbar
+            [members]="members"
+            (assigneeSelected)="onAssigneeSelected($event)"
+            (prioritySelected)="onPrioritySelected($event)"
+            (dueDateSelected)="onDueDateSelected($event)"
+          />
+
+          <!-- Action buttons -->
+          <div class="flex items-center gap-2 mt-1.5">
+            <button
+              pButton
+              class="p-button-sm"
+              icon="pi pi-check"
+              label="Tạo"
+              [disabled]="!newTitle.trim()"
+              (click)="onSubmit()"
+              aria-label="Tạo sub-item"
+            ></button>
+            <button
+              pButton
+              class="p-button-text p-button-sm p-button-secondary"
+              label="Hủy"
+              (click)="onDismiss()"
+              aria-label="Hủy thêm sub-item"
+            ></button>
+          </div>
+        </div>
+      }
     }
   `,
   styles: [`
@@ -185,6 +198,9 @@ export class SubItemsSectionComponent {
 
   // ─── Internal State ──────────────────────────────────────────────────────
 
+  /** Whether the section is expanded */
+  readonly expanded = signal(true);
+
   /** Whether the inline add form is visible */
   readonly isAddingMode = signal(false);
 
@@ -200,6 +216,7 @@ export class SubItemsSectionComponent {
 
   /** Show the inline add form and focus input */
   enterAddMode(): void {
+    this.expanded.set(true);
     this.isAddingMode.set(true);
     // Cho Angular render xong rồi focus
     setTimeout(() => this.titleInputRef?.nativeElement.focus(), 0);

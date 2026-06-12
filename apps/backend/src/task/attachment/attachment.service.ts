@@ -31,6 +31,7 @@ export class AttachmentService {
     userId: string,
     file: Express.Multer.File,
     title?: string,
+    source: 'attachment' | 'comment_image' = 'attachment',
   ): Promise<TaskAttachment> {
     if (file.size > MAX_FILE_BYTES) {
       throw new PayloadTooLargeException('File size exceeds 20MB limit');
@@ -94,13 +95,16 @@ export class AttachmentService {
       mimeType,
       sizeBytes: file.size,
       uploaderId: userId,
+      source,
     });
     const saved = await this.attachmentRepo.save(attachment);
 
-    await this.activityService.log(taskId, userId, 'attachment_added', {
-      field: 'attachment',
-      newValue: file.originalname,
-    });
+    if (source === 'attachment') {
+      await this.activityService.log(taskId, userId, 'attachment_added', {
+        field: 'attachment',
+        newValue: file.originalname,
+      });
+    }
 
     return saved;
   }

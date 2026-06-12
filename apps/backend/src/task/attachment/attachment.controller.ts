@@ -7,6 +7,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Query,
   Res,
   UploadedFile,
   UseInterceptors,
@@ -31,8 +32,9 @@ export class AttachmentController {
     @CurrentUser() user: RequestUser,
     @UploadedFile() file: Express.Multer.File,
     @Body('title') title?: string,
+    @Query('source') source?: 'attachment' | 'comment_image',
   ) {
-    return this.attachmentService.upload(taskId, projectId, user.id, file, title);
+    return this.attachmentService.upload(taskId, projectId, user.id, file, title, source);
   }
 
   @Patch()

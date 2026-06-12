@@ -13,6 +13,7 @@ import type {
   TaskQueryDto,
   CreateCommentDto,
   UpdateCommentDto,
+  TaskComment,
   SubItemsTreeResponse,
   ActivityFilteredResponse,
   ActivityFilterType,
@@ -80,16 +81,28 @@ export class TaskService {
     );
   }
 
-  addComment(projectId: string, taskId: string, dto: CreateCommentDto): Observable<TaskActivity> {
-    return this.http.post<TaskActivity>(`${this.base(projectId)}/${taskId}/comments`, dto);
+  getComments(projectId: string, taskId: string): Observable<TaskComment[]> {
+    return this.http.get<TaskComment[]>(`${this.base(projectId)}/${taskId}/comments`);
   }
 
-  editComment(projectId: string, taskId: string, commentId: string, dto: UpdateCommentDto): Observable<TaskActivity> {
-    return this.http.patch<TaskActivity>(`${this.base(projectId)}/${taskId}/comments/${commentId}`, dto);
+  createComment(projectId: string, taskId: string, dto: CreateCommentDto): Observable<TaskComment> {
+    return this.http.post<TaskComment>(`${this.base(projectId)}/${taskId}/comments`, dto);
+  }
+
+  updateComment(projectId: string, taskId: string, commentId: string, dto: UpdateCommentDto): Observable<TaskComment> {
+    return this.http.patch<TaskComment>(`${this.base(projectId)}/${taskId}/comments/${commentId}`, dto);
   }
 
   deleteComment(projectId: string, taskId: string, commentId: string): Observable<void> {
     return this.http.delete<void>(`${this.base(projectId)}/${taskId}/comments/${commentId}`);
+  }
+
+  addReaction(projectId: string, taskId: string, commentId: string, emoji: string): Observable<void> {
+    return this.http.put<void>(`${this.base(projectId)}/${taskId}/comments/${commentId}/reactions/${emoji}`, {});
+  }
+
+  removeReaction(projectId: string, taskId: string, commentId: string, emoji: string): Observable<void> {
+    return this.http.delete<void>(`${this.base(projectId)}/${taskId}/comments/${commentId}/reactions/${emoji}`);
   }
 
   getSubItemsTree(projectId: string, taskId: string, depth?: number): Observable<SubItemsTreeResponse> {
