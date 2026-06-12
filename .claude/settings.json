@@ -19,5 +19,16 @@
       "Bash(git -C /Volumes/myssd/Working/github/mpm add apps/frontend/src/app/shared/services/editor-preference.service.ts apps/frontend/src/app/shared/components/rich-text-editor/rich-text-editor.component.ts apps/frontend/src/app/shared/components/rich-text-editor/rich-text-editor.component.html apps/frontend/src/app/layout/app-shell/topbar/topbar.component.ts apps/frontend/src/app/tasks/components/task-detail-panel/components/task-overview-tab.component.ts apps/frontend/src/app/projects/pages/project-settings/general-tab/general-tab.component.ts apps/frontend/src/app/tasks/pages/modules/module-form.component.ts)",
       "Bash(git -C /Volumes/myssd/Working/github/mpm commit -m \"feat\\(rte\\): add EditorPreferenceService — user picks toolbar mode globally via topbar dropdown\")"
     ]
+  },
+  "extraKnownMarketplaces": {
+    "tymoj-code-skills": {
+      "source": {
+        "source": "github",
+        "repo": "tymoj/marketplace"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "mermaid@tymoj-code-skills": true
   }
 }

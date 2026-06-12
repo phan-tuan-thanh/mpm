@@ -297,7 +297,7 @@ export class BacklogComponent implements OnInit, OnDestroy {
       // phẳng ở task-list), không filter → chỉ root (parentId=null).
       this.taskStore.loadBacklog(this.projectId);
     } else {
-      this.taskStore.loadBacklog(this.projectId, { parentId: undefined });
+      this.taskStore.loadBacklog(this.projectId, { parentId: undefined, limit: 1000 });
     }
   }
 

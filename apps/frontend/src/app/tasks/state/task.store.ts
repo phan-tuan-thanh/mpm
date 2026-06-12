@@ -3,6 +3,7 @@ import { catchError, finalize } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { TaskService } from '../services/task.service';
 import { LabelStore } from './label.store';
+import { ProjectStore } from '../../projects/state/project.store';
 import type {
   Task,
   TaskAttachment,
@@ -22,6 +23,7 @@ import type {
 export class TaskStore {
   private readonly taskService = inject(TaskService);
   private readonly labelStore = inject(LabelStore);
+  private readonly projectStore = inject(ProjectStore);
 
   // ─── Signals ────────────────────────────────────────────────────────────
   readonly tasks = signal<TaskListItem[]>([]);
@@ -228,13 +230,39 @@ export class TaskStore {
   }
 
   moveToState(projectId: string, taskId: string, stateId: string, backlogOrder: number): void {
+    // Find the state details from the projectStore.currentProjectStates()
+    const groupedStates = this.projectStore.currentProjectStates();
+    const allStates = groupedStates ? Object.values(groupedStates).flat() : [];
+    const newState = allStates.find((s) => s.id === stateId);
+
     // Optimistic update — task moves to new group immediately
     this.tasks.update((prev) =>
-      prev.map((t) => (t.id === taskId ? { ...t, stateId, backlogOrder } : t)),
+      prev.map((t) => (t.id === taskId ? { ...t, stateId, backlogOrder, state: newState ?? t.state } : t)),
     );
+
+    const current = this.currentTask();
+    if (current && current.id === taskId) {
+      this.currentTask.update((prev) =>
+        prev ? { ...prev, stateId, state: newState ?? prev.state } : null
+      );
+    }
+
     this.taskService.updateTask(projectId, taskId, { stateId })
       .pipe(catchError(() => of(null)))
-      .subscribe();
+      .subscribe((updated) => {
+        if (updated) {
+          this.tasks.update((prev) =>
+            prev.map((t) => (t.id === taskId ? ({ ...t, ...updated } as TaskListItem) : t))
+          );
+          const curr = this.currentTask();
+          if (curr && curr.id === taskId) {
+            this.currentTask.update((prev) =>
+              prev ? { ...prev, ...updated } : prev
+            );
+          }
+        }
+      });
+
     this.taskService.reorderTasks(projectId, { items: [{ taskId, backlogOrder }] })
       .pipe(catchError(() => of(null)))
       .subscribe();
