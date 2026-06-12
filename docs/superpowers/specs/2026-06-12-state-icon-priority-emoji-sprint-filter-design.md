@@ -22,8 +22,8 @@ Ba phần độc lập nhưng cùng đợt cải thiện backlog UI:
 
 ### Backend
 
-- Migration mới trong `migrations/` (pattern TS hiện có): `ALTER TABLE project_states ADD COLUMN icon varchar(50) NULL`. Không backfill.
-- `apps/backend/src/project/entities/project-state.entity.ts`: thêm `@Column({ type: 'varchar', length: 50, nullable: true }) icon!: string | null;`
+- Migration mới trong `migrations/` (pattern TS hiện có): `ALTER TABLE project_states ADD COLUMN icon varchar(100) NULL` — độ dài 100 đồng bộ với `project_priority.icon`. Không backfill.
+- `apps/backend/src/project/entities/project-state.entity.ts`: thêm `@Column({ type: 'varchar', length: 100, nullable: true }) icon!: string | null;`
 - `apps/backend/src/project/state/project-state.service.ts`: `create()` nhận `dto.icon`; `update()` thêm `if (dto.icon !== undefined) state.icon = dto.icon;`
 - `apps/backend/src/task/task-query.service.ts`: query sub-items tree (raw SQL) thêm `ps.icon AS state_icon` vào SELECT và map vào `state.icon`. Query list/detail dùng relation nên tự có icon.
 
