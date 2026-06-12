@@ -65,6 +65,7 @@ import { TaskDescriptionSectionComponent } from './components/task-description-s
 import { SprintService } from '../../../projects/sprints/services/sprint.service';
 
 import { IconDisplayComponent } from '../../../shared/components/icon-display/icon-display.component';
+import { StateDotComponent } from '../../../shared/components/state-dot/state-dot.component';
 
 @Component({
   standalone: true,
@@ -89,6 +90,7 @@ import { IconDisplayComponent } from '../../../shared/components/icon-display/ic
     TaskLinksComponent,
     TaskDescriptionSectionComponent,
     IconDisplayComponent,
+    StateDotComponent,
   ],
   providers: [MessageService, TaskDetailStateService],
   styles: [`
@@ -276,8 +278,11 @@ import { IconDisplayComponent } from '../../../shared/components/icon-display/ic
               <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap">
                 <!-- State -->
                 <button class="meta-pill" [class.active]="false" (click)="statePopover.toggle($event)">
-                  <span style="width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; display: inline-block"
-                    [style.background]="selectedStateColor()"></span>
+                  @if (selectedStateRef(); as st) {
+                    <app-state-dot [state]="st" [size]="10" />
+                  } @else {
+                    <span style="width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; display: inline-block; background: #9CA3AF"></span>
+                  }
                   <span>{{ selectedStateName() }}</span>
                 </button>
 
@@ -486,8 +491,7 @@ import { IconDisplayComponent } from '../../../shared/components/icon-display/ic
               <button class="pop-item" [class.selected]="task()?.stateId === s.id"
                 style="padding: 5px 10px; font-size: 12px; border-radius: 4px"
                 (click)="selectState(s.id); statePopover.hide()">
-                <span style="width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0"
-                  [style.background]="s.color"></span>
+                <app-state-dot [state]="s" [size]="10" />
                 <span style="flex: 1; text-align: left; font-size: 12px">{{ s.name }}</span>
                 @if (task()?.stateId === s.id) {
                   <i class="pi pi-check" style="font-size: 10px; color: var(--p-primary-color); flex-shrink: 0"></i>
@@ -820,10 +824,10 @@ export class TaskDetailPanelComponent implements OnInit, OnChanges, OnDestroy {
     return this.stateOptions().find((s) => s.id === t.stateId)?.name ?? 'Trạng thái';
   });
 
-  protected readonly selectedStateColor = computed(() => {
+  protected readonly selectedStateRef = computed(() => {
     const t = this.task();
-    if (!t) return '#9CA3AF';
-    return this.stateOptions().find((s) => s.id === t.stateId)?.color ?? '#9CA3AF';
+    if (!t) return null;
+    return this.stateOptions().find((s) => s.id === t.stateId) ?? null;
   });
 
   protected readonly selectedPriorityConfig = computed(() => {
