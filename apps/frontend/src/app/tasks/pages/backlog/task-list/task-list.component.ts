@@ -8,6 +8,7 @@ import { SkeletonModule } from 'primeng/skeleton';
 import type { TaskListItem, ReorderTaskItem, ProjectState, DisplayProperties } from '@mpm/shared-types';
 import { DEFAULT_DISPLAY_PROPS } from '@mpm/shared-types';
 import { TaskRowComponent } from './task-row.component';
+import { selectRootTasks } from './task-list.helpers';
 import { StateDotComponent } from '../../../../shared/components/state-dot/state-dot.component';
 
 const STATE_GROUP_ORDER = ['backlog', 'unstarted', 'started', 'completed', 'cancelled'];
@@ -234,7 +235,7 @@ export class TaskListComponent {
 
   private readonly sortedGroups = computed(() => {
     const children = this.childrenByParent();
-    const rootTasks = this._tasks().filter((t) => !t.parentId);
+    const rootTasks = selectRootTasks(this._tasks());
     const byState = new Map<string, TaskNode[]>();
     for (const t of rootTasks) {
       if (!byState.has(t.stateId)) byState.set(t.stateId, []);

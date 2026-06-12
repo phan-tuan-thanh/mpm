@@ -58,6 +58,12 @@ import { StateDotComponent } from '../../../../shared/components/state-dot/state
     }
     <i class="flex-shrink-0 text-xs mr-2" [class]="typeIcon(task.type)" [style.color]="typeColor(task.type)" [pTooltip]="task.type"></i>
     <span class="flex-1 text-sm text-gray-800 dark:text-surface-100 truncate">{{ task.title }}</span>
+    @if (depth === 0 && task.parentId && task.parent) {
+      <span class="flex items-center gap-1 text-xs text-gray-400 dark:text-surface-500 flex-shrink-0 mr-2 max-w-[200px]" [pTooltip]="task.parent.taskId + ' · ' + task.parent.title">
+        <i class="pi pi-arrow-up text-[9px]"></i>
+        <span class="truncate">{{ task.parent.taskId }} · {{ task.parent.title }}</span>
+      </span>
+    }
     @if (displayProps.showSubItemCount && task.subItemCount > 0) {
       <span class="flex items-center gap-0.5 text-xs text-gray-400 dark:text-surface-500 flex-shrink-0 mr-2" [pTooltip]="task.subItemCount + ' sub-items'">
         <i class="pi pi-sitemap text-[10px]"></i>{{ task.subItemCount }}

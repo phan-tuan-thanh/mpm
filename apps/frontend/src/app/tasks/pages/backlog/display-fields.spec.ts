@@ -40,4 +40,13 @@ describe('Display Properties: Start date và State được render', () => {
       expect(taskList).not.toContain('isFilledState');
     });
   });
+
+  describe('orphan sub-items khi filter (spec 2026-06-12-filter-orphan-subitems)', () => {
+    it('task-list dùng selectRootTasks thay filter !parentId', () => {
+      expect(taskList).toContain('selectRootTasks(');
+    });
+    it('task-row render chip parent cho orphan row (depth 0 có parentId)', () => {
+      expect(taskRow).toContain('depth === 0 && task.parentId && task.parent');
+    });
+  });
 });
