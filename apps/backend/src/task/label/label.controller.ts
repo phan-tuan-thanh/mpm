@@ -40,7 +40,7 @@ export class LabelController {
   async create(
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @CurrentUser() user: RequestUser,
-    @Body() body: { name: string; color: string; isExclusive?: boolean; description?: string | null },
+    @Body() body: { name: string; colorLight: string; colorDark: string; isExclusive?: boolean; description?: string | null; icon?: string | null },
   ) {
     const workspaceId = await resolveWorkspaceId(this.projectRepo, projectId);
     return this.labelService.create(body, {
@@ -57,7 +57,7 @@ export class LabelController {
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @Param('labelId', ParseUUIDPipe) labelId: string,
     @CurrentUser() user: RequestUser,
-    @Body() body: { name?: string; color?: string; isExclusive?: boolean; description?: string | null },
+    @Body() body: { name?: string; colorLight?: string; colorDark?: string; isExclusive?: boolean; description?: string | null; icon?: string | null },
   ) {
     return this.labelService.update(labelId, body, {
       projectId,

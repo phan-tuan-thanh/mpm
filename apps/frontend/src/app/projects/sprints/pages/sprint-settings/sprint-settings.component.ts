@@ -56,21 +56,41 @@ import {
           <!-- 2-column layout: main content left, metadata right -->
           <div class="flex flex-col xl:flex-row gap-5 items-start">
 
-            <!-- Left: Nhận diện + Vận hành -->
+            <!-- Left: Cấu hình Sprint -->
             <div class="flex-1 min-w-0 space-y-5">
 
-              <!-- ── Nhận diện ── -->
+              <!-- ── Khung Cấu hình Sprint ── -->
               <div class="bg-surface-0 dark:bg-surface-900 rounded-xl border border-surface-100 dark:border-surface-800 shadow-sm overflow-hidden">
                 <div class="px-5 py-3.5 border-b border-surface-100 dark:border-surface-800">
-                  <h2 class="text-sm font-bold text-gray-900 dark:text-surface-0">Nhận diện</h2>
-                  <p class="text-xs text-gray-400 dark:text-surface-500 mt-0.5">Tên gọi và biểu tượng hiển thị trong toàn bộ UI của dự án này.</p>
+                  <h2 class="text-sm font-bold text-gray-900 dark:text-surface-0">Cấu hình Sprint</h2>
+                  <p class="text-xs text-gray-400 dark:text-surface-500 mt-0.5">Tên gọi, biểu tượng hiển thị, giới hạn vận hành và thời lượng mặc định.</p>
                 </div>
                 <div class="p-5 space-y-5">
 
-                  <!-- Terminology -->
-                  <div class="flex flex-col gap-1.5">
-                    <label class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wider">Gọi Sprint là</label>
-                    <div class="mt-1">
+                  <!-- Biểu tượng & Gọi Sprint là: inline row at the top -->
+                  <div class="flex gap-4 items-end flex-wrap">
+                    <!-- Icon Selector -->
+                    <div class="flex-shrink-0 relative">
+                      <p-popover #iconPop styleClass="!p-0" appendTo="body">
+                        <app-icon-picker-panel
+                          context="sprint"
+                          [value]="form.icon"
+                          (valueChange)="onIconPicked($event); iconPop.hide()"
+                        />
+                      </p-popover>
+                      <button
+                        type="button"
+                        class="w-12 h-8 rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 text-primary flex items-center justify-center transition hover:border-primary cursor-pointer"
+                        (click)="iconPop.toggle($event)"
+                        pTooltip="Chọn biểu tượng hiển thị"
+                        tooltipPosition="top"
+                      >
+                        <app-icon-display [icon]="form.icon" class="text-sm"></app-icon-display>
+                      </button>
+                    </div>
+                    <!-- Terminology Select -->
+                    <div class="flex-1 min-w-[140px] flex flex-col gap-1.5">
+                      <label class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wider select-none">Gọi Sprint là</label>
                       <p-selectbutton
                         [options]="terminologyOptions"
                         [(ngModel)]="form.terminology"
@@ -82,48 +102,8 @@ import {
                     </div>
                   </div>
 
-                  <!-- Icon picker (kho icon dùng chung, lọc context sprint) -->
-                  <div class="flex flex-col gap-1.5">
-                    <label class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wider">Biểu tượng</label>
-                    <div class="flex items-center gap-2">
-                      <p-popover #iconPop styleClass="!p-0" appendTo="body">
-                        <app-icon-picker-panel
-                          context="sprint"
-                          [value]="form.icon"
-                          (valueChange)="onIconPicked($event); iconPop.hide()"
-                        />
-                      </p-popover>
-                      <button
-                        type="button"
-                        class="w-12 h-10 rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 text-primary flex items-center justify-center transition hover:border-primary"
-                        (click)="iconPop.toggle($event)"
-                      >
-                        <app-icon-display [icon]="form.icon" class="text-lg"></app-icon-display>
-                      </button>
-                      <button
-                        pButton
-                        type="button"
-                        label="Chọn biểu tượng"
-                        icon="pi pi-palette"
-                        severity="secondary"
-                        size="small"
-                        [outlined]="true"
-                        [fluid]="false"
-                        (click)="iconPop.toggle($event)"
-                      ></button>
-                    </div>
-                    <p class="text-xs text-gray-400 dark:text-surface-500">Hiển thị ở sidebar và các badge sprint.</p>
-                  </div>
-                </div>
-              </div>
-
-              <!-- ── Vận hành ── -->
-              <div class="bg-surface-0 dark:bg-surface-900 rounded-xl border border-surface-100 dark:border-surface-800 shadow-sm overflow-hidden">
-                <div class="px-5 py-3.5 border-b border-surface-100 dark:border-surface-800">
-                  <h2 class="text-sm font-bold text-gray-900 dark:text-surface-0">Vận hành</h2>
-                  <p class="text-xs text-gray-400 dark:text-surface-500 mt-0.5">Giới hạn sprint chạy đồng thời và thời lượng mặc định khi tạo mới.</p>
-                </div>
-                <div class="p-5 space-y-5">
+                  <!-- Divider line -->
+                  <div class="border-t border-surface-100 dark:border-surface-800"></div>
 
                   <!-- Max active sprints -->
                   <div class="flex flex-col gap-1.5">
@@ -144,6 +124,9 @@ import {
                     <p class="text-xs text-gray-400 dark:text-surface-500 mt-1">Giới hạn bao nhiêu sprint có thể đồng thời ở trạng thái "active" (từ 1 đến 10).</p>
                   </div>
 
+                  <!-- Divider line -->
+                  <div class="border-t border-surface-100 dark:border-surface-800"></div>
+
                   <!-- Default duration -->
                   <div class="flex flex-col gap-1.5">
                     <label class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wider">
@@ -155,7 +138,7 @@ import {
                       @for (opt of durationOptions; track opt.value) {
                         <button
                           type="button"
-                          class="px-3 py-1.5 text-xs font-medium rounded-lg border transition-all duration-150"
+                          class="px-3 py-1.5 text-xs font-medium rounded-lg border transition-all duration-150 cursor-pointer"
                           [ngClass]="form.defaultDurationWeeks === opt.value
                             ? 'text-white border-transparent'
                             : 'bg-transparent text-gray-600 dark:text-surface-300 border-surface-200 dark:border-surface-700 hover:border-gray-400 dark:hover:border-surface-500'"
@@ -172,7 +155,7 @@ import {
                       <div class="flex items-center gap-1">
                         <button
                           type="button"
-                          class="w-9 h-9 rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 text-gray-500 dark:text-surface-400 flex items-center justify-center transition hover:border-primary hover:text-primary disabled:opacity-40 disabled:pointer-events-none"
+                          class="w-9 h-9 rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 text-gray-500 dark:text-surface-400 flex items-center justify-center transition hover:border-primary hover:text-primary disabled:opacity-40 disabled:pointer-events-none cursor-pointer"
                           [disabled]="form.defaultDurationWeeks <= 1"
                           (click)="form.defaultDurationWeeks = form.defaultDurationWeeks - 1"
                         >
@@ -189,7 +172,7 @@ import {
                         </span>
                         <button
                           type="button"
-                          class="w-9 h-9 rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 text-gray-500 dark:text-surface-400 flex items-center justify-center transition hover:border-primary hover:text-primary disabled:opacity-40 disabled:pointer-events-none"
+                          class="w-9 h-9 rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 text-gray-500 dark:text-surface-400 flex items-center justify-center transition hover:border-primary hover:text-primary disabled:opacity-40 disabled:pointer-events-none cursor-pointer"
                           [disabled]="form.defaultDurationWeeks >= 12"
                           (click)="form.defaultDurationWeeks = form.defaultDurationWeeks + 1"
                         >
@@ -197,7 +180,7 @@ import {
                         </button>
                       </div>
                     </div>
-                    <p class="text-xs text-gray-400 dark:text-surface-500">Dùng để tự gợi ý ngày kết thúc khi tạo sprint mới.</p>
+                    <p class="text-xs text-gray-400 dark:text-surface-500 mt-1">Dùng để tự gợi ý ngày kết thúc khi tạo sprint mới.</p>
                   </div>
                 </div>
               </div>

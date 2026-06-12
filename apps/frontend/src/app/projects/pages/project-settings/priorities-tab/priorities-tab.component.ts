@@ -12,7 +12,8 @@ import { ProjectStore } from '../../../state/project.store';
 import { PriorityService } from '../../../services/priority.service';
 import { PriorityConfigService } from '../../../../tasks/services/priority-config.service';
 import { AuthService } from '../../../../auth/services/auth.service';
-import { ColorPairPickerComponent } from '../../../../shared/components/color-pair-picker/color-pair-picker.component';
+import { LayoutService } from '../../../../layout/services/layout.service';
+import { ColorPickerPanelComponent } from '../../../../shared/components/color-picker-panel/color-picker-panel.component';
 import { IconPickerPanelComponent } from '../../../../shared/components/icon-picker-panel/icon-picker-panel.component';
 import { IconDisplayComponent } from '../../../../shared/components/icon-display/icon-display.component';
 import { ProjectPriority, CreatePriorityDto } from '@mpm/shared-types';
@@ -30,7 +31,7 @@ interface EditDraft {
   imports: [
     CommonModule, FormsModule, ButtonModule, DialogModule,
     InputTextModule, PopoverModule, TooltipModule,
-    DragDropModule, ColorPairPickerComponent, IconPickerPanelComponent,
+    DragDropModule, ColorPickerPanelComponent, IconPickerPanelComponent,
     IconDisplayComponent,
   ],
   templateUrl: './priorities-tab.component.html',
@@ -42,6 +43,45 @@ export class PrioritiesTabComponent implements OnInit {
   private readonly priorityConfigService = inject(PriorityConfigService);
   private readonly authService = inject(AuthService);
   private readonly messageService = inject(MessageService);
+  protected readonly layoutService = inject(LayoutService);
+
+  readonly presetPairs = [
+    { light: '#EF4444', dark: '#F87171' }, // Red
+    { light: '#F97316', dark: '#FB923C' }, // Orange
+    { light: '#F59E0B', dark: '#FBBF24' }, // Amber
+    { light: '#10B981', dark: '#34D399' }, // Emerald
+    { light: '#0D9488', dark: '#2DD4BF' }, // Teal
+    { light: '#3B82F6', dark: '#60A5FA' }, // Blue
+    { light: '#6366F1', dark: '#818CF8' }, // Indigo
+    { light: '#8B5CF6', dark: '#A78BFA' }, // Violet
+    { light: '#EC4899', dark: '#F472B6' }, // Pink
+    { light: '#6B7280', dark: '#9CA3AF' }  // Gray
+  ];
+
+  protected readonly showCustomAddColors = signal(false);
+  protected readonly showCustomEditColors = signal(false);
+
+  getPresetGradient(light: string, dark: string): string {
+    return `linear-gradient(135deg, ${light} 50%, ${dark} 50%)`;
+  }
+
+  selectColorPair(light: string, dark: string): void {
+    this.addDraft.update(d => ({ ...d, colorLight: light, colorDark: dark }));
+  }
+
+  selectEditColorPair(light: string, dark: string): void {
+    this.editDraft.update(d => ({ ...d, colorLight: light, colorDark: dark }));
+  }
+
+  readonly previewPriority = computed(() => {
+    const draft = this.addDraft();
+    return {
+      name: draft.name.trim() || 'Tên mức ưu tiên',
+      icon: draft.icon,
+      colorLight: draft.colorLight,
+      colorDark: draft.colorDark
+    };
+  });
 
   readonly priorities = signal<ProjectPriority[]>([]);
   readonly isLoading = signal(false);
@@ -107,15 +147,20 @@ export class PrioritiesTabComponent implements OnInit {
   startEdit(p: ProjectPriority): void {
     this.editingId.set(p.id);
     this.editDraft.set({ name: p.name, colorLight: p.colorLight, colorDark: p.colorDark, icon: p.icon });
+    this.showCustomEditColors.set(false);
   }
 
-  cancelEdit(): void { this.editingId.set(null); }
+  cancelEdit(): void {
+    this.editingId.set(null);
+    this.showCustomEditColors.set(false);
+  }
 
   saveEdit(p: ProjectPriority): void {
     const draft = this.editDraft();
     this.priorityService.updatePriority(this.projectId, p.id, draft).subscribe({
       next: () => {
         this.editingId.set(null);
+        this.showCustomEditColors.set(false);
         this.reload();
         this.messageService.add({ severity: 'success', summary: 'Đã lưu', detail: `Cập nhật "${draft.name}" thành công.` });
       },
@@ -162,6 +207,7 @@ export class PrioritiesTabComponent implements OnInit {
       next: () => {
         this.showAddForm.set(false);
         this.addDraft.set({ name: '', value: '', colorLight: '#9CA3AF', colorDark: '#6B7280', icon: 'pi pi-flag' });
+        this.showCustomAddColors.set(false);
         this.reload();
         this.messageService.add({ severity: 'success', summary: 'Thành công', detail: `Đã thêm "${draft.name}".` });
       },

@@ -18,8 +18,11 @@ export class WorkspaceStateTemplate {
   @Column({ type: 'varchar', length: 50 })
   name!: string;
 
-  @Column({ type: 'char', length: 7, default: '#6B7280' })
-  color!: string;
+  @Column({ name: 'color_light', type: 'char', length: 7, default: '#6B7280' })
+  colorLight!: string;
+
+  @Column({ name: 'color_dark', type: 'char', length: 7, default: '#6B7280' })
+  colorDark!: string;
 
   @Column({
     type: 'varchar',

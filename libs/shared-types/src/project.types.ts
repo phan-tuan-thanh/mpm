@@ -92,7 +92,8 @@ export interface ProjectState {
   id: string;
   projectId: string;
   name: string;
-  color: string;
+  colorLight: string;
+  colorDark: string;
   group: StateGroup;
   icon?: string | null;
   isDefault: boolean;
@@ -106,7 +107,8 @@ export interface WorkspaceStateTemplate {
   id: string;
   workspaceId: string;
   name: string;
-  color: string;
+  colorLight: string;
+  colorDark: string;
   group: StateGroup;
   isDefault: boolean;
   order: number;
@@ -164,14 +166,16 @@ export interface UpdateProjectGeneralDto {
 
 export interface CreateStateDto {
   name: string;
-  color: string;
+  colorLight: string;
+  colorDark: string;
   group: StateGroup;
   icon?: string;
 }
 
 export interface UpdateStateDto {
   name?: string;
-  color?: string;
+  colorLight?: string;
+  colorDark?: string;
   group?: StateGroup;
   order?: number;
   isDefault?: boolean;

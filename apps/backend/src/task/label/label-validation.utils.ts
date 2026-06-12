@@ -10,7 +10,7 @@ export function validateColor(color: string): void {
 
 export async function validateUpdate(
   label: Label,
-  dto: { name?: string; color?: string },
+  dto: { name?: string; colorLight?: string; colorDark?: string },
   opts: { projectId?: string; userSystemRole: string },
   labelRepo: Repository<Label>,
 ): Promise<void> {
@@ -28,8 +28,11 @@ export async function validateUpdate(
     throw new NotFoundException('Label not found');
   }
 
-  if (dto.color) {
-    validateColor(dto.color);
+  if (dto.colorLight) {
+    validateColor(dto.colorLight);
+  }
+  if (dto.colorDark) {
+    validateColor(dto.colorDark);
   }
 
   if (dto.name && dto.name !== label.name) {

@@ -70,3 +70,23 @@ export function getDefaultColor(group: StateGroup): string {
       return '#6b7280';
   }
 }
+
+/**
+ * Lấy màu hex tối mặc định khi tạo state mới trong một group
+ */
+export function getDefaultDarkColor(group: StateGroup): string {
+  switch (group) {
+    case StateGroup.BACKLOG:
+      return '#6b7280';
+    case StateGroup.UNSTARTED:
+      return '#f59e0b';
+    case StateGroup.STARTED:
+      return '#2563eb';
+    case StateGroup.COMPLETED:
+      return '#16a34a';
+    case StateGroup.CANCELLED:
+      return '#dc2626';
+    default:
+      return '#4b5563';
+  }
+}

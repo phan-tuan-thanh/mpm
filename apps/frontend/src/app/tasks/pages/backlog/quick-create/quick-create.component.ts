@@ -207,15 +207,17 @@ export class QuickCreateComponent implements OnChanges {
   protected readonly memberOptions = computed(() => this.projectStore.members());
 
   protected readonly labelOptions = computed(() =>
-    this.taskStore.labels().map((l) => ({ id: l.id, name: l.name, color: l.color, isExclusive: l.isExclusive, description: l.description })),
+    this.taskStore.labels().map((l) => ({ id: l.id, name: l.name, colorLight: l.colorLight, colorDark: l.colorDark, isExclusive: l.isExclusive, description: l.description })),
   );
 
   protected readonly moduleOptions = computed(() => this.moduleStore.modules());
 
   // ─── Computed display values ─────────────────────────────────────────────
-  protected readonly selectedStateColor = computed(() =>
-    this.stateOptions().find((s) => s.id === this.selectedStateId())?.color ?? '#9CA3AF',
-  );
+  protected readonly selectedStateColor = computed(() => {
+    const s = this.stateOptions().find((s) => s.id === this.selectedStateId());
+    if (!s) return '#9CA3AF';
+    return this.layoutService.isDarkMode() ? s.colorDark : s.colorLight;
+  });
 
   protected readonly selectedStateName = computed(() =>
     this.stateOptions().find((s) => s.id === this.selectedStateId())?.name ?? 'State',
@@ -271,8 +273,10 @@ export class QuickCreateComponent implements OnChanges {
     return this.memberOptions().find((m) => m.userId === userId)?.displayName ?? userId;
   }
 
-  protected getLabelColor(id: string): string {
-    return this.labelOptions().find((l) => l.id === id)?.color ?? '#9CA3AF';
+  protected getLabelColor(id: string, isDark = false): string {
+    const l = this.labelOptions().find((l) => l.id === id);
+    if (!l) return isDark ? '#6B7280' : '#9CA3AF';
+    return isDark ? l.colorDark : l.colorLight;
   }
 
   protected getLabelName(id: string): string {
@@ -321,12 +325,12 @@ export class QuickCreateComponent implements OnChanges {
     }
   }
 
-  protected getScopeColor(name: string, fallbackColor: string): string {
+  protected getScopeColor(name: string, isDark: boolean, fallbackColor: string): string {
     if (!this.isScoped(name)) return fallbackColor;
     const scope = this.getScope(name).toLowerCase();
     const allLabels = this.labelOptions();
     const match = allLabels.find(l => l.name.includes('::') && l.name.split('::')[0].trim().toLowerCase() === scope);
-    return match ? match.color : fallbackColor;
+    return match ? (isDark ? match.colorDark : match.colorLight) : fallbackColor;
   }
 
   protected isOverdue(): boolean {
@@ -575,8 +579,8 @@ export class QuickCreateComponent implements OnChanges {
         labelIds: this.selectedLabelIds.length ? this.selectedLabelIds : undefined,
         moduleIds: this.selectedModuleIds.length ? this.selectedModuleIds : undefined,
         estimateValue: this.estimateValue ?? undefined,
-        startDate: this.startDate ? this.startDate.toISOString().split('T')[0] : undefined,
-        dueDate: this.dueDate ? this.dueDate.toISOString().split('T')[0] : undefined,
+        startDate: this.formatDateToISO(this.startDate) ?? undefined,
+        dueDate: this.formatDateToISO(this.dueDate) ?? undefined,
         parentId: this.selectedParentId() || undefined,
       },
       files: this.pendingFiles,
@@ -631,27 +635,39 @@ export class QuickCreateComponent implements OnChanges {
     const projectId = this.projectStore.currentProject()?.id;
     if (!projectId) return;
 
-    let chosenColor = '';
+    let chosenColorLight = '';
+    let chosenColorDark = '';
     if (query.includes('::')) {
       const scope = query.split('::')[0].trim().toLowerCase();
       const match = this.labelOptions().find(l => l.name.includes('::') && l.name.split('::')[0].trim().toLowerCase() === scope);
       if (match) {
-        chosenColor = match.color;
+        chosenColorLight = match.colorLight;
+        chosenColorDark = match.colorDark;
       }
     }
 
-    if (!chosenColor) {
+    if (!chosenColorLight || !chosenColorDark) {
       const colorPresets = [
-        '#EF4444', '#F97316', '#F59E0B', '#10B981', '#0D9488',
-        '#3B82F6', '#6366F1', '#8B5CF6', '#EC4899', '#6B7280',
+        { light: '#EF4444', dark: '#F87171' }, // Red
+        { light: '#F97316', dark: '#FB923C' }, // Orange
+        { light: '#F59E0B', dark: '#FBBF24' }, // Amber
+        { light: '#10B981', dark: '#34D399' }, // Emerald
+        { light: '#0D9488', dark: '#2DD4BF' }, // Teal
+        { light: '#3B82F6', dark: '#60A5FA' }, // Blue
+        { light: '#6366F1', dark: '#818CF8' }, // Indigo
+        { light: '#8B5CF6', dark: '#A78BFA' }, // Violet
+        { light: '#EC4899', dark: '#F472B6' }, // Pink
+        { light: '#6B7280', dark: '#9CA3AF' }  // Gray
       ];
       const idx = Math.floor(Math.random() * colorPresets.length);
-      chosenColor = colorPresets[idx];
+      chosenColorLight = colorPresets[idx].light;
+      chosenColorDark = colorPresets[idx].dark;
     }
 
     this.labelStore.createLabel(projectId, {
       name: query,
-      color: chosenColor,
+      colorLight: chosenColorLight,
+      colorDark: chosenColorDark,
       isExclusive: true,
     }).then((created) => {
       if (created) {
@@ -708,5 +724,13 @@ export class QuickCreateComponent implements OnChanges {
     this.subItemsTotalCount.set(0);
     this.subItemsDoneCount.set(0);
     this.selectedModuleIds = [];
+  }
+
+  private formatDateToISO(date: Date | null): string | null {
+    if (!date) return null;
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
   }
 }

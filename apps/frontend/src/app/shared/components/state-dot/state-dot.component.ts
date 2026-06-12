@@ -1,11 +1,13 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, inject } from '@angular/core';
 import { TooltipModule } from 'primeng/tooltip';
 import { IconDisplayComponent } from '../icon-display/icon-display.component';
+import { LayoutService } from '../../../layout/services/layout.service';
 
 /** Dữ liệu tối thiểu để render state — nhận được cả TaskStateRef lẫn ProjectState. */
 export interface StateLike {
   name: string;
-  color: string;
+  colorLight: string;
+  colorDark: string;
   group: string;
   icon?: string | null;
 }
@@ -27,15 +29,21 @@ export interface StateLike {
         class="inline-block rounded-full border-2 flex-shrink-0"
         [style.width.px]="size"
         [style.height.px]="size"
-        [style.border-color]="state.color"
-        [style.background]="isFilled ? state.color : 'transparent'"
+        [style.border-color]="color"
+        [style.background]="isFilled ? color : 'transparent'"
         [pTooltip]="state.name"></span>
     }
   `,
 })
 export class StateDotComponent {
+  protected readonly layoutService = inject(LayoutService);
+
   @Input({ required: true }) state!: StateLike;
   @Input() size = 14;
+
+  get color(): string {
+    return this.layoutService.isDarkMode() ? this.state.colorDark : this.state.colorLight;
+  }
 
   get isFilled(): boolean {
     return this.state.group === 'started' || this.state.group === 'completed';
@@ -45,6 +53,6 @@ export class StateDotComponent {
     const icon = this.state.icon;
     if (!icon) return null;
     const isPrime = icon.startsWith('pi ') || icon.startsWith('pi-');
-    return isPrime ? this.state.color : null;
+    return isPrime ? this.color : null;
   }
 }

@@ -454,26 +454,46 @@ describe('Admin Management & Project Member Bootstrap Integration Tests (Epic D)
 
   // P12: Last admin protection
   it('P12: Last admin protection - demoting or disabling the only active Admin throws 400', async () => {
-    // There is only 1 admin active in our test suite (testAdmin)
-    // Try to demote testAdmin to User
-    await expect(
-      adminService.changeRole(
-        testAdmin.id,
-        'User',
-        testAdmin.id,
-        '127.0.0.1',
-        'spec-agent',
-      ),
-    ).rejects.toThrow(BadRequestException);
+    // Deactivate all other active admins to guarantee testAdmin is the last active admin
+    const otherAdmins = await userRepo.find({
+      where: { systemRole: 'Admin' as any, isActive: true },
+    });
+    const modifiedAdmins: User[] = [];
+    for (const admin of otherAdmins) {
+      if (admin.id !== testAdmin.id) {
+        admin.isActive = false;
+        await userRepo.save(admin);
+        modifiedAdmins.push(admin);
+      }
+    }
 
-    // Try to disable testAdmin
-    await expect(
-      adminService.disableAccount(
-        testAdmin.id,
-        testAdmin.id,
-        '127.0.0.1',
-        'spec-agent',
-      ),
-    ).rejects.toThrow(BadRequestException);
+    try {
+      // Try to demote testAdmin to User
+      await expect(
+        adminService.changeRole(
+          testAdmin.id,
+          'User',
+          testAdmin.id,
+          '127.0.0.1',
+          'spec-agent',
+        ),
+      ).rejects.toThrow(BadRequestException);
+
+      // Try to disable testAdmin
+      await expect(
+        adminService.disableAccount(
+          testAdmin.id,
+          testAdmin.id,
+          '127.0.0.1',
+          'spec-agent',
+        ),
+      ).rejects.toThrow(BadRequestException);
+    } finally {
+      // Restore other admins' active status
+      for (const admin of modifiedAdmins) {
+        admin.isActive = true;
+        await userRepo.save(admin);
+      }
+    }
   });
 });

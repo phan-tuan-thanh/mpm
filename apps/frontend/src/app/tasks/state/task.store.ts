@@ -199,6 +199,28 @@ export class TaskStore {
   }
 
   updateTask(projectId: string, taskId: string, dto: UpdateTaskDto): void {
+    if (dto.labelIds) {
+      const task = this.currentTask()?.id === taskId ? this.currentTask() : this.tasks().find((t) => t.id === taskId);
+      const oldLabelIds = task?.labels?.map((l: any) => l.id) || [];
+      const newLabelIds = dto.labelIds;
+      const addedId = newLabelIds.find((id) => !oldLabelIds.includes(id));
+
+      if (addedId) {
+        const addedLabel = this.labels().find((l) => l.id === addedId);
+        if (addedLabel && addedLabel.name.includes('::') && addedLabel.isExclusive !== false) {
+          const scope = addedLabel.name.split('::')[0].trim().toLowerCase();
+          dto.labelIds = newLabelIds.filter((id) => {
+            if (id === addedId) return true;
+            const label = this.labels().find((l) => l.id === id);
+            if (label && label.name.includes('::') && label.isExclusive !== false) {
+              return label.name.split('::')[0].trim().toLowerCase() !== scope;
+            }
+            return true;
+          });
+        }
+      }
+    }
+
     this.saveStatus.set('saving');
     this.taskService
       .updateTask(projectId, taskId, dto)

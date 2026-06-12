@@ -24,15 +24,15 @@
       <p class="text-xs text-gray-500 dark:text-surface-400 italic">Danh sách template tham khảo (read-only). States được tạo từ template sẽ hiển thị icon <i class="pi pi-link text-xs"></i>.</p>
 
       <!-- Template States List -->
-      <div class="space-y-2">
+      <div class="divide-y divide-gray-150 dark:divide-surface-700 border border-gray-200 dark:border-surface-700 rounded-lg overflow-hidden bg-white dark:bg-surface-900">
         @for (tpl of workspaceTemplates(); track tpl.id) {
-          <div class="flex items-center gap-3 p-2.5 rounded-lg border border-gray-200 dark:border-surface-700 bg-white dark:bg-surface-900">
+          <div class="flex items-center gap-3 p-2.5">
             <span
               class="w-5 h-5 rounded-full flex-shrink-0 border border-gray-200 dark:border-surface-700"
-              [style.background-color]="tpl.color"
+              [style.background-color]="layoutService.isDarkMode() ? tpl.colorDark : tpl.colorLight"
             ></span>
             <span class="text-sm font-medium text-gray-700 dark:text-surface-200">{{ tpl.name }}</span>
-            <span class="text-[11px] text-gray-400 dark:text-surface-500 bg-gray-100 dark:bg-surface-700 px-1.5 py-0.5 rounded">{{ getGroupName(tpl.group) }}</span>
+            <span class="text-[11px] text-gray-400 dark:text-surface-500 bg-gray-100 dark:bg-surface-700 px-1.5 py-0.5 rounded ml-auto">{{ getGroupName(tpl.group) }}</span>
             @if (tpl.isDefault) {
               <span class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 px-1.5 py-0.5 rounded-full">Mặc định</span>
             }
@@ -43,11 +43,31 @@
   }
 
   <!-- Project States Section (Editable) -->
-  <div class="grid grid-cols-1 gap-6">
+  <div class="space-y-4" cdkDropListGroup>
+    <!-- Toolbar with Expand/Collapse All -->
+    <div class="flex justify-end items-center bg-gray-50 dark:bg-surface-800/40 p-2 rounded-lg border border-gray-150 dark:border-surface-800">
+      <button
+        pButton
+        type="button"
+        [icon]="isAllCollapsed() ? 'pi pi-chevron-down' : 'pi pi-chevron-up'"
+        [label]="isAllCollapsed() ? 'Mở rộng tất cả' : 'Thu gọn tất cả'"
+        class="p-button-text p-button-sm font-semibold text-xs py-1 px-3"
+        (click)="toggleCollapseAll()"
+      ></button>
+    </div>
+
     @for (group of groupOrder; track group) {
-      <div class="bg-white dark:bg-surface-900 rounded-xl border border-gray-100 dark:border-surface-800 shadow-sm p-5 space-y-4">
-        <div class="flex justify-between items-center pb-2 border-b border-gray-50 dark:border-surface-800">
-          <div class="flex items-center gap-2">
+      <div class="bg-white dark:bg-surface-900 rounded-xl border border-gray-100 dark:border-surface-800 shadow-sm p-4 space-y-2">
+        <!-- Collapsible Group Header -->
+        <div 
+          class="flex justify-between items-center py-2 px-3 hover:bg-gray-50/50 dark:hover:bg-surface-800/30 rounded-lg cursor-pointer select-none transition"
+          (click)="toggleGroup(group)"
+        >
+          <div class="flex items-center gap-2.5">
+            <i 
+              class="pi text-[11px] text-gray-400 transition-transform duration-150" 
+              [class]="collapsedGroups[group] ? 'pi-chevron-right' : 'pi-chevron-down'"
+            ></i>
             <span class="w-2.5 h-2.5 rounded-full" [ngClass]="getGroupColor(group)"></span>
             <h3 class="text-sm font-bold text-gray-800 dark:text-surface-100 uppercase tracking-wider">{{ getGroupName(group) }}</h3>
             <span class="text-xs text-gray-400 dark:text-surface-500 font-semibold">({{ getStatesCount(group) }})</span>
@@ -57,209 +77,398 @@
               pButton
               type="button"
               icon="pi pi-plus"
-              label="Thêm trạng thái"
-              class="p-button-text p-button-sm font-semibold text-xs py-1"
-              (click)="showAddForm[group] = true"
+              label="Thêm"
+              class="p-button-text p-button-sm font-semibold text-xs py-1 px-2.5 h-7"
+              (click)="$event.stopPropagation(); showAddForm[group] = true; collapsedGroups[group] = false"
+              (pointerdown)="$event.stopPropagation()"
             ></button>
           }
         </div>
 
-        <!-- Drag and Drop List -->
-        <div
-          cdkDropList
-          [cdkDropListData]="statesForGroup(group)"
-          [cdkDropListSortingDisabled]="true"
-          (cdkDropListDropped)="onDrop($event, group)"
-          class="space-y-2 min-h-[40px]"
-        >
-          @for (state of statesForGroup(group); track state.id) {
+        <!-- Drag and Drop List (Indented child states, no connector lines, separated by divide lines) -->
+        @if (!collapsedGroups[group]) {
+          <div
+            cdkDropList
+            [cdkDropListData]="statesForGroup(group)"
+            [cdkDropListSortingDisabled]="true"
+            (cdkDropListDropped)="onDrop($event, group)"
+            class="ml-7 divide-y divide-gray-100 dark:divide-surface-800/40 border-t border-gray-50 dark:border-surface-800/50 mt-1 min-h-[10px]"
+          >
+            @for (state of statesForGroup(group); track state.id) {
 
-            <!-- Ghost: stays in original position while dragging -->
-            @if (draggedStateId === state.id) {
-              <div class="opacity-25 pointer-events-none flex items-center justify-between p-3 rounded-lg border border-gray-100 dark:border-surface-800 bg-white dark:bg-surface-900 shadow-sm">
-                <div class="flex items-center gap-3 flex-1 min-w-0">
-                  <span class="w-5 h-5 rounded-full flex-shrink-0 border border-gray-200 dark:border-surface-700" [style.background-color]="state.color"></span>
-                  <span class="text-sm font-semibold text-gray-800 dark:text-surface-100 truncate">{{ state.name }}</span>
+              <!-- Ghost: stays in original position while dragging -->
+              @if (draggedStateId === state.id) {
+                <div class="flex items-center justify-between py-2.5 px-3 bg-gray-50/50 dark:bg-surface-800/20 opacity-70 pointer-events-none relative">
+                  <div class="flex items-center gap-3 flex-1 min-w-0">
+                    <!-- Color dot style replacement -->
+                    <div class="relative flex-shrink-0">
+                      <button type="button"
+                        class="w-6 h-6 rounded-full border border-black/10 flex-shrink-0"
+                        [style.background]="getPresetGradient(state.colorLight, state.colorDark)"
+                        disabled
+                      ></button>
+                    </div>
+
+                    <!-- Icon placeholder replacement -->
+                    <button
+                      type="button"
+                      class="w-7 h-7 flex items-center justify-center rounded border border-gray-200 dark:border-surface-600 flex-shrink-0"
+                      disabled
+                    >
+                      <app-state-dot [state]="state" [size]="12" />
+                    </button>
+                    
+                    <!-- Text display replacement instead of input -->
+                    <input
+                      type="text"
+                      [ngModel]="state.name"
+                      disabled
+                      class="bg-transparent border-none rounded px-2 py-0.5 text-sm font-semibold text-gray-800 dark:text-surface-100 w-full max-w-xs"
+                    />
+
+                    <!-- Template link replacement -->
+                    @if (state.templateId) {
+                      <i class="pi pi-link text-xs text-indigo-400"></i>
+                    }
+
+                    <!-- Default indicator replacement -->
+                    @if (state.isDefault) {
+                      <span class="flex items-center gap-1 text-[11px] font-bold text-indigo-700 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-800 px-2 py-0.5 rounded-full">
+                        <i class="pi pi-star-fill text-[9px]"></i> Mặc định
+                      </span>
+                    }
+                  </div>
+                  @if (!isReadOnly() && !state.isDefault && totalStatesCount() > 2) {
+                    <!-- Clear placeholder to balance delete button width -->
+                    <button
+                      pButton
+                      type="button"
+                      icon="pi pi-trash"
+                      severity="danger"
+                      [outlined]="true"
+                      class="p-0 h-8 w-8 text-xs invisible"
+                    ></button>
+                  }
                 </div>
-              </div>
-            }
-
-            <div
-              cdkDrag
-              [cdkDragDisabled]="isReadOnly()"
-              [cdkDragData]="state"
-              class="flex items-center justify-between p-3 rounded-lg border border-gray-100 dark:border-surface-800 hover:border-gray-200 dark:hover:border-surface-700 bg-white dark:bg-surface-900 shadow-sm transition group relative cursor-grab active:cursor-grabbing"
-              (cdkDragStarted)="onStateDragStart(state.id)"
-              (cdkDragEnded)="onStateDragEnd()"
-              (mouseenter)="hoveredStateId = state.id"
-              (mouseleave)="hoveredStateId === state.id ? hoveredStateId = null : null"
-            >
-              <!-- Line indicator: shows drop position -->
-              @if (draggedStateId && hoveredStateId === state.id && draggedStateId !== state.id) {
-                <div class="h-0.5 bg-indigo-600 dark:bg-indigo-500 w-full absolute top-0 left-0 right-0 z-20 rounded-full"></div>
               }
 
-              <div class="flex items-center gap-3 flex-1 min-w-0">
-                <!-- Color Picker -->
-                <div class="relative flex-shrink-0">
-                  <input
-                    type="color"
-                    [ngModel]="state.color"
-                    (change)="onUpdateColor(state, $any($event.target).value)"
-                    [disabled]="isReadOnly()"
-                    (pointerdown)="$event.stopPropagation()"
-                    class="w-6 h-6 rounded-full border-none cursor-pointer p-0 bg-transparent flex-shrink-0"
-                  />
-                </div>
-
-                <!-- Icon Picker -->
-                <p-popover #stateIconPop styleClass="!p-0" appendTo="body">
-                  <app-icon-picker-panel
-                    context="state"
-                    [value]="state.icon || ''"
-                    (valueChange)="onUpdateIcon(state, $event); stateIconPop.hide()"
-                  />
-                </p-popover>
-                <button
-                  type="button"
-                  class="w-7 h-7 flex items-center justify-center rounded border border-gray-200 dark:border-surface-600 hover:bg-gray-100 dark:hover:bg-surface-800 cursor-pointer flex-shrink-0"
-                  [disabled]="isReadOnly()"
-                  (pointerdown)="$event.stopPropagation()"
-                  (click)="stateIconPop.toggle($event)"
-                  pTooltip="Icon trạng thái"
-                >
-                  <app-state-dot [state]="state" [size]="12" />
-                </button>
-
-                <!-- Inline Name Input -->
-                <input
-                  type="text"
-                  [ngModel]="state.name"
-                  (focus)="onFocusName(state)"
-                  (blur)="onUpdateName(state, $any($event.target).value)"
-                  (keydown.enter)="onUpdateName(state, $any($event.target).value); $any($event.target).blur()"
-                  [disabled]="isReadOnly()"
-                  (pointerdown)="$event.stopPropagation()"
-                  class="bg-transparent border-none focus:bg-gray-50 dark:focus:bg-surface-800 focus:ring-1 focus:ring-indigo-500 rounded px-2 py-0.5 text-sm font-semibold text-gray-800 dark:text-surface-100 hover:bg-gray-50 dark:hover:bg-surface-800 transition w-full max-w-xs"
-                />
-
-                <!-- Template origin icon -->
-                @if (state.templateId) {
-                  <i
-                    class="pi pi-link text-xs text-indigo-400"
-                    pTooltip="Từ workspace template"
-                    tooltipPosition="top"
-                  ></i>
+              <div
+                cdkDrag
+                [cdkDragDisabled]="isReadOnly()"
+                [cdkDragData]="state"
+                class="flex items-center justify-between py-2.5 px-3 hover:bg-gray-50/50 dark:hover:bg-surface-800/20 transition group relative cursor-grab active:cursor-grabbing"
+                (cdkDragStarted)="onStateDragStart(state.id)"
+                (cdkDragEnded)="onStateDragEnd()"
+                (mouseenter)="hoveredStateId = state.id"
+                (mouseleave)="hoveredStateId === state.id ? hoveredStateId = null : null"
+              >
+                <!-- Line indicator: shows drop position -->
+                @if (draggedStateId && hoveredStateId === state.id && draggedStateId !== state.id) {
+                  <div class="h-0.5 bg-indigo-600 dark:bg-indigo-500 w-full absolute top-0 left-0 right-0 z-20 rounded-full"></div>
                 }
 
-                <!-- Default indicator -->
-                @if (state.isDefault) {
-                  <span class="flex items-center gap-1 text-[11px] font-bold text-indigo-700 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-800 px-2 py-0.5 rounded-full">
-                    <i class="pi pi-star-fill text-[9px]"></i> Mặc định
-                  </span>
-                } @else if (!isReadOnly()) {
+                <div class="flex items-center gap-3 flex-1 min-w-0">
+                  <!-- Color Picker -->
+                  <div class="relative flex-shrink-0">
+                    <p-popover #editColorPop styleClass="p-2" appendTo="body" (onShow)="onOpenColorPopover(state)" (onHide)="onCloseColorPopover(state)">
+                      <div class="space-y-3 p-1">
+                        <div class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Màu chọn nhanh (Light / Dark)</div>
+                        <div class="grid grid-cols-5 gap-2 w-48">
+                          @for (pair of presetPairs; track pair.light) {
+                            <button type="button" 
+                              class="w-8 h-8 rounded-full border border-black/10 hover:scale-110 active:scale-95 transition cursor-pointer flex items-center justify-center relative"
+                              [style.background]="getPresetGradient(pair.light, pair.dark)"
+                              (click)="editColorLightDraft[state.id] = pair.light; editColorDarkDraft[state.id] = pair.dark; editColorPop.hide()">
+                              @if (editColorLightDraft[state.id] === pair.light && editColorDarkDraft[state.id] === pair.dark) {
+                                <i class="pi pi-check text-[10px] text-white shadow-sm"></i>
+                              }
+                            </button>
+                          }
+                        </div>
+                        
+                        <div class="border-t border-surface-200 dark:border-surface-700 pt-2">
+                          <button type="button"
+                            class="text-[11px] font-semibold text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center gap-1 cursor-pointer select-none"
+                            (click)="showCustomEditColors[state.id] = !showCustomEditColors[state.id]">
+                            <i class="pi" [class]="showCustomEditColors[state.id] ? 'pi-chevron-down' : 'pi-chevron-right'"></i>
+                            Tự tùy chỉnh màu sắc Light & Dark
+                          </button>
+                          
+                          @if (showCustomEditColors[state.id]) {
+                            <div class="mt-2 space-y-3 pl-1">
+                              <div>
+                                <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">Màu Light mode:</div>
+                                <app-color-picker-panel
+                                  [value]="editColorLightDraft[state.id]"
+                                  (valueChange)="editColorLightDraft[state.id] = $event"
+                                />
+                              </div>
+                              <div>
+                                <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">Màu Dark mode:</div>
+                                <app-color-picker-panel
+                                  [value]="editColorDarkDraft[state.id]"
+                                  (valueChange)="editColorDarkDraft[state.id] = $event"
+                                />
+                              </div>
+                            </div>
+                          }
+                        </div>
+                      </div>
+                    </p-popover>
+                    <button type="button"
+                      class="w-6 h-6 rounded-full border border-black/10 hover:scale-110 active:scale-95 transition cursor-pointer flex-shrink-0"
+                      [style.background]="getPresetGradient(state.colorLight, state.colorDark)"
+                      [disabled]="isReadOnly()"
+                      (click)="editColorPop.toggle($event)"
+                      (pointerdown)="$event.stopPropagation()"
+                      pTooltip="Chọn cặp màu sắc"
+                    ></button>
+                  </div>
+
+                  <!-- Icon Picker -->
+                  <p-popover #stateIconPop styleClass="!p-0" appendTo="body">
+                    <app-icon-picker-panel
+                      context="state"
+                      [value]="state.icon || ''"
+                      (valueChange)="onUpdateIcon(state, $event); stateIconPop.hide()"
+                    />
+                  </p-popover>
+                  <button
+                    type="button"
+                    class="w-7 h-7 flex items-center justify-center rounded border border-gray-200 dark:border-surface-600 hover:bg-gray-100 dark:hover:bg-surface-800 cursor-pointer flex-shrink-0"
+                    [disabled]="isReadOnly()"
+                    (pointerdown)="$event.stopPropagation()"
+                    (click)="stateIconPop.toggle($event)"
+                    pTooltip="Icon trạng thái"
+                  >
+                    <app-state-dot [state]="state" [size]="12" />
+                  </button>
+
+                  <!-- Inline Name Input -->
+                  <input
+                    type="text"
+                    [ngModel]="state.name"
+                    (focus)="onFocusName(state)"
+                    (blur)="onUpdateName(state, $any($event.target).value)"
+                    (keydown.enter)="onUpdateName(state, $any($event.target).value); $any($event.target).blur()"
+                    [disabled]="isReadOnly()"
+                    (pointerdown)="$event.stopPropagation()"
+                    class="bg-transparent border-none focus:bg-gray-50 dark:focus:bg-surface-800 focus:ring-1 focus:ring-indigo-500 rounded px-2 py-0.5 text-sm font-semibold text-gray-800 dark:text-surface-100 hover:bg-gray-50 dark:hover:bg-surface-800 transition w-full max-w-xs"
+                  />
+
+                  <!-- Template origin icon -->
+                  @if (state.templateId) {
+                    <i
+                      class="pi pi-link text-xs text-indigo-400"
+                      pTooltip="Từ workspace template"
+                      tooltipPosition="top"
+                    ></i>
+                  }
+
+                  <!-- Default indicator -->
+                  @if (state.isDefault) {
+                    <span class="flex items-center gap-1 text-[11px] font-bold text-indigo-700 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-800 px-2 py-0.5 rounded-full">
+                      <i class="pi pi-star-fill text-[9px]"></i> Mặc định
+                    </span>
+                  } @else if (!isReadOnly()) {
+                    <button
+                      pButton
+                      type="button"
+                      icon="pi pi-star"
+                      class="p-button-text p-button-sm text-gray-300 hover:text-amber-500 p-0 h-6 w-6 opacity-0 group-hover:opacity-100 transition"
+                      tooltipPosition="top"
+                      (pointerdown)="$event.stopPropagation()"
+                      (click)="onSetDefault(state)"
+                    ></button>
+                  }
+                </div>
+
+                <!-- Actions -->
+                @if (!isReadOnly() && !state.isDefault && totalStatesCount() > 2) {
                   <button
                     pButton
                     type="button"
-                    icon="pi pi-star"
-                    class="p-button-text p-button-sm text-gray-300 hover:text-amber-500 p-0 h-6 w-6 opacity-0 group-hover:opacity-100 transition"
-                    tooltipPosition="top"
+                    icon="pi pi-trash"
+                    severity="danger"
+                    [outlined]="true"
+                    class="p-0 h-8 w-8 text-xs opacity-0 group-hover:opacity-100 transition"
                     (pointerdown)="$event.stopPropagation()"
-                    (click)="onSetDefault(state)"
+                    (click)="onDeleteState(state)"
                   ></button>
                 }
-              </div>
 
-              <!-- Actions -->
-              @if (!isReadOnly() && !state.isDefault && totalStatesCount() > 2) {
-                <button
-                  pButton
-                  type="button"
-                  icon="pi pi-trash"
-                  severity="danger"
-                  [outlined]="true"
-                  class="p-0 h-8 w-8 text-xs opacity-0 group-hover:opacity-100 transition"
-                  (pointerdown)="$event.stopPropagation()"
-                  (click)="onDeleteState(state)"
-                ></button>
+                <div *cdkDragPreview [matchSize]="true"
+                  class="flex items-center justify-between py-2.5 px-3 rounded-lg border border-indigo-300 dark:border-indigo-700 bg-white dark:bg-surface-800 shadow-xl pointer-events-none select-none"
+                  style="max-width: 320px !important; box-sizing: border-box;"
+                >
+                  <div class="flex items-center gap-3 flex-1 min-w-0">
+                    <button type="button"
+                      class="w-6 h-6 rounded-full border border-black/10 flex-shrink-0"
+                      [style.background]="getPresetGradient(state.colorLight, state.colorDark)"
+                      disabled
+                    ></button>
+
+                    <button
+                      type="button"
+                      class="w-7 h-7 flex items-center justify-center rounded border border-gray-200 dark:border-surface-600 flex-shrink-0"
+                      disabled
+                    >
+                      <app-state-dot [state]="state" [size]="12" />
+                    </button>
+
+                    <input
+                      type="text"
+                      [ngModel]="state.name"
+                      disabled
+                      class="bg-transparent border-none rounded px-2 py-0.5 text-sm font-semibold text-gray-800 dark:text-surface-100 w-full max-w-xs"
+                    />
+
+                    @if (state.templateId) {
+                      <i class="pi pi-link text-xs text-indigo-400"></i>
+                    }
+
+                    @if (state.isDefault) {
+                      <span class="flex items-center gap-1 text-[11px] font-bold text-indigo-700 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-800 px-2 py-0.5 rounded-full">
+                        <i class="pi pi-star-fill text-[9px]"></i> Mặc định
+                      </span>
+                    }
+                  </div>
+                  @if (!isReadOnly() && !state.isDefault && totalStatesCount() > 2) {
+                    <button
+                      pButton
+                      type="button"
+                      icon="pi pi-trash"
+                      severity="danger"
+                      [outlined]="true"
+                      class="p-0 h-8 w-8 text-xs invisible"
+                    ></button>
+                  }
+                </div>
+
+                <!-- Empty placeholder: CDK anchor, not visible -->
+                <div *cdkDragPlaceholder></div>
+              </div>
+            }
+
+            <!-- End drop zone: drop after the last item -->
+            <div class="relative" style="min-height: 8px;"
+                 (mouseenter)="hoveredStateId = 'end-' + group"
+                 (mouseleave)="hoveredStateId === 'end-' + group ? hoveredStateId = null : null">
+              @if (draggedStateId && hoveredStateId === 'end-' + group) {
+                <div class="h-0.5 bg-indigo-600 dark:bg-indigo-500 w-full absolute top-0 left-0 right-0 rounded-full"></div>
               }
-
-              <!-- Drag preview: compact clone follows cursor -->
-              <div *cdkDragPreview
-                class="flex items-center gap-3 px-3 rounded-lg border border-indigo-300 dark:border-indigo-700 bg-white dark:bg-surface-800 shadow-xl pointer-events-none select-none"
-                style="min-width: 240px; height: 44px; box-sizing: border-box;"
-              >
-                <span class="w-4 h-4 rounded-full flex-shrink-0" [style.background-color]="state.color"></span>
-                <span class="text-sm font-semibold text-gray-800 dark:text-surface-100 flex-1 truncate">{{ state.name }}</span>
-              </div>
-
-              <!-- Empty placeholder: CDK anchor, not visible -->
-              <div *cdkDragPlaceholder></div>
             </div>
-          }
 
-          <!-- End drop zone: drop after the last item -->
-          <div class="relative" style="min-height: 16px;"
-               (mouseenter)="hoveredStateId = 'end-' + group"
-               (mouseleave)="hoveredStateId === 'end-' + group ? hoveredStateId = null : null">
-            @if (draggedStateId && hoveredStateId === 'end-' + group) {
-              <div class="h-0.5 bg-indigo-600 dark:bg-indigo-500 w-full absolute top-0 left-0 right-0 rounded-full"></div>
+            <!-- Add State Inline Form (Indented aligned with other child rows) -->
+            @if (showAddForm[group]) {
+              <div class="flex items-center justify-between py-2.5 px-3 hover:bg-gray-50/30 dark:hover:bg-surface-800/10 transition border-t border-gray-100 dark:border-surface-800/30">
+                <div class="flex items-center gap-3 flex-1 min-w-0">
+                  <!-- Color Picker -->
+                  <div class="relative flex-shrink-0">
+                    <p-popover #addColorPop styleClass="p-2" appendTo="body">
+                      <div class="space-y-3 p-1">
+                        <div class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Màu chọn nhanh (Light / Dark)</div>
+                        <div class="grid grid-cols-5 gap-2 w-48">
+                          @for (pair of presetPairs; track pair.light) {
+                            <button type="button" 
+                              class="w-8 h-8 rounded-full border border-black/10 hover:scale-110 active:scale-95 transition cursor-pointer flex items-center justify-center relative"
+                              [style.background]="getPresetGradient(pair.light, pair.dark)"
+                              (click)="selectColorPair(group, pair.light, pair.dark); addColorPop.hide()">
+                              @if (newColorsLight[group] === pair.light && newColorsDark[group] === pair.dark) {
+                                <i class="pi pi-check text-[10px] text-white shadow-sm"></i>
+                              }
+                            </button>
+                          }
+                        </div>
+                        
+                        <div class="border-t border-surface-200 dark:border-surface-700 pt-2">
+                          <button type="button"
+                            class="text-[11px] font-semibold text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center gap-1 cursor-pointer select-none"
+                            (click)="showCustomAddColors[group] = !showCustomAddColors[group]">
+                            <i class="pi" [class]="showCustomAddColors[group] ? 'pi-chevron-down' : 'pi-chevron-right'"></i>
+                            Tự tùy chỉnh màu sắc Light & Dark
+                          </button>
+                          
+                          @if (showCustomAddColors[group]) {
+                            <div class="mt-2 space-y-3 pl-1">
+                              <div>
+                                <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">Màu Light mode:</div>
+                                <app-color-picker-panel
+                                  [value]="newColorsLight[group]"
+                                  (valueChange)="newColorsLight[group] = $event"
+                                />
+                              </div>
+                              <div>
+                                <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">Màu Dark mode:</div>
+                                <app-color-picker-panel
+                                  [value]="newColorsDark[group]"
+                                  (valueChange)="newColorsDark[group] = $event"
+                                />
+                              </div>
+                            </div>
+                          }
+                        </div>
+                      </div>
+                    </p-popover>
+                    <button type="button"
+                      class="w-6 h-6 rounded-full border border-black/10 hover:scale-110 active:scale-95 transition cursor-pointer flex-shrink-0"
+                      [style.background]="getPresetGradient(newColorsLight[group], newColorsDark[group])"
+                      (click)="addColorPop.toggle($event)"
+                      pTooltip="Chọn cặp màu sắc"
+                    ></button>
+                  </div>
+
+                  <!-- Icon Picker -->
+                  <p-popover #addIconPop styleClass="!p-0" appendTo="body">
+                    <app-icon-picker-panel
+                      context="state"
+                      [value]="newIcons[group] || ''"
+                      (valueChange)="newIcons[group] = $event; addIconPop.hide()"
+                    />
+                  </p-popover>
+                  <button
+                    type="button"
+                    class="w-7 h-7 flex items-center justify-center rounded border border-gray-200 dark:border-surface-600 hover:bg-gray-100 dark:hover:bg-surface-800 cursor-pointer flex-shrink-0"
+                    (click)="addIconPop.toggle($event)"
+                    pTooltip="Icon trạng thái"
+                  >
+                    <app-state-dot [state]="{ name: newNames[group] || 'State', colorLight: newColorsLight[group], colorDark: newColorsDark[group], group: group, icon: newIcons[group] || null }" [size]="12" />
+                  </button>
+
+                  <!-- Name Input -->
+                  <input
+                    type="text"
+                    pInputText
+                    [(ngModel)]="newNames[group]"
+                    placeholder="Tên trạng thái..."
+                    class="p-inputtext-sm flex-1 max-w-xs text-sm"
+                    (keydown.enter)="onCreateState(group)"
+                  />
+                </div>
+                
+                <div class="flex items-center gap-1.5 flex-shrink-0">
+                  <button
+                    pButton
+                    type="button"
+                    label="Thêm"
+                    size="small"
+                    [disabled]="!newNames[group]?.trim()"
+                    (click)="onCreateState(group)"
+                  ></button>
+                  <button
+                    pButton
+                    type="button"
+                    label="Hủy"
+                    size="small"
+                    severity="secondary"
+                    [text]="true"
+                    (click)="showAddForm[group] = false; newNames[group] = ''"
+                  ></button>
+                </div>
+              </div>
             }
           </div>
-
-          <!-- Add State Inline Form -->
-          @if (showAddForm[group]) {
-            <div class="flex items-center gap-3 p-3 rounded-lg border border-indigo-100 dark:border-indigo-800 bg-indigo-50/10 dark:bg-indigo-950/10 shadow-sm transition">
-              <input
-                type="color"
-                [(ngModel)]="newColors[group]"
-                class="w-6 h-6 rounded-full border-none cursor-pointer p-0 bg-transparent flex-shrink-0"
-              />
-              <p-popover #addIconPop styleClass="!p-0" appendTo="body">
-                <app-icon-picker-panel
-                  context="state"
-                  [value]="newIcons[group] || ''"
-                  (valueChange)="newIcons[group] = $event; addIconPop.hide()"
-                />
-              </p-popover>
-              <button
-                type="button"
-                class="w-7 h-7 flex items-center justify-center rounded border border-gray-200 dark:border-surface-600 hover:bg-gray-100 dark:hover:bg-surface-800 cursor-pointer flex-shrink-0"
-                (click)="addIconPop.toggle($event)"
-                pTooltip="Icon trạng thái"
-              >
-                <app-state-dot [state]="{ name: newNames[group] || 'State', color: newColors[group], group: group, icon: newIcons[group] || null }" [size]="12" />
-              </button>
-              <input
-                type="text"
-                pInputText
-                [(ngModel)]="newNames[group]"
-                placeholder="Tên trạng thái..."
-                class="p-inputtext-sm flex-1 max-w-xs text-sm"
-                (keydown.enter)="onCreateState(group)"
-              />
-              <div class="flex items-center gap-2">
-                <button
-                  pButton
-                  type="button"
-                  label="Thêm"
-                  size="small"
-                  [disabled]="!newNames[group]?.trim()"
-                  (click)="onCreateState(group)"
-                ></button>
-                <button
-                  pButton
-                  type="button"
-                  label="Hủy"
-                  size="small"
-                  severity="secondary"
-                  [text]="true"
-                  (click)="showAddForm[group] = false; newNames[group] = ''"
-                ></button>
-              </div>
-            </div>
-          }
-        </div>
+        }
       </div>
     }
   </div>
@@ -303,7 +512,7 @@
                 class="pop-item flex items-center gap-2"
                 [class.selected]="selectedMigrationTargetId === opt.id"
               >
-                <span class="w-3 h-3 rounded-full flex-shrink-0" [style.background-color]="opt.color"></span>
+                <span class="w-3 h-3 rounded-full flex-shrink-0" [style.background-color]="layoutService.isDarkMode() ? opt.colorDark : opt.colorLight"></span>
                 <span>{{ opt.name }}</span>
               </div>
             }

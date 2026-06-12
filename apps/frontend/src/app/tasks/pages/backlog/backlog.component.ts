@@ -253,6 +253,26 @@ export class BacklogComponent implements OnInit, OnDestroy {
       if (view === 'board' || view === 'list') {
         this.viewMode.set(view);
       }
+
+      const moduleIdsParam = params['moduleIds'];
+      let changed = false;
+      if (moduleIdsParam) {
+        const ids = moduleIdsParam.split(',');
+        const currentIds = this.taskStore.filter().moduleIds;
+        if (!currentIds || JSON.stringify(currentIds) !== JSON.stringify(ids)) {
+          this.taskStore.setFilter({ moduleIds: ids });
+          changed = true;
+        }
+      } else {
+        if (this.taskStore.filter().moduleIds) {
+          this.taskStore.setFilter({ moduleIds: undefined });
+          changed = true;
+        }
+      }
+
+      if (changed && this.projectId) {
+        this.reloadBacklog();
+      }
     });
 
     // Load lại khi project thay đổi (kể cả khi quay lại project cũ).
@@ -292,6 +312,7 @@ export class BacklogComponent implements OnInit, OnDestroy {
   }
 
   protected reloadBacklog(): void {
+    if (!this.projectId) return;
     if (this.viewMode() === 'list') {
       // Không ép parentId — store tự quyết: có filter → mọi cấp (orphan render
       // phẳng ở task-list), không filter → chỉ root (parentId=null).
@@ -328,6 +349,14 @@ export class BacklogComponent implements OnInit, OnDestroy {
   }
 
   protected onFilterChange(filter: BacklogFilter): void {
+    const isCleared = !filter.search && !filter.types?.length && !filter.priorities?.length && !filter.stateIds?.length && !filter.sprintId && !filter.labelIds?.length;
+    if (isCleared) {
+      this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { moduleIds: null },
+        queryParamsHandling: 'merge',
+      });
+    }
     this.taskStore.setFilter(filter as any);
     this.reloadBacklog();
   }

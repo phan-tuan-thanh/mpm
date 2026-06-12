@@ -166,7 +166,7 @@ describe('SubItemQuickToolbarComponent', () => {
       const config = component['selectedPriorityConfig']();
       expect(config.value).toBe('urgent');
       expect(config.color).toBe('#EF4444');
-      expect(config.icon).toBe('pi pi-angle-double-up');
+      expect(config.icon).toBe('pi pi-flag');
     });
 
     it('should return "none" config by default', () => {

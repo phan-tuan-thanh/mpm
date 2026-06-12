@@ -8,7 +8,7 @@ import { validateCreateUniqueness, determineIsExclusive } from './label-creation
 export async function createLabel(
   labelRepo: Repository<Label>,
   auditService: AuditService,
-  dto: { name: string; color: string; isExclusive?: boolean; description?: string | null },
+  dto: { name: string; colorLight: string; colorDark: string; isExclusive?: boolean; description?: string | null; icon?: string | null },
   opts: {
     scope: 'workspace' | 'project';
     workspaceId: string | null;
@@ -16,7 +16,8 @@ export async function createLabel(
     userId: string;
   },
 ): Promise<Label> {
-  validateColor(dto.color);
+  validateColor(dto.colorLight);
+  validateColor(dto.colorDark);
   await validateCreateUniqueness(labelRepo, opts, dto.name);
   const isExclusive = await determineIsExclusive(labelRepo, opts, dto.name, dto.isExclusive ?? true);
 
@@ -25,7 +26,9 @@ export async function createLabel(
     workspaceId: opts.scope === 'workspace' ? opts.workspaceId : (opts.workspaceId ?? null),
     projectId: opts.scope === 'project' ? opts.projectId : null,
     name: dto.name,
-    color: dto.color,
+    colorLight: dto.colorLight,
+    colorDark: dto.colorDark,
+    icon: dto.icon ?? null,
     isExclusive,
     description: dto.description ?? null,
   });

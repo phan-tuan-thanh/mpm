@@ -7,6 +7,7 @@ import {
   signal,
   OnChanges,
   SimpleChanges,
+  inject,
 } from '@angular/core';
 
 import type {
@@ -25,6 +26,7 @@ import { MetadataFooterComponent } from '../metadata-footer/metadata-footer.comp
 import { ParentNavigationComponent } from '../parent-navigation/parent-navigation.component';
 import { buildDetailFields, buildStructureFields, getTaskFieldValue } from './properties-sidebar.helpers';
 import type { SprintRef } from './properties-sidebar.helpers';
+import { LayoutService } from '../../../../../layout/services/layout.service';
 
 /**
  * PropertiesSidebarComponent — Container cho toàn bộ sidebar properties
@@ -156,6 +158,8 @@ export class PropertiesSidebarComponent implements OnChanges {
 
   // ─── Internal signals ────────────────────────────────────────────────────
 
+  private readonly layoutService = inject(LayoutService);
+
   private readonly _collapseState = signal<SectionCollapseState>({ details: true, structure: true });
   private readonly _states = signal<ProjectState[]>([]);
   private readonly _members = signal<MemberResponse[]>([]);
@@ -171,12 +175,12 @@ export class PropertiesSidebarComponent implements OnChanges {
 
   /** PropertyFieldConfig array cho section "Chi tiết" (Req 3.2) */
   readonly detailFields = computed<PropertyFieldConfig[]>(() => {
-    return buildDetailFields(this._states(), this._members());
+    return buildDetailFields(this._states(), this._members(), this.layoutService.isDarkMode());
   });
 
   /** PropertyFieldConfig array cho section "Cấu trúc" (Labels, Modules, Sprint — Req 3.3) */
   readonly structureFields = computed<PropertyFieldConfig[]>(() => {
-    return buildStructureFields(this._labels(), this._modules(), this._sprints());
+    return buildStructureFields(this._labels(), this._modules(), this._sprints(), this.layoutService.isDarkMode());
   });
 
   // ─── Lifecycle ───────────────────────────────────────────────────────────

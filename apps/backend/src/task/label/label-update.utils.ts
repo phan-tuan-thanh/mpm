@@ -38,7 +38,7 @@ export async function updateExclusiveLabels(
 export async function updateLabel(
   labelRepo: Repository<Label>,
   labelId: string,
-  dto: { name?: string; color?: string; isExclusive?: boolean; description?: string | null },
+  dto: { name?: string; colorLight?: string; colorDark?: string; isExclusive?: boolean; description?: string | null; icon?: string | null },
   opts: {
     workspaceId?: string;
     projectId?: string;
@@ -51,7 +51,9 @@ export async function updateLabel(
   await validateUpdate(label, dto, opts, labelRepo);
 
   if (dto.name !== undefined) label.name = dto.name;
-  if (dto.color !== undefined) label.color = dto.color;
+  if (dto.colorLight !== undefined) label.colorLight = dto.colorLight;
+  if (dto.colorDark !== undefined) label.colorDark = dto.colorDark;
+  if (dto.icon !== undefined) label.icon = dto.icon;
   if (dto.description !== undefined) label.description = dto.description;
   if (dto.isExclusive !== undefined) {
     label.isExclusive = dto.isExclusive;

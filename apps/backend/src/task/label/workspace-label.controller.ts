@@ -40,7 +40,7 @@ export class WorkspaceLabelController {
   async create(
     @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
     @CurrentUser() user: RequestUser,
-    @Body() body: { name: string; color: string; isExclusive?: boolean; description?: string | null },
+    @Body() body: { name: string; colorLight: string; colorDark: string; isExclusive?: boolean; description?: string | null },
   ) {
     return this.labelService.create(body, {
       scope: 'workspace',
@@ -59,7 +59,7 @@ export class WorkspaceLabelController {
     @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
     @Param('labelId', ParseUUIDPipe) labelId: string,
     @CurrentUser() user: RequestUser,
-    @Body() body: { name?: string; color?: string; isExclusive?: boolean; description?: string | null },
+    @Body() body: { name?: string; colorLight?: string; colorDark?: string; isExclusive?: boolean; description?: string | null },
   ) {
     return this.labelService.update(labelId, body, {
       workspaceId,

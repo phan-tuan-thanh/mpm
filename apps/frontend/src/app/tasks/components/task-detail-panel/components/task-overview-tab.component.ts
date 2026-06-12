@@ -49,7 +49,7 @@ const PRIORITY_OPTIONS = [
                   class="pop-item flex items-center gap-2"
                   [class.selected]="editStateId === s.id"
                 >
-                  <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" [style.background-color]="s.color"></span>
+                  <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" [style.background-color]="layoutService.isDarkMode() ? s.colorDark : s.colorLight"></span>
                   <span>{{ s.name }}</span>
                 </div>
               }
@@ -102,16 +102,16 @@ const PRIORITY_OPTIONS = [
                 @if (isScoped(label.name)) {
                   <span class="inline-flex items-center text-xs rounded-full overflow-hidden border border-gray-200 dark:border-surface-700 font-medium bg-white dark:bg-surface-800">
                     <span class="px-1.5 py-px text-white" 
-                          [style.background]="layoutService.getAdaptiveColor(getScopeColor(label.name, label.color))" 
-                          [style.color]="layoutService.getTextColor(layoutService.getAdaptiveColor(getScopeColor(label.name, label.color)))">{{ getScope(label.name) }}</span>
+                          [style.background]="getScopeColor(label.name, layoutService.isDarkMode(), (layoutService.isDarkMode() ? label.colorDark : label.colorLight))" 
+                          [style.color]="layoutService.getTextColor(getScopeColor(label.name, layoutService.isDarkMode(), (layoutService.isDarkMode() ? label.colorDark : label.colorLight)))">{{ getScope(label.name) }}</span>
                     <span class="px-1.5 py-px" 
-                          [style.background]="layoutService.getAdaptiveColor(label.color) + '18'" 
-                          [style.color]="layoutService.getAdaptiveColor(label.color)">{{ getValue(label.name) }}</span>
+                          [style.background]="(layoutService.isDarkMode() ? label.colorDark : label.colorLight) + '18'" 
+                          [style.color]="layoutService.isDarkMode() ? label.colorDark : label.colorLight">{{ getValue(label.name) }}</span>
                   </span>
                 } @else {
                   <span class="text-xs px-2 py-0.5 rounded-full font-medium" 
-                        [style.background]="layoutService.getAdaptiveColor(label.color) + '22'" 
-                        [style.color]="layoutService.getAdaptiveColor(label.color)">
+                        [style.background]="(layoutService.isDarkMode() ? label.colorDark : label.colorLight) + '22'" 
+                        [style.color]="layoutService.isDarkMode() ? label.colorDark : label.colorLight">
                     {{ label.name }}
                   </span>
                 }
@@ -127,16 +127,16 @@ const PRIORITY_OPTIONS = [
                     @if (isScoped(label.name)) {
                       <span class="inline-flex items-center text-[10px] rounded-full overflow-hidden border border-gray-200 dark:border-surface-700 font-medium bg-white dark:bg-surface-800" [pTooltip]="label.description ? label.name + ': ' + label.description : label.name">
                         <span class="px-1.5 py-px text-white" 
-                              [style.background]="layoutService.getAdaptiveColor(getScopeColor(label.name, label.color))" 
-                              [style.color]="layoutService.getTextColor(layoutService.getAdaptiveColor(getScopeColor(label.name, label.color)))">{{ getScope(label.name) }}</span>
+                              [style.background]="getScopeColor(label.name, layoutService.isDarkMode(), (layoutService.isDarkMode() ? label.colorDark : label.colorLight))" 
+                              [style.color]="layoutService.getTextColor(getScopeColor(label.name, layoutService.isDarkMode(), (layoutService.isDarkMode() ? label.colorDark : label.colorLight)))">{{ getScope(label.name) }}</span>
                         <span class="px-1.5 py-px" 
-                              [style.background]="layoutService.getAdaptiveColor(label.color) + '18'" 
-                              [style.color]="layoutService.getAdaptiveColor(label.color)">{{ getValue(label.name) }}</span>
+                              [style.background]="(layoutService.isDarkMode() ? label.colorDark : label.colorLight) + '18'" 
+                              [style.color]="layoutService.isDarkMode() ? label.colorDark : label.colorLight">{{ getValue(label.name) }}</span>
                       </span>
                     } @else {
                       <span class="text-[10px] px-2 py-px rounded-full font-medium bg-white dark:bg-surface-800 border" 
-                            [style.border-color]="layoutService.getAdaptiveColor(label.color)" 
-                            [style.color]="layoutService.getAdaptiveColor(label.color)"
+                            [style.border-color]="layoutService.isDarkMode() ? label.colorDark : label.colorLight" 
+                            [style.color]="layoutService.isDarkMode() ? label.colorDark : label.colorLight"
                             [pTooltip]="label.description ? label.name + ': ' + label.description : label.name">
                         {{ label.name }}
                       </span>
@@ -291,7 +291,11 @@ export class TaskOverviewTabComponent {
   }
 
   protected formatDateToISO(date: Date | null): string | null {
-    return date ? date.toISOString().split('T')[0] : null;
+    if (!date) return null;
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
   }
 
   getStateName(stateId: string): string {
@@ -301,7 +305,8 @@ export class TaskOverviewTabComponent {
 
   getStateColor(stateId: string): string {
     const found = this.stateOptions.find((s) => s.id === stateId);
-    return found ? found.color : '#9CA3AF';
+    if (!found) return '#9CA3AF';
+    return this.layoutService.isDarkMode() ? found.colorDark : found.colorLight;
   }
 
   getPriorityLabel(priority: string): string {
@@ -347,11 +352,11 @@ export class TaskOverviewTabComponent {
   protected getScope(name: string): string { return name.split('::')[0].trim(); }
   protected getValue(name: string): string { return name.split('::').slice(1).join('::').trim(); }
 
-  protected getScopeColor(name: string, fallbackColor: string): string {
+  protected getScopeColor(name: string, isDark: boolean, fallbackColor: string): string {
     if (!this.isScoped(name)) return fallbackColor;
     const scope = this.getScope(name).toLowerCase();
     const match = this.labelOptions.find(l => l.name.includes('::') && l.name.split('::')[0].trim().toLowerCase() === scope);
-    return match ? match.color : fallbackColor;
+    return match ? (isDark ? match.colorDark : match.colorLight) : fallbackColor;
   }
 
   protected getTextColor(bgColor: string): string {

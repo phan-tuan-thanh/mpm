@@ -22,17 +22,21 @@ import { IconDisplayComponent } from '../../../../shared/components/icon-display
     IconDisplayComponent,
   ],
   styles: [`
-    :host { display:block; width:480px; box-sizing:border-box; }
+    :host { display:block; width:560px; box-sizing:border-box; }
+    :host ::ng-deep .p-toggleswitch {
+      transform: scale(0.8);
+      transform-origin: right center;
+    }
     .sec-hdr {
       font-size:9px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
       padding:0 10px; border-bottom:1px solid var(--surface-border);
-      display:flex; align-items:center; gap:6px; height:26px; box-sizing:border-box;
+      display:flex; align-items:center; gap:6px; height:34px; box-sizing:border-box;
     }
     .cell { display:flex; align-items:center; justify-content:space-between; height:32px; padding:0 10px; gap:8px; }
     .cell .cell-label-wrapper { display:flex; align-items:center; gap:8px; flex:1; min-width:0; }
     .cell .cell-label-wrapper > span { font-size:12px; color:var(--text-color); truncate:true; white-space:nowrap; }
     .cell-sm .cell-label-wrapper > span { font-size:11px; color:var(--text-color-secondary); }
-    .sel-cell { display:grid; grid-template-columns:52px 1fr; align-items:center; gap:6px; padding:5px 10px; height:32px; box-sizing:border-box; }
+    .sel-cell { display:grid; grid-template-columns:60px 1fr; align-items:center; gap:8px; padding:5px 12px; height:32px; box-sizing:border-box; }
     .sel-cell > span { font-size:11px; color:var(--text-color-secondary); white-space:nowrap; }
     .box { border:1px solid var(--surface-border); border-radius:8px; overflow:hidden; }
     .vdiv { border-right:1px solid var(--surface-border); }
@@ -169,22 +173,18 @@ import { IconDisplayComponent } from '../../../../shared/components/icon-display
           </div>
 
           <!-- Sub-items (green) + Modules (amber) -->
-          <div style="display:flex; flex-direction:column;">
-            <div class="sec-hdr hdiv" style="background:rgba(16,185,129,0.1); color:#10b981;">
-              <i class="pi pi-sitemap text-[10px]"></i>
-              <span>Sub-items</span>
-            </div>
-            <div class="cell hdiv cell-sm" style="background:rgba(16,185,129,0.03);">
-              <div class="cell-label-wrapper">
-                <span>Show count</span>
+          <div style="display:flex; flex-direction:column; min-width:0;">
+            <div class="sec-hdr hdiv" style="background:rgba(16,185,129,0.1); justify-content:space-between; color:#10b981;">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <i class="pi pi-sitemap text-[10px] flex-shrink-0"></i>
+                <span>Sub-items</span>
               </div>
               <p-toggleswitch [ngModel]="displayProps.showSubItemCount" (ngModelChange)="onToggle('showSubItemCount',$event)" />
             </div>
-            <div class="cell hdiv cell-sm" style="background:rgba(16,185,129,0.03);">
-              <div class="cell-label-wrapper">
-                <span>Depth <span style="font-size:9px;opacity:.6;">(0=ẩn)</span></span>
-              </div>
-              <div class="flex items-center gap-2 w-28"><p-slider [ngModel]="displayProps.maxSubItemDepth" (ngModelChange)="onToggle('maxSubItemDepth',$event)" [min]="0" [max]="5" class="w-full"></p-slider><span class="text-xs font-semibold text-gray-500 w-4 text-right">{{ displayProps.maxSubItemDepth }}</span></div>
+            <div class="hdiv" style="display:grid; grid-template-columns:1fr auto 18px; align-items:center; gap:6px; padding:0 10px; height:32px; box-sizing:border-box; background:rgba(16,185,129,0.03);">
+              <span style="font-size:11px; color:var(--text-color-secondary); white-space:nowrap;">Depth <span style="font-size:9px;opacity:.6;">(0=ẩn)</span></span>
+              <p-slider [ngModel]="displayProps.maxSubItemDepth" (ngModelChange)="onToggle('maxSubItemDepth',$event)" [min]="0" [max]="5" style="width:80px; display:block;"></p-slider>
+              <span style="font-size:11px; font-weight:600; color:var(--text-color-secondary); text-align:right;">{{ displayProps.maxSubItemDepth }}</span>
             </div>
             <div class="sec-hdr hdiv" style="background:rgba(245,158,11,0.1); justify-content:space-between; color:#f59e0b;">
               <div style="display:flex; align-items:center; gap:6px;">
@@ -193,13 +193,12 @@ import { IconDisplayComponent } from '../../../../shared/components/icon-display
               </div>
               <p-toggleswitch [ngModel]="displayProps.showModules" (ngModelChange)="onToggle('showModules',$event)" />
             </div>
-            <div class="cell cell-sm" style="background:rgba(245,158,11,0.03);"
-                 [style.opacity]="displayProps.showModules?'1':'0.4'"
-                 [class.pointer-events-none]="!displayProps.showModules">
-              <div class="cell-label-wrapper">
-                <span>Max shown</span>
-              </div>
-              <div class="flex items-center gap-2 w-28"><p-slider [ngModel]="displayProps.maxModules" (ngModelChange)="onToggle('maxModules',$event)" [min]="1" [max]="3" [disabled]="!displayProps.showModules" class="w-full"></p-slider><span class="text-xs font-semibold text-gray-500 w-4 text-right">{{ displayProps.maxModules }}</span></div>
+            <div [style.opacity]="displayProps.showModules?'1':'0.4'"
+                 [class.pointer-events-none]="!displayProps.showModules"
+                 style="display:grid; grid-template-columns:1fr auto 18px; align-items:center; gap:6px; padding:0 10px; height:32px; box-sizing:border-box; background:rgba(245,158,11,0.03);">
+              <span style="font-size:11px; color:var(--text-color-secondary); white-space:nowrap;">Max shown</span>
+              <p-slider [ngModel]="displayProps.maxModules" (ngModelChange)="onToggle('maxModules',$event)" [min]="1" [max]="3" [disabled]="!displayProps.showModules" style="width:80px; display:block;"></p-slider>
+              <span style="font-size:11px; font-weight:600; color:var(--text-color-secondary); text-align:right;">{{ displayProps.maxModules }}</span>
             </div>
           </div>
 

@@ -5,18 +5,19 @@ import { FormsModule } from '@angular/forms';
 import { DialogModule } from 'primeng/dialog';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
-import { ColorPickerModule } from 'primeng/colorpicker';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { TabsModule } from 'primeng/tabs';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
 import { CheckboxModule } from 'primeng/checkbox';
+import { PopoverModule } from 'primeng/popover';
 
 import { LabelStore } from '../../state/label.store';
 import { LabelService } from '../../services/label.service';
 import { AuthStore } from '../../../auth/state/auth.store';
 import { LayoutService } from '../../../layout/services/layout.service';
+import { ColorPickerPanelComponent } from '../../../shared/components/color-picker-panel/color-picker-panel.component';
 import type { Label } from '@mpm/shared-types';
 
 @Component({
@@ -24,8 +25,9 @@ import type { Label } from '@mpm/shared-types';
   selector: 'app-label-manager',
   imports: [
     CommonModule, FormsModule,
-    DialogModule, ButtonModule, InputTextModule, ColorPickerModule,
+    DialogModule, ButtonModule, InputTextModule, PopoverModule,
     ConfirmDialogModule, TabsModule, ToastModule, TooltipModule, CheckboxModule,
+    ColorPickerPanelComponent,
   ],
   providers: [ConfirmationService, MessageService],
   templateUrl: './label-manager.component.html',
@@ -46,61 +48,27 @@ export class LabelManagerComponent implements OnInit {
   // Admin check
   protected readonly isAdmin = this.authStore.isAdmin;
 
-  protected readonly colorPresets = [
-    'EF4444', // Red
-    'F97316', // Orange
-    'F59E0B', // Yellow
-    '10B981', // Green
-    '0D9488', // Teal
-    '3B82F6', // Blue
-    '6366F1', // Indigo
-    '8B5CF6', // Purple
-    'EC4899', // Pink
-    '6B7280', // Gray
+  readonly presetPairs = [
+    { light: '#EF4444', dark: '#F87171' }, // Red
+    { light: '#F97316', dark: '#FB923C' }, // Orange
+    { light: '#F59E0B', dark: '#FBBF24' }, // Amber
+    { light: '#10B981', dark: '#34D399' }, // Emerald
+    { light: '#0D9488', dark: '#2DD4BF' }, // Teal
+    { light: '#3B82F6', dark: '#60A5FA' }, // Blue
+    { light: '#6366F1', dark: '#818CF8' }, // Indigo
+    { light: '#8B5CF6', dark: '#A78BFA' }, // Violet
+    { light: '#EC4899', dark: '#F472B6' }, // Pink
+    { light: '#6B7280', dark: '#9CA3AF' }  // Gray
   ];
 
-  protected readonly themes = [
-    {
-      id: 'classic',
-      name: 'Classic',
-      presets: [
-        { scope: 'EF4444', value: 'F97316', label: 'Red - Orange' },
-        { scope: '10B981', value: '0D9488', label: 'Green - Teal' },
-        { scope: '3B82F6', value: '6366F1', label: 'Blue - Indigo' },
-        { scope: '8B5CF6', value: 'EC4899', label: 'Purple - Pink' },
-        { scope: '6B7280', value: '475569', label: 'Gray - Slate' },
-      ]
-    },
-    {
-      id: 'pastel',
-      name: 'Pastel',
-      presets: [
-        { scope: 'FCA5A5', value: 'FFEDD5', label: 'Light Red - Orange' },
-        { scope: 'A7F3D0', value: 'CCFBF1', label: 'Light Green - Teal' },
-        { scope: 'BFDBFE', value: 'E0E7FF', label: 'Light Blue - Indigo' },
-        { scope: 'C084FC', value: 'FCE7F3', label: 'Light Purple - Pink' },
-        { scope: 'D1D5DB', value: 'F3F4F6', label: 'Light Gray - White' },
-      ]
-    },
-    {
-      id: 'neon',
-      name: 'Vibrant / Neon',
-      presets: [
-        { scope: 'FF007F', value: 'FF5E00', label: 'Neon Pink - Orange' },
-        { scope: '00FF66', value: '00E5FF', label: 'Neon Green - Cyan' },
-        { scope: '0066FF', value: '7F00FF', label: 'Neon Blue - Purple' },
-        { scope: 'FFD700', value: 'FF3300', label: 'Vibrant Yellow - Red' },
-        { scope: 'E0B0FF', value: 'DA70D6', label: 'Vibrant Mauve - Orchid' },
-      ]
-    }
-  ];
+  getPresetGradient(light: string, dark: string): string {
+    return `linear-gradient(135deg, ${light} 50%, ${dark} 50%)`;
+  }
 
-  protected selectedThemeId = signal('classic');
-
-  protected readonly currentPresets = computed(() => {
-    const theme = this.themes.find(t => t.id === this.selectedThemeId());
-    return theme ? theme.presets : this.themes[0].presets;
-  });
+  protected getRandomPresetPair(): { light: string; dark: string } {
+    const idx = Math.floor(Math.random() * this.presetPairs.length);
+    return this.presetPairs[idx];
+  }
 
   // Workspace labels (loaded separately)
   protected readonly wsLabels = signal<Array<Label & { taskCount: number }>>([]);
@@ -114,22 +82,30 @@ export class LabelManagerComponent implements OnInit {
   // Project label editing state
   protected editingId = signal<string | null>(null);
   protected editName = '';
-  protected editColor = '';
+  protected readonly editColorLight = signal('#9CA3AF');
+  protected readonly editColorDark = signal('#6B7280');
+  protected readonly showCustomEditColors = signal(false);
   protected editIsExclusive = true;
   protected editDescription = '';
   protected newName = '';
-  protected newColor = '';
+  protected readonly newColorLight = signal('#9CA3AF');
+  protected readonly newColorDark = signal('#6B7280');
+  protected readonly showCustomAddColors = signal(false);
   protected isExclusive = true;
   protected newDescription = '';
 
   // Workspace label editing state
   protected wsEditingId = signal<string | null>(null);
   protected wsEditName = '';
-  protected wsEditColor = '';
+  protected readonly wsEditColorLight = signal('#9CA3AF');
+  protected readonly wsEditColorDark = signal('#6B7280');
+  protected readonly showCustomWsEditColors = signal(false);
   protected wsEditIsExclusive = true;
   protected wsEditDescription = '';
   protected wsNewName = '';
-  protected wsNewColor = '';
+  protected readonly wsNewColorLight = signal('#9CA3AF');
+  protected readonly wsNewColorDark = signal('#6B7280');
+  protected readonly showCustomWsAddColors = signal(false);
   protected wsIsExclusive = true;
   protected wsNewDescription = '';
 
@@ -243,8 +219,14 @@ export class LabelManagerComponent implements OnInit {
   protected clearWsSelection(): void { this.wsSelected.set(new Set()); }
 
   ngOnInit(): void {
-    this.newColor = this.getRandomPresetColor();
-    this.wsNewColor = this.getRandomPresetColor();
+    const pair = this.getRandomPresetPair();
+    this.newColorLight.set(pair.light);
+    this.newColorDark.set(pair.dark);
+
+    const wsPair = this.getRandomPresetPair();
+    this.wsNewColorLight.set(wsPair.light);
+    this.wsNewColorDark.set(wsPair.dark);
+
     if (this.projectId) this.labelStore.loadLabels(this.projectId);
   }
 
@@ -258,8 +240,15 @@ export class LabelManagerComponent implements OnInit {
     this.wsFilter.set('all');
     this.projSelected.set(new Set());
     this.wsSelected.set(new Set());
-    this.newColor = this.getRandomPresetColor();
-    this.wsNewColor = this.getRandomPresetColor();
+
+    const pair = this.getRandomPresetPair();
+    this.newColorLight.set(pair.light);
+    this.newColorDark.set(pair.dark);
+
+    const wsPair = this.getRandomPresetPair();
+    this.wsNewColorLight.set(wsPair.light);
+    this.wsNewColorDark.set(wsPair.dark);
+
     if (this.projectId) this.labelStore.loadLabels(this.projectId);
     if (this.workspaceId) this.loadWorkspaceLabels();
   }
@@ -283,46 +272,17 @@ export class LabelManagerComponent implements OnInit {
     return name.split('::').slice(1).join('::').trim();
   }
 
-  protected getRandomPresetColor(): string {
-    const idx = Math.floor(Math.random() * this.colorPresets.length);
-    return this.colorPresets[idx];
-  }
-
-  protected isPairSelected(pair: { scope: string; value: string }, isWs: boolean): boolean {
-    const currentColor = isWs ? this.wsNewColor : this.newColor;
-    return currentColor.toUpperCase() === pair.scope.toUpperCase() || currentColor.toUpperCase() === pair.value.toUpperCase();
-  }
-
-  protected selectColorPair(pair: { scope: string; value: string }, isWs: boolean): void {
-    const name = isWs ? this.wsNewName.trim() : this.newName.trim();
-    if (!name.includes('::')) {
-      if (isWs) this.wsNewColor = pair.scope;
-      else this.newColor = pair.scope;
-      return;
-    }
-    const scope = name.split('::')[0].trim().toLowerCase();
-    const labels = isWs ? this.wsLabels() : this.labelStore.labels();
-    const exists = labels.some(l => l.name.includes('::') && l.name.split('::')[0].trim().toLowerCase() === scope);
-    if (exists) {
-      if (isWs) this.wsNewColor = pair.value;
-      else this.newColor = pair.value;
-    } else {
-      if (isWs) this.wsNewColor = pair.scope;
-      else this.newColor = pair.scope;
-    }
-  }
-
-  protected getScopeColor(name: string, fallbackColor: string): string {
+  protected getScopeColor(name: string, isDark: boolean, fallbackColor: string): string {
     if (!this.isScoped(name)) return fallbackColor;
     const scope = this.getScope(name).toLowerCase();
     
     // Search in project labels
     const projMatch = this.labelStore.labels().find(l => l.name.includes('::') && l.name.split('::')[0].trim().toLowerCase() === scope);
-    if (projMatch) return projMatch.color;
+    if (projMatch) return isDark ? projMatch.colorDark : projMatch.colorLight;
 
     // Search in workspace labels
     const wsMatch = this.wsLabels().find(l => l.name.includes('::') && l.name.split('::')[0].trim().toLowerCase() === scope);
-    if (wsMatch) return wsMatch.color;
+    if (wsMatch) return isDark ? wsMatch.colorDark : wsMatch.colorLight;
 
     return fallbackColor;
   }
@@ -333,14 +293,17 @@ export class LabelManagerComponent implements OnInit {
     if (!this.newName.trim()) return;
     const result = await this.labelStore.createLabel(this.projectId, {
       name: this.newName.trim(),
-      color: `#${this.newColor}`.replace('##', '#'),
+      colorLight: this.newColorLight(),
+      colorDark: this.newColorDark(),
       isExclusive: this.isExclusive,
       description: this.newDescription.trim() || null,
     });
     if (result) {
       this.newName = '';
       this.newDescription = '';
-      this.newColor = this.getRandomPresetColor();
+      const pair = this.getRandomPresetPair();
+      this.newColorLight.set(pair.light);
+      this.newColorDark.set(pair.dark);
       this.isExclusive = true;
       this.messageService.add({ severity: 'success', summary: 'Thành công', detail: 'Đã tạo label mới' });
     } else {
@@ -351,15 +314,18 @@ export class LabelManagerComponent implements OnInit {
   protected startEdit(label: Label & { taskCount: number }): void {
     this.editingId.set(label.id);
     this.editName = label.name;
-    this.editColor = label.color.replace('#', '');
+    this.editColorLight.set(label.colorLight);
+    this.editColorDark.set(label.colorDark);
     this.editIsExclusive = label.isExclusive !== false;
     this.editDescription = label.description ?? '';
+    this.showCustomEditColors.set(false);
   }
 
   protected async saveEdit(label: Label & { taskCount: number }): Promise<void> {
     const success = await this.labelStore.updateLabel(this.projectId, label.id, {
       name: this.editName.trim() || label.name,
-      color: `#${this.editColor}`.replace('##', '#'),
+      colorLight: this.editColorLight(),
+      colorDark: this.editColorDark(),
       isExclusive: this.editIsExclusive,
       description: this.editDescription.trim() || null,
     });
@@ -422,7 +388,8 @@ export class LabelManagerComponent implements OnInit {
     if (!this.wsNewName.trim() || !this.workspaceId) return;
     const label = await this.labelStore.createWorkspaceLabel(this.workspaceId, {
       name: this.wsNewName.trim(),
-      color: `#${this.wsNewColor}`.replace('##', '#'),
+      colorLight: this.wsNewColorLight(),
+      colorDark: this.wsNewColorDark(),
       isExclusive: this.wsIsExclusive,
       description: this.wsNewDescription.trim() || null,
     });
@@ -430,7 +397,9 @@ export class LabelManagerComponent implements OnInit {
       this.wsLabels.update(prev => [...prev, { ...label, taskCount: 0 }]);
       this.wsNewName = '';
       this.wsNewDescription = '';
-      this.wsNewColor = this.getRandomPresetColor();
+      const pair = this.getRandomPresetPair();
+      this.wsNewColorLight.set(pair.light);
+      this.wsNewColorDark.set(pair.dark);
       this.wsIsExclusive = true;
       this.messageService.add({ severity: 'success', summary: 'Thành công', detail: 'Đã tạo workspace label' });
     } else {
@@ -441,18 +410,22 @@ export class LabelManagerComponent implements OnInit {
   protected startWsEdit(label: Label & { taskCount: number }): void {
     this.wsEditingId.set(label.id);
     this.wsEditName = label.name;
-    this.wsEditColor = label.color.replace('#', '');
+    this.wsEditColorLight.set(label.colorLight);
+    this.wsEditColorDark.set(label.colorDark);
     this.wsEditIsExclusive = label.isExclusive !== false;
     this.wsEditDescription = label.description ?? '';
+    this.showCustomWsEditColors.set(false);
   }
 
   protected async saveWsEdit(label: Label & { taskCount: number }): Promise<void> {
     if (!this.workspaceId) return;
-    const newColor = `#${this.wsEditColor}`.replace('##', '#');
+    const colorLight = this.wsEditColorLight();
+    const colorDark = this.wsEditColorDark();
     const newName = this.wsEditName.trim() || label.name;
     const success = await this.labelStore.updateWorkspaceLabel(this.workspaceId, label.id, {
       name: newName,
-      color: newColor,
+      colorLight: colorLight,
+      colorDark: colorDark,
       isExclusive: this.wsEditIsExclusive,
       description: this.wsEditDescription.trim() || null,
     });
@@ -460,7 +433,7 @@ export class LabelManagerComponent implements OnInit {
       this.wsLabels.update(prev =>
         prev.map(l => {
           if (l.id === label.id) {
-            return { ...l, name: newName, color: newColor, isExclusive: this.wsEditIsExclusive, description: this.wsEditDescription.trim() || null };
+            return { ...l, name: newName, colorLight: colorLight, colorDark: colorDark, isExclusive: this.wsEditIsExclusive, description: this.wsEditDescription.trim() || null };
           }
           // Propagate isExclusive update to same-scope labels locally
           if (newName.includes('::') && l.name.includes('::') && l.name.split('::')[0].trim().toLowerCase() === newName.split('::')[0].trim().toLowerCase()) {

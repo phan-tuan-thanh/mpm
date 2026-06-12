@@ -14,9 +14,11 @@ import { FormsModule } from '@angular/forms';
 import { DragDropModule, CdkDragDrop } from '@angular/cdk/drag-drop';
 import { TooltipModule } from 'primeng/tooltip';
 import { StateGroup, ProjectState, WorkspaceStateTemplate } from '@mpm/shared-types';
-import { GROUP_ORDER, getGroupName, getGroupColor, getDefaultColor } from './states-tab.helpers';
+import { GROUP_ORDER, getGroupName, getGroupColor, getDefaultColor, getDefaultDarkColor } from './states-tab.helpers';
 import { IconPickerPanelComponent } from '../../../../shared/components/icon-picker-panel/icon-picker-panel.component';
+import { ColorPickerPanelComponent } from '../../../../shared/components/color-picker-panel/color-picker-panel.component';
 import { StateDotComponent } from '../../../../shared/components/state-dot/state-dot.component';
+import { LayoutService } from '../../../../layout/services/layout.service';
 
 @Component({
   standalone: true,
@@ -32,6 +34,7 @@ import { StateDotComponent } from '../../../../shared/components/state-dot/state
     DragDropModule,
     TooltipModule,
     IconPickerPanelComponent,
+    ColorPickerPanelComponent,
     StateDotComponent,
   ],
   templateUrl: './states-tab.component.html',
@@ -43,6 +46,7 @@ export class StatesTabComponent implements OnInit {
   private readonly stateTemplateService = inject(StateTemplateService);
   private readonly authService = inject(AuthService);
   private readonly messageService = inject(MessageService);
+  protected readonly layoutService = inject(LayoutService);
 
   readonly groupOrder = GROUP_ORDER;
 
@@ -53,8 +57,69 @@ export class StatesTabComponent implements OnInit {
   // Inline Creation form bindings
   showAddForm: Record<string, boolean> = {};
   newNames: Record<string, string> = {};
-  newColors: Record<string, string> = {};
+  newColorsLight: Record<string, string> = {};
+  newColorsDark: Record<string, string> = {};
   newIcons: Record<string, string> = {};
+  showCustomAddColors: Record<string, boolean> = {};
+
+  // Drafts for editing state color
+  editColorLightDraft: Record<string, string> = {};
+  editColorDarkDraft: Record<string, string> = {};
+  showCustomEditColors: Record<string, boolean> = {};
+
+  // Group collapsible state
+  collapsedGroups: Record<string, boolean> = {};
+
+  readonly presetPairs = [
+    { light: '#EF4444', dark: '#F87171' }, // Red
+    { light: '#F97316', dark: '#FB923C' }, // Orange
+    { light: '#F59E0B', dark: '#FBBF24' }, // Amber
+    { light: '#10B981', dark: '#34D399' }, // Emerald
+    { light: '#0D9488', dark: '#2DD4BF' }, // Teal
+    { light: '#3B82F6', dark: '#60A5FA' }, // Blue
+    { light: '#6366F1', dark: '#818CF8' }, // Indigo
+    { light: '#8B5CF6', dark: '#A78BFA' }, // Violet
+    { light: '#EC4899', dark: '#F472B6' }, // Pink
+    { light: '#6B7280', dark: '#9CA3AF' }  // Gray
+  ];
+
+  getPresetGradient(light: string, dark: string): string {
+    return `linear-gradient(135deg, ${light} 50%, ${dark} 50%)`;
+  }
+
+  toggleGroup(group: string): void {
+    this.collapsedGroups[group] = !this.collapsedGroups[group];
+  }
+
+  isAllCollapsed(): boolean {
+    return this.groupOrder.every(g => this.collapsedGroups[g]);
+  }
+
+  toggleCollapseAll(): void {
+    const targetState = !this.isAllCollapsed();
+    for (const group of this.groupOrder) {
+      this.collapsedGroups[group] = targetState;
+    }
+  }
+
+  onOpenColorPopover(state: ProjectState): void {
+    this.editColorLightDraft[state.id] = state.colorLight;
+    this.editColorDarkDraft[state.id] = state.colorDark;
+    this.showCustomEditColors[state.id] = false;
+  }
+
+  onCloseColorPopover(state: ProjectState): void {
+    const light = this.editColorLightDraft[state.id];
+    const dark = this.editColorDarkDraft[state.id];
+    if (light && dark && (light !== state.colorLight || dark !== state.colorDark)) {
+      this.onUpdateColor(state, light, dark);
+    }
+  }
+
+  selectColorPair(group: string, light: string, dark: string): void {
+    this.newColorsLight[group] = light;
+    this.newColorsDark[group] = dark;
+  }
 
   // Inline editing temp name store
   private originalNameTemp = '';
@@ -115,8 +180,10 @@ export class StatesTabComponent implements OnInit {
     for (const group of this.groupOrder) {
       this.showAddForm[group] = false;
       this.newNames[group] = '';
-      this.newColors[group] = this.getDefaultColor(group);
+      this.newColorsLight[group] = this.getDefaultColor(group);
+      this.newColorsDark[group] = this.getDefaultDarkColor(group);
       this.newIcons[group] = '';
+      this.showCustomAddColors[group] = false;
     }
 
     const project = this.projectStore.currentProject();
@@ -195,6 +262,7 @@ export class StatesTabComponent implements OnInit {
   getGroupName = getGroupName;
   getGroupColor = getGroupColor;
   getDefaultColor = getDefaultColor;
+  getDefaultDarkColor = getDefaultDarkColor;
 
   onStateDragStart(stateId: string): void {
     this.draggedStateId = stateId;
@@ -221,36 +289,84 @@ export class StatesTabComponent implements OnInit {
 
     if (!draggedId || !hoveredId || draggedId === hoveredId) return;
 
-    const currentList = [...this.statesForGroup(group)];
-    const draggedIdx = currentList.findIndex(s => s.id === draggedId);
-    if (draggedIdx === -1) return;
+    const allStates = this.allStatesList();
+    const draggedState = allStates.find(s => s.id === draggedId);
+    if (!draggedState) return;
 
-    const [dragged] = currentList.splice(draggedIdx, 1);
+    const sourceGroup = draggedState.group;
+    const targetGroup = group;
 
-    if (hoveredId.startsWith('end-')) {
-      currentList.push(dragged);
+    if (sourceGroup === targetGroup) {
+      const currentList = [...this.statesForGroup(targetGroup)];
+      const draggedIdx = currentList.findIndex(s => s.id === draggedId);
+      if (draggedIdx === -1) return;
+
+      const [dragged] = currentList.splice(draggedIdx, 1);
+
+      if (hoveredId.startsWith('end-')) {
+        currentList.push(dragged);
+      } else {
+        const targetIdx = currentList.findIndex(s => s.id === hoveredId);
+        currentList.splice(targetIdx === -1 ? currentList.length : targetIdx, 0, dragged);
+      }
+
+      const reorderItems = currentList.map((state, idx) => ({
+        stateId: state.id,
+        order: idx + 1,
+      }));
+
+      this.projectService.reorderStates(project.id, { items: reorderItems }).subscribe({
+        next: () => {
+          this.projectStore.loadStates(project.id);
+        },
+        error: (err) => {
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Lỗi sắp xếp',
+            detail: err.error?.message || 'Có lỗi xảy ra khi sắp xếp lại.',
+          });
+        },
+      });
     } else {
-      const targetIdx = currentList.findIndex(s => s.id === hoveredId);
-      currentList.splice(targetIdx === -1 ? currentList.length : targetIdx, 0, dragged);
+      const targetList = [...this.statesForGroup(targetGroup)];
+      
+      if (hoveredId.startsWith('end-')) {
+        targetList.push(draggedState);
+      } else {
+        const targetIdx = targetList.findIndex(s => s.id === hoveredId);
+        targetList.splice(targetIdx === -1 ? targetList.length : targetIdx, 0, draggedState);
+      }
+
+      const reorderItems = targetList.map((state, idx) => ({
+        stateId: state.id,
+        order: idx + 1,
+      }));
+
+      this.projectService.updateState(project.id, draggedId, { group: targetGroup }).subscribe({
+        next: () => {
+          this.projectService.reorderStates(project.id, { items: reorderItems }).subscribe({
+            next: () => {
+              this.projectStore.loadStates(project.id);
+            },
+            error: (err) => {
+              this.projectStore.loadStates(project.id);
+              this.messageService.add({
+                severity: 'error',
+                summary: 'Lỗi sắp xếp',
+                detail: err.error?.message || 'Có lỗi xảy ra khi sắp xếp lại.',
+              });
+            }
+          });
+        },
+        error: (err) => {
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Lỗi di chuyển nhóm',
+            detail: err.error?.message || 'Không thể di chuyển trạng thái sang nhóm khác.',
+          });
+        },
+      });
     }
-
-    const reorderItems = currentList.map((state, idx) => ({
-      stateId: state.id,
-      order: idx + 1,
-    }));
-
-    this.projectService.reorderStates(project.id, { items: reorderItems }).subscribe({
-      next: () => {
-        this.projectStore.loadStates(project.id);
-      },
-      error: (err) => {
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Lỗi sắp xếp',
-          detail: err.error?.message || 'Có lỗi xảy ra khi sắp xếp lại.',
-        });
-      },
-    });
   }
 
   onSetDefault(state: ProjectState): void {
@@ -314,13 +430,13 @@ export class StatesTabComponent implements OnInit {
     });
   }
 
-  onUpdateColor(state: ProjectState, color: string): void {
-    if (state.color === color || this.isReadOnly()) return;
+  onUpdateColor(state: ProjectState, colorLight: string, colorDark: string): void {
+    if ((state.colorLight === colorLight && state.colorDark === colorDark) || this.isReadOnly()) return;
 
     const project = this.projectStore.currentProject();
     if (!project) return;
 
-    this.projectService.updateState(project.id, state.id, { color }).subscribe({
+    this.projectService.updateState(project.id, state.id, { colorLight, colorDark }).subscribe({
       next: () => {
         this.projectStore.loadStates(project.id);
         this.messageService.add({
@@ -366,7 +482,8 @@ export class StatesTabComponent implements OnInit {
 
   onCreateState(group: StateGroup): void {
     const name = this.newNames[group]?.trim();
-    const color = this.newColors[group] || this.getDefaultColor(group);
+    const colorLight = this.newColorsLight[group] || this.getDefaultColor(group);
+    const colorDark = this.newColorsDark[group] || this.getDefaultDarkColor(group);
 
     if (!name) return;
 
@@ -383,11 +500,14 @@ export class StatesTabComponent implements OnInit {
     }
 
     const icon = this.newIcons[group] || undefined;
-    this.projectService.createState(project.id, { name, color, group, icon }).subscribe({
+    this.projectService.createState(project.id, { name, colorLight, colorDark, group, icon }).subscribe({
       next: () => {
         this.projectStore.loadStates(project.id);
         this.newNames[group] = '';
         this.newIcons[group] = '';
+        this.newColorsLight[group] = this.getDefaultColor(group);
+        this.newColorsDark[group] = this.getDefaultDarkColor(group);
+        this.showCustomAddColors[group] = false;
         this.showAddForm[group] = false;
         this.messageService.add({
           severity: 'success',

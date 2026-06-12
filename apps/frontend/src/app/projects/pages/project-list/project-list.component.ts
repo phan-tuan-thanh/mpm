@@ -189,8 +189,8 @@ export class ProjectListComponent implements OnInit, OnDestroy {
       name: this.filterName,
       status: this.selectedStatus,
       network: this.selectedNetwork,
-      startDate: this.dateRange?.[0]?.toISOString(),
-      endDate: this.dateRange?.[1]?.toISOString(),
+      startDate: this.formatDateToISO(this.dateRange?.[0]) ?? undefined,
+      endDate: this.formatDateToISO(this.dateRange?.[1]) ?? undefined,
     });
   }
 
@@ -199,8 +199,8 @@ export class ProjectListComponent implements OnInit, OnDestroy {
       name: this.filterName,
       status: this.selectedStatus,
       network: this.selectedNetwork,
-      startDate: this.dateRange?.[0]?.toISOString().split('T')[0],
-      endDate: this.dateRange?.[1]?.toISOString().split('T')[0],
+      startDate: this.formatDateToISO(this.dateRange?.[0]) ?? undefined,
+      endDate: this.formatDateToISO(this.dateRange?.[1]) ?? undefined,
     });
 
     void this.router.navigate([], {
@@ -254,5 +254,13 @@ export class ProjectListComponent implements OnInit, OnDestroy {
 
   formatRole(role: ProjectRole): string {
     return formatProjectRole(role);
+  }
+
+  private formatDateToISO(date: Date | null | undefined): string | null {
+    if (!date) return null;
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
   }
 }

@@ -76,7 +76,7 @@ import { StateDotComponent } from '../../../../shared/components/state-dot/state
              [class.opacity-0]="!displayProps.alwaysShowLabels">
           @for (label of task.labels.slice(0, 4); track label.id) {
             <span class="w-2.5 h-2.5 rounded-full border border-white dark:border-surface-900 flex-shrink-0"
-                  [style.background]="layoutService.getAdaptiveColor(label.color)"
+                  [style.background]="layoutService.isDarkMode() ? label.colorDark : label.colorLight"
                   [pTooltip]="label.description ? label.name + ': ' + label.description : label.name"></span>
           }
           @if (task.labels.length > 4) {
@@ -93,18 +93,26 @@ import { StateDotComponent } from '../../../../shared/components/state-dot/state
           @for (label of task.labels.slice(0, displayProps.maxLabels); track label.id) {
             @if (isScoped(label.name)) {
               <span class="inline-flex items-center text-[10px] rounded-full overflow-hidden border border-gray-300 dark:border-surface-600 font-medium select-none cursor-default" [pTooltip]="label.description ? label.name + ': ' + label.description : label.name">
+                <span class="px-1.5 py-0.5 flex items-center gap-1"
+                      [style.background]="getScopeColor(label.name, layoutService.isDarkMode(), (layoutService.isDarkMode() ? label.colorDark : label.colorLight))"
+                      [style.color]="layoutService.getTextColor(getScopeColor(label.name, layoutService.isDarkMode(), (layoutService.isDarkMode() ? label.colorDark : label.colorLight)))">
+                  @if (label.icon) {
+                    <app-icon-display [icon]="label.icon" class="text-[9px]"></app-icon-display>
+                  }
+                  {{ getScope(label.name) }}
+                </span>
                 <span class="px-1.5 py-0.5"
-                      [style.background]="layoutService.getAdaptiveColor(getScopeColor(label.name, label.color))"
-                      [style.color]="layoutService.getTextColor(layoutService.getAdaptiveColor(getScopeColor(label.name, label.color)))">{{ getScope(label.name) }}</span>
-                <span class="px-1.5 py-0.5"
-                      [style.background]="layoutService.getAdaptiveColor(label.color) + '28'"
-                      [style.color]="layoutService.getAdaptiveColor(label.color)">{{ getValue(label.name) }}</span>
+                      [style.background]="(layoutService.isDarkMode() ? label.colorDark : label.colorLight) + '28'"
+                      [style.color]="layoutService.isDarkMode() ? label.colorDark : label.colorLight">{{ getValue(label.name) }}</span>
               </span>
             } @else {
-              <span class="text-[10px] px-2 py-0.5 rounded-full font-medium border border-gray-300 dark:border-surface-600 select-none cursor-default"
-                    [style.background]="layoutService.getAdaptiveColor(label.color) + '22'"
-                    [style.color]="layoutService.getAdaptiveColor(label.color)"
+              <span class="text-[10px] px-2 py-0.5 rounded-full font-medium border border-gray-300 dark:border-surface-600 select-none cursor-default inline-flex items-center gap-1"
+                    [style.background]="(layoutService.isDarkMode() ? label.colorDark : label.colorLight) + '22'"
+                    [style.color]="layoutService.isDarkMode() ? label.colorDark : label.colorLight"
                     [pTooltip]="label.description ? label.name + ': ' + label.description : label.name">
+                @if (label.icon) {
+                  <app-icon-display [icon]="label.icon" class="text-[9px]"></app-icon-display>
+                }
                 {{ label.name }}
               </span>
             }
@@ -216,12 +224,12 @@ export class TaskRowComponent {
   protected getScope(name: string): string { return name.split('::')[0].trim(); }
   protected getValue(name: string): string { return name.split('::').slice(1).join('::').trim(); }
 
-  protected getScopeColor(name: string, fallbackColor: string): string {
+  protected getScopeColor(name: string, isDark: boolean, fallbackColor: string): string {
     if (!this.isScoped(name)) return fallbackColor;
     const scope = this.getScope(name).toLowerCase();
     const allLabels = this.taskStore.labels();
     const match = allLabels.find(l => l.name.includes('::') && l.name.split('::')[0].trim().toLowerCase() === scope);
-    return match ? match.color : fallbackColor;
+    return match ? (isDark ? match.colorDark : match.colorLight) : fallbackColor;
   }
 
   protected getTextColor(bgColor: string): string {

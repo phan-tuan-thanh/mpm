@@ -193,12 +193,12 @@ const ACTION_CONTROLS: readonly ActionControl[] = [
     guard: 'hasSelection',
     guardToken: 'projSelected().size > 0',
   },
-  // priorities-tab: nút "Thêm mức" (khi có quyền)
+  // priorities-tab: nút "Thêm" (khi có quyền)
   {
     id: 'priorities:add',
     tab: 'priorities-tab',
-    templateSignatures: ['(click)="showAddForm.set(true)"', 'label="Thêm mức"'],
-    handler: { name: 'showAddForm', kind: 'signal' },
+    templateSignatures: ['(click)="submitAdd()"', 'label="Thêm"'],
+    handler: { name: 'submitAdd', kind: 'method' },
     guard: 'notReadOnly',
     guardToken: '!isReadOnly()',
   },
@@ -250,9 +250,8 @@ function isControlVisible(guard: GuardKind, s: RenderState): boolean {
 
 const SECTION_TITLES: ReadonlyArray<{ tab: TabName; title: string }> = [
   { tab: 'states-tab', title: 'Workspace Template' },
-  { tab: 'estimates-tab', title: 'Xem trước (Preview)' },
-  { tab: 'general-info-tab', title: 'Nhận diện dự án' },
-  { tab: 'general-info-tab', title: 'Mô tả' },
+  { tab: 'estimates-tab', title: 'Xem trước' },
+  { tab: 'general-info-tab', title: 'Thông tin chung' },
   { tab: 'general-info-tab', title: 'Thông tin dự án' },
 ];
 
@@ -358,9 +357,9 @@ describe('Project Settings tabs — Preservation [Property 2]', () => {
 
   // ── 3. general-info-tab (tab chuẩn) không đổi (Requirement 3.5) ───────────
   describe('general-info-tab unchanged (Requirement 3.5)', () => {
-    it('giữ nguyên 3 tiêu đề card nội dung', () => {
+    it('giữ nguyên các tiêu đề card nội dung', () => {
       const headings = headingTexts('general-info-tab');
-      expect(headings).toEqual(expect.arrayContaining(['Nhận diện dự án', 'Mô tả', 'Thông tin dự án']));
+      expect(headings).toEqual(expect.arrayContaining(['Thông tin chung', 'Thông tin dự án']));
     });
 
     it('giữ nguyên nhịp spacing chuẩn (space-y-5 / gap-5)', () => {

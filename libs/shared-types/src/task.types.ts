@@ -50,7 +50,9 @@ export interface Label {
   id: string;
   projectId: string | null;
   name: string;
-  color: string;
+  colorLight: string;
+  colorDark: string;
+  icon?: string | null;
   scope?: LabelScope;
   workspaceId?: string;
   taskCount?: number;
@@ -111,7 +113,8 @@ export interface TaskActivity {
 export interface TaskStateRef {
   id: string;
   name: string;
-  color: string;
+  colorLight: string;
+  colorDark: string;
   group: string;
   icon?: string | null;
 }
@@ -233,14 +236,18 @@ export interface BulkDeleteTasksDto {
 
 export interface CreateLabelDto {
   name: string;
-  color: string;
+  colorLight: string;
+  colorDark: string;
+  icon?: string | null;
   isExclusive?: boolean;
   description?: string | null;
 }
 
 export interface UpdateLabelDto {
   name?: string;
-  color?: string;
+  colorLight?: string;
+  colorDark?: string;
+  icon?: string | null;
   isExclusive?: boolean;
   description?: string | null;
 }
@@ -293,6 +300,7 @@ export interface TaskQueryDto {
   priorities?: TaskPriority[];
   assigneeIds?: string[];
   labelIds?: string[];
+  moduleIds?: string[];
   search?: string;
   groupBy?: 'state' | 'priority' | 'label' | 'assignee' | 'none';
   orderBy?: 'rank' | 'created_at' | 'updated_at' | 'start_date' | 'due_date' | 'priority';

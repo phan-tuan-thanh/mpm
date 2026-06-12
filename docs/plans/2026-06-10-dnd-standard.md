@@ -21,7 +21,7 @@
 
 ### 2.1 Khi bắt đầu drag
 
-- Item gốc chuyển thành **ghost**: opacity giảm xuống ~25%, `pointer-events: none`.
+- Item gốc chuyển thành **ghost**: opacity giảm xuống ~70% (để giữ độ rõ nét) và giữ màu nền hover (`bg-gray-50/50` / `dark:bg-surface-800/20`), `pointer-events: none`.
 - Clone (drag preview) xuất hiện ngay tại vị trí item, bám theo con trỏ.
 - Cursor chuyển thành `grabbing`.
 - Các items còn lại **không di chuyển** (CDK `sortingDisabled = true`).
@@ -65,8 +65,8 @@
 
 ```html
 @if (draggedId === item.id) {
-  <div class="opacity-25 pointer-events-none rounded-lg">
-    <!-- Phiên bản đơn giản hóa của item, chỉ render các trường chính -->
+  <div class="opacity-70 bg-gray-50/50 dark:bg-surface-800/20 pointer-events-none rounded-lg">
+    <!-- Phiên bản giữ nguyên layout hoặc cấu trúc chính của item, cùng class và paddings -->
   </div>
 }
 ```
@@ -76,12 +76,12 @@
 ### Drag preview (clone bám theo con trỏ)
 
 ```html
-<div *cdkDragPreview
+<div *cdkDragPreview [matchSize]="true"
   class="flex items-center gap-2 bg-white dark:bg-surface-800
          border border-surface-200 dark:border-surface-700
          shadow-xl rounded-lg px-3 pointer-events-none select-none"
-  style="height: 40px; min-width: 200px; max-width: 280px;">
-  <!-- Hiển thị ID + title của item -->
+  style="max-width: 320px; width: 100%; box-sizing: border-box;">
+  <!-- Hiển thị ID + title của item hoặc cấu trúc của item gốc -->
 </div>
 ```
 

@@ -19,8 +19,8 @@ import { buildDetailFields, buildStructureFields, getTaskFieldValue } from './pr
  */
 describe('PropertiesSidebarComponent — Helpers', () => {
   const mockStates: ProjectState[] = [
-    { id: 's1', projectId: 'p1', name: 'Backlog', color: '#6B7280', group: StateGroup.BACKLOG, isDefault: true, order: 0, createdAt: new Date(), updatedAt: new Date() },
-    { id: 's2', projectId: 'p1', name: 'Todo', color: '#3B82F6', group: StateGroup.UNSTARTED, isDefault: false, order: 1, createdAt: new Date(), updatedAt: new Date() },
+    { id: 's1', projectId: 'p1', name: 'Backlog', colorLight: '#6B7280', colorDark: '#6B7280', group: StateGroup.BACKLOG, isDefault: true, order: 0, createdAt: new Date(), updatedAt: new Date() },
+    { id: 's2', projectId: 'p1', name: 'Todo', colorLight: '#3B82F6', colorDark: '#3B82F6', group: StateGroup.UNSTARTED, isDefault: false, order: 1, createdAt: new Date(), updatedAt: new Date() },
   ];
 
   const mockMembers: MemberResponse[] = [
@@ -29,8 +29,8 @@ describe('PropertiesSidebarComponent — Helpers', () => {
   ];
 
   const mockLabels: Label[] = [
-    { id: 'l1', projectId: 'p1', name: 'Bug', color: '#EF4444', createdAt: new Date(), updatedAt: new Date() },
-    { id: 'l2', projectId: 'p1', name: 'Feature', color: '#22C55E', createdAt: new Date(), updatedAt: new Date() },
+    { id: 'l1', projectId: 'p1', name: 'Bug', colorLight: '#EF4444', colorDark: '#EF4444', createdAt: new Date(), updatedAt: new Date() },
+    { id: 'l2', projectId: 'p1', name: 'Feature', colorLight: '#22C55E', colorDark: '#22C55E', createdAt: new Date(), updatedAt: new Date() },
   ];
 
   const mockModules: ProjectModule[] = [
@@ -45,9 +45,9 @@ describe('PropertiesSidebarComponent — Helpers', () => {
     title: 'Test Task',
     priority: 'medium',
     stateId: 's1',
-    state: { id: 's1', name: 'Backlog', color: '#6B7280', group: 'backlog' },
+    state: { id: 's1', name: 'Backlog', colorLight: '#6B7280', colorDark: '#6B7280', group: 'backlog' },
     assignees: [{ userId: 'u1', displayName: 'Nguyễn Văn A', email: 'a@test.com', avatarUrl: null, assignedAt: new Date() }],
-    labels: [{ id: 'l1', projectId: 'p1', name: 'Bug', color: '#EF4444', createdAt: new Date(), updatedAt: new Date() }],
+    labels: [{ id: 'l1', projectId: 'p1', name: 'Bug', colorLight: '#EF4444', colorDark: '#EF4444', createdAt: new Date(), updatedAt: new Date() }],
     modules: [{ id: 'm1', name: 'Sprint 1', scope: 'project', status: 'active' }],
     estimateValue: 3,
     startDate: '2026-06-01',
@@ -141,9 +141,9 @@ describe('PropertiesSidebarComponent — Helpers', () => {
   });
 
   describe('buildStructureFields (Req 3.3)', () => {
-    it('should return labelIds and moduleIds fields', () => {
+    it('should return labelIds, moduleIds and sprintId fields', () => {
       const fields = buildStructureFields(mockLabels, mockModules);
-      expect(fields.map(f => f.field)).toEqual(['labelIds', 'moduleIds']);
+      expect(fields.map(f => f.field)).toEqual(['labelIds', 'moduleIds', 'sprintId']);
     });
 
     it('should map labels to labelIds multi-select options', () => {

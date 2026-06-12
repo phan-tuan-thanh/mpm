@@ -11,9 +11,9 @@
 |---------|---------|
 | Không dùng `cdkDragHandle` | Toàn bộ item là vùng kéo. Xóa `cdkDragHandle` nếu thấy. |
 | `[cdkDropListSortingDisabled]="true"` | Bắt buộc trên mọi `cdkDropList`. Items không tự di chuyển khi kéo. |
-| Ghost ngoài `cdkDrag` | `@if (draggedId === item.id)` + `opacity-25 pointer-events-none` đặt **trước** `<div cdkDrag>`. |
+| Ghost ngoài `cdkDrag` | `@if (draggedId === item.id)` + `opacity-70 pointer-events-none bg-gray-50/50 dark:bg-surface-800/20` (giữ màu nền hover) đặt **trước** `<div cdkDrag>`. |
 | Line indicator trong `cdkDrag` | `h-0.5 bg-indigo-600 dark:bg-indigo-500 absolute top-0 left-0 right-0 z-20 rounded-full`, hiện khi `draggedId && hoveredId === item.id && draggedId !== item.id`. |
-| `*cdkDragPreview` | Clone compact bám theo con trỏ, bên trong `cdkDrag`. |
+| `*cdkDragPreview` | Clone bám theo con trỏ (hỗ trợ `[matchSize]="true"`, giới hạn `max-width: 320px` để tương tự item gốc), bên trong `cdkDrag`. |
 | `*cdkDragPlaceholder` | `<div *cdkDragPlaceholder></div>` rỗng, bên trong `cdkDrag`. |
 | End drop zone | Div sau vòng lặp item, `(mouseenter)="hoveredId='end'"`, có line indicator khi hover. |
 | `(mouseleave)` trên `cdkDrag` | `hoveredId === item.id ? hoveredId = null : null` — bắt buộc để clear state. |
@@ -26,9 +26,9 @@
 ```
 - [ ] cdkDropList có [cdkDropListSortingDisabled]="true"
 - [ ] KHÔNG có cdkDragHandle ở bất kỳ đâu
-- [ ] Ghost div (opacity-25) đặt NGOÀI cdkDrag, trước nó
+- [ ] Ghost div (opacity-70, giữ màu nền hover) đặt NGOÀI cdkDrag, trước nó
 - [ ] Line indicator (h-0.5 bg-indigo-600) TRONG cdkDrag, position absolute top-0
-- [ ] *cdkDragPreview compact (ID + title) bên trong cdkDrag
+- [ ] *cdkDragPreview bên trong cdkDrag (sử dụng matchSize và max-width giới hạn nếu cần)
 - [ ] <div *cdkDragPlaceholder></div> rỗng bên trong cdkDrag
 - [ ] End zone div sau @for loop với hoveredId='end' và line indicator
 - [ ] (mouseenter) và (mouseleave) trên cdkDrag để track hoveredId

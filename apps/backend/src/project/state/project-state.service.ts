@@ -108,7 +108,8 @@ export class ProjectStateService {
     const state = this.stateRepository.create({
       projectId,
       name: dto.name,
-      color: dto.color,
+      colorLight: dto.colorLight,
+      colorDark: dto.colorDark,
       group: dto.group,
       icon: dto.icon ?? null,
       isDefault: false,
@@ -171,7 +172,8 @@ export class ProjectStateService {
       state.name = dto.name;
     }
 
-    if (dto.color !== undefined) state.color = dto.color;
+    if (dto.colorLight !== undefined) state.colorLight = dto.colorLight;
+    if (dto.colorDark !== undefined) state.colorDark = dto.colorDark;
     if (dto.icon !== undefined) state.icon = dto.icon;
     if (dto.group !== undefined) state.group = dto.group;
     if (dto.order !== undefined) state.order = dto.order;

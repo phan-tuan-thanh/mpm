@@ -1,9 +1,10 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import type { Task } from '@mpm/shared-types';
+import { LayoutService } from '../../../../layout/services/layout.service';
 
 @Component({
   standalone: true,
@@ -21,8 +22,8 @@ import type { Task } from '@mpm/shared-types';
             <span class="flex-1 text-gray-800 dark:text-surface-100">{{ child.title }}</span>
             @if (child.state) {
               <span class="text-xs px-1.5 py-0.5 rounded"
-                [style.background]="child.state.color + '22'"
-                [style.color]="child.state.color"
+                [style.background]="(layoutService.isDarkMode() ? child.state.colorDark : child.state.colorLight) + '22'"
+                [style.color]="layoutService.isDarkMode() ? child.state.colorDark : child.state.colorLight"
               >{{ child.state.name }}</span>
             }
           </div>
@@ -41,6 +42,7 @@ export class TaskSubitemsTabComponent {
   @Output() openChild = new EventEmitter<string>();
   @Output() addSubItem = new EventEmitter<string>();
 
+  protected readonly layoutService = inject(LayoutService);
   protected newChildTitle = '';
 
   protected onAdd(): void {

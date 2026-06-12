@@ -21,6 +21,7 @@ export class TaskQueryService {
       priorities?: TaskPriority[];
       assigneeIds?: string[];
       labelIds?: string[];
+      moduleIds?: string[];
       search?: string;
       groupBy?: string;
       orderBy?: string;
@@ -86,6 +87,13 @@ export class TaskQueryService {
       qb.andWhere(
         `EXISTS (SELECT 1 FROM task_labels tl WHERE tl.task_id = t.id AND tl.label_id IN (:...labelIds))`,
         { labelIds: query.labelIds },
+      );
+    }
+
+    if (query.moduleIds?.length) {
+      qb.andWhere(
+        `EXISTS (SELECT 1 FROM task_modules tm WHERE tm.task_id = t.id AND tm.module_id IN (:...moduleIds))`,
+        { moduleIds: query.moduleIds },
       );
     }
 
@@ -186,7 +194,8 @@ export class TaskQueryService {
       backlog_order: number;
       depth: number;
       state_name: string;
-      state_color: string;
+      state_color_light: string;
+      state_color_dark: string;
       state_group: string;
       state_icon: string | null;
     }> = await this.dataSource.query(
@@ -235,7 +244,8 @@ export class TaskQueryService {
         tt.backlog_order,
         tt.depth,
         ps.name AS state_name,
-        ps.color AS state_color,
+        ps.color_light AS state_color_light,
+        ps.color_dark AS state_color_dark,
         ps."group" AS state_group,
         ps.icon AS state_icon
       FROM task_tree tt
@@ -297,7 +307,7 @@ export class TaskQueryService {
         priority: row.priority as TaskPriority,
         stateId: row.state_id,
         state: row.state_name
-          ? { id: row.state_id, name: row.state_name, color: row.state_color, group: row.state_group, icon: row.state_icon }
+          ? { id: row.state_id, name: row.state_name, colorLight: row.state_color_light, colorDark: row.state_color_dark, group: row.state_group, icon: row.state_icon }
           : undefined,
         assignees: (assigneeMap.get(row.id) ?? []).map((a) => ({
           userId: a.userId,

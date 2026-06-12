@@ -34,6 +34,8 @@ describe('ProjectSettings Integration Tests (Epic A+)', () => {
   let testUser1: User;
   let testUser2: User;
 
+  const createdProjectIds: string[] = [];
+
   beforeAll(async () => {
     moduleRef = await Test.createTestingModule({
       imports: [AppModule],
@@ -66,9 +68,24 @@ describe('ProjectSettings Integration Tests (Epic A+)', () => {
         avatarUrl: null,
         externalId: 'dev-external-id',
       }));
+
+    // Track mọi project được tạo trong suite để dọn dẹp ở afterAll
+    const realCreate = projectService.create.bind(projectService);
+    jest.spyOn(projectService, 'create').mockImplementation(async (...args: Parameters<ProjectService['create']>) => {
+      const project = await realCreate(...args);
+      createdProjectIds.push(project.id);
+      return project;
+    });
   });
 
   afterAll(async () => {
+    try {
+      if (createdProjectIds.length > 0) {
+        await projectRepo.delete(createdProjectIds);
+      }
+    } catch (e) {
+      // Ignore cleanup errors
+    }
     if (moduleRef) {
       await moduleRef.close();
     }
@@ -149,7 +166,7 @@ describe('ProjectSettings Integration Tests (Epic A+)', () => {
       stateService.create(
         project.id,
         testUser1.id,
-        { name: 'Todo', color: '#112233', group: StateGroup.UNSTARTED },
+        { name: 'Todo', colorLight: '#112233', colorDark: '#112233', group: StateGroup.UNSTARTED },
         '127.0.0.1',
         'test-agent',
       ),
@@ -344,7 +361,7 @@ describe('ProjectSettings Integration Tests (Epic A+)', () => {
       estimateValue: 5,
       stateId: todoState.id,
     });
-    expect(task.estimateValue).toBe(5);
+    expect(Number(task.estimateValue)).toBe(5);
 
     // Change estimate config type (from points to categories)
     await estimateService.updateConfig(

@@ -325,16 +325,16 @@ import { StateDotComponent } from '../../../shared/components/state-dot/state-do
                         @if (isScoped(getLabelName(id))) {
                           <span class="inline-flex items-center text-[10px] rounded-full overflow-hidden border border-gray-200 dark:border-surface-700 bg-white dark:bg-surface-800 font-medium">
                             <span class="px-1.5 py-px text-white" 
-                                  [style.background]="layoutService.getAdaptiveColor(getScopeColor(getLabelName(id), getLabelColor(id)))" 
-                                  [style.color]="layoutService.getTextColor(layoutService.getAdaptiveColor(getScopeColor(getLabelName(id), getLabelColor(id))))">{{ getScope(getLabelName(id)) }}</span>
+                                  [style.background]="getScopeColor(getLabelName(id), getLabelColor(id, layoutService.isDarkMode()))" 
+                                  [style.color]="layoutService.getTextColor(getScopeColor(getLabelName(id), getLabelColor(id, layoutService.isDarkMode())))">{{ getScope(getLabelName(id)) }}</span>
                             <span class="px-1.5 py-px" 
-                                  [style.background]="layoutService.getAdaptiveColor(getLabelColor(id)) + '18'" 
-                                  [style.color]="layoutService.getAdaptiveColor(getLabelColor(id))">{{ getValue(getLabelName(id)) }}</span>
+                                  [style.background]="getLabelColor(id, layoutService.isDarkMode()) + '18'" 
+                                  [style.color]="getLabelColor(id, layoutService.isDarkMode())">{{ getValue(getLabelName(id)) }}</span>
                           </span>
                         } @else {
                           <span class="text-[10px] px-1 py-px rounded-full font-medium bg-white dark:bg-surface-800 border"
-                                [style.border-color]="layoutService.getAdaptiveColor(getLabelColor(id))"
-                                [style.color]="layoutService.getAdaptiveColor(getLabelColor(id))"
+                                [style.border-color]="getLabelColor(id, layoutService.isDarkMode())"
+                                [style.color]="getLabelColor(id, layoutService.isDarkMode())"
                                 [pTooltip]="getLabelDescription(id) ? getLabelName(id) + ': ' + getLabelDescription(id) : getLabelName(id)">
                             {{ getLabelName(id) }}
                           </span>
@@ -562,7 +562,7 @@ import { StateDotComponent } from '../../../shared/components/state-dot/state-do
                   style="padding: 5px 10px; font-size: 12px; border-radius: 4px"
                   (click)="toggleLabel(l.id)">
                   <span style="width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0"
-                    [style.background]="l.color"></span>
+                    [style.background]="layoutService.isDarkMode() ? l.colorDark : l.colorLight"></span>
                   <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px">{{ l.name }}</span>
                   @if (selectedLabelIds().includes(l.id)) {
                     <i class="pi pi-check" style="font-size: 10px; color: var(--p-primary-color); flex-shrink: 0"></i>
@@ -895,8 +895,10 @@ export class TaskDetailPanelComponent implements OnInit, OnChanges, OnDestroy {
   protected getLabelName(id: string): string {
     return this.labelOptions().find(l => l.id === id)?.name ?? id;
   }
-  protected getLabelColor(id: string): string {
-    return this.labelOptions().find(l => l.id === id)?.color ?? '#9CA3AF';
+  protected getLabelColor(id: string, isDark = false): string {
+    const l = this.labelOptions().find(l => l.id === id);
+    if (!l) return isDark ? '#6B7280' : '#9CA3AF';
+    return isDark ? l.colorDark : l.colorLight;
   }
   protected getLabelDescription(id: string): string {
     return this.labelOptions().find(l => l.id === id)?.description ?? '';
@@ -959,9 +961,25 @@ export class TaskDetailPanelComponent implements OnInit, OnChanges, OnDestroy {
     const t = this.task();
     if (t) {
       const current = this.selectedLabelIds();
-      const next = current.includes(labelId)
-        ? current.filter((id) => id !== labelId)
-        : [...current, labelId];
+      let next: string[];
+      if (current.includes(labelId)) {
+        next = current.filter((id) => id !== labelId);
+      } else {
+        const addedLabel = this.labelOptions().find((l) => l.id === labelId);
+        if (addedLabel && this.isScoped(addedLabel.name) && addedLabel.isExclusive !== false) {
+          const scope = this.getScope(addedLabel.name).trim().toLowerCase();
+          next = current.filter((id) => {
+            const label = this.labelOptions().find((l) => l.id === id);
+            if (label && this.isScoped(label.name) && label.isExclusive !== false) {
+              return this.getScope(label.name).trim().toLowerCase() !== scope;
+            }
+            return true;
+          });
+          next.push(labelId);
+        } else {
+          next = [...current, labelId];
+        }
+      }
       this.taskStore.updateTask(this.projectId(), t.id, { labelIds: next });
     }
   }
@@ -973,17 +991,25 @@ export class TaskDetailPanelComponent implements OnInit, OnChanges, OnDestroy {
     }
   }
 
+  private formatDateToISO(date: Date | null): string | null {
+    if (!date) return null;
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
   protected onStartDateChange(date: Date | null): void {
     const t = this.task();
     if (t) {
-      this.taskStore.updateTask(this.projectId(), t.id, { startDate: date ? date.toISOString() : null } as any);
+      this.taskStore.updateTask(this.projectId(), t.id, { startDate: this.formatDateToISO(date) } as any);
     }
   }
 
   protected onDueDateChange(date: Date | null): void {
     const t = this.task();
     if (t) {
-      this.taskStore.updateTask(this.projectId(), t.id, { dueDate: date ? date.toISOString() : null } as any);
+      this.taskStore.updateTask(this.projectId(), t.id, { dueDate: this.formatDateToISO(date) } as any);
     }
   }
 

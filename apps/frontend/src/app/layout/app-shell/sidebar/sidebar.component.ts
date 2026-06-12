@@ -257,12 +257,10 @@ import { IconDisplayComponent } from '../../../shared/components/icon-display/ic
                 @for (sub of settingsSubItems; track sub.label) {
                   <a
                     [routerLink]="['/projects', currentKey(), 'settings'].concat(sub.route)"
-                    [routerLinkActiveOptions]="{ exact: sub.exact }"
-                    [routerLinkActive]="sub.danger ? 'bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 font-semibold' : 'bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 font-semibold'"
                     class="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs transition"
-                    [ngClass]="sub.danger
-                      ? 'text-red-400 dark:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 hover:text-red-600 dark:hover:text-red-400'
-                      : 'text-gray-500 dark:text-surface-400 hover:bg-gray-50 dark:hover:bg-surface-800 hover:text-gray-700 dark:hover:text-surface-100'"
+                    [ngClass]="isSettingsSubItemActive(sub)
+                      ? (sub.danger ? 'bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 font-semibold' : 'bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 font-semibold')
+                      : (sub.danger ? 'text-red-400 dark:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 hover:text-red-600 dark:hover:text-red-400' : 'text-gray-500 dark:text-surface-400 hover:bg-gray-50 dark:hover:bg-surface-800 hover:text-gray-700 dark:hover:text-surface-100')"
                   >
                     <i [class]="'pi ' + sub.icon + ' text-[10px]'"></i>
                     {{ sub.label }}
@@ -312,6 +310,14 @@ export class SidebarComponent implements OnInit {
       p.key.toLowerCase().includes(search)
     );
   });
+
+  readonly currentUrl = toSignal(
+    this.router.events.pipe(
+      filter(e => e instanceof NavigationEnd),
+      map(() => this.router.url)
+    ),
+    { initialValue: this.router.url }
+  );
 
   readonly isOnSettings = toSignal(
     this.router.events.pipe(
@@ -368,6 +374,31 @@ export class SidebarComponent implements OnInit {
 
   onSprintsClick(): void {
     this.isSprintsOpen.update(v => !v);
+  }
+
+  isSettingsSubItemActive(sub: typeof this.settingsSubItems[number]): boolean {
+    const url = this.currentUrl().split('?')[0];
+    const key = this.currentKey();
+    if (!key) return false;
+
+    const prefix = `/projects/${key}/settings`;
+
+    if (!url.startsWith(prefix)) {
+      return false;
+    }
+
+    // For 'Cấu hình chung' (route: [])
+    if (sub.route.length === 0) {
+      return url === prefix ||
+             (url.startsWith(`${prefix}/`) &&
+              !url.startsWith(`${prefix}/members`) &&
+              !url.startsWith(`${prefix}/features`) &&
+              !url.startsWith(`${prefix}/danger`));
+    }
+
+    // For other items (route: ['members'], etc.)
+    const pathSegment = sub.route[0];
+    return url === `${prefix}/${pathSegment}` || url.startsWith(`${prefix}/${pathSegment}/`);
   }
 
   readonly sprintSubItems = [

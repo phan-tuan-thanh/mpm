@@ -11,6 +11,7 @@ import type { Task } from '@mpm/shared-types';
 export function buildDetailFields(
   states: ProjectState[],
   members: MemberResponse[],
+  isDarkMode = false,
 ): PropertyFieldConfig[] {
   return [
     {
@@ -20,7 +21,7 @@ export function buildDetailFields(
       options: states.map((s) => ({
         label: s.name,
         value: s.id,
-        color: s.color,
+        color: isDarkMode ? s.colorDark : s.colorLight,
       })),
       placeholder: 'Chọn trạng thái...',
     },
@@ -88,6 +89,7 @@ export function buildStructureFields(
   labels: Label[],
   modules: ProjectModule[],
   sprints: SprintRef[] = [],
+  isDarkMode = false,
 ): PropertyFieldConfig[] {
   return [
     {
@@ -97,7 +99,7 @@ export function buildStructureFields(
       options: labels.map((l) => ({
         label: l.name,
         value: l.id,
-        color: l.color,
+        color: isDarkMode ? l.colorDark : l.colorLight,
       })),
       placeholder: 'Chọn nhãn...',
     },

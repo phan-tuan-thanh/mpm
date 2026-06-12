@@ -42,7 +42,7 @@ import type { TaskListItem, DisplayProperties, Label } from '@mpm/shared-types';
             <div class="flex items-center -space-x-1">
               @for (label of task.labels.slice(0, displayProps.maxLabels); track label.id) {
                 <span class="w-2.5 h-2.5 rounded-full border border-white dark:border-surface-800 flex-shrink-0"
-                      [style.background]="ls.getAdaptiveColor(label.color)"
+                      [style.background]="ls.isDarkMode() ? label.colorDark : label.colorLight"
                       [pTooltip]="label.description ? label.name + ': ' + label.description : label.name">
                 </span>
               }
@@ -58,22 +58,28 @@ import type { TaskListItem, DisplayProperties, Label } from '@mpm/shared-types';
                 @if (isScoped(label.name)) {
                   <span class="inline-flex items-center text-[10px] rounded-full overflow-hidden border border-gray-300 dark:border-surface-600 font-medium"
                         [pTooltip]="label.description ? label.name + ': ' + label.description : label.name">
-                    <span class="px-1.5 py-0.5"
-                          [style.background]="ls.getAdaptiveColor(getScopeColor(label))"
-                          [style.color]="ls.getTextColor(ls.getAdaptiveColor(getScopeColor(label)))">
+                    <span class="px-1.5 py-0.5 flex items-center gap-1"
+                          [style.background]="getScopeColor(label.name, ls.isDarkMode(), (ls.isDarkMode() ? label.colorDark : label.colorLight))"
+                          [style.color]="ls.getTextColor(getScopeColor(label.name, ls.isDarkMode(), (ls.isDarkMode() ? label.colorDark : label.colorLight)))">
+                      @if (label.icon) {
+                        <app-icon-display [icon]="label.icon" class="text-[9px]"></app-icon-display>
+                      }
                       {{ getScope(label.name) }}
                     </span>
                     <span class="px-1.5 py-0.5"
-                          [style.background]="ls.getAdaptiveColor(label.color) + '28'"
-                          [style.color]="ls.getAdaptiveColor(label.color)">
+                          [style.background]="(ls.isDarkMode() ? label.colorDark : label.colorLight) + '28'"
+                          [style.color]="ls.isDarkMode() ? label.colorDark : label.colorLight">
                       {{ getValue(label.name) }}
                     </span>
                   </span>
                 } @else {
-                  <span class="text-[10px] px-2 py-0.5 rounded-full font-medium border border-gray-300 dark:border-surface-600"
-                        [style.background]="ls.getAdaptiveColor(label.color) + '22'"
-                        [style.color]="ls.getAdaptiveColor(label.color)"
+                  <span class="text-[10px] px-2 py-0.5 rounded-full font-medium border border-gray-300 dark:border-surface-600 inline-flex items-center gap-1"
+                        [style.background]="(ls.isDarkMode() ? label.colorDark : label.colorLight) + '22'"
+                        [style.color]="ls.isDarkMode() ? label.colorDark : label.colorLight"
                         [pTooltip]="label.description ? label.name + ': ' + label.description : label.name">
+                    @if (label.icon) {
+                      <app-icon-display [icon]="label.icon" class="text-[9px]"></app-icon-display>
+                    }
                     {{ label.name }}
                   </span>
                 }
@@ -197,13 +203,13 @@ export class BoardCardComponent {
   protected getScope(name: string): string { return name.split('::')[0].trim(); }
   protected getValue(name: string): string { return name.split('::').slice(1).join('::').trim(); }
 
-  protected getScopeColor(label: Label): string {
-    if (!this.isScoped(label.name)) return label.color;
-    const scope = this.getScope(label.name).toLowerCase();
+  protected getScopeColor(name: string, isDark: boolean, fallbackColor: string): string {
+    if (!this.isScoped(name)) return fallbackColor;
+    const scope = this.getScope(name).toLowerCase();
     const match = this.taskStore.labels().find(
       l => l.name.includes('::') && l.name.split('::')[0].trim().toLowerCase() === scope
     );
-    return match ? match.color : label.color;
+    return match ? (isDark ? match.colorDark : match.colorLight) : fallbackColor;
   }
 
   protected hiddenLabelsTooltip(labels: Label[]): string {

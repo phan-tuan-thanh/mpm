@@ -30,20 +30,20 @@ describe('SubItemProgressComponent', () => {
   });
 
   describe('SVG dimensions', () => {
-    it('should have size 24', () => {
-      expect(component.size).toBe(24);
+    it('should have size 36', () => {
+      expect(component.size).toBe(36);
     });
 
-    it('should have strokeWidth 3', () => {
-      expect(component.strokeWidth).toBe(3);
+    it('should have strokeWidth 3.5', () => {
+      expect(component.strokeWidth).toBe(3.5);
     });
 
     it('should calculate radius as (size - strokeWidth) / 2', () => {
-      expect(component.radius).toBe((24 - 3) / 2);
+      expect(component.radius).toBe((36 - 3.5) / 2);
     });
 
     it('should calculate center as size / 2', () => {
-      expect(component.center).toBe(12);
+      expect(component.center).toBe(18);
     });
   });
 
@@ -92,7 +92,7 @@ describe('SubItemProgressComponent', () => {
   });
 
   describe('strokeDashArrayValue calculation', () => {
-    const radius = (24 - 3) / 2; // 10.5
+    const radius = (36 - 3.5) / 2; // 16.25
     const circumference = 2 * Math.PI * radius;
 
     it('should return full remaining when percentage is 0', () => {

@@ -26,7 +26,7 @@ describe('SubItemTreeComponent', () => {
       type: 'task',
       priority: 'medium',
       stateId: 'state-1',
-      state: { id: 'state-1', name: 'Todo', color: '#3B82F6', group: 'unstarted' },
+      state: { id: 'state-1', name: 'Todo', colorLight: '#3B82F6', colorDark: '#3B82F6', group: 'unstarted' },
       assignees: [],
       dueDate: null,
       children: [],
@@ -276,33 +276,34 @@ describe('SubItemTreeComponent', () => {
   // ─── getPriorityIconClass ─────────────────────────────────────────────────
 
   describe('getPriorityIconClass', () => {
-    it('urgent → red exclamation', () => {
+    it('urgent → red flag', () => {
       const cls = component.getPriorityIconClass('urgent');
       expect(cls).toContain('text-red-500');
-      expect(cls).toContain('pi-exclamation-circle');
+      expect(cls).toContain('pi-flag');
     });
 
-    it('high → orange arrow-up', () => {
+    it('high → orange flag', () => {
       const cls = component.getPriorityIconClass('high');
       expect(cls).toContain('text-orange-500');
-      expect(cls).toContain('pi-arrow-up');
+      expect(cls).toContain('pi-flag');
     });
 
-    it('medium → yellow minus', () => {
+    it('medium → yellow flag', () => {
       const cls = component.getPriorityIconClass('medium');
       expect(cls).toContain('text-yellow-500');
-      expect(cls).toContain('pi-minus');
+      expect(cls).toContain('pi-flag');
     });
 
-    it('low → blue arrow-down', () => {
+    it('low → blue flag', () => {
       const cls = component.getPriorityIconClass('low');
       expect(cls).toContain('text-blue-400');
-      expect(cls).toContain('pi-arrow-down');
+      expect(cls).toContain('pi-flag');
     });
 
-    it('none/unknown → gray minus', () => {
+    it('none/unknown → gray flag', () => {
       const cls = component.getPriorityIconClass('none');
       expect(cls).toContain('text-gray-300');
+      expect(cls).toContain('pi-flag');
     });
   });
 

@@ -51,16 +51,43 @@ import { IconDisplayComponent } from '../../../../../shared/components/icon-disp
         <!-- Left: cover + name + description -->
         <div class="flex-1 min-w-0 space-y-5">
 
-          <!-- Card: Nhận diện dự án -->
-          <div class="bg-surface-0 dark:bg-surface-900 rounded-xl border border-surface-100 dark:border-surface-800 shadow-sm">
+          <!-- Card: Thông tin chung -->
+          <div class="bg-surface-0 dark:bg-surface-900 rounded-xl border border-surface-100 dark:border-surface-800 shadow-sm overflow-hidden">
             <div class="px-5 py-3.5 border-b border-surface-100 dark:border-surface-800">
-              <h2 class="text-sm font-bold text-gray-900 dark:text-surface-0">Nhận diện dự án</h2>
-              <p class="text-xs text-gray-400 dark:text-surface-500 mt-0.5">Tên, biểu tượng và ảnh bìa hiển thị cho toàn bộ thành viên.</p>
+              <h2 class="text-sm font-bold text-gray-900 dark:text-surface-0">Thông tin chung</h2>
+              <p class="text-xs text-gray-400 dark:text-surface-500 mt-0.5">Quản lý nhận diện dự án bao gồm biểu tượng, tên gọi, ảnh bìa và mô tả chi tiết.</p>
             </div>
-            <div class="p-5 space-y-4">
+            <div class="p-5 space-y-5">
 
-              <!-- Cover image -->
-              <div class="flex flex-col gap-2">
+              <!-- Emoji + Name: inline row at the top -->
+              <div class="flex gap-3 items-end max-w-lg">
+                <!-- Icon Selector -->
+                <div class="flex-shrink-0 relative">
+                  <button
+                    pButton type="button"
+                    [disabled]="isReadOnly() || isSubmitting()"
+                    (click)="op.toggle($event)"
+                    class="h-[38px] w-12 text-lg flex items-center justify-center p-0 border border-gray-200 dark:border-surface-700 bg-white dark:bg-surface-800"
+                  >
+                    <app-icon-display [icon]="emoji || '🚀'" class="text-lg"></app-icon-display>
+                  </button>
+                  <p-popover #op styleClass="!p-0" appendTo="body">
+                    <app-icon-picker-panel [value]="emoji" (valueChange)="emoji = $event; op.hide()"></app-icon-picker-panel>
+                  </p-popover>
+                </div>
+                <!-- Name Input -->
+                <div class="flex-1 flex flex-col gap-1.5">
+                  <label for="name" class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wider select-none">Tên dự án <span class="text-red-500 normal-case">*</span></label>
+                  <input id="name" name="name" type="text" pInputText [(ngModel)]="name" [disabled]="isReadOnly() || isSubmitting()" required maxlength="100" class="w-full" style="height: 38px;" />
+                </div>
+              </div>
+
+              <!-- Divider line -->
+              <div class="border-t border-surface-100 dark:border-surface-800"></div>
+
+              <!-- Cover image section -->
+              <div class="space-y-2">
+                <label class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wider">Ảnh bìa</label>
                 <div class="relative group rounded-lg overflow-hidden border border-gray-200 dark:border-surface-700 bg-gray-50 dark:bg-surface-800 h-32 flex items-center justify-center">
                   @if (coverPreviewUrl()) {
                     <img [src]="coverPreviewUrl()" class="w-full h-full object-cover" />
@@ -77,7 +104,7 @@ import { IconDisplayComponent } from '../../../../../shared/components/icon-disp
                   }
                 </div>
                 @if (!isReadOnly()) {
-                  <div class="flex items-center gap-2">
+                  <div class="flex items-center gap-2 pt-1">
                     <input type="file" #coverInput accept="image/png, image/jpeg, image/webp" class="hidden" (change)="onCoverFileSelected($event)" />
                     <button pButton type="button" icon="pi pi-upload" label="Tải lên ảnh bìa" severity="secondary" size="small" [outlined]="true" [fluid]="false" (click)="coverInput.click()" [disabled]="isUploadingCover()"></button>
                     <span class="text-xs text-gray-400 dark:text-surface-500">JPG, PNG, WEBP · tối đa 5MB</span>
@@ -85,39 +112,17 @@ import { IconDisplayComponent } from '../../../../../shared/components/icon-disp
                 }
               </div>
 
-              <!-- Emoji + Name -->
-              <div class="flex gap-3 items-end">
-                <div class="flex-shrink-0 flex flex-col gap-1.5 relative">
-                  <label class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wider">Icon</label>
-                  <button
-                    pButton type="button"
-                    [disabled]="isReadOnly() || isSubmitting()"
-                    (click)="op.toggle($event)"
-                    class="h-10 w-12 text-lg flex items-center justify-center p-0 border border-gray-200 dark:border-surface-700 bg-white dark:bg-surface-800"
-                  >
-                    <app-icon-display [icon]="emoji || '🚀'" class="text-lg"></app-icon-display>
-                  </button>
-                  <p-popover #op styleClass="!p-0" appendTo="body">
-                    <app-icon-picker-panel [value]="emoji" (valueChange)="emoji = $event; op.hide()"></app-icon-picker-panel>
-                  </p-popover>
-                </div>
-                <div class="flex-1 flex flex-col gap-1.5 max-w-lg">
-                  <label for="name" class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wider">Tên dự án <span class="text-red-500 normal-case">*</span></label>
-                  <input id="name" name="name" type="text" pInputText [(ngModel)]="name" [disabled]="isReadOnly() || isSubmitting()" required maxlength="100" />
+              <!-- Divider line -->
+              <div class="border-t border-surface-100 dark:border-surface-800"></div>
+
+              <!-- Description section -->
+              <div class="space-y-2">
+                <label class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wider">Mô tả dự án</label>
+                <div>
+                  <app-rich-text-editor name="description" [(ngModel)]="description" placeholder="Không có mô tả cho dự án này."></app-rich-text-editor>
                 </div>
               </div>
 
-            </div>
-          </div>
-
-          <!-- Card: Mô tả -->
-          <div class="bg-surface-0 dark:bg-surface-900 rounded-xl border border-surface-100 dark:border-surface-800 shadow-sm overflow-hidden">
-            <div class="px-5 py-3.5 border-b border-surface-100 dark:border-surface-800">
-              <h2 class="text-sm font-bold text-gray-900 dark:text-surface-0">Mô tả</h2>
-              <p class="text-xs text-gray-400 dark:text-surface-500 mt-0.5">Giới thiệu ngắn về mục tiêu và phạm vi dự án.</p>
-            </div>
-            <div class="p-5">
-              <app-rich-text-editor name="description" [(ngModel)]="description" placeholder="Không có mô tả cho dự án này."></app-rich-text-editor>
             </div>
           </div>
 

@@ -128,25 +128,25 @@
           <i class="pi pi-tag" style="font-size: 11px"></i>
           @if (selectedLabelIds.length) {
             <div class="flex items-center gap-1">
-              @for (id of selectedLabelIds.slice(0, 2); track id) {
-                @if (isScoped(getLabelName(id))) {
-                  <span class="inline-flex items-center text-[10px] rounded-full overflow-hidden border border-gray-200 dark:border-surface-700 bg-white dark:bg-surface-800 font-medium" [pTooltip]="getLabelDescription(id) ? getLabelName(id) + ': ' + getLabelDescription(id) : getLabelName(id)">
-                    <span class="px-1.5 py-px text-white" 
-                          [style.background]="layoutService.getAdaptiveColor(getScopeColor(getLabelName(id), getLabelColor(id)))" 
-                          [style.color]="layoutService.getTextColor(layoutService.getAdaptiveColor(getScopeColor(getLabelName(id), getLabelColor(id))))">{{ getScope(getLabelName(id)) }}</span>
-                    <span class="px-1.5 py-px" 
-                          [style.background]="layoutService.getAdaptiveColor(getLabelColor(id)) + '18'" 
-                          [style.color]="layoutService.getAdaptiveColor(getLabelColor(id))">{{ getValue(getLabelName(id)) }}</span>
-                  </span>
-                } @else {
-                  <span class="text-[10px] px-1 py-px rounded-full font-medium bg-white dark:bg-surface-800 border"
-                        [style.border-color]="layoutService.getAdaptiveColor(getLabelColor(id))"
-                        [style.color]="layoutService.getAdaptiveColor(getLabelColor(id))"
-                        [pTooltip]="getLabelDescription(id) ? getLabelName(id) + ': ' + getLabelDescription(id) : getLabelName(id)">
-                    {{ getLabelName(id) }}
-                  </span>
-                }
-              }
+                      @for (id of selectedLabelIds.slice(0, 2); track id) {
+                        @if (isScoped(getLabelName(id))) {
+                          <span class="inline-flex items-center text-[10px] rounded-full overflow-hidden border border-gray-200 dark:border-surface-700 bg-white dark:bg-surface-800 font-medium" [pTooltip]="getLabelDescription(id) ? getLabelName(id) + ': ' + getLabelDescription(id) : getLabelName(id)">
+                            <span class="px-1.5 py-px text-white" 
+                                  [style.background]="getScopeColor(getLabelName(id), layoutService.isDarkMode(), getLabelColor(id, layoutService.isDarkMode()))" 
+                                  [style.color]="layoutService.getTextColor(getScopeColor(getLabelName(id), layoutService.isDarkMode(), getLabelColor(id, layoutService.isDarkMode())))">{{ getScope(getLabelName(id)) }}</span>
+                            <span class="px-1.5 py-px" 
+                                  [style.background]="getLabelColor(id, layoutService.isDarkMode()) + '18'" 
+                                  [style.color]="getLabelColor(id, layoutService.isDarkMode())">{{ getValue(getLabelName(id)) }}</span>
+                          </span>
+                        } @else {
+                          <span class="text-[10px] px-1 py-px rounded-full font-medium bg-white dark:bg-surface-800 border"
+                                [style.border-color]="getLabelColor(id, layoutService.isDarkMode())"
+                                [style.color]="getLabelColor(id, layoutService.isDarkMode())"
+                                [pTooltip]="getLabelDescription(id) ? getLabelName(id) + ': ' + getLabelDescription(id) : getLabelName(id)">
+                            {{ getLabelName(id) }}
+                          </span>
+                        }
+                      }
               @if (selectedLabelIds.length > 2) {
                 <span class="text-[10px] font-medium text-gray-400">+{{ selectedLabelIds.length - 2 }}</span>
               }
@@ -311,7 +311,7 @@
         style="padding: 5px 10px; font-size: 12px"
         (click)="selectedStateId.set(s.id); statePopover.hide()">
         <span style="width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; border: 1px solid rgba(0,0,0,0.08)"
-          [style.background]="s.color"></span>
+          [style.background]="layoutService.isDarkMode() ? s.colorDark : s.colorLight"></span>
         <span>{{ s.name }}</span>
         @if (selectedStateId() === s.id) {
           <i class="pi pi-check" style="margin-left: auto; font-size: 10px"></i>
@@ -405,16 +405,16 @@
             @if (isScoped(l.name)) {
               <span class="inline-flex items-center text-[10px] rounded-full overflow-hidden border border-gray-200 dark:border-surface-700 font-medium bg-white dark:bg-surface-800">
                 <span class="px-1.5 py-px text-white" 
-                      [style.background]="layoutService.getAdaptiveColor(getScopeColor(l.name, l.color))" 
-                      [style.color]="layoutService.getTextColor(layoutService.getAdaptiveColor(getScopeColor(l.name, l.color)))">{{ getScope(l.name) }}</span>
+                      [style.background]="getScopeColor(l.name, layoutService.isDarkMode(), (layoutService.isDarkMode() ? l.colorDark : l.colorLight))" 
+                      [style.color]="layoutService.getTextColor(getScopeColor(l.name, layoutService.isDarkMode(), (layoutService.isDarkMode() ? l.colorDark : l.colorLight)))">{{ getScope(l.name) }}</span>
                 <span class="px-1.5 py-px" 
-                      [style.background]="layoutService.getAdaptiveColor(l.color) + '18'" 
-                      [style.color]="layoutService.getAdaptiveColor(l.color)">{{ getValue(l.name) }}</span>
+                      [style.background]="(layoutService.isDarkMode() ? l.colorDark : l.colorLight) + '18'" 
+                      [style.color]="layoutService.isDarkMode() ? l.colorDark : l.colorLight">{{ getValue(l.name) }}</span>
               </span>
             } @else {
               <span class="text-[10px] px-1.5 py-px rounded-full font-medium" 
-                    [style.background]="layoutService.getAdaptiveColor(l.color) + '22'" 
-                    [style.color]="layoutService.getAdaptiveColor(l.color)">
+                    [style.background]="(layoutService.isDarkMode() ? l.colorDark : l.colorLight) + '22'" 
+                    [style.color]="layoutService.isDarkMode() ? l.colorDark : l.colorLight">
                 {{ l.name }}
               </span>
             }
@@ -468,7 +468,7 @@
           [class.selected]="selectedParentId() === p.id"
           (click)="onParentSelected(p.id); parentPopover.hide()">
           <div style="display: flex; align-items: center; gap: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">
-            <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" [style.background]="p.state?.color ?? '#9CA3AF'"></span>
+            <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" [style.background]="p.state ? (layoutService.isDarkMode() ? p.state.colorDark : p.state.colorLight) : '#9CA3AF'"></span>
             <span class="text-xs font-mono text-gray-400 flex-shrink-0">{{ p.taskId }}</span>
             <span style="font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ p.title }}</span>
           </div>

@@ -46,6 +46,9 @@ describe('Task Management Integration Tests (Epic B)', () => {
   let stakeholderUser: User;
   let nonMember: User;
 
+  const createdProjectIds: string[] = [];
+  const createdUserIds: string[] = [];
+
   beforeAll(async () => {
     moduleRef = await Test.createTestingModule({
       imports: [AppModule],
@@ -69,19 +72,41 @@ describe('Task Management Integration Tests (Epic B)', () => {
 
     // Create test users
     const ts = Date.now();
-    testUser1 = await userRepo.findOne({ where: { email: 'sm@demo.local' } }) ||
-      await userRepo.save(userRepo.create({ email: `epic-b-u1-${ts}@test.com`, displayName: 'Epic B User1', externalId: `eb1-${ts}` }));
-    testUser2 = await userRepo.findOne({ where: { email: 'dev@demo.local' } }) ||
-      await userRepo.save(userRepo.create({ email: `epic-b-u2-${ts}@test.com`, displayName: 'Epic B User2', externalId: `eb2-${ts}` }));
+    const existingUser1 = await userRepo.findOne({ where: { email: 'sm@demo.local' } });
+    if (existingUser1) {
+      testUser1 = existingUser1;
+    } else {
+      testUser1 = await userRepo.save(userRepo.create({ email: `epic-b-u1-${ts}@test.com`, displayName: 'Epic B User1', externalId: `eb1-${ts}` }));
+      createdUserIds.push(testUser1.id);
+    }
+    const existingUser2 = await userRepo.findOne({ where: { email: 'dev@demo.local' } });
+    if (existingUser2) {
+      testUser2 = existingUser2;
+    } else {
+      testUser2 = await userRepo.save(userRepo.create({ email: `epic-b-u2-${ts}@test.com`, displayName: 'Epic B User2', externalId: `eb2-${ts}` }));
+      createdUserIds.push(testUser2.id);
+    }
     stakeholderUser = await userRepo.save(
       userRepo.create({ email: `epic-b-sh-${ts}@test.com`, displayName: 'Stakeholder', externalId: `ebsh-${ts}` }),
     );
+    createdUserIds.push(stakeholderUser.id);
     nonMember = await userRepo.save(
       userRepo.create({ email: `epic-b-nm-${ts}@test.com`, displayName: 'Non Member', externalId: `ebnm-${ts}` }),
     );
+    createdUserIds.push(nonMember.id);
   });
 
   afterAll(async () => {
+    try {
+      if (createdProjectIds.length > 0) {
+        await projectRepo.delete(createdProjectIds);
+      }
+      if (createdUserIds.length > 0) {
+        await userRepo.delete(createdUserIds);
+      }
+    } catch (e) {
+      // Ignore cleanup errors
+    }
     await moduleRef.close();
   });
 
@@ -96,6 +121,7 @@ describe('Task Management Integration Tests (Epic B)', () => {
       '127.0.0.1',
       'test-agent',
     );
+    createdProjectIds.push(project.id);
     // Add testUser2 as Developer
     await memberRepo.save(
       memberRepo.create({ userId: testUser2.id, projectId: project.id, projectRole: 'Developer' }),

@@ -26,8 +26,14 @@ export class Label {
   @Column({ type: 'varchar', length: 50 })
   name!: string;
 
-  @Column({ type: 'char', length: 7, default: '#6B7280' })
-  color!: string;
+  @Column({ name: 'color_light', type: 'char', length: 7, default: '#6B7280' })
+  colorLight!: string;
+
+  @Column({ name: 'color_dark', type: 'char', length: 7, default: '#6B7280' })
+  colorDark!: string;
+
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  icon!: string | null;
 
   @Column({ name: 'is_exclusive', type: 'boolean', default: true })
   isExclusive!: boolean;

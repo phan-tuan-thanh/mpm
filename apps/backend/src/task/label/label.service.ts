@@ -34,7 +34,7 @@ export class LabelService {
    * - scope='project': tạo project-level label (project_id required)
    */
   async create(
-    dto: { name: string; color: string; isExclusive?: boolean; description?: string | null },
+    dto: { name: string; colorLight: string; colorDark: string; isExclusive?: boolean; description?: string | null; icon?: string | null },
     opts: {
       scope: 'workspace' | 'project';
       workspaceId: string | null;
@@ -52,7 +52,7 @@ export class LabelService {
    */
   async update(
     labelId: string,
-    dto: { name?: string; color?: string; isExclusive?: boolean; description?: string | null },
+    dto: { name?: string; colorLight?: string; colorDark?: string; isExclusive?: boolean; description?: string | null; icon?: string | null },
     opts: {
       workspaceId?: string;
       projectId?: string;

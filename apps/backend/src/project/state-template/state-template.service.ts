@@ -77,7 +77,8 @@ export class StateTemplateService {
     const template = this.templateRepository.create({
       workspaceId,
       name: dto.name,
-      color: dto.color,
+      colorLight: dto.colorLight,
+      colorDark: dto.colorDark,
       group: dto.group,
       isDefault: false,
       order: nextOrder,
@@ -126,7 +127,8 @@ export class StateTemplateService {
       template.name = dto.name;
     }
 
-    if (dto.color !== undefined) template.color = dto.color;
+    if (dto.colorLight !== undefined) template.colorLight = dto.colorLight;
+    if (dto.colorDark !== undefined) template.colorDark = dto.colorDark;
     if (dto.group !== undefined) template.group = dto.group;
     if (dto.order !== undefined) template.order = dto.order;
     if (dto.isDefault !== undefined) template.isDefault = dto.isDefault;
@@ -199,7 +201,8 @@ export class StateTemplateService {
       const newState = this.stateRepository.create({
         projectId,
         name,
-        color: tpl.color,
+        colorLight: tpl.colorLight,
+        colorDark: tpl.colorDark,
         group: tpl.group,
         isDefault: false,
         order: tpl.order,

@@ -80,8 +80,57 @@
                 @if (isAdmin() && wsEditingId() === label.id) {
                   <!-- Inline edit -->
                   <div class="inline-edit-group flex-wrap gap-y-2">
-                    <div class="color-preview-swatch" [style.background]="'#' + wsEditColor" (click)="wsColorPicker.togglePanel()"></div>
-                    <p-colorpicker #wsColorPicker [(ngModel)]="wsEditColor" [inline]="false" appendTo="body" />
+                    <p-popover #wsEditColorPop styleClass="p-2" appendTo="body">
+                      <div class="space-y-3 p-1">
+                        <div class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Màu chọn nhanh (Light / Dark)</div>
+                        <div class="grid grid-cols-5 gap-2 w-48">
+                          @for (pair of presetPairs; track pair.light) {
+                            <button type="button" 
+                              class="w-8 h-8 rounded-full border border-black/10 hover:scale-110 active:scale-95 transition cursor-pointer flex items-center justify-center relative"
+                              [style.background]="getPresetGradient(pair.light, pair.dark)"
+                              (click)="wsEditColorLight.set(pair.light); wsEditColorDark.set(pair.dark); wsEditColorPop.hide()">
+                              @if (wsEditColorLight() === pair.light && wsEditColorDark() === pair.dark) {
+                                <i class="pi pi-check text-[10px] text-white shadow-sm"></i>
+                              }
+                            </button>
+                          }
+                        </div>
+                        <div class="border-t border-surface-200 dark:border-surface-700 pt-2">
+                          <button type="button"
+                            class="text-[11px] font-semibold text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center gap-1 cursor-pointer select-none"
+                            (click)="showCustomWsEditColors.set(!showCustomWsEditColors())">
+                            <i class="pi" [class]="showCustomWsEditColors() ? 'pi-chevron-down' : 'pi-chevron-right'"></i>
+                            Tự tùy chỉnh màu sắc Light & Dark
+                          </button>
+                          
+                          @if (showCustomWsEditColors()) {
+                            <div class="mt-2 space-y-3 pl-1">
+                              <div>
+                                <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">Màu Light mode:</div>
+                                <app-color-picker-panel
+                                  [value]="wsEditColorLight()"
+                                  (valueChange)="wsEditColorLight.set($event)"
+                                />
+                              </div>
+                              <div>
+                                <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">Màu Dark mode:</div>
+                                <app-color-picker-panel
+                                  [value]="wsEditColorDark()"
+                                  (valueChange)="wsEditColorDark.set($event)"
+                                />
+                              </div>
+                            </div>
+                          }
+                        </div>
+                      </div>
+                    </p-popover>
+                    <button type="button"
+                      class="w-7 h-7 rounded-full border border-black/10 hover:scale-110 active:scale-95 transition cursor-pointer flex-shrink-0"
+                      [style.background]="getPresetGradient(wsEditColorLight(), wsEditColorDark())"
+                      (click)="wsEditColorPop.toggle($event)"
+                      pTooltip="Chọn cặp màu sắc"
+                      tooltipPosition="top"
+                    ></button>
                     <input pInputText class="flex-1" style="height: 30px; font-size: 13px; padding: 0 8px"
                       [(ngModel)]="wsEditName"
                       (keydown.enter)="saveWsEdit(label)"
@@ -117,13 +166,13 @@
                       @if (isScoped(label.name)) {
                         <span class="inline-flex items-center text-xs rounded-full overflow-hidden border border-gray-300 dark:border-surface-600 font-medium">
                           <span class="px-2 py-0.5"
-                                [style.background]="layoutService.getAdaptiveColor(getScopeColor(label.name, label.color))"
-                                [style.color]="layoutService.getTextColor(layoutService.getAdaptiveColor(getScopeColor(label.name, label.color)))">
+                                [style.background]="getScopeColor(label.name, layoutService.isDarkMode(), (layoutService.isDarkMode() ? label.colorDark : label.colorLight))"
+                                [style.color]="layoutService.getTextColor(getScopeColor(label.name, layoutService.isDarkMode(), (layoutService.isDarkMode() ? label.colorDark : label.colorLight)))">
                             {{ getScope(label.name) }}
                           </span>
                           <span class="px-2 py-0.5"
-                                [style.background]="layoutService.getAdaptiveColor(label.color) + '28'"
-                                [style.color]="layoutService.getAdaptiveColor(label.color)">
+                                [style.background]="(layoutService.isDarkMode() ? label.colorDark : label.colorLight) + '28'"
+                                [style.color]="layoutService.isDarkMode() ? label.colorDark : label.colorLight">
                             {{ getValue(label.name) }}
                           </span>
                           @if (label.isExclusive === false) {
@@ -132,8 +181,8 @@
                         </span>
                       } @else {
                         <span class="text-xs px-2 py-0.5 rounded-full font-medium border border-gray-300 dark:border-surface-600"
-                              [style.background]="layoutService.getAdaptiveColor(label.color) + '22'"
-                              [style.color]="layoutService.getAdaptiveColor(label.color)">
+                              [style.background]="(layoutService.isDarkMode() ? label.colorDark : label.colorLight) + '22'"
+                              [style.color]="layoutService.isDarkMode() ? label.colorDark : label.colorLight">
                           {{ label.name }}
                         </span>
                       }
@@ -195,63 +244,59 @@
               <div class="create-card-body">
 
                 <!-- Màu row -->
-                <div class="create-row items-start">
+                <div class="create-row items-center">
                   <span class="create-row-label">Màu</span>
-                  @if (isScoped(wsNewName)) {
-                    <!-- Scoped: theme tabs + pair presets -->
-                    <div class="flex flex-col gap-2 flex-1">
-                      <div class="flex items-center gap-1 flex-wrap">
-                        @for (theme of themes; track theme.id) {
-                          <button type="button"
-                            class="text-[10px] px-2 py-0.5 rounded border transition-colors cursor-pointer font-medium"
-                            [class.bg-indigo-50]="selectedThemeId() === theme.id"
-                            [class.border-indigo-600]="selectedThemeId() === theme.id"
-                            [class.text-indigo-700]="selectedThemeId() === theme.id"
-                            [class.bg-white]="selectedThemeId() !== theme.id"
-                            [class.border-gray-200]="selectedThemeId() !== theme.id"
-                            [class.text-gray-600]="selectedThemeId() !== theme.id"
-                            [class.dark:bg-surface-800]="selectedThemeId() !== theme.id"
-                            (click)="selectedThemeId.set(theme.id)">{{ theme.name }}</button>
-                        }
-                      </div>
-                      <div class="flex items-center gap-1.5 flex-wrap">
-                        @for (pair of currentPresets(); track pair.label) {
-                          <button type="button"
-                            class="w-11 h-5 rounded-full border transition-all duration-150 flex overflow-hidden cursor-pointer hover:scale-105"
-                            [style.border-color]="isPairSelected(pair, true) ? '#6366f1' : 'rgba(0,0,0,0.08)'"
-                            [style.box-shadow]="isPairSelected(pair, true) ? '0 0 0 2px rgba(99,102,241,0.25)' : 'none'"
-                            (click)="selectColorPair(pair, true)" [pTooltip]="pair.label">
-                            <span class="w-1/2 h-full" [style.background-color]="'#' + pair.scope"></span>
-                            <span class="w-1/2 h-full" [style.background-color]="'#' + pair.value"></span>
+                  <p-popover #wsNewColorPop styleClass="p-2" appendTo="body">
+                    <div class="space-y-3 p-1">
+                      <div class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Màu chọn nhanh (Light / Dark)</div>
+                      <div class="grid grid-cols-5 gap-2 w-48">
+                        @for (pair of presetPairs; track pair.light) {
+                          <button type="button" 
+                            class="w-8 h-8 rounded-full border border-black/10 hover:scale-110 active:scale-95 transition cursor-pointer flex items-center justify-center relative"
+                            [style.background]="getPresetGradient(pair.light, pair.dark)"
+                            (click)="wsNewColorLight.set(pair.light); wsNewColorDark.set(pair.dark); wsNewColorPop.hide()">
+                            @if (wsNewColorLight() === pair.light && wsNewColorDark() === pair.dark) {
+                              <i class="pi pi-check text-[10px] text-white shadow-sm"></i>
+                            }
                           </button>
                         }
-                        <div class="w-px h-4 bg-gray-200 dark:bg-surface-600 mx-0.5"></div>
-                        <button type="button" class="color-dot color-dot-custom" pTooltip="Màu tùy chỉnh"
-                          (click)="wsNewColorPicker.togglePanel()" style="position:relative">
-                          <i class="pi pi-palette" style="font-size:10px"></i>
-                          <p-colorpicker #wsNewColorPicker [(ngModel)]="wsNewColor" [inline]="false" appendTo="body" />
+                      </div>
+                      <div class="border-t border-surface-200 dark:border-surface-700 pt-2">
+                        <button type="button"
+                          class="text-[11px] font-semibold text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center gap-1 cursor-pointer select-none"
+                          (click)="showCustomWsAddColors.set(!showCustomWsAddColors())">
+                          <i class="pi" [class]="showCustomWsAddColors() ? 'pi-chevron-down' : 'pi-chevron-right'"></i>
+                          Tự tùy chỉnh màu sắc Light & Dark
                         </button>
+                        
+                        @if (showCustomWsAddColors()) {
+                          <div class="mt-2 space-y-3 pl-1">
+                            <div>
+                              <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">Màu Light mode:</div>
+                              <app-color-picker-panel
+                                [value]="wsNewColorLight()"
+                                (valueChange)="wsNewColorLight.set($event)"
+                              />
+                            </div>
+                            <div>
+                              <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">Màu Dark mode:</div>
+                              <app-color-picker-panel
+                                [value]="wsNewColorDark()"
+                                (valueChange)="wsNewColorDark.set($event)"
+                              />
+                            </div>
+                          </div>
+                        }
                       </div>
                     </div>
-                  } @else {
-                    <!-- Non-scoped: simple dots -->
-                    <div class="flex items-center gap-1.5 flex-wrap pt-1">
-                      @for (color of colorPresets; track color) {
-                        <button type="button" class="color-dot" [class.selected]="color === wsNewColor"
-                          [style.background-color]="'#' + color" (click)="wsNewColor = color" [pTooltip]="'#' + color">
-                          @if (color === wsNewColor) {
-                            <i class="pi pi-check" style="font-size:9px;color:white"></i>
-                          }
-                        </button>
-                      }
-                      <div class="w-px h-4 bg-gray-200 dark:bg-surface-600 mx-0.5"></div>
-                      <button type="button" class="color-dot color-dot-custom" pTooltip="Màu tùy chỉnh"
-                        (click)="wsNewColorPicker.togglePanel()">
-                        <i class="pi pi-palette" style="font-size:10px"></i>
-                      </button>
-                      <p-colorpicker #wsNewColorPicker [(ngModel)]="wsNewColor" [inline]="false" appendTo="body" />
-                    </div>
-                  }
+                  </p-popover>
+                  <button type="button"
+                    class="w-8 h-8 rounded-full border border-black/10 hover:scale-115 active:scale-95 transition cursor-pointer flex-shrink-0"
+                    [style.background]="getPresetGradient(wsNewColorLight(), wsNewColorDark())"
+                    (click)="wsNewColorPop.toggle($event)"
+                    pTooltip="Chọn cặp màu sắc"
+                    tooltipPosition="top"
+                  ></button>
                 </div>
 
                 <!-- Mode row (scoped only) -->
@@ -283,21 +328,21 @@
                     @if (isScoped(wsNewName)) {
                       <span class="inline-flex items-center text-xs rounded-full overflow-hidden border border-gray-300 dark:border-surface-600 font-medium flex-shrink-0">
                         <span class="px-2 py-0.5"
-                          [style.background]="layoutService.getAdaptiveColor(getScopeColor(wsNewName, wsNewColor))"
-                          [style.color]="layoutService.getTextColor(layoutService.getAdaptiveColor(getScopeColor(wsNewName, wsNewColor)))">
+                          [style.background]="getScopeColor(wsNewName, layoutService.isDarkMode(), (layoutService.isDarkMode() ? wsNewColorDark() : wsNewColorLight()))"
+                          [style.color]="layoutService.getTextColor(getScopeColor(wsNewName, layoutService.isDarkMode(), (layoutService.isDarkMode() ? wsNewColorDark() : wsNewColorLight())))">
                           {{ getScope(wsNewName) }}
                         </span>
                         <span class="px-2 py-0.5"
-                          [style.background]="layoutService.getAdaptiveColor(wsNewColor) + '28'"
-                          [style.color]="layoutService.getAdaptiveColor(wsNewColor)">
+                          [style.background]="(layoutService.isDarkMode() ? wsNewColorDark() : wsNewColorLight()) + '28'"
+                          [style.color]="layoutService.isDarkMode() ? wsNewColorDark() : wsNewColorLight()">
                           {{ getValue(wsNewName) }}
                         </span>
                       </span>
                     } @else {
                       <span class="text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0"
-                        [style.background]="layoutService.getAdaptiveColor(wsNewColor) + '22'"
-                        [style.color]="layoutService.getAdaptiveColor(wsNewColor)"
-                        [style.border]="'1px solid ' + layoutService.getAdaptiveColor(wsNewColor) + '55'">
+                        [style.background]="(layoutService.isDarkMode() ? wsNewColorDark() : wsNewColorLight()) + '22'"
+                        [style.color]="layoutService.isDarkMode() ? wsNewColorDark() : wsNewColorLight()"
+                        [style.border]="'1px solid ' + (layoutService.isDarkMode() ? wsNewColorDark() : wsNewColorLight()) + '55'">
                         {{ wsNewName }}
                       </span>
                     }
@@ -384,8 +429,57 @@
                 @if (editingId() === label.id) {
                   <!-- Inline edit -->
                   <div class="inline-edit-group flex-wrap gap-y-2">
-                    <div class="color-preview-swatch" [style.background]="'#' + editColor" (click)="editColorPicker.togglePanel()"></div>
-                    <p-colorpicker #editColorPicker [(ngModel)]="editColor" [inline]="false" appendTo="body" />
+                    <p-popover #editColorPop styleClass="p-2" appendTo="body">
+                      <div class="space-y-3 p-1">
+                        <div class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Màu chọn nhanh (Light / Dark)</div>
+                        <div class="grid grid-cols-5 gap-2 w-48">
+                          @for (pair of presetPairs; track pair.light) {
+                            <button type="button" 
+                              class="w-8 h-8 rounded-full border border-black/10 hover:scale-110 active:scale-95 transition cursor-pointer flex items-center justify-center relative"
+                              [style.background]="getPresetGradient(pair.light, pair.dark)"
+                              (click)="editColorLight.set(pair.light); editColorDark.set(pair.dark); editColorPop.hide()">
+                              @if (editColorLight() === pair.light && editColorDark() === pair.dark) {
+                                <i class="pi pi-check text-[10px] text-white shadow-sm"></i>
+                              }
+                            </button>
+                          }
+                        </div>
+                        <div class="border-t border-surface-200 dark:border-surface-700 pt-2">
+                          <button type="button"
+                            class="text-[11px] font-semibold text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center gap-1 cursor-pointer select-none"
+                            (click)="showCustomEditColors.set(!showCustomEditColors())">
+                            <i class="pi" [class]="showCustomEditColors() ? 'pi-chevron-down' : 'pi-chevron-right'"></i>
+                            Tự tùy chỉnh màu sắc Light & Dark
+                          </button>
+                          
+                          @if (showCustomEditColors()) {
+                            <div class="mt-2 space-y-3 pl-1">
+                              <div>
+                                <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">Màu Light mode:</div>
+                                <app-color-picker-panel
+                                  [value]="editColorLight()"
+                                  (valueChange)="editColorLight.set($event)"
+                                />
+                              </div>
+                              <div>
+                                <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">Màu Dark mode:</div>
+                                <app-color-picker-panel
+                                  [value]="editColorDark()"
+                                  (valueChange)="editColorDark.set($event)"
+                                />
+                              </div>
+                            </div>
+                          }
+                        </div>
+                      </div>
+                    </p-popover>
+                    <button type="button"
+                      class="w-7 h-7 rounded-full border border-black/10 hover:scale-110 active:scale-95 transition cursor-pointer flex-shrink-0"
+                      [style.background]="getPresetGradient(editColorLight(), editColorDark())"
+                      (click)="editColorPop.toggle($event)"
+                      pTooltip="Chọn cặp màu sắc"
+                      tooltipPosition="top"
+                    ></button>
                     <input pInputText class="flex-1" style="height: 30px; font-size: 13px; padding: 0 8px"
                       [(ngModel)]="editName"
                       (keydown.enter)="saveEdit(label)"
@@ -420,13 +514,13 @@
                       @if (isScoped(label.name)) {
                         <span class="inline-flex items-center text-xs rounded-full overflow-hidden border border-gray-300 dark:border-surface-600 font-medium">
                           <span class="px-2 py-0.5"
-                                [style.background]="layoutService.getAdaptiveColor(getScopeColor(label.name, label.color))"
-                                [style.color]="layoutService.getTextColor(layoutService.getAdaptiveColor(getScopeColor(label.name, label.color)))">
+                                [style.background]="getScopeColor(label.name, layoutService.isDarkMode(), (layoutService.isDarkMode() ? label.colorDark : label.colorLight))"
+                                [style.color]="layoutService.getTextColor(getScopeColor(label.name, layoutService.isDarkMode(), (layoutService.isDarkMode() ? label.colorDark : label.colorLight)))">
                             {{ getScope(label.name) }}
                           </span>
                           <span class="px-2 py-0.5"
-                                [style.background]="layoutService.getAdaptiveColor(label.color) + '28'"
-                                [style.color]="layoutService.getAdaptiveColor(label.color)">
+                                [style.background]="(layoutService.isDarkMode() ? label.colorDark : label.colorLight) + '28'"
+                                [style.color]="layoutService.isDarkMode() ? label.colorDark : label.colorLight">
                             {{ getValue(label.name) }}
                           </span>
                           @if (label.isExclusive === false) {
@@ -435,8 +529,8 @@
                         </span>
                       } @else {
                         <span class="text-xs px-2 py-0.5 rounded-full font-medium border border-gray-300 dark:border-surface-600"
-                              [style.background]="layoutService.getAdaptiveColor(label.color) + '22'"
-                              [style.color]="layoutService.getAdaptiveColor(label.color)">
+                              [style.background]="(layoutService.isDarkMode() ? label.colorDark : label.colorLight) + '22'"
+                              [style.color]="layoutService.isDarkMode() ? label.colorDark : label.colorLight">
                           {{ label.name }}
                         </span>
                       }
@@ -495,63 +589,59 @@
             <div class="create-card-body">
 
               <!-- Màu row -->
-              <div class="create-row items-start">
+              <div class="create-row items-center">
                 <span class="create-row-label">Màu</span>
-                @if (isScoped(newName)) {
-                  <!-- Scoped: theme tabs + pair presets -->
-                  <div class="flex flex-col gap-2 flex-1">
-                    <div class="flex items-center gap-1 flex-wrap">
-                      @for (theme of themes; track theme.id) {
-                        <button type="button"
-                          class="text-[10px] px-2 py-0.5 rounded border transition-colors cursor-pointer font-medium"
-                          [class.bg-indigo-50]="selectedThemeId() === theme.id"
-                          [class.border-indigo-600]="selectedThemeId() === theme.id"
-                          [class.text-indigo-700]="selectedThemeId() === theme.id"
-                          [class.bg-white]="selectedThemeId() !== theme.id"
-                          [class.border-gray-200]="selectedThemeId() !== theme.id"
-                          [class.text-gray-600]="selectedThemeId() !== theme.id"
-                          [class.dark:bg-surface-800]="selectedThemeId() !== theme.id"
-                          (click)="selectedThemeId.set(theme.id)">{{ theme.name }}</button>
-                      }
-                    </div>
-                    <div class="flex items-center gap-1.5 flex-wrap">
-                      @for (pair of currentPresets(); track pair.label) {
-                        <button type="button"
-                          class="w-11 h-5 rounded-full border transition-all duration-150 flex overflow-hidden cursor-pointer hover:scale-105"
-                          [style.border-color]="isPairSelected(pair, false) ? '#6366f1' : 'rgba(0,0,0,0.08)'"
-                          [style.box-shadow]="isPairSelected(pair, false) ? '0 0 0 2px rgba(99,102,241,0.25)' : 'none'"
-                          (click)="selectColorPair(pair, false)" [pTooltip]="pair.label">
-                          <span class="w-1/2 h-full" [style.background-color]="'#' + pair.scope"></span>
-                          <span class="w-1/2 h-full" [style.background-color]="'#' + pair.value"></span>
+                <p-popover #newColorPop styleClass="p-2" appendTo="body">
+                  <div class="space-y-3 p-1">
+                    <div class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Màu chọn nhanh (Light / Dark)</div>
+                    <div class="grid grid-cols-5 gap-2 w-48">
+                      @for (pair of presetPairs; track pair.light) {
+                        <button type="button" 
+                          class="w-8 h-8 rounded-full border border-black/10 hover:scale-110 active:scale-95 transition cursor-pointer flex items-center justify-center relative"
+                          [style.background]="getPresetGradient(pair.light, pair.dark)"
+                          (click)="newColorLight.set(pair.light); newColorDark.set(pair.dark); newColorPop.hide()">
+                          @if (newColorLight() === pair.light && newColorDark() === pair.dark) {
+                            <i class="pi pi-check text-[10px] text-white shadow-sm"></i>
+                          }
                         </button>
                       }
-                      <div class="w-px h-4 bg-gray-200 dark:bg-surface-600 mx-0.5"></div>
-                      <button type="button" class="color-dot color-dot-custom" pTooltip="Màu tùy chỉnh"
-                        (click)="newColorPicker.togglePanel()">
-                        <i class="pi pi-palette" style="font-size:10px"></i>
+                    </div>
+                    <div class="border-t border-surface-200 dark:border-surface-700 pt-2">
+                      <button type="button"
+                        class="text-[11px] font-semibold text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center gap-1 cursor-pointer select-none"
+                        (click)="showCustomAddColors.set(!showCustomAddColors())">
+                        <i class="pi" [class]="showCustomAddColors() ? 'pi-chevron-down' : 'pi-chevron-right'"></i>
+                        Tự tùy chỉnh màu sắc Light & Dark
                       </button>
-                      <p-colorpicker #newColorPicker [(ngModel)]="newColor" [inline]="false" appendTo="body" />
+                      
+                      @if (showCustomAddColors()) {
+                        <div class="mt-2 space-y-3 pl-1">
+                          <div>
+                            <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">Màu Light mode:</div>
+                            <app-color-picker-panel
+                              [value]="newColorLight()"
+                              (valueChange)="newColorLight.set($event)"
+                            />
+                          </div>
+                          <div>
+                            <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">Màu Dark mode:</div>
+                            <app-color-picker-panel
+                              [value]="newColorDark()"
+                              (valueChange)="newColorDark.set($event)"
+                            />
+                          </div>
+                        </div>
+                      }
                     </div>
                   </div>
-                } @else {
-                  <!-- Non-scoped: simple dots -->
-                  <div class="flex items-center gap-1.5 flex-wrap pt-1">
-                    @for (color of colorPresets; track color) {
-                      <button type="button" class="color-dot" [class.selected]="color === newColor"
-                        [style.background-color]="'#' + color" (click)="newColor = color" [pTooltip]="'#' + color">
-                        @if (color === newColor) {
-                          <i class="pi pi-check" style="font-size:9px;color:white"></i>
-                        }
-                      </button>
-                    }
-                    <div class="w-px h-4 bg-gray-200 dark:bg-surface-600 mx-0.5"></div>
-                    <button type="button" class="color-dot color-dot-custom" pTooltip="Màu tùy chỉnh"
-                      (click)="newColorPicker.togglePanel()" style="position:relative">
-                      <i class="pi pi-palette" style="font-size:10px"></i>
-                      <p-colorpicker #newColorPicker [(ngModel)]="newColor" [inline]="false" appendTo="body" />
-                    </button>
-                  </div>
-                }
+                </p-popover>
+                <button type="button"
+                  class="w-8 h-8 rounded-full border border-black/10 hover:scale-115 active:scale-95 transition cursor-pointer flex-shrink-0"
+                  [style.background]="getPresetGradient(newColorLight(), newColorDark())"
+                  (click)="newColorPop.toggle($event)"
+                  pTooltip="Chọn cặp màu sắc"
+                  tooltipPosition="top"
+                ></button>
               </div>
 
               <!-- Mode row (scoped only) -->
@@ -583,21 +673,21 @@
                   @if (isScoped(newName)) {
                     <span class="inline-flex items-center text-xs rounded-full overflow-hidden border border-gray-300 dark:border-surface-600 font-medium flex-shrink-0">
                       <span class="px-2 py-0.5"
-                        [style.background]="layoutService.getAdaptiveColor(getScopeColor(newName, newColor))"
-                        [style.color]="layoutService.getTextColor(layoutService.getAdaptiveColor(getScopeColor(newName, newColor)))">
+                        [style.background]="getScopeColor(newName, layoutService.isDarkMode(), (layoutService.isDarkMode() ? newColorDark() : newColorLight()))"
+                        [style.color]="layoutService.getTextColor(getScopeColor(newName, layoutService.isDarkMode(), (layoutService.isDarkMode() ? newColorDark() : newColorLight())))">
                         {{ getScope(newName) }}
                       </span>
                       <span class="px-2 py-0.5"
-                        [style.background]="layoutService.getAdaptiveColor(newColor) + '28'"
-                        [style.color]="layoutService.getAdaptiveColor(newColor)">
+                        [style.background]="(layoutService.isDarkMode() ? newColorDark() : newColorLight()) + '28'"
+                        [style.color]="layoutService.isDarkMode() ? newColorDark() : newColorLight()">
                         {{ getValue(newName) }}
                       </span>
                     </span>
                   } @else {
                     <span class="text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0"
-                      [style.background]="layoutService.getAdaptiveColor(newColor) + '22'"
-                      [style.color]="layoutService.getAdaptiveColor(newColor)"
-                      [style.border]="'1px solid ' + layoutService.getAdaptiveColor(newColor) + '55'">
+                      [style.background]="(layoutService.isDarkMode() ? newColorDark() : newColorLight()) + '22'"
+                      [style.color]="layoutService.isDarkMode() ? newColorDark() : newColorLight()"
+                      [style.border]="'1px solid ' + (layoutService.isDarkMode() ? newColorDark() : newColorLight()) + '55'">
                       {{ newName }}
                     </span>
                   }

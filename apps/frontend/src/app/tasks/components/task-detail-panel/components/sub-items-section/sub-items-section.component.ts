@@ -12,7 +12,6 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { TooltipModule } from 'primeng/tooltip';
 import type { SubItemTreeNode, CreateSubItemDto, MemberResponse, TaskPriority } from '@mpm/shared-types';
-import { SubItemProgressComponent } from '../sub-item-progress/sub-item-progress.component';
 import { SubItemTreeComponent } from '../sub-item-tree/sub-item-tree.component';
 import { SubItemQuickToolbarComponent } from '../sub-item-quick-toolbar/sub-item-quick-toolbar.component';
 
@@ -33,7 +32,6 @@ import { SubItemQuickToolbarComponent } from '../sub-item-quick-toolbar/sub-item
     ButtonModule,
     InputTextModule,
     TooltipModule,
-    SubItemProgressComponent,
     SubItemTreeComponent,
     SubItemQuickToolbarComponent,
   ],
@@ -51,12 +49,21 @@ import { SubItemQuickToolbarComponent } from '../sub-item-quick-toolbar/sub-item
 
       <h3 class="text-sm font-semibold text-gray-700 dark:text-surface-200 cursor-pointer select-none" (click)="expanded.set(!expanded())">Sub-items</h3>
 
-      <!-- Circular progress ring (contains done/total count inside) -->
+      <!-- Pill badge: "done/total", green when 100% complete, gray otherwise -->
       @if (totalCount > 0) {
-        <app-sub-item-progress
-          [done]="doneCount"
-          [total]="totalCount"
-        />
+        <span
+          class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[11px] font-semibold leading-none select-none"
+          [class.bg-green-100]="doneCount === totalCount"
+          [class.text-green-700]="doneCount === totalCount"
+          [class.dark:bg-green-900\/40]="doneCount === totalCount"
+          [class.dark:text-green-400]="doneCount === totalCount"
+          [class.bg-gray-100]="doneCount !== totalCount"
+          [class.text-gray-500]="doneCount !== totalCount"
+          [class.dark:bg-surface-700]="doneCount !== totalCount"
+          [class.dark:text-surface-400]="doneCount !== totalCount"
+          [pTooltip]="doneCount + ' / ' + totalCount + ' sub-items hoàn thành'"
+          tooltipPosition="top"
+        >{{ doneCount }}/{{ totalCount }}</span>
       }
 
       <!-- Spacer -->

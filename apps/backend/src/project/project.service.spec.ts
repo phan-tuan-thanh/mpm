@@ -12,6 +12,7 @@ import { AuditService } from '../audit/audit.service';
 import { StateTemplateService } from './state-template/state-template.service';
 import { DataSource } from 'typeorm';
 import { ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { PriorityService } from './priority/priority.service';
 
 describe('ProjectService', () => {
   let service: ProjectService;
@@ -84,6 +85,12 @@ describe('ProjectService', () => {
           },
         },
         {
+          provide: PriorityService,
+          useValue: {
+            seedDefaults: jest.fn().mockResolvedValue(undefined),
+          },
+        },
+        {
           provide: DataSource,
           useValue: dataSource,
         },
@@ -102,7 +109,7 @@ describe('ProjectService', () => {
     it('should create a project and assign owner as Scrum_Master', async () => {
       projectRepo.findOne.mockResolvedValue(null);
 
-      const dto = { name: 'Test Project', key: 'TEST', description: 'A test project' };
+      const dto = { name: 'Test Project', key: 'TEST', description: { type: 'doc', content: [] } as any };
       const project = await service.create('user-id', dto, '127.0.0.1', 'Mozilla');
 
       expect(project).toBeDefined();
