@@ -7,14 +7,15 @@ import type { TaskAttachment } from '@mpm/shared-types';
 export class AttachmentService {
   private readonly http = inject(HttpClient);
 
-  upload(projectId: string, taskId: string, file: File, title?: string): Observable<TaskAttachment> {
+  upload(projectId: string, taskId: string, file: File, title?: string, source?: string): Observable<TaskAttachment> {
     const form = new FormData();
     form.append('file', file);
     if (title?.trim()) form.append('title', title.trim());
-    return this.http.post<TaskAttachment>(
-      `/api/projects/${projectId}/tasks/${taskId}/attachments`,
-      form,
-    );
+    let url = `/api/projects/${projectId}/tasks/${taskId}/attachments`;
+    if (source) {
+      url += `?source=${source}`;
+    }
+    return this.http.post<TaskAttachment>(url, form);
   }
 
   getDownloadUrl(projectId: string, taskId: string, attachmentId: string): string {

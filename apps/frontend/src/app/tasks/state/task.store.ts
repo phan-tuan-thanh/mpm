@@ -15,6 +15,7 @@ import type {
   ReorderTaskItem,
   SubItemTreeNode,
   ActivityFilterType,
+  TaskComment,
 } from '@mpm/shared-types';
 
 @Injectable({ providedIn: 'root' })
@@ -26,6 +27,7 @@ export class TaskStore {
   readonly tasks = signal<TaskListItem[]>([]);
   readonly currentTask = signal<Task | null>(null);
   readonly activity = signal<TaskActivity[]>([]);
+  readonly comments = signal<TaskComment[]>([]);
   readonly labels = this.labelStore.labels;
   readonly isLoading = signal(false);
   readonly isSaving = signal(false);
@@ -346,6 +348,12 @@ export class TaskStore {
    * Replaces the current activity entries (used for initial load or filter change).
    */
   loadActivity(projectId: string, taskId: string, filter: ActivityFilterType, page = 1, limit = 20): void {
+    if (filter === 'comments') {
+      this.activityFilter.set(filter);
+      this.loadComments(projectId, taskId);
+      return;
+    }
+
     this.activityLoading.set(true);
     this.activityFilter.set(filter);
     this.activityPage.set(page);
@@ -377,6 +385,10 @@ export class TaskStore {
   private _activityLimit = 20;
 
   loadMoreActivity(projectId: string, taskId: string): void {
+    if (this.activityFilter() === 'comments') {
+      this.activityHasMore.set(false);
+      return;
+    }
     if (!this.activityHasMore() || this.activityLoading()) return;
 
     const nextPage = this.activityPage() + 1;
@@ -398,5 +410,174 @@ export class TaskStore {
           this.activityPage.set(res.page);
         }
       });
+  }
+
+  loadComments(projectId: string, taskId: string): void {
+    this.activityLoading.set(true);
+    this.taskService.getComments(projectId, taskId)
+      .pipe(
+        catchError(() => {
+          this.comments.set([]);
+          return of([]);
+        }),
+        finalize(() => this.activityLoading.set(false))
+      )
+      .subscribe((comments) => {
+        this.comments.set(comments);
+        this.activityHasMore.set(false);
+      });
+  }
+
+  createComment(projectId: string, taskId: string, content: string, parentId?: string | null): Promise<void> {
+    return new Promise((resolve) => {
+      this.taskService.createComment(projectId, taskId, { content, parentId })
+        .subscribe((newComment) => {
+          if (newComment) {
+            this.comments.update((prev) => {
+              if (newComment.parentId) {
+                return prev.map((p) => {
+                  if (p.id === newComment.parentId) {
+                    return { ...p, replies: [...(p.replies || []), newComment] };
+                  }
+                  return p;
+                });
+              } else {
+                return [...prev, newComment];
+              }
+            });
+          }
+          resolve();
+        });
+    });
+  }
+
+  updateComment(projectId: string, taskId: string, commentId: string, content: string): Promise<void> {
+    return new Promise((resolve) => {
+      this.taskService.updateComment(projectId, taskId, commentId, { content })
+        .subscribe((updated) => {
+          if (updated) {
+            this.comments.update((prev) => {
+              if (updated.parentId) {
+                return prev.map((p: TaskComment) => {
+                  if (p.id === updated.parentId) {
+                    return {
+                      ...p,
+                      replies: (p.replies || []).map((r: TaskComment) => (r.id === commentId ? updated : r)),
+                    };
+                  }
+                  return p;
+                });
+              } else {
+                return prev.map((c: TaskComment) => (c.id === commentId ? { ...c, ...updated } : c));
+              }
+            });
+          }
+          resolve();
+        });
+    });
+  }
+
+  deleteComment(projectId: string, taskId: string, commentId: string): Promise<void> {
+    return new Promise((resolve) => {
+      this.taskService.deleteComment(projectId, taskId, commentId)
+        .subscribe(() => {
+          this.comments.update((prev) => {
+            return prev.map((c: TaskComment) => {
+              if (c.id === commentId) {
+                return {
+                  ...c,
+                  content: null,
+                  deletedAt: new Date().toISOString(),
+                  authorName: null,
+                  authorAvatar: null,
+                };
+              }
+              if (c.replies?.some((r: TaskComment) => r.id === commentId)) {
+                return { ...c, replies: (c.replies || []).filter((r: TaskComment) => r.id !== commentId) };
+              }
+              return c;
+            }).filter((c: TaskComment) => {
+              if (c.deletedAt && (!c.replies || c.replies.length === 0)) {
+                return false;
+              }
+              return true;
+            });
+          });
+          resolve();
+        });
+    });
+  }
+
+  addReaction(projectId: string, taskId: string, commentId: string, emoji: string, userId: string): Promise<void> {
+    return new Promise((resolve) => {
+      this.taskService.addReaction(projectId, taskId, commentId, emoji)
+        .subscribe(() => {
+          this.comments.update((prev) => {
+            const updateReactions = (reactions: any[] = []) => {
+              const match = reactions.find((r: any) => r.emoji === emoji);
+              if (match) {
+                if (!match.userIds.includes(userId)) {
+                  match.userIds.push(userId);
+                  match.count = match.userIds.length;
+                }
+                return [...reactions];
+              } else {
+                return [...reactions, { emoji, count: 1, userIds: [userId] }];
+              }
+            };
+
+            return prev.map((c: TaskComment) => {
+              if (c.id === commentId) {
+                return { ...c, reactions: updateReactions(c.reactions) };
+              }
+              if (c.replies?.some((r: TaskComment) => r.id === commentId)) {
+                return {
+                  ...c,
+                  replies: c.replies.map((r: TaskComment) =>
+                    r.id === commentId ? { ...r, reactions: updateReactions(r.reactions) } : r
+                  ),
+                };
+              }
+              return c;
+            });
+          });
+          resolve();
+        });
+    });
+  }
+
+  removeReaction(projectId: string, taskId: string, commentId: string, emoji: string, userId: string): Promise<void> {
+    return new Promise((resolve) => {
+      this.taskService.removeReaction(projectId, taskId, commentId, emoji)
+        .subscribe(() => {
+          this.comments.update((prev) => {
+            const updateReactions = (reactions: any[] = []) => {
+              return reactions.map((r: any) => {
+                if (r.emoji === emoji) {
+                  const userIds = r.userIds.filter((id: string) => id !== userId);
+                  return { emoji, count: userIds.length, userIds };
+                }
+                return r;
+              }).filter((r: any) => r.count > 0);
+            };
+
+            return prev.map((c: TaskComment) => {
+              if (c.id === commentId) {
+                return { ...c, reactions: updateReactions(c.reactions) };
+              }
+              if (c.replies?.some((r: TaskComment) => r.id === commentId)) {
+                return {
+                  ...c,
+                  replies: c.replies.map((r: TaskComment) =>
+                    r.id === commentId ? { ...r, reactions: updateReactions(r.reactions) } : r
+                  ),
+                };
+              }
+              return c;
+            });
+          });
+          resolve();
+        });
+    });
   }
 }

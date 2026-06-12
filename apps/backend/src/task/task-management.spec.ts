@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AppModule } from '../app.module';
 import { TaskService } from './task.service';
 import { ActivityService } from './activity/activity.service';
+import { CommentService } from './comment/comment.service';
 import { LabelService } from './label/label.service';
 import { RelationService } from './relation/relation.service';
 import { AttachmentService } from './attachment/attachment.service';
@@ -27,6 +28,7 @@ describe('Task Management Integration Tests (Epic B)', () => {
   let moduleRef: TestingModule;
   let taskService: TaskService;
   let activityService: ActivityService;
+  let commentService: CommentService;
   let labelService: LabelService;
   let relationService: RelationService;
   let projectService: ProjectService;
@@ -51,6 +53,7 @@ describe('Task Management Integration Tests (Epic B)', () => {
 
     taskService = moduleRef.get<TaskService>(TaskService);
     activityService = moduleRef.get<ActivityService>(ActivityService);
+    commentService = moduleRef.get<CommentService>(CommentService);
     labelService = moduleRef.get<LabelService>(LabelService);
     relationService = moduleRef.get<RelationService>(RelationService);
     attachmentService = moduleRef.get<AttachmentService>(AttachmentService);
@@ -196,18 +199,18 @@ describe('Task Management Integration Tests (Epic B)', () => {
     const task = await taskService.create(project.id, testUser1.id, { title: 'P5 Permission Task' });
 
     // Stakeholder CAN add a comment (POST comment → 200)
-    const comment = await activityService.addComment(task.id, stakeholderUser.id, 'Stakeholder comment');
+    const comment = await commentService.create(project.id, task.id, stakeholderUser.id, '<p>Stakeholder comment</p>');
     expect(comment).toBeDefined();
-    expect(comment.comment).toBe('Stakeholder comment');
-
+    expect(comment.content).toBe('<p>Stakeholder comment</p>');
+ 
     // testUser2 (Developer) CANNOT delete Stakeholder's comment — ForbiddenException
     await expect(
-      activityService.deleteComment(comment.id, testUser2.id),
+      commentService.delete(project.id, task.id, comment.id, testUser2.id, 'Developer'),
     ).rejects.toThrow(ForbiddenException);
-
+ 
     // testUser1 with 'Scrum_Master' callerRole CAN delete anyone's comment
     await expect(
-      activityService.deleteComment(comment.id, testUser1.id, 'Scrum_Master'),
+      commentService.delete(project.id, task.id, comment.id, testUser1.id, 'Scrum_Master'),
     ).resolves.not.toThrow();
   });
 
@@ -368,14 +371,14 @@ describe('Task Management Integration Tests (Epic B)', () => {
     expect(afterUpdate.data.some((a) => a.entryType === 'title_changed')).toBe(true);
 
     // Comment add/edit/delete
-    const comment = await activityService.addComment(task.id, testUser1.id, 'Hello world');
-    expect(comment.comment).toBe('Hello world');
-
-    const edited = await activityService.editComment(comment.id, testUser1.id, 'Updated comment');
-    expect(edited.comment).toBe('Updated comment');
-
-    await activityService.deleteComment(comment.id, testUser1.id);
-    const timeline = await activityService.getTimeline(task.id);
-    expect(timeline.data.some((a) => a.id === comment.id)).toBe(false);
+    const comment = await commentService.create(project.id, task.id, testUser1.id, '<p>Hello world</p>');
+    expect(comment.content).toBe('<p>Hello world</p>');
+ 
+    const edited = await commentService.update(project.id, task.id, comment.id, testUser1.id, '<p>Updated comment</p>');
+    expect(edited.content).toBe('<p>Updated comment</p>');
+ 
+    await commentService.delete(project.id, task.id, comment.id, testUser1.id);
+    const commentsList = await commentService.getComments(project.id, task.id);
+    expect(commentsList.length).toBe(0);
   });
 });

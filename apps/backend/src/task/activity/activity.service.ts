@@ -165,48 +165,4 @@ export class ActivityService {
     };
   }
 
-  async addComment(taskId: string, actorId: string, content: string): Promise<ActivityDto> {
-    const entry = this.activityRepo.create({
-      taskId,
-      actorId,
-      entryType: 'comment_added',
-      comment: content,
-      field: null,
-      oldValue: null,
-      newValue: null,
-    });
-    const saved = await this.activityRepo.save(entry);
-    const withActor = await this.activityRepo.findOne({ where: { id: saved.id }, relations: ['actor'] });
-    return this.toDto(withActor!);
-  }
-
-  async editComment(commentId: string, actorId: string, content: string): Promise<ActivityDto> {
-    const entry = await this.activityRepo.findOne({ where: { id: commentId } });
-    if (!entry) throw new NotFoundException('Comment not found');
-    if (entry.actorId !== actorId) throw new ForbiddenException('Cannot edit another user\'s comment');
-    if (entry.entryType !== 'comment_added' && entry.entryType !== 'comment_edited') throw new NotFoundException('Comment not found');
-
-    entry.comment = content;
-    entry.entryType = 'comment_edited';
-    const saved = await this.activityRepo.save(entry);
-    const withActor = await this.activityRepo.findOne({ where: { id: saved.id }, relations: ['actor'] });
-    return this.toDto(withActor!);
-  }
-
-  async deleteComment(
-    commentId: string,
-    actorId: string,
-    callerRole?: string,
-  ): Promise<void> {
-    const entry = await this.activityRepo.findOne({ where: { id: commentId } });
-    if (!entry) throw new NotFoundException('Comment not found');
-
-    const isOwn = entry.actorId === actorId;
-    const isPrivileged = callerRole === 'Scrum_Master' || callerRole === 'Admin';
-    if (!isOwn && !isPrivileged) {
-      throw new ForbiddenException('Cannot delete another user\'s comment');
-    }
-
-    await this.activityRepo.delete(commentId);
-  }
 }

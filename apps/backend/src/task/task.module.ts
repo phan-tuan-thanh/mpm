@@ -12,6 +12,8 @@ import { TaskAttachment } from './entities/task-attachment.entity';
 import { TaskLink } from './entities/task-link.entity';
 import { TaskRelation } from './entities/task-relation.entity';
 import { TaskActivity } from './entities/task-activity.entity';
+import { TaskComment } from './entities/task-comment.entity';
+import { TaskCommentReaction } from './entities/task-comment-reaction.entity';
 import { ProjectMember } from '../auth/entities/project-member.entity';
 import { User } from '../auth/entities/user.entity';
 import { Project } from '../project/entities/project.entity';
@@ -42,6 +44,7 @@ import { ModuleQueryService } from './module/module-query.service';
 import { ModuleTaskService } from './module/module-task.service';
 import { ModuleLifecycleService } from './module/module-lifecycle.service';
 import { ModuleLifecycleAuditService } from './module/module-lifecycle-audit.service';
+import { CommentService } from './comment/comment.service';
 
 import { AuthModule } from '../auth/auth.module';
 import { AuditModule } from '../audit/audit.module';
@@ -58,6 +61,8 @@ import { AuditModule } from '../audit/audit.module';
       TaskLink,
       TaskRelation,
       TaskActivity,
+      TaskComment,
+      TaskCommentReaction,
       ProjectMember,
       User,
       Project,
@@ -97,7 +102,8 @@ import { AuditModule } from '../audit/audit.module';
     ModuleTaskService,
     ModuleLifecycleService,
     ModuleLifecycleAuditService,
+    CommentService,
   ],
-  exports: [TaskService, ActivityService, LabelService],
+  exports: [TaskService, ActivityService, LabelService, CommentService],
 })
 export class TaskModule {}

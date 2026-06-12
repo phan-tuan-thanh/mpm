@@ -256,10 +256,34 @@ export interface CreateRelationDto {
 
 export interface CreateCommentDto {
   content: string;
+  parentId?: string | null;
 }
 
 export interface UpdateCommentDto {
   content: string;
+}
+
+export interface TaskCommentReaction {
+  emoji: string;
+  count: number;
+  userIds: string[];
+}
+
+export interface TaskComment {
+  id: string;
+  taskId: string;
+  authorId: string;
+  authorName?: string | null;
+  authorAvatar?: string | null;
+  parentId: string | null;
+  content: string | null;
+  mentions: string[];
+  editedAt: Date | string | null;
+  deletedAt: Date | string | null;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+  replies?: TaskComment[];
+  reactions?: TaskCommentReaction[];
 }
 
 export interface TaskQueryDto {

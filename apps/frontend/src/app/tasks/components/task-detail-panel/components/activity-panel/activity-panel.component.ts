@@ -15,6 +15,7 @@ import { SkeletonModule } from 'primeng/skeleton';
 
 import type { TaskActivity, ActivityFilterType } from '@mpm/shared-types';
 import { ActivityEntryComponent } from '../activity-entry';
+import { TaskCommentsComponent } from '../task-comments/task-comments.component';
 import {
   ActivityTab,
   buildActivityTabs,
@@ -37,7 +38,7 @@ import {
 @Component({
   standalone: true,
   selector: 'app-activity-panel',
-  imports: [ActivityEntryComponent, SkeletonModule],
+  imports: [ActivityEntryComponent, SkeletonModule, TaskCommentsComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <!-- Tab Bar -->
@@ -85,6 +86,12 @@ import {
       <!-- Properties Tab (projected content) -->
       @if (activeFilter === 'properties') {
         <ng-content select="[activityPanelProperties]"></ng-content>
+      } @else if (activeFilter === 'comments') {
+        <app-task-comments
+          [projectId]="projectId"
+          [taskId]="taskId"
+          [membersList]="membersList"
+        ></app-task-comments>
       } @else {
         <!-- Loading Skeleton -->
         @if (loading && entries.length === 0) {
@@ -143,6 +150,10 @@ import {
 export class ActivityPanelComponent implements AfterViewInit, OnDestroy, OnChanges {
   /** List of activity entries to display (already filtered by parent) */
   @Input() entries: TaskActivity[] = [];
+
+  @Input() projectId = '';
+  @Input() taskId = '';
+  @Input() membersList: any[] = [];
 
   /** Whether entries are currently loading */
   @Input() loading = false;

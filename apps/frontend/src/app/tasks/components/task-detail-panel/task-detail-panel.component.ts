@@ -468,6 +468,9 @@ import { IconDisplayComponent } from '../../../shared/components/icon-display/ic
                 [viewMode]="viewMode === 'right-pane' ? 'drawer' : viewMode === 'full-page' ? 'full-page' : 'popup'"
                 [showPropertiesTab]="false"
                 [compact]="true"
+                [projectId]="projectId()"
+                [taskId]="task()!.id"
+                [membersList]="memberOptions()"
                 (filterChanged)="onActivityFilterChanged($event)"
                 (loadMore)="onActivityLoadMore()"
               />
