@@ -8,6 +8,7 @@ import { SkeletonModule } from 'primeng/skeleton';
 import type { TaskListItem, ReorderTaskItem, ProjectState, DisplayProperties } from '@mpm/shared-types';
 import { DEFAULT_DISPLAY_PROPS } from '@mpm/shared-types';
 import { TaskRowComponent } from './task-row.component';
+import { StateDotComponent } from '../../../../shared/components/state-dot/state-dot.component';
 
 const STATE_GROUP_ORDER = ['backlog', 'unstarted', 'started', 'completed', 'cancelled'];
 interface TaskNode { task: TaskListItem; children: TaskListItem[] }
@@ -37,6 +38,7 @@ function flattenTask(
   imports: [
     CommonModule, FormsModule, DragDropModule,
     CheckboxModule, TooltipModule, SkeletonModule, TaskRowComponent,
+    StateDotComponent,
   ],
   styles: [`
     :host { display: block; }
@@ -105,7 +107,8 @@ function flattenTask(
                  (click)="toggleGroup(group.state.id)"
                  (mouseenter)="onHeaderMouseEnter(group)"
                  (mouseleave)="onHeaderMouseLeave(group)">
-              <span class="w-3.5 h-3.5 rounded-full flex-shrink-0 border-2" [style.border-color]="group.state.color" [style.background]="isFilledState(group.state.group) ? group.state.color : 'transparent'"></span>
+              <app-state-dot [state]="group.state" />
+
               <span class="text-sm font-semibold text-gray-700 dark:text-surface-100">{{ group.state.name }}</span>
               <span class="text-xs text-gray-500 bg-gray-200 dark:bg-surface-800 rounded px-1.5 font-medium min-w-[1.25rem] text-center leading-5">{{ group.rootTasks.length }}</span>
             </div>
@@ -301,7 +304,6 @@ export class TaskListComponent {
     }
   }
 
-  protected isFilledState(group: string): boolean { return group === 'started' || group === 'completed'; }
   protected isGroupAllSelected(nodes: TaskNode[]): boolean { return nodes.length > 0 && nodes.every((n) => this.selectedIds.has(n.task.id)); }
   protected isGroupAnySelected(nodes: TaskNode[]): boolean { return nodes.length > 0 && nodes.some((n) => this.selectedIds.has(n.task.id) || n.children.some((c) => this.selectedIds.has(c.id))); }
   protected toggleGroupSelect(nodes: TaskNode[], checked: boolean): void {

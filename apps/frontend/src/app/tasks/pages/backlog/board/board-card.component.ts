@@ -5,12 +5,13 @@ import { LayoutService } from '../../../../layout/services/layout.service';
 import { TaskStore } from '../../../state/task.store';
 import { ProjectStore } from '../../../../projects/state/project.store';
 import { PriorityConfigService } from '../../../services/priority-config.service';
+import { StateDotComponent } from '../../../../shared/components/state-dot/state-dot.component';
 import type { TaskListItem, DisplayProperties, Label } from '@mpm/shared-types';
 
 @Component({
   standalone: true,
   selector: 'app-board-card',
-  imports: [CommonModule, TooltipModule],
+  imports: [CommonModule, TooltipModule, StateDotComponent],
   template: `
     <div
       class="bg-white dark:bg-surface-800 border rounded-lg p-3 cursor-pointer select-none transition-all duration-150 ease-in-out"
@@ -111,6 +112,9 @@ import type { TaskListItem, DisplayProperties, Label } from '@mpm/shared-types';
         @if (displayProps.showPriority && task.priority !== 'none') {
           <i class="text-[11px]" [class]="priorityIcon" [style.color]="priorityColor" [pTooltip]="task.priority"></i>
         }
+        @if (displayProps.showState && task.state) {
+          <app-state-dot [state]="task.state" [size]="12" />
+        }
         @if (displayProps.showAssignee && task.assignees?.length) {
           <div class="flex items-center -space-x-1">
             @for (a of task.assignees.slice(0, 2); track a.userId) {
@@ -126,6 +130,12 @@ import type { TaskListItem, DisplayProperties, Label } from '@mpm/shared-types';
               }
             }
           </div>
+        }
+        @if (displayProps.showStartDate && task.startDate) {
+          <span class="text-[10px] flex items-center gap-0.5 text-gray-400 dark:text-surface-500" pTooltip="Start date">
+            <i class="pi pi-calendar" style="font-size: 9px"></i>
+            {{ formatDate(task.startDate) }}
+          </span>
         }
         @if (displayProps.showDueDate && task.dueDate) {
           <span class="text-[10px] flex items-center gap-0.5"
