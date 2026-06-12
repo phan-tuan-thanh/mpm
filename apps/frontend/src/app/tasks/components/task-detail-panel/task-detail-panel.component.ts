@@ -285,7 +285,7 @@ import { IconDisplayComponent } from '../../../shared/components/icon-display/ic
 
                 <!-- Priority -->
                 <button class="meta-pill" [class.active]="false" (click)="priorityPopover.toggle($event)">
-                  <i [class]="selectedPriorityConfig().icon" [style.color]="selectedPriorityConfig().colorLight" style="font-size: 11px"></i>
+                  <app-icon-display [icon]="selectedPriorityConfig().icon" [style.color]="selectedPriorityConfig().colorLight" style="font-size: 11px" class="leading-none" />
                   <span>{{ selectedPriorityConfig().name }}</span>
                 </button>
 
@@ -504,7 +504,7 @@ import { IconDisplayComponent } from '../../../shared/components/icon-display/ic
               <button class="pop-item" [class.selected]="(task()?.priority ?? 'none') === p.value"
                 style="padding: 5px 10px; font-size: 12px; border-radius: 4px"
                 (click)="selectPriority(p.value); priorityPopover.hide()">
-                <i [class]="p.icon" [style.color]="p.colorLight" style="font-size: 11px"></i>
+                <app-icon-display [icon]="p.icon" [style.color]="p.colorLight" style="font-size: 11px" class="leading-none" />
                 <span style="flex: 1; text-align: left; font-size: 12px">{{ p.name }}</span>
                 @if ((task()?.priority ?? 'none') === p.value) {
                   <i class="pi pi-check" style="font-size: 10px; color: var(--p-primary-color); flex-shrink: 0"></i>

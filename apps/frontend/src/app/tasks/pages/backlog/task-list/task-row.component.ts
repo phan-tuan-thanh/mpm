@@ -146,7 +146,7 @@ import { StateDotComponent } from '../../../../shared/components/state-dot/state
       <span class="flex items-center gap-0.5 text-xs flex-shrink-0 mr-2" [class.text-red-500]="isOverdue(task.dueDate)" [class.text-gray-400]="!isOverdue(task.dueDate)" [class.dark:text-surface-500]="!isOverdue(task.dueDate)" pTooltip="Due date"><i class="pi pi-calendar text-[10px]"></i>{{ formatDate(task.dueDate) }}</span>
     }
     @if (displayProps.showPriority && task.priority !== 'none') {
-      <i class="flex-shrink-0 text-xs mr-2" [class]="priorityIcon(task.priority)" [style.color]="priorityColor(task.priority)" [pTooltip]="'Priority: ' + task.priority"></i>
+      <app-icon-display [icon]="priorityIcon(task.priority)" class="flex-shrink-0 text-xs mr-2 leading-none" [style.color]="priorityColor(task.priority)" [pTooltip]="'Priority: ' + task.priority" />
     }
     @if (displayProps.showState && task.state) {
       <app-state-dot [state]="task.state" [size]="12" class="flex-shrink-0 mr-2" />

@@ -6,12 +6,13 @@ import { TaskStore } from '../../../state/task.store';
 import { ProjectStore } from '../../../../projects/state/project.store';
 import { PriorityConfigService } from '../../../services/priority-config.service';
 import { StateDotComponent } from '../../../../shared/components/state-dot/state-dot.component';
+import { IconDisplayComponent } from '../../../../shared/components/icon-display/icon-display.component';
 import type { TaskListItem, DisplayProperties, Label } from '@mpm/shared-types';
 
 @Component({
   standalone: true,
   selector: 'app-board-card',
-  imports: [CommonModule, TooltipModule, StateDotComponent],
+  imports: [CommonModule, TooltipModule, StateDotComponent, IconDisplayComponent],
   template: `
     <div
       class="bg-white dark:bg-surface-800 border rounded-lg p-3 cursor-pointer select-none transition-all duration-150 ease-in-out"
@@ -110,7 +111,7 @@ import type { TaskListItem, DisplayProperties, Label } from '@mpm/shared-types';
       <!-- priority + assignees + due date + sub-item count -->
       <div class="flex items-center gap-2 flex-wrap">
         @if (displayProps.showPriority && task.priority !== 'none') {
-          <i class="text-[11px]" [class]="priorityIcon" [style.color]="priorityColor" [pTooltip]="task.priority"></i>
+          <app-icon-display [icon]="priorityIcon" class="text-[11px] leading-none" [style.color]="priorityColor" [pTooltip]="task.priority" />
         }
         @if (displayProps.showState && task.state) {
           <app-state-dot [state]="task.state" [size]="12" />
