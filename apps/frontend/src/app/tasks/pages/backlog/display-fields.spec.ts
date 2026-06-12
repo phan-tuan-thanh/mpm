@@ -41,6 +41,14 @@ describe('Display Properties: Start date và State được render', () => {
     });
   });
 
+  describe('column header (board-column)', () => {
+    it('dùng app-state-dot thay inline dot markup', () => {
+      const boardColumn = read('./board/board-column.component.ts');
+      expect(boardColumn).toContain('<app-state-dot');
+      expect(boardColumn).not.toContain('isFilledGroup');
+    });
+  });
+
   describe('orphan sub-items khi filter (spec 2026-06-12-filter-orphan-subitems)', () => {
     it('task-list dùng selectRootTasks thay filter !parentId', () => {
       expect(taskList).toContain('selectRootTasks(');
