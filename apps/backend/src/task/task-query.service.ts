@@ -188,6 +188,7 @@ export class TaskQueryService {
       state_name: string;
       state_color: string;
       state_group: string;
+      state_icon: string | null;
     }> = await this.dataSource.query(
       `
       WITH RECURSIVE task_tree AS (
@@ -235,7 +236,8 @@ export class TaskQueryService {
         tt.depth,
         ps.name AS state_name,
         ps.color AS state_color,
-        ps."group" AS state_group
+        ps."group" AS state_group,
+        ps.icon AS state_icon
       FROM task_tree tt
       LEFT JOIN project_states ps ON ps.id = tt.state_id
       ORDER BY tt.depth ASC, tt.backlog_order ASC
@@ -295,7 +297,7 @@ export class TaskQueryService {
         priority: row.priority as TaskPriority,
         stateId: row.state_id,
         state: row.state_name
-          ? { id: row.state_id, name: row.state_name, color: row.state_color, group: row.state_group }
+          ? { id: row.state_id, name: row.state_name, color: row.state_color, group: row.state_group, icon: row.state_icon }
           : undefined,
         assignees: (assigneeMap.get(row.id) ?? []).map((a) => ({
           userId: a.userId,
