@@ -1,4 +1,4 @@
-export type IconContext = 'priority' | 'sprint' | 'project';
+export type IconContext = 'priority' | 'sprint' | 'project' | 'state';
 
 export interface IconItem { icon: string; label: string; name: string }
 export interface IconGroup {
@@ -76,7 +76,7 @@ export const ICON_GROUPS: IconGroup[] = [
   },
   {
     label: 'Status',
-    contexts: ['priority', 'sprint', 'project'],
+    contexts: ['priority', 'sprint', 'project', 'state'],
     icons: [
       { icon: 'pi pi-check-circle',  label: 'Xong',      name: 'check circle hoàn thành xong' },
       { icon: 'pi pi-clock',         label: 'Đồng hồ',   name: 'clock đồng hồ thời gian' },

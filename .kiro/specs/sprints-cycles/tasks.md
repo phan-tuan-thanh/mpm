@@ -15,22 +15,22 @@ Property-based test dùng **fast-check** (TypeScript) cho 10 correctness propert
 
 ## Tasks
 
-- [ ] 1. Tạo schema cơ sở dữ liệu và migrations (TypeORM)
-  - [ ] 1.1 Viết migration tạo bảng `sprints`, `sprint_member_capacities`, `sprint_snapshots`
+- [x] 1. Tạo schema cơ sở dữ liệu và migrations (TypeORM)
+  - [x] 1.1 Viết migration tạo bảng `sprints`, `sprint_member_capacities`, `sprint_snapshots`
     - Tạo file `migrations/<timestamp>-CreateSprintTables.ts` với `up`/`down`
     - `sprints`: id (uuid PK), project_id (FK→projects), name, goal, start_date, end_date, status (`planning|active|completed`, default `planning`), target_capacity (numeric null), initial_story_points (numeric null), initial_tasks_count (int null), completed_at, created_by, created_at, updated_at, deleted_at (soft delete)
     - `sprint_member_capacities`: id, sprint_id (FK), user_id (FK), capacity (numeric), timestamps, deleted_at
     - `sprint_snapshots`: id, sprint_id (FK), snapshot_date (date), remaining_story_points (numeric), remaining_tasks_count (int), timestamps, deleted_at
     - _Requirements: 1.1, 4.1, 8.2, 9.1, 10.2, 10.3, 15.1_
 
-  - [ ] 1.2 Viết migration thêm cột `sprint_id` vào bảng `tasks` và tạo indexes
+  - [x] 1.2 Viết migration thêm cột `sprint_id` vào bảng `tasks` và tạo indexes
     - Thêm cột `tasks.sprint_id` (uuid, nullable, FK→sprints.id ON DELETE SET NULL), migrate dữ liệu từ `cycle_id` cũ nếu tồn tại
     - `CREATE INDEX idx_sprints_project_status ON sprints (project_id, status) WHERE deleted_at IS NULL`
     - `CREATE INDEX idx_tasks_sprint_id ON tasks (sprint_id) WHERE sprint_id IS NOT NULL`
     - `CREATE UNIQUE INDEX idx_sprint_snapshots_sprint_date ON sprint_snapshots (sprint_id, snapshot_date) WHERE deleted_at IS NULL`
     - _Requirements: 7.1, 9.9 (idempotency snapshot), 10.4, 15.2_
 
-  - [ ] 1.3 Viết migration đảm bảo `projects.sprint_settings` (JSONB) + giá trị mặc định
+  - [x] 1.3 Viết migration đảm bảo `projects.sprint_settings` (JSONB) + giá trị mặc định
     - Thêm/đảm bảo cột `sprint_settings` JSONB trên `projects`
     - Backfill mặc định cho project hiện có: `{terminology:'sprint', maxActiveSprints:1, defaultDurationWeeks:2, capacityMode:'total'}`
     - _Requirements: 1.1, 1.2_

@@ -377,7 +377,7 @@ export class SidebarComponent implements OnInit {
   ];
 
   readonly settingsSubItems = [
-    { label: 'Cấu hình chung', icon: 'pi-sliders-h',            route: [] as string[], exact: false, danger: false },
+    { label: 'Cấu hình chung', icon: 'pi-sliders-h',            route: [] as string[], exact: true,  danger: false },
     { label: 'Thành viên',     icon: 'pi-users',                 route: ['members'],   exact: false, danger: false },
     { label: 'Tính năng',      icon: 'pi-toggle-on',             route: ['features'],  exact: false, danger: false },
     { label: 'Danger Zone',    icon: 'pi-exclamation-triangle',  route: ['danger'],    exact: false, danger: true  },

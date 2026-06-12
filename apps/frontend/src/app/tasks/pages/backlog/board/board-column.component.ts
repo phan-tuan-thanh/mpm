@@ -2,12 +2,13 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DragDropModule, CdkDragDrop } from '@angular/cdk/drag-drop';
 import { BoardCardComponent } from './board-card.component';
+import { StateDotComponent } from '../../../../shared/components/state-dot/state-dot.component';
 import type { TaskListItem, ProjectState, DisplayProperties } from '@mpm/shared-types';
 
 @Component({
   standalone: true,
   selector: 'app-board-column',
-  imports: [CommonModule, DragDropModule, BoardCardComponent],
+  imports: [CommonModule, DragDropModule, BoardCardComponent, StateDotComponent],
   styles: [`
     ::ng-deep .cdk-drop-list-dragging .cdk-drag {
       transition: none !important;
@@ -17,10 +18,7 @@ import type { TaskListItem, ProjectState, DisplayProperties } from '@mpm/shared-
     <div class="flex flex-col h-full min-w-[260px] max-w-[320px] w-72 flex-shrink-0 bg-gray-100 dark:bg-surface-800 rounded-xl p-3">
       <!-- Column header -->
       <div class="flex items-center gap-2 px-1 py-1 mb-3 flex-shrink-0">
-        <span class="w-3 h-3 rounded-full flex-shrink-0 border-2"
-              [style.border-color]="state.color"
-              [style.background]="isFilledGroup ? state.color : 'transparent'">
-        </span>
+        <app-state-dot [state]="state" [size]="12" />
         <span class="text-sm font-semibold text-gray-700 dark:text-surface-100 flex-1 truncate">
           {{ state.name }}
         </span>
@@ -117,10 +115,6 @@ export class BoardColumnComponent {
   protected isDragOver = false;
   protected draggedTaskId: string | null = null;
   protected hoveredTaskId: string | null = null;
-
-  protected get isFilledGroup(): boolean {
-    return this.state.group === 'started' || this.state.group === 'completed';
-  }
 
   protected onDragEnd(): void {
     setTimeout(() => {

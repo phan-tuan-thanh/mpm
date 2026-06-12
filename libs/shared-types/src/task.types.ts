@@ -113,6 +113,7 @@ export interface TaskStateRef {
   name: string;
   color: string;
   group: string;
+  icon?: string | null;
 }
 
 export interface TaskParentRef {

@@ -110,6 +110,7 @@ export class ProjectStateService {
       name: dto.name,
       color: dto.color,
       group: dto.group,
+      icon: dto.icon ?? null,
       isDefault: false,
       order: nextOrder,
     });
@@ -171,6 +172,7 @@ export class ProjectStateService {
     }
 
     if (dto.color !== undefined) state.color = dto.color;
+    if (dto.icon !== undefined) state.icon = dto.icon;
     if (dto.group !== undefined) state.group = dto.group;
     if (dto.order !== undefined) state.order = dto.order;
     if (dto.isDefault !== undefined) state.isDefault = dto.isDefault;

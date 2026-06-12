@@ -25,6 +25,7 @@ const AVATAR_PALETTE = [
 ];
 
 import { IconDisplayComponent } from '../../../../shared/components/icon-display/icon-display.component';
+import { StateDotComponent } from '../../../../shared/components/state-dot/state-dot.component';
 
 @Component({
   selector: 'app-task-row',
@@ -32,7 +33,7 @@ import { IconDisplayComponent } from '../../../../shared/components/icon-display
   imports: [
     CommonModule, FormsModule, DragDropModule,
     ButtonModule, CheckboxModule, TooltipModule,
-    IconDisplayComponent
+    IconDisplayComponent, StateDotComponent
   ],
   styles: [`
     :host { display: flex; align-items: center; width: 100%; }
@@ -57,6 +58,12 @@ import { IconDisplayComponent } from '../../../../shared/components/icon-display
     }
     <i class="flex-shrink-0 text-xs mr-2" [class]="typeIcon(task.type)" [style.color]="typeColor(task.type)" [pTooltip]="task.type"></i>
     <span class="flex-1 text-sm text-gray-800 dark:text-surface-100 truncate">{{ task.title }}</span>
+    @if (depth === 0 && task.parentId && task.parent) {
+      <span class="flex items-center gap-1 text-xs text-gray-400 dark:text-surface-500 flex-shrink-0 mr-2 max-w-[200px]" [pTooltip]="task.parent.taskId + ' · ' + task.parent.title">
+        <i class="pi pi-arrow-up text-[9px]"></i>
+        <span class="truncate">{{ task.parent.taskId }} · {{ task.parent.title }}</span>
+      </span>
+    }
     @if (displayProps.showSubItemCount && task.subItemCount > 0) {
       <span class="flex items-center gap-0.5 text-xs text-gray-400 dark:text-surface-500 flex-shrink-0 mr-2" [pTooltip]="task.subItemCount + ' sub-items'">
         <i class="pi pi-sitemap text-[10px]"></i>{{ task.subItemCount }}
@@ -138,11 +145,17 @@ import { IconDisplayComponent } from '../../../../shared/components/icon-display
     @if (displayProps.showEstimate && task.estimateValue != null) {
       <span class="flex items-center gap-0.5 text-xs text-gray-400 dark:text-surface-500 flex-shrink-0 mr-2" pTooltip="Estimate"><i class="pi pi-hourglass text-[10px]"></i>{{ task.estimateValue }}</span>
     }
+    @if (displayProps.showStartDate && task.startDate) {
+      <span class="flex items-center gap-0.5 text-xs text-gray-400 dark:text-surface-500 flex-shrink-0 mr-2" pTooltip="Start date"><i class="pi pi-calendar text-[10px]"></i>{{ formatDate(task.startDate) }}</span>
+    }
     @if (displayProps.showDueDate && task.dueDate) {
       <span class="flex items-center gap-0.5 text-xs flex-shrink-0 mr-2" [class.text-red-500]="isOverdue(task.dueDate)" [class.text-gray-400]="!isOverdue(task.dueDate)" [class.dark:text-surface-500]="!isOverdue(task.dueDate)" pTooltip="Due date"><i class="pi pi-calendar text-[10px]"></i>{{ formatDate(task.dueDate) }}</span>
     }
     @if (displayProps.showPriority && task.priority !== 'none') {
-      <i class="flex-shrink-0 text-xs mr-2" [class]="priorityIcon(task.priority)" [style.color]="priorityColor(task.priority)" [pTooltip]="'Priority: ' + task.priority"></i>
+      <app-icon-display [icon]="priorityIcon(task.priority)" class="flex-shrink-0 text-xs mr-2 leading-none" [style.color]="priorityColor(task.priority)" [pTooltip]="'Priority: ' + task.priority" />
+    }
+    @if (displayProps.showState && task.state) {
+      <app-state-dot [state]="task.state" [size]="12" class="flex-shrink-0 mr-2" />
     }
     @if (displayProps.showAssignee && task.assignees?.length) {
       <div class="flex -space-x-1.5 flex-shrink-0 mr-2">
@@ -182,10 +195,6 @@ export class TaskRowComponent {
   @Output() selectionToggle = new EventEmitter<string>();
   @Output() toggleExpand = new EventEmitter<string>();
   @Output() taskMenuClick = new EventEmitter<TaskListItem>();
-
-  protected isFilledState(group: string): boolean {
-    return group === 'started' || group === 'completed';
-  }
 
   protected typeIcon(t: TaskType): string { return TYPE_CONFIG[t]?.icon ?? 'pi pi-circle'; }
   protected typeColor(t: TaskType): string { return TYPE_CONFIG[t]?.color ?? '#9CA3AF'; }

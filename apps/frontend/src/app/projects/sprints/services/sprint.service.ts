@@ -14,6 +14,7 @@ import {
   UpdateSprintSettingsDto,
   SprintStatus,
 } from '../models/sprint.models';
+import { sortCompletedSprints } from '../../../tasks/pages/backlog/backlog-toolbar/sprint-filter.helpers';
 
 export interface SprintQuery {
   status?: SprintStatus;
@@ -45,6 +46,11 @@ export class SprintService {
   /** Sprint planning/active — nhận task được */
   readonly openSprints = computed(() =>
     this.projectSprints().filter((s) => s.status !== 'completed'),
+  );
+
+  /** Sprint đã hoàn thành — mới hoàn thành nhất lên trước */
+  readonly completedSprints = computed(() =>
+    sortCompletedSprints(this.projectSprints()),
   );
 
   readonly sprintById = computed(() => {

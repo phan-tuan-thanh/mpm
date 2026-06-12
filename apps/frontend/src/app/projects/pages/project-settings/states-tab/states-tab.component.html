@@ -112,6 +112,25 @@
                   />
                 </div>
 
+                <!-- Icon Picker -->
+                <p-popover #stateIconPop styleClass="!p-0" appendTo="body">
+                  <app-icon-picker-panel
+                    context="state"
+                    [value]="state.icon || ''"
+                    (valueChange)="onUpdateIcon(state, $event); stateIconPop.hide()"
+                  />
+                </p-popover>
+                <button
+                  type="button"
+                  class="w-7 h-7 flex items-center justify-center rounded border border-gray-200 dark:border-surface-600 hover:bg-gray-100 dark:hover:bg-surface-800 cursor-pointer flex-shrink-0"
+                  [disabled]="isReadOnly()"
+                  (pointerdown)="$event.stopPropagation()"
+                  (click)="stateIconPop.toggle($event)"
+                  pTooltip="Icon trạng thái"
+                >
+                  <app-state-dot [state]="state" [size]="12" />
+                </button>
+
                 <!-- Inline Name Input -->
                 <input
                   type="text"
@@ -196,6 +215,21 @@
                 [(ngModel)]="newColors[group]"
                 class="w-6 h-6 rounded-full border-none cursor-pointer p-0 bg-transparent flex-shrink-0"
               />
+              <p-popover #addIconPop styleClass="!p-0" appendTo="body">
+                <app-icon-picker-panel
+                  context="state"
+                  [value]="newIcons[group] || ''"
+                  (valueChange)="newIcons[group] = $event; addIconPop.hide()"
+                />
+              </p-popover>
+              <button
+                type="button"
+                class="w-7 h-7 flex items-center justify-center rounded border border-gray-200 dark:border-surface-600 hover:bg-gray-100 dark:hover:bg-surface-800 cursor-pointer flex-shrink-0"
+                (click)="addIconPop.toggle($event)"
+                pTooltip="Icon trạng thái"
+              >
+                <app-state-dot [state]="{ name: newNames[group] || 'State', color: newColors[group], group: group, icon: newIcons[group] || null }" [size]="12" />
+              </button>
               <input
                 type="text"
                 pInputText

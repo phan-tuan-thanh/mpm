@@ -9,6 +9,7 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { ProjectStore } from '../../../../projects/state/project.store';
 import { SprintService } from '../../../../projects/sprints/services/sprint.service';
+import { buildSprintSections } from './sprint-filter.helpers';
 import { LabelStore } from '../../../state/label.store';
 import { DisplayPropertiesPanelComponent } from './display-properties-panel.component';
 import type { TaskQueryDto, TaskType, TaskPriority, DisplayProperties } from '@mpm/shared-types';
@@ -199,17 +200,51 @@ export interface BacklogFilter {
           <i class="pi pi-chevron-down text-[9px] opacity-50"></i>
         }
       </button>
-      <p-popover #sprintPop appendTo="body" styleClass="!p-0">
-        <div class="pop-list w-48 max-h-60 overflow-y-auto">
-          @for (opt of sprintOptions(); track opt.value) {
+      <p-popover #sprintPop appendTo="body" styleClass="!p-0" (onHide)="sprintSearch = ''; showAllCompletedSprints = false">
+        <div class="w-64">
+          <div class="p-2 border-b border-surface-100 dark:border-surface-700">
+            <input pInputText type="text" placeholder="Tìm sprint..."
+              class="w-full !text-xs !py-1"
+              [(ngModel)]="sprintSearch" />
+          </div>
+          <div class="pop-list max-h-72 overflow-y-auto">
             <div
-              (click)="selectedSprintId = opt.value; emitFilter(); sprintPop.hide()"
+              (click)="selectedSprintId = 'none'; emitFilter(); sprintPop.hide()"
               class="pop-item"
-              [class.selected]="selectedSprintId === opt.value"
+              [class.selected]="selectedSprintId === 'none'"
             >
-              {{ opt.label }}
+              Chưa có sprint
             </div>
-          }
+            @if (sprintSections().open.length) {
+              <div class="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-surface-500">Đang mở</div>
+              @for (opt of sprintSections().open; track opt.value) {
+                <div
+                  (click)="selectedSprintId = opt.value; emitFilter(); sprintPop.hide()"
+                  class="pop-item"
+                  [class.selected]="selectedSprintId === opt.value"
+                >
+                  {{ opt.label }}
+                </div>
+              }
+            }
+            @if (sprintSections().completed.length) {
+              <div class="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-surface-500">Đã hoàn thành</div>
+              @for (opt of sprintSections().completed; track opt.value) {
+                <div
+                  (click)="selectedSprintId = opt.value; emitFilter(); sprintPop.hide()"
+                  class="pop-item"
+                  [class.selected]="selectedSprintId === opt.value"
+                >
+                  {{ opt.label }}
+                </div>
+              }
+              @if (sprintSections().hiddenCompletedCount > 0) {
+                <div class="pop-item text-primary font-semibold" (click)="showAllCompletedSprints = true; $event.stopPropagation()">
+                  Xem thêm ({{ sprintSections().hiddenCompletedCount }})
+                </div>
+              }
+            }
+          </div>
         </div>
       </p-popover>
 
@@ -306,13 +341,17 @@ export class BacklogToolbarComponent {
     });
   }
 
-  protected readonly sprintOptions = () => [
-    { label: 'Chưa có sprint', value: 'none' },
-    ...this.sprintService.openSprints().map((s) => ({
-      label: s.status === 'active' ? `${s.name} (đang chạy)` : s.name,
-      value: s.id,
-    })),
-  ];
+  protected sprintSearch = '';
+  protected showAllCompletedSprints = false;
+
+  protected readonly sprintSections = () =>
+    buildSprintSections(
+      this.sprintService.openSprints(),
+      this.sprintService.completedSprints(),
+      this.sprintSearch,
+      this.showAllCompletedSprints,
+      this.selectedSprintId,
+    );
 
   @Input() displayProps: DisplayProperties = DEFAULT_DISPLAY_PROPS;
   @Input() selectedGroupBy = 'none';
@@ -404,8 +443,12 @@ export class BacklogToolbarComponent {
   }
 
   getSprintLabel(): string {
-    const found = this.sprintOptions().find((o) => o.value === this.selectedSprintId);
-    return found ? found.label : 'Sprint';
+    if (!this.selectedSprintId) return 'Sprint';
+    if (this.selectedSprintId === 'none') return 'Chưa có sprint';
+    const sprint = this.sprintService
+      .projectSprints()
+      .find((s) => s.id === this.selectedSprintId);
+    return sprint?.name ?? 'Sprint';
   }
 
   getGroupByLabel(): string {

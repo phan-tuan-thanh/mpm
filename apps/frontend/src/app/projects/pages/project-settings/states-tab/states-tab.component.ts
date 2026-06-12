@@ -15,6 +15,8 @@ import { DragDropModule, CdkDragDrop } from '@angular/cdk/drag-drop';
 import { TooltipModule } from 'primeng/tooltip';
 import { StateGroup, ProjectState, WorkspaceStateTemplate } from '@mpm/shared-types';
 import { GROUP_ORDER, getGroupName, getGroupColor, getDefaultColor } from './states-tab.helpers';
+import { IconPickerPanelComponent } from '../../../../shared/components/icon-picker-panel/icon-picker-panel.component';
+import { StateDotComponent } from '../../../../shared/components/state-dot/state-dot.component';
 
 @Component({
   standalone: true,
@@ -29,6 +31,8 @@ import { GROUP_ORDER, getGroupName, getGroupColor, getDefaultColor } from './sta
     FormsModule,
     DragDropModule,
     TooltipModule,
+    IconPickerPanelComponent,
+    StateDotComponent,
   ],
   templateUrl: './states-tab.component.html',
   styleUrl: './states-tab.component.css',
@@ -50,6 +54,7 @@ export class StatesTabComponent implements OnInit {
   showAddForm: Record<string, boolean> = {};
   newNames: Record<string, string> = {};
   newColors: Record<string, string> = {};
+  newIcons: Record<string, string> = {};
 
   // Inline editing temp name store
   private originalNameTemp = '';
@@ -111,6 +116,7 @@ export class StatesTabComponent implements OnInit {
       this.showAddForm[group] = false;
       this.newNames[group] = '';
       this.newColors[group] = this.getDefaultColor(group);
+      this.newIcons[group] = '';
     }
 
     const project = this.projectStore.currentProject();
@@ -333,6 +339,31 @@ export class StatesTabComponent implements OnInit {
     });
   }
 
+  onUpdateIcon(state: ProjectState, icon: string): void {
+    if (state.icon === icon || this.isReadOnly()) return;
+
+    const project = this.projectStore.currentProject();
+    if (!project) return;
+
+    this.projectService.updateState(project.id, state.id, { icon }).subscribe({
+      next: () => {
+        this.projectStore.loadStates(project.id);
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Cập nhật thành công',
+          detail: 'Icon trạng thái đã được lưu.',
+        });
+      },
+      error: (err) => {
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Thất bại',
+          detail: err.error?.message || 'Không thể đổi icon trạng thái.',
+        });
+      },
+    });
+  }
+
   onCreateState(group: StateGroup): void {
     const name = this.newNames[group]?.trim();
     const color = this.newColors[group] || this.getDefaultColor(group);
@@ -351,10 +382,12 @@ export class StatesTabComponent implements OnInit {
       return;
     }
 
-    this.projectService.createState(project.id, { name, color, group }).subscribe({
+    const icon = this.newIcons[group] || undefined;
+    this.projectService.createState(project.id, { name, color, group, icon }).subscribe({
       next: () => {
         this.projectStore.loadStates(project.id);
         this.newNames[group] = '';
+        this.newIcons[group] = '';
         this.showAddForm[group] = false;
         this.messageService.add({
           severity: 'success',

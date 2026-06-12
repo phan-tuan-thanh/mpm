@@ -94,6 +94,7 @@ export interface ProjectState {
   name: string;
   color: string;
   group: StateGroup;
+  icon?: string | null;
   isDefault: boolean;
   order: number;
   templateId?: string | null;
@@ -165,6 +166,7 @@ export interface CreateStateDto {
   name: string;
   color: string;
   group: StateGroup;
+  icon?: string;
 }
 
 export interface UpdateStateDto {
@@ -173,6 +175,7 @@ export interface UpdateStateDto {
   group?: StateGroup;
   order?: number;
   isDefault?: boolean;
+  icon?: string | null;
 }
 
 export interface ReorderItem {
