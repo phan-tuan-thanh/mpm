@@ -1,4 +1,4 @@
-const { parseSpecFile, buildTree } = require('./parser');
+const { parseSpecFile, buildTree, parseRequirementsFile } = require('./parser');
 const { apiRequest, chunkArray } = require('./api');
 
 // ─── 1. Validate environment variables ─────────────────────────────────────
@@ -173,25 +173,207 @@ function getSprintAndModule(specName, treeNode, parentSprintContext) {
   return { sprintId, moduleId };
 }
 
-// ─── 4. Build Description JSON ───────────────────────────────────────────
-function getDescription(title) {
+// ─── 4. Build Description JSON (TipTap doc) ───────────────────────────────
+// Nội dung phân tích được trích từ requirements.md + bullet chi tiết trong
+// tasks.md (đã loại bỏ code formatting) — chỉ văn bản phân tích, không kèm code.
+const MAX_DETAILS = 8;
+const MAX_CRITERIA = 6;
+
+function textNode(text, marks) {
+  const node = { type: 'text', text };
+  if (marks) node.marks = marks;
+  return node;
+}
+
+function paragraph(...nodes) {
+  return { type: 'paragraph', content: nodes };
+}
+
+function heading(text, level = 3) {
+  return { type: 'heading', attrs: { level }, content: [textNode(text)] };
+}
+
+function bulletList(items) {
   return {
-    type: 'doc',
-    content: [
-      {
-        type: 'paragraph',
-        content: [
-          {
-            type: 'text',
-            text: `Công việc chi tiết: ${title}. Triển khai và kiểm thử theo thiết kế của spec.`
-          }
-        ]
-      }
-    ]
+    type: 'bulletList',
+    content: items.map(text => ({
+      type: 'listItem',
+      content: [paragraph(textNode(text))]
+    }))
   };
 }
 
-// ─── 5. Main Runner ───────────────────────────────────────────────────────
+function docOf(content) {
+  return { type: 'doc', content };
+}
+
+// Tra cứu các tham chiếu "3.1" sang User Story + Acceptance Criteria trong requirements.md
+function resolveRefs(refs, reqDoc) {
+  const stories = [];
+  const criteria = [];
+  if (!reqDoc || !refs || refs.length === 0) return { stories, criteria };
+
+  const seenStories = new Set();
+  const seenCriteria = new Set();
+  for (const ref of refs) {
+    const [majorStr, minorStr] = String(ref).split('.');
+    const req = reqDoc.requirements[parseInt(majorStr, 10)];
+    if (!req) continue;
+    if (req.userStory && !seenStories.has(req.number)) {
+      seenStories.add(req.number);
+      stories.push(req.userStory);
+    }
+    if (minorStr) {
+      const crit = req.criteria[parseInt(minorStr, 10) - 1];
+      if (crit && !seenCriteria.has(ref)) {
+        seenCriteria.add(ref);
+        criteria.push({ ref, text: crit });
+      }
+    }
+  }
+  return { stories, criteria };
+}
+
+// Mô tả Epic: tổng quan phân tích (Introduction) + phạm vi yêu cầu của spec
+function buildEpicDescription(specTitle, reqDoc) {
+  const content = [heading('Tổng quan phân tích', 3)];
+  if (reqDoc && reqDoc.introduction) {
+    content.push(paragraph(textNode(reqDoc.introduction)));
+  } else {
+    content.push(paragraph(textNode(`Epic quản lý toàn bộ user story và tác vụ thuộc phạm vi ${specTitle}.`)));
+  }
+
+  const reqs = reqDoc ? Object.values(reqDoc.requirements) : [];
+  if (reqs.length > 0) {
+    content.push(heading('Phạm vi yêu cầu', 3));
+    content.push(bulletList(reqs.map(r =>
+      `Yêu cầu ${r.number}: ${r.title}${r.criteria.length ? ` — ${r.criteria.length} tiêu chí chấp nhận` : ''}`
+    )));
+  }
+  return docOf(content);
+}
+
+// Mô tả Story/Task: User Story liên quan + phân tích công việc + tiêu chí chấp nhận
+function buildItemDescription(node, reqDoc, extraRefs = []) {
+  const content = [];
+  const ownRefs = node.requirementRefs || [];
+  const combined = resolveRefs([...ownRefs, ...extraRefs], reqDoc);
+  const own = resolveRefs(ownRefs, reqDoc);
+
+  if (combined.stories.length > 0) {
+    content.push(paragraph(textNode('User Story liên quan: ', [{ type: 'bold' }]), textNode(combined.stories[0])));
+  } else {
+    content.push(paragraph(textNode(`Phân tích nghiệp vụ cho hạng mục: ${node.title}. Triển khai và kiểm thử theo thiết kế của spec.`)));
+  }
+
+  const details = (node.details || []).slice(0, MAX_DETAILS);
+  if (details.length > 0) {
+    content.push(heading('Phân tích công việc', 4));
+    content.push(bulletList(details));
+  }
+
+  const crits = own.criteria.slice(0, MAX_CRITERIA);
+  if (crits.length > 0) {
+    content.push(heading('Tiêu chí chấp nhận liên quan', 4));
+    content.push(bulletList(crits.map(c => `(${c.ref}) ${c.text}`)));
+  }
+
+  return docOf(content);
+}
+
+// Item có nội dung phân tích thực sự (khác fallback generic) hay không — dùng cho báo cáo
+function hasAnalysis(node, reqDoc, extraRefs = []) {
+  if (node.details && node.details.length > 0) return true;
+  const { stories, criteria } = resolveRefs([...(node.requirementRefs || []), ...extraRefs], reqDoc);
+  return stories.length > 0 || criteria.length > 0;
+}
+
+// ─── 5. Seeding Statistics (báo cáo phân tích cuối phiên import) ──────────
+const SPRINT_LABELS = {};
+for (const key in SPRINT_IDS) {
+  SPRINT_LABELS[SPRINT_IDS[key]] = key.replace('SPRINT', 'Sprint ').replace('_ID', '');
+}
+
+const MODULE_LABELS = {};
+const MODULE_LABEL_BY_KEY = {
+  MODULE_AUTH_ID: 'Core & Authentication',
+  MODULE_TASK_ID: 'Task Management & Details',
+  MODULE_MEMBER_ID: 'Project & Members',
+  MODULE_BACKLOG_ID: 'Backlog & Labels',
+  MODULE_STATE_ID: 'State Templates & Settings',
+  MODULE_MODULE_ID: 'Modules & Lifecycle',
+  MODULE_SPRINT_ID: 'Sprints, Cycles & Velocity',
+  MODULE_COLLAB_ID: 'Collaboration & Comments',
+};
+for (const key in MODULE_IDS) {
+  MODULE_LABELS[MODULE_IDS[key]] = MODULE_LABEL_BY_KEY[key] || key;
+}
+
+const stats = {
+  epics: 0,
+  stories: 0,
+  tasks: 0,
+  points: 0,
+  enriched: 0,
+  totalItems: 0,
+  bySprint: {},   // sprintId -> { count, points }
+  byModule: {},   // moduleId -> { count, points }
+  byState: { todo: 0, inProgress: 0, done: 0 },
+};
+
+function trackItem({ sprintId, moduleId, stateId, points = 0, enriched = false }) {
+  stats.totalItems++;
+  stats.points += points;
+  if (enriched) stats.enriched++;
+
+  if (sprintId) {
+    stats.bySprint[sprintId] = stats.bySprint[sprintId] || { count: 0, points: 0 };
+    stats.bySprint[sprintId].count++;
+    stats.bySprint[sprintId].points += points;
+  }
+  if (moduleId) {
+    stats.byModule[moduleId] = stats.byModule[moduleId] || { count: 0, points: 0 };
+    stats.byModule[moduleId].count++;
+    stats.byModule[moduleId].points += points;
+  }
+  if (stateId === DONE_STATE_ID) stats.byState.done++;
+  else if (stateId === IN_PROGRESS_STATE_ID) stats.byState.inProgress++;
+  else stats.byState.todo++;
+}
+
+function printAnalysisReport() {
+  const pad = (s, n) => String(s).padEnd(n);
+  console.log('\n══════════════ BÁO CÁO PHÂN TÍCH DỮ LIỆU DEMO ══════════════');
+  console.log(`Khối lượng:  ${stats.epics} Epics, ${stats.stories} Stories, ${stats.tasks} Tasks — tổng ${stats.points} story points.`);
+
+  console.log('\nPhân bố theo Sprint (items / points):');
+  for (const key in SPRINT_IDS) {
+    const id = SPRINT_IDS[key];
+    const s = stats.bySprint[id];
+    if (s) console.log(`  - ${pad(SPRINT_LABELS[id], 10)} ${s.count} items / ${s.points} pts`);
+  }
+
+  console.log('\nPhân bố theo Module (items / points):');
+  for (const key in MODULE_IDS) {
+    const id = MODULE_IDS[key];
+    const m = stats.byModule[id];
+    if (m) console.log(`  - ${pad(MODULE_LABELS[id], 30)} ${m.count} items / ${m.points} pts`);
+  }
+
+  const { todo, inProgress, done } = stats.byState;
+  const donePct = stats.totalItems ? Math.round((done / stats.totalItems) * 100) : 0;
+  console.log('\nPhân bố theo trạng thái:');
+  console.log(`  - Done:        ${done} (${donePct}%)`);
+  console.log(`  - In Progress: ${inProgress}`);
+  console.log(`  - Todo:        ${todo}`);
+
+  const coverage = stats.totalItems ? Math.round((stats.enriched / stats.totalItems) * 100) : 0;
+  console.log(`\nĐộ phủ phân tích: ${stats.enriched}/${stats.totalItems} items (${coverage}%) có mô tả trích từ tài liệu`);
+  console.log('phân tích (User Story, Acceptance Criteria, phân tích công việc) — không kèm code.');
+  console.log('═════════════════════════════════════════════════════════════');
+}
+
+// ─── 6. Main Runner ───────────────────────────────────────────────────────
 async function run() {
   console.log('[INFO] Bắt đầu nạp dữ liệu từ các file specifications...');
   
@@ -224,9 +406,18 @@ async function run() {
   
   for (const spec of specs) {
     console.log(`\nProcessing Spec: ${spec.title}...`);
-    
+
+    // 0. Load tài liệu phân tích (requirements.md) cùng thư mục với tasks.md
+    const reqDoc = parseRequirementsFile(spec.path.replace(/tasks\.md$/, 'requirements.md'));
+    if (reqDoc) {
+      const reqCount = Object.keys(reqDoc.requirements).length;
+      console.log(`  Analysis doc loaded: ${reqCount} requirements (User Story + Acceptance Criteria).`);
+    } else {
+      console.log('  Analysis doc not found — dùng mô tả mặc định.');
+    }
+
     // 1. Create Epic
-    const epicDesc = getDescription(`Epic quản lý tất cả các câu chuyện người dùng và tác vụ liên quan đến ${spec.title}.`);
+    const epicDesc = buildEpicDescription(spec.title, reqDoc);
     const epicResponse = await apiRequest(`/api/projects/${PROJECT_ID}/tasks`, 'POST', {
       title: spec.title,
       type: 'epic',
@@ -235,8 +426,9 @@ async function run() {
       assigneeIds: [users.po],
       description: epicDesc
     });
-    
+
     const epicId = epicResponse.id;
+    stats.epics++;
     console.log(`  Epic Created: ${spec.title} (ID: ${epicId})`);
     
     // 2. Parse & Build Tree
@@ -268,10 +460,10 @@ async function run() {
       
       const assigneeIds = getAssignee(node.title);
       const estimateValue = getEstimateValue(node.title);
-      const description = getDescription(node.title);
-      
+
       if (node.isStory) {
-        // Create Story
+        // Create Story — gom thêm refs của các subtask để hiển thị User Story liên quan
+        const childRefs = node.tasks.flatMap(t => t.requirementRefs || []);
         const storyResponse = await apiRequest(`/api/projects/${PROJECT_ID}/tasks`, 'POST', {
           title: node.title,
           type: 'story',
@@ -279,26 +471,27 @@ async function run() {
           parentId: epicId,
           priority: 'medium',
           assigneeIds,
-          description
+          description: buildItemDescription(node, reqDoc, childRefs)
         });
-        
+
         const storyId = storyResponse.id;
         totalTasksCreated++;
-        
+        stats.stories++;
+        trackItem({ sprintId, moduleId, stateId, enriched: hasAnalysis(node, reqDoc, childRefs) });
+
         sprintAssignments[sprintId].push(storyId);
         moduleAssignments[moduleId].push(storyId);
-        
+
         // Create Sub-Tasks
         for (const sub of node.tasks) {
           const subAssignee = getAssignee(sub.title);
           const subEstimate = getEstimateValue(sub.title);
-          const subDesc = getDescription(sub.title);
-          
+
           let subStateId = stateId;
           if (sprintId === SPRINT_IDS.SPRINT7_ID) {
             subStateId = sub.checked ? DONE_STATE_ID : TODO_STATE_ID;
           }
-          
+
           const taskResponse = await apiRequest(`/api/projects/${PROJECT_ID}/tasks`, 'POST', {
             title: sub.title,
             type: 'task',
@@ -307,10 +500,12 @@ async function run() {
             priority: 'medium',
             estimateValue: subEstimate,
             assigneeIds: subAssignee,
-            description: subDesc
+            description: buildItemDescription(sub, reqDoc)
           });
-          
+
           totalTasksCreated++;
+          stats.tasks++;
+          trackItem({ sprintId, moduleId, stateId: subStateId, points: subEstimate, enriched: hasAnalysis(sub, reqDoc) });
           sprintAssignments[sprintId].push(taskResponse.id);
           moduleAssignments[moduleId].push(taskResponse.id);
         }
@@ -324,12 +519,14 @@ async function run() {
           priority: 'medium',
           estimateValue,
           assigneeIds,
-          description
+          description: buildItemDescription(node, reqDoc)
         });
-        
+
         const taskId = taskResponse.id;
         totalTasksCreated++;
-        
+        stats.tasks++;
+        trackItem({ sprintId, moduleId, stateId, points: estimateValue, enriched: hasAnalysis(node, reqDoc) });
+
         sprintAssignments[sprintId].push(taskId);
         moduleAssignments[moduleId].push(taskId);
       }
@@ -338,7 +535,16 @@ async function run() {
   
   // ─── 6. Epic 9: Collaboration & Threaded Comments (Manually seed future tasks) ─
   console.log('\nProcessing Custom Spec: Collaboration & Threaded Comments...');
-  const epic9Desc = getDescription('Epic phát triển bình luận, phân luồng trả lời trực tiếp trong thẻ công việc.');
+  const epic9Desc = docOf([
+    heading('Tổng quan phân tích', 3),
+    paragraph(textNode('Epic phát triển hệ thống bình luận trong thẻ công việc: phản hồi phân luồng 1 cấp và thả biểu cảm emoji, phục vụ trao đổi trực tiếp giữa QA và Developer trong quá trình kiểm thử.')),
+    heading('Phạm vi yêu cầu', 3),
+    bulletList([
+      'Bình luận lồng nhau 1 cấp (thread reply) trên timeline của task',
+      'Thả biểu cảm emoji với bộ emoji cố định trên từng bình luận',
+      'Cập nhật bình luận theo thời gian thực giữa các thành viên đang mở task',
+    ]),
+  ]);
   const epic9Response = await apiRequest(`/api/projects/${PROJECT_ID}/tasks`, 'POST', {
     title: 'Collaboration & Threaded Comments',
     type: 'epic',
@@ -348,8 +554,16 @@ async function run() {
     description: epic9Desc
   });
   const epic9Id = epic9Response.id;
-  
-  const story9Desc = getDescription('Là QA, tôi muốn comment các lỗi và phản hồi lồng phẳng trong card trao đổi.');
+  stats.epics++;
+
+  const story9Desc = docOf([
+    paragraph(textNode('User Story liên quan: ', [{ type: 'bold' }]), textNode('Là QA, tôi muốn bình luận các lỗi và nhận phản hồi phân luồng ngay trong thẻ công việc, để trao đổi kiểm thử không bị phân mảnh qua kênh chat ngoài.')),
+    heading('Tiêu chí chấp nhận liên quan', 4),
+    bulletList([
+      'WHEN người dùng trả lời một bình luận, THE hệ thống SHALL hiển thị phản hồi lồng 1 cấp dưới bình luận gốc',
+      'WHEN người dùng thả emoji, THE hệ thống SHALL gộp số lượt theo từng loại emoji và highlight lựa chọn của chính họ',
+    ]),
+  ]);
   const story9Response = await apiRequest(`/api/projects/${PROJECT_ID}/tasks`, 'POST', {
     title: 'Linear Comments & Reactions',
     type: 'story',
@@ -361,9 +575,11 @@ async function run() {
   });
   const story9Id = story9Response.id;
   totalTasksCreated++;
+  stats.stories++;
+  trackItem({ sprintId: SPRINT_IDS.SPRINT9_ID, moduleId: MODULE_IDS.MODULE_COLLAB_ID, stateId: TODO_STATE_ID, enriched: true });
   sprintAssignments[SPRINT_IDS.SPRINT9_ID].push(story9Id);
   moduleAssignments[MODULE_IDS.MODULE_COLLAB_ID].push(story9Id);
-  
+
   const task9_1Response = await apiRequest(`/api/projects/${PROJECT_ID}/tasks`, 'POST', {
     title: 'Implement 1-level thread reply card layout',
     type: 'task',
@@ -372,12 +588,22 @@ async function run() {
     priority: 'high',
     estimateValue: 5,
     assigneeIds: [users.dev1],
-    description: getDescription('Giao diện hiển thị timeline comments 1 cấp lồng nhau.')
+    description: docOf([
+      paragraph(textNode('Phân tích nghiệp vụ: giao diện timeline bình luận hiển thị phản hồi lồng 1 cấp, mỗi card gồm avatar, tên người gửi, thời gian tương đối và nội dung rich text.')),
+      heading('Phân tích công việc', 4),
+      bulletList([
+        'Thiết kế layout card bình luận và vùng phản hồi thụt lề 1 cấp',
+        'Sắp xếp bình luận gốc theo thời gian tăng dần, phản hồi nằm ngay dưới bình luận cha',
+        'Hỗ trợ dark mode và trạng thái đang soạn thảo phản hồi',
+      ]),
+    ])
   });
   totalTasksCreated++;
+  stats.tasks++;
+  trackItem({ sprintId: SPRINT_IDS.SPRINT9_ID, moduleId: MODULE_IDS.MODULE_COLLAB_ID, stateId: TODO_STATE_ID, points: 5, enriched: true });
   sprintAssignments[SPRINT_IDS.SPRINT9_ID].push(task9_1Response.id);
   moduleAssignments[MODULE_IDS.MODULE_COLLAB_ID].push(task9_1Response.id);
-  
+
   const task9_2Response = await apiRequest(`/api/projects/${PROJECT_ID}/tasks`, 'POST', {
     title: 'Support reaction with a fixed emoji set',
     type: 'task',
@@ -386,9 +612,18 @@ async function run() {
     priority: 'low',
     estimateValue: 2,
     assigneeIds: [users.dev2],
-    description: getDescription('Thả emoji reactions lên comment.')
+    description: docOf([
+      paragraph(textNode('Phân tích nghiệp vụ: cho phép thả biểu cảm emoji trên từng bình luận với bộ emoji cố định, gộp số lượt thả theo loại.')),
+      heading('Phân tích công việc', 4),
+      bulletList([
+        'Hiển thị popover chọn emoji từ bộ cố định khi hover/click vào bình luận',
+        'Gộp và đếm lượt thả theo từng emoji, toggle khi người dùng thả lại cùng emoji',
+      ]),
+    ])
   });
   totalTasksCreated++;
+  stats.tasks++;
+  trackItem({ sprintId: SPRINT_IDS.SPRINT9_ID, moduleId: MODULE_IDS.MODULE_COLLAB_ID, stateId: TODO_STATE_ID, points: 2, enriched: true });
   sprintAssignments[SPRINT_IDS.SPRINT9_ID].push(task9_2Response.id);
   moduleAssignments[MODULE_IDS.MODULE_COLLAB_ID].push(task9_2Response.id);
   
@@ -444,6 +679,8 @@ async function run() {
   
   console.log(`\n[OK] Đã import thành công tổng cộng ${totalTasksCreated} Tasks/Stories.`);
   console.log('[OK] Hoàn thành seeding spec.');
+
+  printAnalysisReport();
 }
 
 run().catch(err => {
