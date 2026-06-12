@@ -27,6 +27,9 @@ export class ProjectState {
   @Column({ type: 'char', length: 7, default: '#6B7280' })
   color!: string;
 
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  icon!: string | null;
+
   @Column({
     type: 'enum',
     enum: ['backlog', 'unstarted', 'started', 'completed', 'cancelled'],
