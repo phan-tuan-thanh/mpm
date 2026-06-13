@@ -72,7 +72,7 @@ export class GeneralTabComponent {
       { label: 'Cấu hình Sprint', route: ['sprints'], exact: true },
       { label: 'Trạng thái', route: ['states'], exact: true },
       { label: 'Mức ưu tiên', route: ['priorities'], exact: true },
-      { label: 'Labels', route: ['labels'], exact: true },
+      { label: 'Nhãn', route: ['labels'], exact: true },
       { label: 'Ước lượng', route: ['estimates'], exact: true },
     ];
   });

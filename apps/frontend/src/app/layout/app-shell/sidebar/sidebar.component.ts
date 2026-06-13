@@ -258,7 +258,9 @@ import { IconDisplayComponent } from '../../../shared/components/icon-display/ic
                   <a
                     [routerLink]="['/projects', currentKey(), 'settings'].concat(sub.route)"
                     class="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs transition"
-                    [ngClass]="isSettingsSubItemActive(sub)"
+                    [ngClass]="isSettingsSubItemActive(sub)
+                      ? 'bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 font-semibold'
+                      : 'text-gray-500 dark:text-surface-400 hover:bg-gray-50 dark:hover:bg-surface-800 hover:text-gray-700 dark:hover:text-surface-100'"
                   >
                     <i [class]="'pi ' + sub.icon" [style.font-size.px]="layoutService.menuIconSize() - 6"></i>
                     {{ sub.label }}
