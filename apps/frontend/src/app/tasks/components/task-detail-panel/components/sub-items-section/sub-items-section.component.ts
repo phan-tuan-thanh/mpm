@@ -17,6 +17,7 @@ import type { SubItemTreeNode, CreateSubItemDto, MemberResponse, TaskPriority } 
 import { SubItemTreeComponent } from '../sub-item-tree/sub-item-tree.component';
 import { SubItemQuickToolbarComponent } from '../sub-item-quick-toolbar/sub-item-quick-toolbar.component';
 import { ProjectStore } from '../../../../../projects/state/project.store';
+import { CustomTranslationService } from '../../../../../shared/services/custom-translation.service';
 
 /**
  * SubItemsSectionComponent — Container component for Sub-Items section
@@ -179,35 +180,24 @@ import { ProjectStore } from '../../../../../projects/state/project.store';
 })
 export class SubItemsSectionComponent {
   private readonly projectStore = inject(ProjectStore);
+  private readonly customTrans = inject(CustomTranslationService);
 
   readonly t = computed(() => {
     const isEn = this.projectStore.projectLanguage() === 'en';
-    return isEn ? {
-      collapseAria: 'Collapse sub-items',
-      expandAria: 'Expand sub-items',
-      completionTooltip: (done: number, total: number) => `${done} / ${total} sub-items completed`,
-      addSubItemBtn: 'Add sub-item',
-      addSubItemTooltip: 'Add new sub-item',
-      emptyStateText: 'No sub-items yet. Break down the work to track progress.',
-      inputPlaceholder: 'Enter sub-item title...',
-      createBtn: 'Create',
-      cancelBtn: 'Cancel',
-      createAria: 'Create sub-item',
-      cancelAria: 'Cancel adding sub-item',
-      inputAria: 'New sub-item title'
-    } : {
-      collapseAria: 'Thu gọn sub-items',
-      expandAria: 'Mở rộng sub-items',
-      completionTooltip: (done: number, total: number) => `${done} / ${total} sub-items hoàn thành`,
-      addSubItemBtn: 'Thêm sub-item',
-      addSubItemTooltip: 'Thêm sub-item mới',
-      emptyStateText: 'Chưa có sub-item nào. Chia nhỏ công việc để dễ theo dõi tiến độ.',
-      inputPlaceholder: 'Nhập tiêu đề sub-item...',
-      createBtn: 'Tạo',
-      cancelBtn: 'Hủy',
-      createAria: 'Tạo sub-item',
-      cancelAria: 'Hủy thêm sub-item',
-      inputAria: 'Tiêu đề sub-item mới'
+    const ct = this.customTrans;
+    return {
+      collapseAria:      isEn ? 'Collapse sub-items'    : 'Thu gọn sub-items',
+      expandAria:        isEn ? 'Expand sub-items'       : 'Mở rộng sub-items',
+      completionTooltip: (done: number, total: number) => isEn ? `${done} / ${total} sub-items completed` : `${done} / ${total} sub-items hoàn thành`,
+      addSubItemBtn:     ct.t('sub-items.addBtn',         isEn ? 'Add sub-item'    : 'Thêm sub-item'),
+      addSubItemTooltip: ct.t('sub-items.addTooltip',     isEn ? 'Add new sub-item': 'Thêm sub-item mới'),
+      emptyStateText:    ct.t('sub-items.empty',          isEn ? 'No sub-items yet. Break down the work to track progress.' : 'Chưa có sub-item nào. Chia nhỏ công việc để dễ theo dõi tiến độ.'),
+      inputPlaceholder:  ct.t('sub-items.inputPlaceholder',isEn ? 'Enter sub-item title...' : 'Nhập tiêu đề sub-item...'),
+      createBtn:         ct.t('sub-items.createBtn',      isEn ? 'Create'          : 'Tạo'),
+      cancelBtn:         ct.t('sub-items.cancelBtn',      isEn ? 'Cancel'          : 'Hủy'),
+      createAria:        isEn ? 'Create sub-item'       : 'Tạo sub-item',
+      cancelAria:        isEn ? 'Cancel adding sub-item': 'Hủy thêm sub-item',
+      inputAria:         isEn ? 'New sub-item title'    : 'Tiêu đề sub-item mới',
     };
   });
 

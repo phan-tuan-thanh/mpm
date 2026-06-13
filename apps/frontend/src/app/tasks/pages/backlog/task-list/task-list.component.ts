@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, signal, computed } from '@angular/core';
+import { Component, Input, Output, EventEmitter, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DragDropModule, CdkDragDrop } from '@angular/cdk/drag-drop';
@@ -10,6 +10,8 @@ import { DEFAULT_DISPLAY_PROPS } from '@mpm/shared-types';
 import { TaskRowComponent } from './task-row.component';
 import { selectRootTasks } from './task-list.helpers';
 import { StateDotComponent } from '../../../../shared/components/state-dot/state-dot.component';
+import { ProjectStore } from '../../../../projects/state/project.store';
+import { CustomTranslationService } from '../../../../shared/services/custom-translation.service';
 
 const STATE_GROUP_ORDER = ['backlog', 'unstarted', 'started', 'completed', 'cancelled'];
 interface TaskNode { task: TaskListItem; children: TaskListItem[] }
@@ -88,7 +90,7 @@ function flattenTask(
     } @else if (_states().length === 0) {
       <div class="flex flex-col items-center justify-center h-64 text-gray-400 dark:text-surface-500">
         <i class="pi pi-inbox text-5xl mb-4 text-gray-200 dark:text-surface-700"></i>
-        <p class="text-sm font-medium text-gray-500 dark:text-surface-400">Danh sách trống</p>
+        <p class="text-sm font-medium text-gray-500 dark:text-surface-400">{{ t().emptyState }}</p>
       </div>
     } @else {
       <div cdkDropListGroup>
@@ -113,7 +115,7 @@ function flattenTask(
               <span class="text-sm font-semibold text-gray-700 dark:text-surface-100">{{ group.state.name }}</span>
               <span class="text-xs text-gray-500 bg-gray-200 dark:bg-surface-800 rounded px-1.5 font-medium min-w-[1.25rem] text-center leading-5">{{ group.rootTasks.length }}</span>
             </div>
-            <button class="show-on-hover opacity-0 flex items-center justify-center w-7 h-7 mr-2 rounded hover:bg-gray-200 dark:hover:bg-surface-800 text-gray-400 hover:text-indigo-600" pTooltip="Thêm task vào nhóm này" (click)="newTaskInState.emit(group.state.id)">
+            <button class="show-on-hover opacity-0 flex items-center justify-center w-7 h-7 mr-2 rounded hover:bg-gray-200 dark:hover:bg-surface-800 text-gray-400 hover:text-indigo-600" [pTooltip]="t().addTaskToGroup" (click)="newTaskInState.emit(group.state.id)">
               <i class="pi pi-plus text-xs"></i>
             </button>
           </div>
@@ -183,7 +185,7 @@ function flattenTask(
                 @if (draggedTaskId && hoveredTaskId === 'end-' + group.state.id) {
                   <div class="h-0.5 bg-indigo-600 dark:bg-indigo-500 w-full absolute top-0 left-0 right-0 z-20"></div>
                 }
-                <button class="flex items-center gap-1.5 text-xs text-gray-400 hover:text-indigo-600 transition-colors" (click)="newTaskInState.emit(group.state.id)"><i class="pi pi-plus text-[10px]"></i> New work item</button>
+                <button class="flex items-center gap-1.5 text-xs text-gray-400 hover:text-indigo-600 transition-colors" (click)="newTaskInState.emit(group.state.id)"><i class="pi pi-plus text-[10px]"></i> {{ t().newWorkItem }}</button>
               </div>
             </div>
           }
@@ -194,6 +196,19 @@ function flattenTask(
   `,
 })
 export class TaskListComponent {
+  private readonly projectStore = inject(ProjectStore);
+  private readonly customTrans = inject(CustomTranslationService);
+
+  readonly t = computed(() => {
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    const ct = this.customTrans;
+    return {
+      emptyState:    ct.t('backlog.emptyState',    isEn ? 'Empty list' : 'Danh sách trống'),
+      addTaskToGroup: ct.t('backlog.addTaskToGroup', isEn ? 'Add task to this group' : 'Thêm task vào nhóm này'),
+      newWorkItem:   ct.t('backlog.newWorkItem',   isEn ? 'New work item' : 'Công việc mới'),
+    };
+  });
+
   protected readonly _tasks = signal<TaskListItem[]>([]);
   protected readonly _states = signal<ProjectState[]>([]);
   private readonly _displayProps = signal<DisplayProperties>(DEFAULT_DISPLAY_PROPS);

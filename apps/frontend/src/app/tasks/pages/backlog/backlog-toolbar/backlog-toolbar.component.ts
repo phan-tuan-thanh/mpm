@@ -18,6 +18,7 @@ import { StateDotComponent } from '../../../../shared/components/state-dot/state
 import { IconDisplayComponent } from '../../../../shared/components/icon-display/icon-display.component';
 import { PriorityConfigService } from '../../../services/priority-config.service';
 import { LayoutService } from '../../../../layout/services/layout.service';
+import { CustomTranslationService } from '../../../../shared/services/custom-translation.service';
 
 export interface BacklogFilter {
   search?: string;
@@ -380,6 +381,7 @@ export interface BacklogFilter {
 })
 export class BacklogToolbarComponent {
   protected readonly projectStore = inject(ProjectStore);
+  private readonly customTrans = inject(CustomTranslationService);
   private readonly sprintService = inject(SprintService);
   protected readonly labelStore = inject(LabelStore);
   private readonly priorityConfigService = inject(PriorityConfigService);
@@ -439,38 +441,25 @@ export class BacklogToolbarComponent {
 
   readonly t = computed(() => {
     const isEn = this.projectStore.projectLanguage() === 'en';
-    return isEn ? {
-      searchPlaceholder: 'Search... (/)',
-      listView: 'List view',
-      boardView: 'Board view',
-      newTask: 'Add task',
-      searchSprintPlaceholder: 'Search sprint...',
-      noSprint: 'No sprint',
-      sprintOpen: 'Active',
-      sprintCompleted: 'Completed',
-      showMore: 'Show more',
-      searchLabelPlaceholder: 'Search labels...',
-      noLabelFound: 'No labels found',
-      clearFilters: 'Clear filters'
-    } : {
-      searchPlaceholder: 'Tìm kiếm... (/)',
-      listView: 'Giao diện danh sách',
-      boardView: 'Giao diện bảng',
-      newTask: 'Thêm task',
-      searchSprintPlaceholder: 'Tìm sprint...',
-      noSprint: 'Chưa có sprint',
-      sprintOpen: 'Đang mở',
-      sprintCompleted: 'Đã hoàn thành',
-      showMore: 'Xem thêm',
-      searchLabelPlaceholder: 'Tìm label...',
-      noLabelFound: 'Không tìm thấy label',
-      clearFilters: 'Xóa bộ lọc'
+    const ct = this.customTrans;
+    return {
+      searchPlaceholder:      ct.t('toolbar.search',         isEn ? 'Search... (/)'      : 'Tìm kiếm... (/)'),
+      listView:               ct.t('toolbar.listView',       isEn ? 'List view'           : 'Giao diện danh sách'),
+      boardView:              ct.t('toolbar.boardView',      isEn ? 'Board view'          : 'Giao diện bảng'),
+      newTask:                ct.t('toolbar.newTask',        isEn ? 'Add task'            : 'Thêm task'),
+      searchSprintPlaceholder:ct.t('toolbar.searchSprint',   isEn ? 'Search sprint...'    : 'Tìm sprint...'),
+      noSprint:               ct.t('toolbar.noSprint',       isEn ? 'No sprint'           : 'Chưa có sprint'),
+      sprintOpen:             ct.t('toolbar.sprintOpen',     isEn ? 'Active'              : 'Đang mở'),
+      sprintCompleted:        ct.t('toolbar.sprintCompleted',isEn ? 'Completed'           : 'Đã hoàn thành'),
+      showMore:               ct.t('toolbar.showMore',       isEn ? 'Show more'           : 'Xem thêm'),
+      searchLabelPlaceholder: ct.t('toolbar.searchLabel',    isEn ? 'Search labels...'    : 'Tìm label...'),
+      noLabelFound:           ct.t('toolbar.noLabelFound',   isEn ? 'No labels found'     : 'Không tìm thấy label'),
+      clearFilters:           ct.t('toolbar.clearFilters',   isEn ? 'Clear filters'       : 'Xóa bộ lọc'),
     };
   });
 
   getTypeLabel(): string {
-    const isEn = this.projectStore.projectLanguage() === 'en';
-    const defaultLabel = isEn ? 'Type' : 'Loại';
+    const defaultLabel = this.customTrans.t('toolbar.filterType', this.projectStore.projectLanguage() === 'en' ? 'Type' : 'Loại');
     if (!this.selectedTypes.length) return defaultLabel;
     if (this.selectedTypes.length === 1) {
       return this.typeOptions.find((o) => o.value === this.selectedTypes[0])?.label ?? defaultLabel;
@@ -485,8 +474,7 @@ export class BacklogToolbarComponent {
   );
 
   getPriorityLabel(): string {
-    const isEn = this.projectStore.projectLanguage() === 'en';
-    const defaultLabel = isEn ? 'Priority' : 'Độ ưu tiên';
+    const defaultLabel = this.customTrans.t('toolbar.filterPriority', this.projectStore.projectLanguage() === 'en' ? 'Priority' : 'Độ ưu tiên');
     if (!this.selectedPriorities.length) return defaultLabel;
     if (this.selectedPriorities.length === 1) {
       return this.priorityOptions().find((o) => o.value === this.selectedPriorities[0])?.name ?? defaultLabel;
@@ -495,8 +483,7 @@ export class BacklogToolbarComponent {
   }
 
   getStateLabel(): string {
-    const isEn = this.projectStore.projectLanguage() === 'en';
-    const defaultLabel = isEn ? 'State' : 'Trạng thái';
+    const defaultLabel = this.customTrans.t('toolbar.filterState', this.projectStore.projectLanguage() === 'en' ? 'State' : 'Trạng thái');
     if (!this.selectedStateIds.length) return defaultLabel;
     if (this.selectedStateIds.length === 1) {
       return this.stateOptions().find((s) => s.id === this.selectedStateIds[0])?.name ?? defaultLabel;

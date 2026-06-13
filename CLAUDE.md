@@ -89,4 +89,49 @@ KHÔNG sử dụng component nhập số thông thường (`<input type="number"
 ### Segment Switchers / Toggle Buttons (BẮT BUỘC)
 Đối với các cấu hình lựa chọn 1 trong 2 (hoặc tối đa 3) tùy chọn loại trừ lẫn nhau (ví dụ: Terminology, Capacity Mode, Theme Presets...), KHÔNG sử dụng dropdown hay các nút bấm rời rạc. Bắt buộc phải sử dụng bộ chuyển đổi phân đoạn `<p-selectbutton>` (`SelectButtonModule`) hiển thị các tùy chọn sát nhau trên một hàng ngang để tối ưu giao diện và đem lại trải nghiệm tương tác mượt mà.
 
+### Localization / Text hiển thị (BẮT BUỘC)
+
+> **Mọi text hiển thị trong giao diện PHẢI đi qua `CustomTranslationService.t()`. Không được hardcode chuỗi vi/en trực tiếp trong template hoặc computed.**
+
+#### Quy tắc cứng
+
+| Quy tắc | Chi tiết |
+|---------|---------|
+| KHÔNG hardcode string UI | Không viết `'Thêm task'`, `'Add task'`, `'Cancel'`, `'Hủy'`... trực tiếp trong template hay method. |
+| Bắt buộc dùng `ct.t(key, default)` | Mọi label, placeholder, tooltip, toast message, confirm text đều phải dùng `CustomTranslationService.t()`. |
+| Đăng ký key vào `DEFAULT_TRANSLATIONS` | Mọi key mới phải được thêm vào mảng `DEFAULT_TRANSLATIONS` trong `custom-translation.service.ts` với đầy đủ `vi` và `en`. |
+| Đặt trong `computed()` | Gọi `ct.t()` bên trong `computed(() => { const isEn = ...; const ct = this.customTrans; return { ... }; })` để reactivity hoạt động đúng khi ngôn ngữ thay đổi. |
+| Chuỗi động giữ inline | Chuỗi có tham số động (count, tên...) vẫn dùng arrow function inline trong computed: `confirmMsg: (count: number) => isEn ? \`Delete \${count} items?\` : \`Xóa \${count} mục?\`` |
+
+#### Pattern chuẩn
+
+```typescript
+import { CustomTranslationService } from '...shared/services/custom-translation.service';
+
+private readonly customTrans = inject(CustomTranslationService);
+
+readonly t = computed(() => {
+  const isEn = this.projectStore.projectLanguage() === 'en';
+  const ct = this.customTrans;
+  return {
+    addBtn:      ct.t('feature.addBtn',      isEn ? 'Add'    : 'Thêm'),
+    cancelBtn:   ct.t('feature.cancelBtn',   isEn ? 'Cancel' : 'Hủy'),
+    placeholder: ct.t('feature.placeholder', isEn ? 'Search...' : 'Tìm kiếm...'),
+    // Chuỗi động — không dùng ct.t():
+    deleteConfirm: (count: number) => isEn ? `Delete ${count} items?` : `Xóa ${count} mục?`,
+  };
+});
+```
+
+#### Checklist khi thêm text mới vào component
+
+```
+- [ ] Thêm key vào DEFAULT_TRANSLATIONS (cả vi lẫn en)
+- [ ] inject CustomTranslationService vào component
+- [ ] Đặt ct.t() trong computed() — KHÔNG gọi ngoài computed
+- [ ] Template dùng t().key thay vì hardcode string
+- [ ] Chuỗi có tham số động → arrow function trong computed, không dùng ct.t()
+- [ ] Key đặt theo namespace: 'feature.actionName' (ví dụ: 'backlog.addBtn', 'task-detail.cancelBtn')
+```
+
 

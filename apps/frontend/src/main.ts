@@ -222,6 +222,14 @@ const routes = [
                       ),
                     title: 'Labels — Agile PM',
                   },
+                  {
+                    path: 'language',
+                    loadComponent: () =>
+                      import('./app/projects/pages/project-settings/language-tab/language-tab.component').then(
+                        (m) => m.LanguageTabComponent
+                      ),
+                    title: 'Ngôn ngữ — Agile PM',
+                  },
                 ],
               },
               {

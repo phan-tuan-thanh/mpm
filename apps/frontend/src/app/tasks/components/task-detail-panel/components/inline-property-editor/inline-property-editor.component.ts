@@ -18,6 +18,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { MessageService } from 'primeng/api';
 import { CommonModule } from '@angular/common';
 import { ProjectStore } from '../../../../../projects/state/project.store';
+import { CustomTranslationService } from '../../../../../shared/services/custom-translation.service';
 
 import { PropertySaveQueue } from './property-save-queue';
 
@@ -221,19 +222,16 @@ export class InlinePropertyEditorComponent implements OnDestroy {
   private readonly messageService = inject(MessageService);
   private readonly saveQueue = new PropertySaveQueue(500);
   private readonly projectStore = inject(ProjectStore);
+  private readonly customTrans = inject(CustomTranslationService);
 
   readonly t = computed(() => {
     const isEn = this.projectStore.projectLanguage() === 'en';
-    return isEn ? {
-      clear: 'Clear',
-      select: 'Select...',
-      error: 'Error',
-      updateFailed: (label: string) => `Failed to update ${label}`
-    } : {
-      clear: 'Bỏ chọn',
-      select: 'Chọn...',
-      error: 'Lỗi',
-      updateFailed: (label: string) => `Không thể cập nhật ${label}`
+    const ct = this.customTrans;
+    return {
+      clear:  ct.t('property-editor.clear',  isEn ? 'Clear'     : 'Bỏ chọn'),
+      select: ct.t('property-editor.select', isEn ? 'Select...' : 'Chọn...'),
+      error:  ct.t('property-editor.error',  isEn ? 'Error'     : 'Lỗi'),
+      updateFailed: (label: string) => isEn ? `Failed to update ${label}` : `Không thể cập nhật ${label}`,
     };
   });
 

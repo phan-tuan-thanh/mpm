@@ -66,6 +66,7 @@ import { TaskAttachmentsComponent } from './components/task-attachments.componen
 import { TaskLinksComponent } from './components/task-links.component';
 import { TaskDescriptionSectionComponent } from './components/task-description-section/task-description-section.component';
 import { SprintService } from '../../../projects/sprints/services/sprint.service';
+import { CustomTranslationService } from '../../../shared/services/custom-translation.service';
 
 import { IconDisplayComponent } from '../../../shared/components/icon-display/icon-display.component';
 import { StateDotComponent } from '../../../shared/components/state-dot/state-dot.component';
@@ -829,6 +830,7 @@ export class TaskDetailPanelComponent implements OnInit, OnChanges, OnDestroy {
   // ─── Injected Services ──────────────────────────────────────────────────
   readonly taskStore = inject(TaskStore);
   readonly projectStore = inject(ProjectStore);
+  private readonly customTrans = inject(CustomTranslationService);
   readonly moduleStore = inject(ModuleStore);
   readonly stateService = inject(TaskDetailStateService);
   private readonly authStore = inject(AuthStore);
@@ -894,78 +896,43 @@ export class TaskDetailPanelComponent implements OnInit, OnChanges, OnDestroy {
 
   readonly t = computed(() => {
     const isEn = this.projectStore.projectLanguage() === 'en';
-    return isEn ? {
-      backToList: 'Back to list',
-      close: 'Close',
-      assigneeLabel: (count: number) => count === 1 ? '1 assignee' : `${count} assignees`,
-      assigneePlaceholder: 'Assignee',
-      noAssignee: 'No assignee',
-      searchAssigneePlaceholder: 'Search members...',
-      noMemberFound: 'No members found',
-      startDatePlaceholder: 'Start date',
-      dueDatePlaceholder: 'Due date',
-      clearDate: 'Clear date',
-      descriptionLabel: 'Description',
-      labelsPlaceholder: 'Search labels...',
-      noLabelFound: 'No labels found',
-      parentPlaceholder: 'Search parent task...',
-      noParent: 'No parent',
-      noParentFound: 'No parent task found',
-      estimateLabel: 'Estimate',
-      deleteBtn: 'Delete',
-      noModule: 'No module',
-      noSprintPlanningOrActive: 'No sprint planning or active',
-      removeFromSprint: 'Remove from sprint',
-      stateLabel: 'State',
-      toastSuccessHeader: 'Success',
-      toastErrorHeader: 'Error',
-      uploadFailed: 'Upload failed',
-      genericError: 'Error occurred',
-      closeTaskBtn: 'Close task',
-      reopenTaskBtn: 'Reopen task',
-      commentsHeader: 'Comments',
-      closeWarningHeader: 'Close Task Warning',
-      closeWarningMsg: 'This task has incomplete sub-tasks. Closing this task will leave them incomplete unless auto-closed.',
-      autoCloseSubtasksLabel: 'Auto-close incomplete sub-tasks',
-      confirmBtn: 'Confirm',
-      cancelBtn: 'Cancel',
-      modules: 'Modules'
-    } : {
-      backToList: 'Quay lại danh sách',
-      close: 'Đóng',
-      assigneeLabel: (count: number) => count === 1 ? '1 người' : `${count} người`,
-      assigneePlaceholder: 'Người phụ trách',
-      noAssignee: 'Chưa giao',
-      searchAssigneePlaceholder: 'Tìm thành viên...',
-      noMemberFound: 'Không tìm thấy thành viên',
-      startDatePlaceholder: 'Bắt đầu',
-      dueDatePlaceholder: 'Hết hạn',
-      clearDate: 'Xóa ngày',
-      descriptionLabel: 'Mô tả',
-      labelsPlaceholder: 'Tìm nhãn...',
-      noLabelFound: 'Không tìm thấy nhãn',
-      parentPlaceholder: 'Tìm parent task...',
-      noParent: 'Không có parent',
-      noParentFound: 'Không tìm thấy parent',
-      estimateLabel: 'Ước lượng',
-      deleteBtn: 'Xóa',
-      noModule: 'Chưa có module',
-      noSprintPlanningOrActive: 'Chưa có sprint planning/active',
-      removeFromSprint: 'Gỡ khỏi sprint',
-      stateLabel: 'Trạng thái',
-      toastSuccessHeader: 'Thành công',
-      toastErrorHeader: 'Lỗi',
-      uploadFailed: 'Upload thất bại',
-      genericError: 'Có lỗi xảy ra',
-      closeTaskBtn: 'Đóng task',
-      reopenTaskBtn: 'Mở lại task',
-      commentsHeader: 'Bình luận',
-      closeWarningHeader: 'Cảnh báo đóng task',
-      closeWarningMsg: 'Task này có các sub-task chưa hoàn thành. Việc đóng task này sẽ để lại các sub-task ở trạng thái chưa hoàn thành trừ khi bạn tự động đóng.',
-      autoCloseSubtasksLabel: 'Tự động đóng các task con chưa hoàn thành',
-      confirmBtn: 'Đồng ý',
-      cancelBtn: 'Hủy',
-      modules: 'Modules'
+    const ct = this.customTrans;
+    return {
+      backToList:              ct.t('task-detail.backToList',          isEn ? 'Back to list'                  : 'Quay lại danh sách'),
+      close:                   ct.t('task-detail.close',               isEn ? 'Close'                         : 'Đóng'),
+      assigneeLabel:           (count: number) => isEn ? (count === 1 ? '1 assignee' : `${count} assignees`) : (count === 1 ? '1 người' : `${count} người`),
+      assigneePlaceholder:     ct.t('task-detail.assigneePlaceholder', isEn ? 'Assignee'                      : 'Người phụ trách'),
+      noAssignee:              ct.t('task-detail.noAssignee',          isEn ? 'No assignee'                   : 'Chưa giao'),
+      searchAssigneePlaceholder:ct.t('task-detail.searchAssignee',     isEn ? 'Search members...'             : 'Tìm thành viên...'),
+      noMemberFound:           ct.t('task-detail.noMemberFound',       isEn ? 'No members found'              : 'Không tìm thấy thành viên'),
+      startDatePlaceholder:    ct.t('task-detail.startDate',           isEn ? 'Start date'                    : 'Bắt đầu'),
+      dueDatePlaceholder:      ct.t('task-detail.dueDate',             isEn ? 'Due date'                      : 'Hết hạn'),
+      clearDate:               ct.t('task-detail.clearDate',           isEn ? 'Clear date'                    : 'Xóa ngày'),
+      descriptionLabel:        ct.t('task-detail.descriptionLabel',    isEn ? 'Description'                   : 'Mô tả'),
+      labelsPlaceholder:       ct.t('task-detail.labelsPlaceholder',   isEn ? 'Search labels...'              : 'Tìm nhãn...'),
+      noLabelFound:            ct.t('task-detail.noLabelFound',        isEn ? 'No labels found'               : 'Không tìm thấy nhãn'),
+      parentPlaceholder:       ct.t('task-detail.parentPlaceholder',   isEn ? 'Search parent task...'         : 'Tìm parent task...'),
+      noParent:                ct.t('task-detail.noParent',            isEn ? 'No parent'                     : 'Không có parent'),
+      noParentFound:           ct.t('task-detail.noParentFound',       isEn ? 'No parent task found'          : 'Không tìm thấy parent'),
+      estimateLabel:           ct.t('task-detail.estimateLabel',       isEn ? 'Estimate'                      : 'Ước lượng'),
+      deleteBtn:               ct.t('task-detail.deleteBtn',           isEn ? 'Delete'                        : 'Xóa'),
+      noModule:                ct.t('task-detail.noModule',            isEn ? 'No module'                     : 'Chưa có module'),
+      noSprintPlanningOrActive:ct.t('task-detail.noSprintPlanningOrActive', isEn ? 'No sprint planning or active' : 'Chưa có sprint planning/active'),
+      removeFromSprint:        ct.t('task-detail.removeFromSprint',    isEn ? 'Remove from sprint'            : 'Gỡ khỏi sprint'),
+      stateLabel:              ct.t('task-detail.stateLabel',          isEn ? 'State'                         : 'Trạng thái'),
+      toastSuccessHeader:      ct.t('task-detail.success',             isEn ? 'Success'                       : 'Thành công'),
+      toastErrorHeader:        ct.t('task-detail.error',               isEn ? 'Error'                         : 'Lỗi'),
+      uploadFailed:            ct.t('task-detail.uploadFailed',        isEn ? 'Upload failed'                 : 'Upload thất bại'),
+      genericError:            ct.t('task-detail.genericError',        isEn ? 'Error occurred'                : 'Có lỗi xảy ra'),
+      closeTaskBtn:            ct.t('task-detail.closeTaskBtn',        isEn ? 'Close task'                    : 'Đóng task'),
+      reopenTaskBtn:           ct.t('task-detail.reopenTaskBtn',       isEn ? 'Reopen task'                   : 'Mở lại task'),
+      commentsHeader:          ct.t('task-detail.commentsHeader',      isEn ? 'Comments'                      : 'Bình luận'),
+      closeWarningHeader:      ct.t('backlog.closeWarningHeader',      isEn ? 'Close Task Warning'            : 'Cảnh báo đóng task'),
+      closeWarningMsg:         ct.t('backlog.closeWarningMsg',         isEn ? 'This task has incomplete sub-tasks. Closing this task will leave them incomplete unless auto-closed.' : 'Task này có các sub-task chưa hoàn thành. Việc đóng task này sẽ để lại các sub-task ở trạng thái chưa hoàn thành trừ khi bạn tự động đóng.'),
+      autoCloseSubtasksLabel:  ct.t('backlog.autoCloseSubtasksLabel',  isEn ? 'Auto-close incomplete sub-tasks' : 'Tự động đóng các task con chưa hoàn thành'),
+      confirmBtn:              ct.t('backlog.confirmBtn',              isEn ? 'Confirm'                       : 'Đồng ý'),
+      cancelBtn:               ct.t('backlog.cancelBtn',              isEn ? 'Cancel'                        : 'Hủy'),
+      modules:                 ct.t('task-detail.modules',             isEn ? 'Modules'                       : 'Module'),
     };
   });
 

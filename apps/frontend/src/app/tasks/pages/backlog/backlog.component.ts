@@ -29,6 +29,7 @@ import type { TaskListItem, CreateTaskDto, ReorderTaskItem, DisplayProperties, T
 import { DEFAULT_DISPLAY_PROPS } from '@mpm/shared-types';
 import { Subject, takeUntil, filter, distinctUntilChanged, firstValueFrom } from 'rxjs';
 import { toObservable } from '@angular/core/rxjs-interop';
+import { CustomTranslationService } from '../../../shared/services/custom-translation.service';
 
 @Component({
   standalone: true,
@@ -246,6 +247,7 @@ export class BacklogComponent implements OnInit, OnDestroy {
 
   readonly taskStore = inject(TaskStore);
   protected readonly projectStore = inject(ProjectStore);
+  private readonly customTrans = inject(CustomTranslationService);
   private readonly sprintService = inject(SprintService);
   private readonly layoutService = inject(LayoutService);
   private readonly attachmentService = inject(AttachmentService);
@@ -283,54 +285,31 @@ export class BacklogComponent implements OnInit, OnDestroy {
 
   readonly t = computed(() => {
     const isEn = this.projectStore.projectLanguage() === 'en';
-    return isEn ? {
-      selectedTasks: 'tasks selected',
-      deselect: 'Deselect',
-      addToSprint: 'Add to Sprint',
-      delete: 'Delete',
-      cancel: 'Cancel',
-      addSelectedTasksHeader: 'Add selected tasks to sprint:',
-      noSprintPlanningOrActive: 'No sprint in planning/active status. Create one first.',
-      planned: 'Planned',
-      active: 'Active',
-      selectSprintPlaceholder: 'Select sprint...',
-      confirmDeleteHeader: 'Confirm Delete',
-      confirmDeleteMessage: (count: number) => `Delete ${count} selected tasks?`,
-      success: 'Success',
-      error: 'Error',
-      taskCreated: 'Created new task',
-      draftError: 'Could not initialize draft task',
-      addedToSprintSuccess: (count: number, sprintName: string) => `Added ${count} tasks to sprint "${sprintName}"`,
-      addedToSprintError: 'Could not add tasks to sprint',
-      closeWarningHeader: 'Close Task Warning',
-      closeWarningMsg: 'Selected task(s) have incomplete sub-tasks. Closing will leave them incomplete unless auto-closed.',
-      autoCloseSubtasksLabel: 'Auto-close incomplete sub-tasks',
-      confirmBtn: 'Confirm',
-      cancelBtn: 'Cancel'
-    } : {
-      selectedTasks: 'task đã chọn',
-      deselect: 'Bỏ chọn',
-      addToSprint: 'Thêm vào Sprint',
-      delete: 'Xóa',
-      cancel: 'Hủy',
-      addSelectedTasksHeader: 'Thêm các task đã chọn vào sprint:',
-      noSprintPlanningOrActive: 'Chưa có sprint nào ở trạng thái planning/active. Tạo sprint trước.',
-      planned: 'Lên kế hoạch',
-      active: 'Đang chạy',
-      selectSprintPlaceholder: 'Chọn sprint...',
-      confirmDeleteHeader: 'Xác nhận xóa',
-      confirmDeleteMessage: (count: number) => `Xóa ${count} task đã chọn?`,
-      success: 'Thành công',
-      error: 'Lỗi',
-      taskCreated: 'Đã tạo task mới',
-      draftError: 'Không thể khởi tạo task nháp',
-      addedToSprintSuccess: (count: number, sprintName: string) => `Đã thêm ${count} task vào sprint "${sprintName}"`,
-      addedToSprintError: 'Không thể thêm task vào sprint',
-      closeWarningHeader: 'Cảnh báo đóng task',
-      closeWarningMsg: 'Task được chọn có các sub-task chưa hoàn thành. Việc đóng các task này sẽ để lại các sub-task ở trạng thái chưa hoàn thành trừ khi bạn tự động đóng.',
-      autoCloseSubtasksLabel: 'Tự động đóng các task con chưa hoàn thành',
-      confirmBtn: 'Đồng ý',
-      cancelBtn: 'Hủy'
+    const ct = this.customTrans;
+    return {
+      selectedTasks:           ct.t('backlog.selectedTasks',          isEn ? 'tasks selected'                          : 'task đã chọn'),
+      deselect:                ct.t('backlog.deselect',               isEn ? 'Deselect'                                : 'Bỏ chọn'),
+      addToSprint:             ct.t('backlog.addToSprint',            isEn ? 'Add to Sprint'                           : 'Thêm vào Sprint'),
+      delete:                  ct.t('backlog.delete',                 isEn ? 'Delete'                                  : 'Xóa'),
+      cancel:                  ct.t('backlog.cancel',                 isEn ? 'Cancel'                                  : 'Hủy'),
+      addSelectedTasksHeader:  ct.t('backlog.addSelectedTasksHeader', isEn ? 'Add selected tasks to sprint:'           : 'Thêm các task đã chọn vào sprint:'),
+      noSprintPlanningOrActive:ct.t('backlog.noSprintPlanningOrActive',isEn ? 'No sprint in planning/active status. Create one first.' : 'Chưa có sprint nào ở trạng thái planning/active. Tạo sprint trước.'),
+      planned:                 ct.t('backlog.sprintPlanned',          isEn ? 'Planned'                                 : 'Lên kế hoạch'),
+      active:                  ct.t('backlog.sprintActive',           isEn ? 'Active'                                  : 'Đang chạy'),
+      selectSprintPlaceholder: ct.t('backlog.selectSprintPlaceholder',isEn ? 'Select sprint...'                        : 'Chọn sprint...'),
+      confirmDeleteHeader:     ct.t('backlog.confirmDeleteHeader',    isEn ? 'Confirm Delete'                          : 'Xác nhận xóa'),
+      confirmDeleteMessage:    (count: number) => isEn ? `Delete ${count} selected tasks?` : `Xóa ${count} task đã chọn?`,
+      success:                 ct.t('backlog.success',                isEn ? 'Success'                                 : 'Thành công'),
+      error:                   ct.t('backlog.error',                  isEn ? 'Error'                                   : 'Lỗi'),
+      taskCreated:             ct.t('backlog.taskCreated',            isEn ? 'Created new task'                        : 'Đã tạo task mới'),
+      draftError:              ct.t('backlog.draftError',             isEn ? 'Could not initialize draft task'         : 'Không thể khởi tạo task nháp'),
+      addedToSprintSuccess:    (count: number, sprintName: string) => isEn ? `Added ${count} tasks to sprint "${sprintName}"` : `Đã thêm ${count} task vào sprint "${sprintName}"`,
+      addedToSprintError:      ct.t('backlog.addedToSprintError',     isEn ? 'Could not add tasks to sprint'           : 'Không thể thêm task vào sprint'),
+      closeWarningHeader:      ct.t('backlog.closeWarningHeader',     isEn ? 'Close Task Warning'                      : 'Cảnh báo đóng task'),
+      closeWarningMsg:         ct.t('backlog.closeWarningMsg',        isEn ? 'Selected task(s) have incomplete sub-tasks. Closing will leave them incomplete unless auto-closed.' : 'Task được chọn có các sub-task chưa hoàn thành. Việc đóng các task này sẽ để lại các sub-task ở trạng thái chưa hoàn thành trừ khi bạn tự động đóng.'),
+      autoCloseSubtasksLabel:  ct.t('backlog.autoCloseSubtasksLabel', isEn ? 'Auto-close incomplete sub-tasks'         : 'Tự động đóng các task con chưa hoàn thành'),
+      confirmBtn:              ct.t('backlog.confirmBtn',             isEn ? 'Confirm'                                 : 'Đồng ý'),
+      cancelBtn:               ct.t('backlog.cancelBtn',             isEn ? 'Cancel'                                  : 'Hủy'),
     };
   });
 

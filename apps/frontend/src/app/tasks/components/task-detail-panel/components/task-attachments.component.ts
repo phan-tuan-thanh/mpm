@@ -8,6 +8,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { AttachmentService } from '../../../services/attachment.service';
 import type { TaskAttachment } from '@mpm/shared-types';
 import { ProjectStore } from '../../../../projects/state/project.store';
+import { CustomTranslationService } from '../../../../shared/services/custom-translation.service';
 
 interface DisplayGroup {
   key: string;    // 'g:Title' for real, 'p:Title' for pending
@@ -296,32 +297,22 @@ export class TaskAttachmentsComponent {
 
   readonly attachmentService = inject(AttachmentService);
   private readonly projectStore = inject(ProjectStore);
+  private readonly customTrans = inject(CustomTranslationService);
 
   readonly t = computed(() => {
     const isEn = this.projectStore.projectLanguage() === 'en';
-    return isEn ? {
-      attachments: 'Attachments',
-      addFileToGroup: 'Add file to group',
-      deleteGroup: 'Delete group',
-      duplicateWarning: 'Trùng tên với file khác', // wait, let's keep original meaning "Trùng tên với file khác" -> "Duplicate filename"
-      duplicateWarningLabel: 'Duplicate file name',
-      addFileTip: 'Press + to add file',
-      ungroup: 'Ungroup',
-      groupNamePlaceholder: 'Group name...',
-      fileAlreadyExists: 'File already exists',
-      createGroup: 'Create group',
-      upload: 'Upload file'
-    } : {
-      attachments: 'Tài liệu đính kèm',
-      addFileToGroup: 'Thêm file vào nhóm',
-      deleteGroup: 'Xóa nhóm',
-      duplicateWarningLabel: 'Trùng tên với file khác',
-      addFileTip: 'Nhấn + để thêm file',
-      ungroup: 'Bỏ khỏi nhóm',
-      groupNamePlaceholder: 'Tên nhóm...',
-      fileAlreadyExists: 'File đã tồn tại',
-      createGroup: 'Tạo nhóm',
-      upload: 'Upload file'
+    const ct = this.customTrans;
+    return {
+      attachments:         ct.t('attachments.title',               isEn ? 'Attachments'        : 'Tài liệu đính kèm'),
+      addFileToGroup:      ct.t('attachments.addFileToGroup',      isEn ? 'Add file to group'  : 'Thêm file vào nhóm'),
+      deleteGroup:         ct.t('attachments.deleteGroup',         isEn ? 'Delete group'        : 'Xóa nhóm'),
+      duplicateWarningLabel:ct.t('attachments.duplicateWarning',   isEn ? 'Duplicate file name' : 'Trùng tên với file khác'),
+      addFileTip:          ct.t('attachments.addFileTip',          isEn ? 'Press + to add file' : 'Nhấn + để thêm file'),
+      ungroup:             ct.t('attachments.ungroup',             isEn ? 'Ungroup'             : 'Bỏ khỏi nhóm'),
+      groupNamePlaceholder:ct.t('attachments.groupNamePlaceholder',isEn ? 'Group name...'       : 'Tên nhóm...'),
+      fileAlreadyExists:   ct.t('attachments.fileAlreadyExists',   isEn ? 'File already exists' : 'File đã tồn tại'),
+      createGroup:         ct.t('attachments.createGroup',         isEn ? 'Create group'        : 'Tạo nhóm'),
+      upload:              ct.t('attachments.upload',              isEn ? 'Upload file'         : 'Upload file'),
     };
   });
 

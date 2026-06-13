@@ -17,6 +17,7 @@ import { RichTextViewerComponent } from '../../../../../shared/components/rich-t
 import { RichTextEditorComponent } from '../../../../../shared/components/rich-text-editor/rich-text-editor.component';
 import { isDocEmpty } from '../../../../../shared/components/rich-text-viewer/rte-render';
 import { ProjectStore } from '../../../../../projects/state/project.store';
+import { CustomTranslationService } from '../../../../../shared/services/custom-translation.service';
 
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
@@ -83,25 +84,19 @@ type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 export class TaskDescriptionSectionComponent {
   private readonly confirmService = inject(ConfirmationService);
   private readonly projectStore = inject(ProjectStore);
+  private readonly customTrans = inject(CustomTranslationService);
 
   readonly t = computed(() => {
     const isEn = this.projectStore.projectLanguage() === 'en';
-    return isEn ? {
-      placeholder: 'Add description...',
-      cancel: 'Cancel',
-      save: 'Save',
-      confirmMsg: 'Discard unsaved changes?',
-      confirmHeader: 'Confirm',
-      confirmAccept: 'Discard changes',
-      confirmReject: 'Continue editing'
-    } : {
-      placeholder: 'Thêm mô tả…',
-      cancel: 'Hủy',
-      save: 'Lưu',
-      confirmMsg: 'Bỏ thay đổi chưa lưu?',
-      confirmHeader: 'Xác nhận',
-      confirmAccept: 'Bỏ thay đổi',
-      confirmReject: 'Tiếp tục sửa'
+    const ct = this.customTrans;
+    return {
+      placeholder:   ct.t('description.placeholder',    isEn ? 'Add description...'      : 'Thêm mô tả…'),
+      cancel:        ct.t('description.cancel',          isEn ? 'Cancel'                  : 'Hủy'),
+      save:          ct.t('description.save',            isEn ? 'Save'                    : 'Lưu'),
+      confirmMsg:    ct.t('description.discardTitle',    isEn ? 'Discard unsaved changes?' : 'Bỏ thay đổi chưa lưu?'),
+      confirmHeader: ct.t('description.confirmHeader',   isEn ? 'Confirm'                 : 'Xác nhận'),
+      confirmAccept: ct.t('description.discardBtn',      isEn ? 'Discard changes'         : 'Bỏ thay đổi'),
+      confirmReject: ct.t('description.continueBtn',     isEn ? 'Continue editing'        : 'Tiếp tục sửa'),
     };
   });
 

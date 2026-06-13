@@ -20,6 +20,7 @@ import {
   getActiveTabLabel,
 } from './activity-panel.helpers';
 import { ProjectStore } from '../../../../../projects/state/project.store';
+import { CustomTranslationService } from '../../../../../shared/services/custom-translation.service';
 
 /**
  * ActivityPanelComponent — Tabbed activity panel with manual pagination buttons.
@@ -154,19 +155,16 @@ import { ProjectStore } from '../../../../../projects/state/project.store';
 })
 export class ActivityPanelComponent implements OnDestroy {
   private readonly projectStore = inject(ProjectStore);
+  private readonly customTrans = inject(CustomTranslationService);
 
   readonly t = computed(() => {
     const isEn = this.projectStore.projectLanguage() === 'en';
-    return isEn ? {
-      loading: 'Loading activities...',
-      loadingMore: 'Loading more...',
-      showMore: 'Show more',
-      showAll: 'Show all',
-    } : {
-      loading: 'Đang tải hoạt động...',
-      loadingMore: 'Đang tải thêm...',
-      showMore: 'Xem thêm',
-      showAll: 'Xem hết',
+    const ct = this.customTrans;
+    return {
+      loading:     ct.t('activity.loading',     isEn ? 'Loading activities...' : 'Đang tải hoạt động...'),
+      loadingMore: ct.t('activity.loadingMore', isEn ? 'Loading more...'       : 'Đang tải thêm...'),
+      showMore:    ct.t('activity.showMore',    isEn ? 'Show more'             : 'Xem thêm'),
+      showAll:     ct.t('activity.showAll',     isEn ? 'Show all'              : 'Xem hết'),
     };
   });
 

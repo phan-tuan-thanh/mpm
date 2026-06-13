@@ -5,6 +5,7 @@ import { BoardCardComponent } from './board-card.component';
 import { StateDotComponent } from '../../../../shared/components/state-dot/state-dot.component';
 import type { TaskListItem, ProjectState, DisplayProperties } from '@mpm/shared-types';
 import { ProjectStore } from '../../../../projects/state/project.store';
+import { CustomTranslationService } from '../../../../shared/services/custom-translation.service';
 
 @Component({
   standalone: true,
@@ -108,13 +109,13 @@ import { ProjectStore } from '../../../../projects/state/project.store';
 })
 export class BoardColumnComponent {
   private readonly projectStore = inject(ProjectStore);
+  private readonly customTrans = inject(CustomTranslationService);
 
   readonly t = computed(() => {
     const isEn = this.projectStore.projectLanguage() === 'en';
-    return isEn ? {
-      noTasks: 'No tasks'
-    } : {
-      noTasks: 'Không có task'
+    const ct = this.customTrans;
+    return {
+      noTasks: ct.t('board.noTasks', isEn ? 'No tasks' : 'Không có task'),
     };
   });
 

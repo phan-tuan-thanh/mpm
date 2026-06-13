@@ -27,6 +27,8 @@ import { ParentNavigationComponent } from '../parent-navigation/parent-navigatio
 import { buildDetailFields, buildStructureFields, getTaskFieldValue } from './properties-sidebar.helpers';
 import type { SprintRef } from './properties-sidebar.helpers';
 import { LayoutService } from '../../../../../layout/services/layout.service';
+import { ProjectStore } from '../../../../../projects/state/project.store';
+import { CustomTranslationService } from '../../../../../shared/services/custom-translation.service';
 
 /**
  * PropertiesSidebarComponent — Container cho toàn bộ sidebar properties
@@ -52,7 +54,7 @@ import { LayoutService } from '../../../../../layout/services/layout.service';
   template: `
     <!-- ═══ Section "Chi tiết" (Req 3.1, 3.2) ═══ -->
     <app-collapsible-section
-      title="Chi tiết"
+      [title]="t().details"
       sectionKey="details"
       [expanded]="detailsExpanded()"
       (expandedChange)="onSectionToggled('details', $event)"
@@ -69,7 +71,7 @@ import { LayoutService } from '../../../../../layout/services/layout.service';
 
     <!-- ═══ Section "Cấu trúc" (Req 3.1, 3.3) ═══ -->
     <app-collapsible-section
-      title="Cấu trúc"
+      [title]="t().structure"
       sectionKey="structure"
       [expanded]="structureExpanded()"
       (expandedChange)="onSectionToggled('structure', $event)"
@@ -78,7 +80,7 @@ import { LayoutService } from '../../../../../layout/services/layout.service';
       <div class="px-3 py-1.5">
         <div class="flex items-center gap-2 min-h-[36px]">
           <span class="text-xs text-gray-500 dark:text-surface-400 w-[100px] shrink-0 uppercase tracking-wide">
-            Parent
+            {{ t().parent }}
           </span>
           <div class="flex-1 min-w-0">
             <app-parent-navigation
@@ -159,6 +161,8 @@ export class PropertiesSidebarComponent implements OnChanges {
   // ─── Internal signals ────────────────────────────────────────────────────
 
   private readonly layoutService = inject(LayoutService);
+  private readonly projectStore = inject(ProjectStore);
+  private readonly customTrans = inject(CustomTranslationService);
 
   private readonly _collapseState = signal<SectionCollapseState>({ details: true, structure: true });
   private readonly _states = signal<ProjectState[]>([]);
@@ -166,6 +170,21 @@ export class PropertiesSidebarComponent implements OnChanges {
   private readonly _labels = signal<Label[]>([]);
   private readonly _modules = signal<ProjectModule[]>([]);
   private readonly _sprints = signal<SprintRef[]>([]);
+
+  readonly isEn = computed(() => this.projectStore.projectLanguage() === 'en');
+
+  readonly t = computed(() => {
+    const isEn = this.isEn();
+    return isEn ? {
+      details: this.customTrans.t('properties.details', 'Details'),
+      structure: this.customTrans.t('properties.structure', 'Structure'),
+      parent: this.customTrans.t('properties.parent', 'Parent'),
+    } : {
+      details: this.customTrans.t('properties.details', 'Chi tiết'),
+      structure: this.customTrans.t('properties.structure', 'Cấu trúc'),
+      parent: this.customTrans.t('properties.parent', 'Parent'),
+    };
+  });
 
   /** "Chi tiết" section expanded state */
   readonly detailsExpanded = computed(() => this._collapseState()['details'] !== false);
@@ -175,12 +194,12 @@ export class PropertiesSidebarComponent implements OnChanges {
 
   /** PropertyFieldConfig array cho section "Chi tiết" (Req 3.2) */
   readonly detailFields = computed<PropertyFieldConfig[]>(() => {
-    return buildDetailFields(this._states(), this._members(), this.layoutService.isDarkMode());
+    return buildDetailFields(this._states(), this._members(), this.layoutService.isDarkMode(), this.isEn(), this.customTrans);
   });
 
   /** PropertyFieldConfig array cho section "Cấu trúc" (Labels, Modules, Sprint — Req 3.3) */
   readonly structureFields = computed<PropertyFieldConfig[]>(() => {
-    return buildStructureFields(this._labels(), this._modules(), this._sprints(), this.layoutService.isDarkMode());
+    return buildStructureFields(this._labels(), this._modules(), this._sprints(), this.layoutService.isDarkMode(), this.isEn(), this.customTrans);
   });
 
   // ─── Lifecycle ───────────────────────────────────────────────────────────

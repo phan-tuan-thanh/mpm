@@ -5,6 +5,7 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import type { TaskLink } from '@mpm/shared-types';
 import { ProjectStore } from '../../../../projects/state/project.store';
+import { CustomTranslationService } from '../../../../shared/services/custom-translation.service';
 
 @Component({
   standalone: true,
@@ -36,15 +37,14 @@ import { ProjectStore } from '../../../../projects/state/project.store';
 })
 export class TaskLinksComponent {
   private readonly projectStore = inject(ProjectStore);
+  private readonly customTrans = inject(CustomTranslationService);
 
   readonly t = computed(() => {
     const isEn = this.projectStore.projectLanguage() === 'en';
-    return isEn ? {
-      titlePlaceholder: 'Title (optional)',
-      addBtn: 'Add'
-    } : {
-      titlePlaceholder: 'Tiêu đề (tùy chọn)',
-      addBtn: 'Thêm'
+    const ct = this.customTrans;
+    return {
+      titlePlaceholder: ct.t('links.titlePlaceholder', isEn ? 'Title (optional)' : 'Tiêu đề (tùy chọn)'),
+      addBtn:           ct.t('links.addBtn',           isEn ? 'Add'              : 'Thêm'),
     };
   });
   @Input() links: TaskLink[] = [];
