@@ -11,6 +11,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { fromBuffer as fileTypeFromBuffer } from 'file-type';
 import { TaskAttachment } from '../entities/task-attachment.entity';
+import { Task } from '../entities/task.entity';
 import { ActivityService } from '../activity/activity.service';
 
 const MAX_ATTACHMENTS = 20;
@@ -22,8 +23,18 @@ export class AttachmentService {
   constructor(
     @InjectRepository(TaskAttachment)
     private readonly attachmentRepo: Repository<TaskAttachment>,
+    @InjectRepository(Task)
+    private readonly taskRepo: Repository<Task>,
     private readonly activityService: ActivityService,
   ) {}
+
+  private async checkTaskNotCompleted(taskId: string): Promise<void> {
+    const task = await this.taskRepo.findOne({ where: { id: taskId }, relations: ['state'] });
+    if (!task) throw new NotFoundException('Task not found');
+    if (task.state?.group === 'completed') {
+      throw new UnprocessableEntityException('Cannot modify attachments of a completed/closed task');
+    }
+  }
 
   async upload(
     taskId: string,
@@ -33,6 +44,8 @@ export class AttachmentService {
     title?: string,
     source: 'attachment' | 'comment_image' = 'attachment',
   ): Promise<TaskAttachment> {
+    await this.checkTaskNotCompleted(taskId);
+
     if (file.size > MAX_FILE_BYTES) {
       throw new PayloadTooLargeException('File size exceeds 20MB limit');
     }
@@ -113,6 +126,8 @@ export class AttachmentService {
     taskId: string,
     items: Array<{ id: string; title?: string | null; sortOrder?: number }>,
   ): Promise<void> {
+    await this.checkTaskNotCompleted(taskId);
+
     for (const item of items) {
       const update: Partial<TaskAttachment> = {};
       if (item.title !== undefined) update.title = item.title;
@@ -126,6 +141,7 @@ export class AttachmentService {
   async updateTitle(attachmentId: string, title: string | null): Promise<TaskAttachment> {
     const attachment = await this.attachmentRepo.findOne({ where: { id: attachmentId } });
     if (!attachment) throw new NotFoundException('Attachment not found');
+    await this.checkTaskNotCompleted(attachment.taskId);
     attachment.title = title;
     return this.attachmentRepo.save(attachment);
   }
@@ -143,6 +159,7 @@ export class AttachmentService {
   ): Promise<void> {
     const attachment = await this.attachmentRepo.findOne({ where: { id: attachmentId } });
     if (!attachment) throw new NotFoundException('Attachment not found');
+    await this.checkTaskNotCompleted(attachment.taskId);
 
     const isOwn = attachment.uploaderId === userId;
     const isPrivileged = callerRole === 'Scrum_Master' || callerRole === 'Admin';

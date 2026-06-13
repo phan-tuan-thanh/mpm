@@ -93,6 +93,7 @@ describe('SubItemTreeComponent', () => {
       const child = makeNode({ id: 'child' });
       const parent = makeNode({ id: 'parent', children: [child] });
       setItems([parent]);
+      component.expandAll();
 
       const flat = component.flatNodes();
       expect(flat).toHaveLength(2);
@@ -104,8 +105,10 @@ describe('SubItemTreeComponent', () => {
       const child = makeNode({ id: 'child' });
       const parent = makeNode({ id: 'parent', children: [child] });
       setItems([parent]);
-      component.toggleExpand('parent'); // collapse
+      component.expandAll();
+      expect(component.flatNodes()).toHaveLength(2);
 
+      component.collapseAll();
       const flat = component.flatNodes();
       expect(flat).toHaveLength(1);
       expect(flat[0].node.id).toBe('parent');
@@ -116,6 +119,7 @@ describe('SubItemTreeComponent', () => {
       const child = makeNode({ id: 'child', children: [gc] });
       const root = makeNode({ id: 'root', children: [child] });
       setItems([root]);
+      component.expandAll();
 
       const flat = component.flatNodes();
       expect(flat).toHaveLength(3);
@@ -126,28 +130,28 @@ describe('SubItemTreeComponent', () => {
   // ─── Expand / Collapse ────────────────────────────────────────────────────
 
   describe('expand/collapse', () => {
-    it('should expand all nodes with children by default', () => {
+    it('should start with all nodes collapsed by default', () => {
       const parent = makeNode({ id: 'p', children: [makeNode({ id: 'c' })] });
       setItems([parent]);
 
-      expect(component.isExpanded('p')).toBe(true);
-    });
-
-    it('should collapse on first toggleExpand call', () => {
-      const parent = makeNode({ id: 'p', children: [makeNode({ id: 'c' })] });
-      setItems([parent]);
-
-      component.toggleExpand('p');
       expect(component.isExpanded('p')).toBe(false);
     });
 
-    it('should re-expand on second toggleExpand call', () => {
+    it('should expand on first toggleExpand call when collapsed', () => {
+      const parent = makeNode({ id: 'p', children: [makeNode({ id: 'c' })] });
+      setItems([parent]);
+
+      component.toggleExpand('p');
+      expect(component.isExpanded('p')).toBe(true);
+    });
+
+    it('should collapse again on second toggleExpand call', () => {
       const parent = makeNode({ id: 'p', children: [makeNode({ id: 'c' })] });
       setItems([parent]);
 
       component.toggleExpand('p');
       component.toggleExpand('p');
-      expect(component.isExpanded('p')).toBe(true);
+      expect(component.isExpanded('p')).toBe(false);
     });
 
     it('should not expand leaf nodes', () => {
@@ -157,15 +161,45 @@ describe('SubItemTreeComponent', () => {
       expect(component.isExpanded('leaf')).toBe(false);
     });
 
-    it('should expand all nodes at all depths by default', () => {
+    it('should not expand nodes at all depths by default', () => {
       const gc = makeNode({ id: 'gc', children: [makeNode({ id: 'ggc' })] });
       const child = makeNode({ id: 'child', children: [gc] });
       const root = makeNode({ id: 'root', children: [child] });
       setItems([root]);
 
+      expect(component.isExpanded('root')).toBe(false);
+      expect(component.isExpanded('child')).toBe(false);
+      expect(component.isExpanded('gc')).toBe(false);
+    });
+
+    it('should expand all nodes with children when expandAll is called', () => {
+      const gc = makeNode({ id: 'gc', children: [makeNode({ id: 'ggc' })] });
+      const child = makeNode({ id: 'child', children: [gc] });
+      const root = makeNode({ id: 'root', children: [child] });
+      setItems([root]);
+
+      component.collapseAll();
+      expect(component.isExpanded('root')).toBe(false);
+      expect(component.isExpanded('child')).toBe(false);
+
+      component.expandAll();
       expect(component.isExpanded('root')).toBe(true);
       expect(component.isExpanded('child')).toBe(true);
       expect(component.isExpanded('gc')).toBe(true);
+    });
+
+    it('should collapse all nodes when collapseAll is called', () => {
+      const child = makeNode({ id: 'child', children: [makeNode({ id: 'gc' })] });
+      const root = makeNode({ id: 'root', children: [child] });
+      setItems([root]);
+
+      component.expandAll();
+      expect(component.isExpanded('root')).toBe(true);
+      expect(component.isExpanded('child')).toBe(true);
+
+      component.collapseAll();
+      expect(component.isExpanded('root')).toBe(false);
+      expect(component.isExpanded('child')).toBe(false);
     });
   });
 
@@ -390,6 +424,26 @@ describe('SubItemTreeComponent', () => {
   describe('ngOnDestroy', () => {
     it('should not throw when destroyed without an active drag', () => {
       expect(() => component.ngOnDestroy()).not.toThrow();
+    });
+  });
+
+  // ─── Type helper methods ──────────────────────────────────────────────────
+
+  describe('type helpers', () => {
+    it('should return correct icon class for each TaskType', () => {
+      expect(component.typeIcon('epic')).toBe('pi pi-bolt');
+      expect(component.typeIcon('story')).toBe('pi pi-book');
+      expect(component.typeIcon('task')).toBe('pi pi-check-circle');
+      expect(component.typeIcon('subtask')).toBe('pi pi-minus-circle');
+      expect(component.typeIcon('invalid' as any)).toBe('pi pi-circle');
+    });
+
+    it('should return correct color for each TaskType', () => {
+      expect(component.typeColor('epic')).toBe('#8B5CF6');
+      expect(component.typeColor('story')).toBe('#3B82F6');
+      expect(component.typeColor('task')).toBe('#10B981');
+      expect(component.typeColor('subtask')).toBe('#6B7280');
+      expect(component.typeColor('invalid' as any)).toBe('#9CA3AF');
     });
   });
 });

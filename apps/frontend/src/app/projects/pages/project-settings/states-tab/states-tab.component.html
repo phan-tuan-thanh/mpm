@@ -5,7 +5,7 @@
       <div class="flex justify-between items-center pb-2 border-b border-gray-200 dark:border-surface-700">
         <div class="flex items-center gap-2">
           <i class="pi pi-globe text-sm text-indigo-500"></i>
-          <h3 class="text-sm font-bold text-gray-700 dark:text-surface-200 uppercase tracking-wider">Workspace Template</h3>
+          <h3 class="text-sm font-bold text-gray-700 dark:text-surface-200 uppercase tracking-wider">{{ t().templateSectionTitle }}</h3>
           <span class="text-xs text-gray-400 dark:text-surface-500 font-semibold">({{ workspaceTemplates().length }})</span>
         </div>
         @if (isAdmin()) {
@@ -13,7 +13,7 @@
             pButton
             type="button"
             icon="pi pi-refresh"
-            label="Áp dụng lại template"
+            [label]="t().reapplyTemplateBtn"
             class="p-button-outlined p-button-sm font-semibold text-xs py-1"
             [loading]="isApplyingTemplate()"
             (click)="onApplyTemplate()"
@@ -21,7 +21,7 @@
         }
       </div>
 
-      <p class="text-xs text-gray-500 dark:text-surface-400 italic">Danh sách template tham khảo (read-only). States được tạo từ template sẽ hiển thị icon <i class="pi pi-link text-xs"></i>.</p>
+      <p class="text-xs text-gray-500 dark:text-surface-400 italic">{{ t().templateReferenceDesc }} <i class="pi pi-link text-xs"></i>.</p>
 
       <!-- Template States List -->
       <div class="divide-y divide-gray-150 dark:divide-surface-700 border border-gray-200 dark:border-surface-700 rounded-lg overflow-hidden bg-white dark:bg-surface-900">
@@ -32,9 +32,9 @@
               [style.background-color]="layoutService.isDarkMode() ? tpl.colorDark : tpl.colorLight"
             ></span>
             <span class="text-sm font-medium text-gray-700 dark:text-surface-200">{{ tpl.name }}</span>
-            <span class="text-[11px] text-gray-400 dark:text-surface-500 bg-gray-100 dark:bg-surface-700 px-1.5 py-0.5 rounded ml-auto">{{ getGroupName(tpl.group) }}</span>
+            <span class="text-[11px] text-gray-400 dark:text-surface-500 bg-gray-100 dark:bg-surface-700 px-1.5 py-0.5 rounded ml-auto">{{ getGroupLabel(tpl.group) }}</span>
             @if (tpl.isDefault) {
-              <span class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 px-1.5 py-0.5 rounded-full">Mặc định</span>
+              <span class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 px-1.5 py-0.5 rounded-full">{{ t().defaultIndicator }}</span>
             }
           </div>
         }
@@ -50,7 +50,7 @@
         pButton
         type="button"
         [icon]="isAllCollapsed() ? 'pi pi-chevron-down' : 'pi pi-chevron-up'"
-        [label]="isAllCollapsed() ? 'Mở rộng tất cả' : 'Thu gọn tất cả'"
+        [label]="isAllCollapsed() ? t().expandAll : t().collapseAll"
         class="p-button-text p-button-sm font-semibold text-xs py-1 px-3"
         (click)="toggleCollapseAll()"
       ></button>
@@ -69,7 +69,7 @@
               [class]="collapsedGroups[group] ? 'pi-chevron-right' : 'pi-chevron-down'"
             ></i>
             <span class="w-2.5 h-2.5 rounded-full" [ngClass]="getGroupColor(group)"></span>
-            <h3 class="text-sm font-bold text-gray-800 dark:text-surface-100 uppercase tracking-wider">{{ getGroupName(group) }}</h3>
+            <h3 class="text-sm font-bold text-gray-800 dark:text-surface-100 uppercase tracking-wider">{{ getGroupLabel(group) }}</h3>
             <span class="text-xs text-gray-400 dark:text-surface-500 font-semibold">({{ getStatesCount(group) }})</span>
           </div>
           @if (!isReadOnly() && getStatesCount(group) < 20) {
@@ -77,7 +77,7 @@
               pButton
               type="button"
               icon="pi pi-plus"
-              label="Thêm"
+              [label]="t().addBtn"
               class="p-button-text p-button-sm font-semibold text-xs py-1 px-2.5 h-7"
               (click)="$event.stopPropagation(); showAddForm[group] = true; collapsedGroups[group] = false"
               (pointerdown)="$event.stopPropagation()"
@@ -134,7 +134,7 @@
                     <!-- Default indicator replacement -->
                     @if (state.isDefault) {
                       <span class="flex items-center gap-1 text-[11px] font-bold text-indigo-700 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-800 px-2 py-0.5 rounded-full">
-                        <i class="pi pi-star-fill text-[9px]"></i> Mặc định
+                        <i class="pi pi-star-fill text-[9px]"></i> {{ t().defaultIndicator }}
                       </span>
                     }
                   </div>
@@ -172,7 +172,7 @@
                   <div class="relative flex-shrink-0">
                     <p-popover #editColorPop styleClass="p-2" appendTo="body" (onShow)="onOpenColorPopover(state)" (onHide)="onCloseColorPopover(state)">
                       <div class="space-y-3 p-1">
-                        <div class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Màu chọn nhanh (Light / Dark)</div>
+                        <div class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">{{ t().quickColorTitle }}</div>
                         <div class="grid grid-cols-5 gap-2 w-48">
                           @for (pair of presetPairs; track pair.light) {
                             <button type="button" 
@@ -191,20 +191,20 @@
                             class="text-[11px] font-semibold text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center gap-1 cursor-pointer select-none"
                             (click)="showCustomEditColors[state.id] = !showCustomEditColors[state.id]">
                             <i class="pi" [class]="showCustomEditColors[state.id] ? 'pi-chevron-down' : 'pi-chevron-right'"></i>
-                            Tự tùy chỉnh màu sắc Light & Dark
+                            {{ t().customColorBtn }}
                           </button>
                           
                           @if (showCustomEditColors[state.id]) {
                             <div class="mt-2 space-y-3 pl-1">
                               <div>
-                                <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">Màu Light mode:</div>
+                                <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">{{ t().lightModeLabel }}</div>
                                 <app-color-picker-panel
                                   [value]="editColorLightDraft[state.id]"
                                   (valueChange)="editColorLightDraft[state.id] = $event"
                                 />
                               </div>
                               <div>
-                                <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">Màu Dark mode:</div>
+                                <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">{{ t().darkModeLabel }}</div>
                                 <app-color-picker-panel
                                   [value]="editColorDarkDraft[state.id]"
                                   (valueChange)="editColorDarkDraft[state.id] = $event"
@@ -221,7 +221,7 @@
                       [disabled]="isReadOnly()"
                       (click)="editColorPop.toggle($event)"
                       (pointerdown)="$event.stopPropagation()"
-                      pTooltip="Chọn cặp màu sắc"
+                      [pTooltip]="t().colorTooltip"
                     ></button>
                   </div>
 
@@ -239,7 +239,7 @@
                     [disabled]="isReadOnly()"
                     (pointerdown)="$event.stopPropagation()"
                     (click)="stateIconPop.toggle($event)"
-                    pTooltip="Icon trạng thái"
+                    [pTooltip]="t().iconTooltip"
                   >
                     <app-state-dot [state]="state" [size]="12" />
                   </button>
@@ -260,7 +260,7 @@
                   @if (state.templateId) {
                     <i
                       class="pi pi-link text-xs text-indigo-400"
-                      pTooltip="Từ workspace template"
+                      [pTooltip]="t().fromTemplateTooltip"
                       tooltipPosition="top"
                     ></i>
                   }
@@ -268,7 +268,7 @@
                   <!-- Default indicator -->
                   @if (state.isDefault) {
                     <span class="flex items-center gap-1 text-[11px] font-bold text-indigo-700 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-800 px-2 py-0.5 rounded-full">
-                      <i class="pi pi-star-fill text-[9px]"></i> Mặc định
+                      <i class="pi pi-star-fill text-[9px]"></i> {{ t().defaultIndicator }}
                     </span>
                   } @else if (!isReadOnly()) {
                     <button
@@ -329,7 +329,7 @@
 
                     @if (state.isDefault) {
                       <span class="flex items-center gap-1 text-[11px] font-bold text-indigo-700 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-800 px-2 py-0.5 rounded-full">
-                        <i class="pi pi-star-fill text-[9px]"></i> Mặc định
+                        <i class="pi pi-star-fill text-[9px]"></i> {{ t().defaultIndicator }}
                       </span>
                     }
                   </div>
@@ -367,7 +367,7 @@
                   <div class="relative flex-shrink-0">
                     <p-popover #addColorPop styleClass="p-2" appendTo="body">
                       <div class="space-y-3 p-1">
-                        <div class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Màu chọn nhanh (Light / Dark)</div>
+                        <div class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">{{ t().quickColorTitle }}</div>
                         <div class="grid grid-cols-5 gap-2 w-48">
                           @for (pair of presetPairs; track pair.light) {
                             <button type="button" 
@@ -386,20 +386,20 @@
                             class="text-[11px] font-semibold text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center gap-1 cursor-pointer select-none"
                             (click)="showCustomAddColors[group] = !showCustomAddColors[group]">
                             <i class="pi" [class]="showCustomAddColors[group] ? 'pi-chevron-down' : 'pi-chevron-right'"></i>
-                            Tự tùy chỉnh màu sắc Light & Dark
+                            {{ t().customColorBtn }}
                           </button>
                           
                           @if (showCustomAddColors[group]) {
                             <div class="mt-2 space-y-3 pl-1">
                               <div>
-                                <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">Màu Light mode:</div>
+                                <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">{{ t().lightModeLabel }}</div>
                                 <app-color-picker-panel
                                   [value]="newColorsLight[group]"
                                   (valueChange)="newColorsLight[group] = $event"
                                 />
                               </div>
                               <div>
-                                <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">Màu Dark mode:</div>
+                                <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">{{ t().darkModeLabel }}</div>
                                 <app-color-picker-panel
                                   [value]="newColorsDark[group]"
                                   (valueChange)="newColorsDark[group] = $event"
@@ -414,7 +414,7 @@
                       class="w-6 h-6 rounded-full border border-black/10 hover:scale-110 active:scale-95 transition cursor-pointer flex-shrink-0"
                       [style.background]="getPresetGradient(newColorsLight[group], newColorsDark[group])"
                       (click)="addColorPop.toggle($event)"
-                      pTooltip="Chọn cặp màu sắc"
+                      [pTooltip]="t().colorTooltip"
                     ></button>
                   </div>
 
@@ -430,7 +430,7 @@
                     type="button"
                     class="w-7 h-7 flex items-center justify-center rounded border border-gray-200 dark:border-surface-600 hover:bg-gray-100 dark:hover:bg-surface-800 cursor-pointer flex-shrink-0"
                     (click)="addIconPop.toggle($event)"
-                    pTooltip="Icon trạng thái"
+                    [pTooltip]="t().iconTooltip"
                   >
                     <app-state-dot [state]="{ name: newNames[group] || 'State', colorLight: newColorsLight[group], colorDark: newColorsDark[group], group: group, icon: newIcons[group] || null }" [size]="12" />
                   </button>
@@ -440,7 +440,7 @@
                     type="text"
                     pInputText
                     [(ngModel)]="newNames[group]"
-                    placeholder="Tên trạng thái..."
+                    [placeholder]="t().addStatePlaceholder"
                     class="p-inputtext-sm flex-1 max-w-xs text-sm"
                     (keydown.enter)="onCreateState(group)"
                   />
@@ -450,7 +450,7 @@
                   <button
                     pButton
                     type="button"
-                    label="Thêm"
+                    [label]="t().addBtn"
                     size="small"
                     [disabled]="!newNames[group]?.trim()"
                     (click)="onCreateState(group)"
@@ -458,7 +458,7 @@
                   <button
                     pButton
                     type="button"
-                    label="Hủy"
+                    [label]="t().cancelBtn"
                     size="small"
                     severity="secondary"
                     [text]="true"
@@ -475,7 +475,7 @@
 
   <!-- Migration Dialog -->
   <p-dialog
-    header="Di chuyển công việc & Xóa trạng thái"
+    [header]="t().migrationDialogHeader"
     [(visible)]="displayMigrationDialog"
     [modal]="true"
     [style]="{ width: '450px' }"
@@ -486,13 +486,13 @@
       <div class="rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-800 p-3 text-amber-800 dark:text-amber-400 flex gap-2">
         <i class="pi pi-info-circle text-base mt-0.5"></i>
         <div>
-          <p class="font-bold">Trạng thái này đang được sử dụng!</p>
-          <p class="mt-0.5">Có một số công việc đang ở trạng thái này. Bạn cần chọn trạng thái khác để di chuyển những công việc đó sang trước khi xóa.</p>
+          <p class="font-bold">{{ t().migrationWarningTitle }}</p>
+          <p class="mt-0.5">{{ t().migrationWarningDesc }}</p>
         </div>
       </div>
 
       <p class="font-medium text-sm text-gray-700 dark:text-surface-200">
-        Chọn trạng thái thay thế:
+        {{ t().migrationTargetLabel }}
       </p>
 
       <div class="relative">
@@ -526,7 +526,7 @@
         <button
           pButton
           (click)="displayMigrationDialog = false"
-          label="Hủy"
+          [label]="t().cancelBtn"
           severity="secondary"
           [text]="true"
           [fluid]="false"
@@ -535,7 +535,7 @@
           pButton
           (click)="onMigrateAndDelete()"
           [disabled]="!selectedMigrationTargetId || isMigrating()"
-          label="Di chuyển & Xóa"
+          [label]="t().migrateAndDeleteBtn"
           severity="danger"
           [fluid]="false"
         ></button>

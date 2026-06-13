@@ -41,6 +41,7 @@ export class TaskCommentsComponent {
   // Inputs
   @Input({ required: true }) projectId = '';
   @Input({ required: true }) taskId = '';
+  @Input() disabled = false;
 
   // Members lists from project store for autocomplete mentions
   protected readonly members = computed(() => this.taskStore.labels()); // Wait, members are in projectStore. In task-detail-panel, it is memberOptions. Let's pass members list as input or fetch from TaskStore if available. Actually, TaskStore doesn't store project members directly, but TaskDetailPanelComponent has memberOptions().

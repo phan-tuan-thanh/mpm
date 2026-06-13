@@ -29,6 +29,7 @@ import { PopoverModule } from 'primeng/popover';
 import { DatePickerModule } from 'primeng/datepicker';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { SliderModule } from 'primeng/slider';
+import { CheckboxModule } from 'primeng/checkbox';
 import { MessageService } from 'primeng/api';
 
 import { TaskStore } from '../../state/task.store';
@@ -51,13 +52,15 @@ import type {
   CreateSubItemDto,
   ActivityFilterType,
   ProjectPriority,
+  SubItemTreeNode,
 } from '@mpm/shared-types';
-import { Subject, takeUntil, combineLatest, distinctUntilChanged, filter, firstValueFrom } from 'rxjs';
+import { Subject, takeUntil, combineLatest, distinctUntilChanged, filter, firstValueFrom, debounceTime } from 'rxjs';
 
 import { TaskHeaderComponent } from './components/task-header/task-header.component';
 import { TaskTitleInlineComponent } from './components/task-title-inline/task-title-inline.component';
 import { SubItemsSectionComponent } from './components/sub-items-section/sub-items-section.component';
 import { ActivityPanelComponent } from './components/activity-panel/activity-panel.component';
+import { TaskCommentsComponent } from './components/task-comments/task-comments.component';
 import { PropertiesSidebarComponent } from './components/properties-sidebar/properties-sidebar.component';
 import { TaskAttachmentsComponent } from './components/task-attachments.component';
 import { TaskLinksComponent } from './components/task-links.component';
@@ -82,10 +85,12 @@ import { StateDotComponent } from '../../../shared/components/state-dot/state-do
     DatePickerModule,
     InputNumberModule,
     SliderModule,
+    CheckboxModule,
     TaskHeaderComponent,
     TaskTitleInlineComponent,
     SubItemsSectionComponent,
     ActivityPanelComponent,
+    TaskCommentsComponent,
     TaskAttachmentsComponent,
     TaskLinksComponent,
     TaskDescriptionSectionComponent,
@@ -254,7 +259,7 @@ import { StateDotComponent } from '../../../shared/components/state-dot/state-do
             <!-- Close -->
             <button pButton [icon]="viewMode === 'full-page' ? 'pi pi-arrow-left' : 'pi pi-times'"
               class="p-button-rounded p-button-text p-button-sm" severity="secondary"
-              [pTooltip]="viewMode === 'full-page' ? 'Quay lại danh sách' : 'Đóng'"
+              [pTooltip]="viewMode === 'full-page' ? t().backToList : t().close"
               (click)="onClose()"></button>
           </div>
         </div>
@@ -267,6 +272,7 @@ import { StateDotComponent } from '../../../shared/components/state-dot/state-do
             <div class="px-4 py-3 border-b border-gray-100 dark:border-surface-700">
               <app-task-title-inline
                 [title]="task()!.title"
+                [disabled]="isTaskClosed()"
                 [viewMode]="viewMode === 'right-pane' ? 'drawer' : viewMode === 'full-page' ? 'full-page' : 'popup'"
                 (titleSaved)="onTitleSaved($event)"
               />
@@ -289,15 +295,21 @@ import { StateDotComponent } from '../../../shared/components/state-dot/state-do
                 <div class="meta-divider"></div>
 
                 <!-- Priority -->
-                <button class="meta-pill" [class.active]="false" (click)="priorityPopover.toggle($event)">
-                  <app-icon-display [icon]="selectedPriorityConfig().icon" [style.color]="selectedPriorityConfig().colorLight" style="font-size: 11px" class="leading-none" />
+                <button class="meta-pill" [class.active]="false" 
+                        [class.cursor-not-allowed]="isTaskClosed()"
+                        [class.opacity-60]="isTaskClosed()"
+                        (click)="!isTaskClosed() && priorityPopover.toggle($event)">
+                  <app-icon-display [icon]="selectedPriorityConfig().icon" [style.color]="selectedPriorityConfig().colorLight" [size]="layoutService.appIconSize() - 3" class="leading-none" />
                   <span>{{ selectedPriorityConfig().name }}</span>
                 </button>
 
                 <div class="meta-divider"></div>
 
                 <!-- Assignees -->
-                <button class="meta-pill" [class.active]="selectedAssigneeIds().length > 0" (click)="assigneePopover.toggle($event)">
+                <button class="meta-pill" [class.active]="selectedAssigneeIds().length > 0" 
+                        [class.cursor-not-allowed]="isTaskClosed()"
+                        [class.opacity-60]="isTaskClosed()"
+                        (click)="!isTaskClosed() && assigneePopover.toggle($event)">
                   @if (selectedAssigneeIds().length) {
                     <div style="display: flex; align-items: center; gap: -2px">
                       @for (id of selectedAssigneeIds().slice(0, 3); track id) {
@@ -305,19 +317,37 @@ import { StateDotComponent } from '../../../shared/components/state-dot/state-do
                       }
                     </div>
                     <span style="margin-left: 6px">
-                      {{ selectedAssigneeIds().length === 1 ? getMemberName(selectedAssigneeIds()[0]) : selectedAssigneeIds().length + ' người' }}
+                      {{ selectedAssigneeIds().length === 1 ? getMemberName(selectedAssigneeIds()[0]) : t().assigneeLabel(selectedAssigneeIds().length) }}
                     </span>
                   } @else {
                     <i class="pi pi-user" style="font-size: 11px"></i>
-                    <span>Assignees</span>
+                    <span>{{ t().assigneePlaceholder }}</span>
                   }
                 </button>
+
+                <div style="flex-grow: 1"></div>
+
+                <!-- Close/Reopen task shortcuts -->
+                @if (task()) {
+                  @if (!isTaskClosed()) {
+                    <button pButton [label]="t().closeTaskBtn" icon="pi pi-check-circle" severity="primary" [outlined]="true" size="small"
+                            class="!py-1 !px-2.5 !h-7 text-xs font-semibold"
+                            (click)="closeTask()"></button>
+                  } @else {
+                    <button pButton [label]="t().reopenTaskBtn" icon="pi pi-refresh" severity="secondary" [outlined]="true" size="small"
+                            class="!py-1 !px-2.5 !h-7 text-xs font-semibold"
+                            (click)="reopenTask()"></button>
+                  }
+                }
               </div>
 
               <!-- Row 2: Supporting properties -->
               <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap">
                 <!-- Labels -->
-                <button class="meta-pill" [class.active]="selectedLabelIds().length > 0" (click)="labelPopover.toggle($event)">
+                <button class="meta-pill" [class.active]="selectedLabelIds().length > 0" 
+                        [class.cursor-not-allowed]="isTaskClosed()"
+                        [class.opacity-60]="isTaskClosed()"
+                        (click)="!isTaskClosed() && labelPopover.toggle($event)">
                   <i class="pi pi-tag" style="font-size: 11px"></i>
                   @if (selectedLabelIds().length) {
                     <div class="flex items-center gap-1">
@@ -352,40 +382,55 @@ import { StateDotComponent } from '../../../shared/components/state-dot/state-do
                 <div class="meta-divider"></div>
 
                 <!-- Parent Task -->
-                <button class="meta-pill" [class.active]="(task()?.parentId) !== null" (click)="parentPopover.toggle($event)">
+                <button class="meta-pill" [class.active]="(task()?.parentId) !== null" 
+                        [class.cursor-not-allowed]="isTaskClosed()"
+                        [class.opacity-60]="isTaskClosed()"
+                        (click)="!isTaskClosed() && parentPopover.toggle($event)">
                   <i class="pi pi-sitemap" style="font-size: 11px" [style.color]="(task()?.parentId) !== null ? 'var(--p-primary-color)' : undefined"></i>
-                  <span [style.color]="(task()?.parentId) !== null ? 'var(--p-primary-color)' : undefined">{{ selectedParentTitle() }}</span>
+                  <span [style.color]="(task()?.parentId) !== null ? 'var(--p-primary-color)' : undefined">{{ (task()?.parentId) ? selectedParentTitle : t().parentPlaceholder }}</span>
                 </button>
 
                 <!-- Start date -->
-                <button class="meta-pill" [class.active]="!!(task()?.startDate)" (click)="startDatePopover.toggle($event)">
+                <button class="meta-pill" [class.active]="!!(task()?.startDate)" 
+                        [class.cursor-not-allowed]="isTaskClosed()"
+                        [class.opacity-60]="isTaskClosed()"
+                        (click)="!isTaskClosed() && startDatePopover.toggle($event)">
                   <i class="pi pi-calendar" style="font-size: 11px" [style.color]="(task()?.startDate) ? 'var(--p-primary-color)' : undefined"></i>
                   <span [style.color]="(task()?.startDate) ? 'var(--p-primary-color)' : undefined">
-                    {{ (task()?.startDate) ? (task()?.startDate | date:'dd/MM/yy') : 'Bắt đầu' }}
+                    {{ (task()?.startDate) ? (task()?.startDate | date:'dd/MM/yy') : t().startDatePlaceholder }}
                   </span>
                 </button>
 
                 <!-- Due date -->
-                <button class="meta-pill" [class.active]="!!(task()?.dueDate)" (click)="dueDatePopover.toggle($event)">
+                <button class="meta-pill" [class.active]="!!(task()?.dueDate)" 
+                        [class.cursor-not-allowed]="isTaskClosed()"
+                        [class.opacity-60]="isTaskClosed()"
+                        (click)="!isTaskClosed() && dueDatePopover.toggle($event)">
                   <i class="pi pi-calendar" style="font-size: 11px"
                     [style.color]="isOverdue() ? '#ef4444' : (task()?.dueDate) ? 'var(--p-primary-color)' : undefined"></i>
                   <span [style.color]="isOverdue() ? '#ef4444' : (task()?.dueDate) ? 'var(--p-primary-color)' : undefined">
-                    {{ (task()?.dueDate) ? (task()?.dueDate | date:'dd/MM/yy') : 'Hết hạn' }}
+                    {{ (task()?.dueDate) ? (task()?.dueDate | date:'dd/MM/yy') : t().dueDatePlaceholder }}
                   </span>
                 </button>
 
                 <!-- Estimate -->
-                <button class="meta-pill" [class.active]="(task()?.estimateValue) !== null" (click)="estimatePopover.toggle($event)">
+                <button class="meta-pill" [class.active]="(task()?.estimateValue) !== null" 
+                        [class.cursor-not-allowed]="isTaskClosed()"
+                        [class.opacity-60]="isTaskClosed()"
+                        (click)="!isTaskClosed() && estimatePopover.toggle($event)">
                   <i class="pi pi-stopwatch" style="font-size: 11px" [style.color]="(task()?.estimateValue) !== null ? 'var(--p-primary-color)' : undefined"></i>
                   <span [style.color]="(task()?.estimateValue) !== null ? 'var(--p-primary-color)' : undefined">
-                    {{ (task()?.estimateValue) !== null ? (task()?.estimateValue) + ' pts' : 'Estimate' }}
+                    {{ (task()?.estimateValue) !== null ? (task()?.estimateValue) + ' pts' : t().estimateLabel }}
                   </span>
                 </button>
 
                 <div class="meta-divider"></div>
 
                 <!-- Modules -->
-                <button class="meta-pill" [class.active]="selectedModuleIds().length > 0" (click)="modulePopover.toggle($event)">
+                <button class="meta-pill" [class.active]="selectedModuleIds().length > 0" 
+                        [class.cursor-not-allowed]="isTaskClosed()"
+                        [class.opacity-60]="isTaskClosed()"
+                        (click)="!isTaskClosed() && modulePopover.toggle($event)">
                   <i class="pi pi-box" style="font-size: 11px" [style.color]="selectedModuleIds().length > 0 ? 'var(--p-primary-color)' : undefined"></i>
                   @if (selectedModuleIds().length) {
                     <div class="flex items-center gap-1">
@@ -407,8 +452,11 @@ import { StateDotComponent } from '../../../shared/components/state-dot/state-do
                 <div class="meta-divider"></div>
 
                 <!-- Sprint -->
-                <button class="meta-pill" [class.active]="!!(task()?.sprintId)" (click)="sprintPopover.toggle($event)">
-                  <app-icon-display [icon]="sprintIconClass()" class="text-[11px] flex-shrink-0" [style.color]="(task()?.sprintId) ? 'var(--p-primary-color)' : undefined"></app-icon-display>
+                <button class="meta-pill" [class.active]="!!(task()?.sprintId)" 
+                        [class.cursor-not-allowed]="isTaskClosed()"
+                        [class.opacity-60]="isTaskClosed()"
+                        (click)="!isTaskClosed() && sprintPopover.toggle($event)">
+                  <app-icon-display [icon]="sprintIconClass()" [size]="layoutService.appIconSize() - 3" class="flex-shrink-0" [style.color]="(task()?.sprintId) ? 'var(--p-primary-color)' : undefined"></app-icon-display>
                   <span [style.color]="(task()?.sprintId) ? 'var(--p-primary-color)' : undefined">{{ currentSprintName() }}</span>
                 </button>
               </div>
@@ -416,10 +464,11 @@ import { StateDotComponent } from '../../../shared/components/state-dot/state-do
 
             <!-- Description: đọc mặc định, click để sửa (read-mode design) -->
             <div class="px-4 pt-4 pb-3 border-b border-gray-100 dark:border-surface-700">
-              <label class="text-xs font-semibold text-gray-400 dark:text-surface-500 uppercase tracking-wide mb-2 block">Mô tả</label>
+              <label class="text-xs font-semibold text-gray-400 dark:text-surface-500 uppercase tracking-wide mb-2 block">{{ t().descriptionLabel }}</label>
               @if (showRte()) {
                 <app-task-description-section
                   [doc]="task()?.description ?? null"
+                  [disabled]="isTaskClosed()"
                   [saveStatus]="stateService.saveStatus()"
                   (saveRequested)="onDescriptionSave($event)"
                   (checkboxToggled)="onDescriptionSave($event)"
@@ -436,6 +485,7 @@ import { StateDotComponent } from '../../../shared/components/state-dot/state-do
                 [projectId]="projectId()"
                 [taskId]="task()!.id"
                 [attachments]="task()!.attachments ?? []"
+                [disabled]="isTaskClosed()"
                 (upload)="onFileUpload($event)"
                 (delete)="deleteAttachment($event)"
                 (deleteGroup)="deleteAttachmentGroup($event)"
@@ -443,6 +493,7 @@ import { StateDotComponent } from '../../../shared/components/state-dot/state-do
               />
               <app-task-links
                 [links]="task()!.links ?? []"
+                [disabled]="isTaskClosed()"
                 (add)="addLink($event)"
                 (delete)="deleteLink($event)"
               />
@@ -457,9 +508,21 @@ import { StateDotComponent } from '../../../shared/components/state-dot/state-do
                 [members]="memberOptions()"
                 [projectId]="projectId()"
                 [taskId]="task()!.id"
+                [disabled]="isTaskClosed()"
                 (createSubItem)="onCreateSubItem($event)"
                 (subItemClicked)="openChildTask($event)"
                 (saveRequested)="onSubItemSaveRequested($event)"
+              />
+            </div>
+
+            <!-- Comments -->
+            <div class="px-4 py-3 border-b border-gray-100 dark:border-surface-700">
+              <label class="text-xs font-semibold text-gray-400 dark:text-surface-500 uppercase tracking-wide mb-3 block">Bình luận</label>
+              <app-task-comments
+                [projectId]="projectId()"
+                [taskId]="task()!.id"
+                [disabled]="isTaskClosed()"
+                [membersList]="memberOptions()"
               />
             </div>
 
@@ -478,6 +541,7 @@ import { StateDotComponent } from '../../../shared/components/state-dot/state-do
                 [membersList]="memberOptions()"
                 (filterChanged)="onActivityFilterChanged($event)"
                 (loadMore)="onActivityLoadMore()"
+                (loadAll)="onActivityLoadAll()"
               />
             </div>
           </div>
@@ -508,7 +572,7 @@ import { StateDotComponent } from '../../../shared/components/state-dot/state-do
               <button class="pop-item" [class.selected]="(task()?.priority ?? 'none') === p.value"
                 style="padding: 5px 10px; font-size: 12px; border-radius: 4px"
                 (click)="selectPriority(p.value); priorityPopover.hide()">
-                <app-icon-display [icon]="p.icon" [style.color]="p.colorLight" style="font-size: 11px" class="leading-none" />
+                <app-icon-display [icon]="p.icon" [style.color]="p.colorLight" [size]="layoutService.appIconSize() - 3" class="leading-none" />
                 <span style="flex: 1; text-align: left; font-size: 12px">{{ p.name }}</span>
                 @if ((task()?.priority ?? 'none') === p.value) {
                   <i class="pi pi-check" style="font-size: 10px; color: var(--p-primary-color); flex-shrink: 0"></i>
@@ -521,13 +585,13 @@ import { StateDotComponent } from '../../../shared/components/state-dot/state-do
         <!-- Assignees Popover -->
         <p-popover #assigneePopover (onShow)="focusAssigneeSearch()">
           <div style="width: 220px; padding: 4px; display: flex; flex-direction: column; gap: 4px">
-            <input #assigneeSearchInput type="text" pInputText placeholder="Tìm thành viên..."
+            <input #assigneeSearchInput type="text" pInputText [placeholder]="t().searchAssigneePlaceholder"
               style="padding: 4px 8px; font-size: 11px; width: 100%"
               [ngModel]="assigneeSearch()" (ngModelChange)="assigneeSearch.set($event)" />
             <div style="max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 1px">
               @if (!filteredMembers().length) {
                 <p style="padding: 6px; font-size: 11px; color: var(--text-color-secondary); text-align: center">
-                  Không tìm thấy thành viên
+                  {{ t().noMemberFound }}
                 </p>
               }
               @for (m of filteredMembers(); track m.userId) {
@@ -548,13 +612,13 @@ import { StateDotComponent } from '../../../shared/components/state-dot/state-do
         <!-- Labels Popover -->
         <p-popover #labelPopover (onShow)="focusLabelSearch()">
           <div style="width: 240px; padding: 4px; display: flex; flex-direction: column; gap: 4px">
-            <input #labelSearchInput type="text" pInputText placeholder="Tìm nhãn..."
+            <input #labelSearchInput type="text" pInputText [placeholder]="t().labelsPlaceholder"
               style="padding: 4px 8px; font-size: 11px; width: 100%"
               [ngModel]="labelSearch()" (ngModelChange)="labelSearch.set($event)" />
             <div style="max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 1px">
               @if (!filteredLabels().length) {
                 <p style="padding: 6px; font-size: 11px; color: var(--text-color-secondary); text-align: center">
-                  Không tìm thấy nhãn
+                  {{ t().noLabelFound }}
                 </p>
               }
               @for (l of filteredLabels(); track l.id) {
@@ -576,7 +640,7 @@ import { StateDotComponent } from '../../../shared/components/state-dot/state-do
         <!-- Parent Popover -->
         <p-popover #parentPopover (onShow)="focusParentSearch()">
           <div style="width: 260px; padding: 4px; display: flex; flex-direction: column; gap: 4px">
-            <input #parentSearchInput type="text" pInputText placeholder="Tìm parent task..."
+            <input #parentSearchInput type="text" pInputText [placeholder]="t().parentPlaceholder"
               style="padding: 4px 8px; font-size: 11px; width: 100%"
               [ngModel]="parentSearch()" (ngModelChange)="parentSearch.set($event)" />
             <div style="max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 1px">
@@ -584,14 +648,14 @@ import { StateDotComponent } from '../../../shared/components/state-dot/state-do
                 style="padding: 5px 10px; font-size: 12px; border-radius: 4px"
                 (click)="selectParent(null); parentPopover.hide()">
                 <i class="pi pi-times text-gray-400" style="font-size: 11px"></i>
-                <span style="flex: 1; font-size: 12px; color: var(--text-color-secondary)">Không có parent</span>
+                <span style="flex: 1; font-size: 12px; color: var(--text-color-secondary)">{{ t().noParent }}</span>
                 @if (task()?.parentId === null) {
                   <i class="pi pi-check" style="font-size: 10px; color: var(--p-primary-color); flex-shrink: 0"></i>
                 }
               </button>
               @if (!filteredParents().length && parentSearch()) {
                 <p style="padding: 6px; font-size: 11px; color: var(--text-color-secondary); text-align: center">
-                  Không tìm thấy parent
+                  {{ t().noParentFound }}
                 </p>
               }
               @for (p of filteredParents(); track p.id) {
@@ -617,7 +681,7 @@ import { StateDotComponent } from '../../../shared/components/state-dot/state-do
             <p-datepicker [ngModel]="startDateValue()" (ngModelChange)="onStartDateChange($event); startDatePopover.hide()"
               [inline]="true" styleClass="border-0 text-xs" />
             @if (task()?.startDate) {
-              <button pButton label="Xóa ngày" severity="secondary" size="small" [text]="true"
+              <button pButton [label]="t().clearDate" severity="secondary" size="small" [text]="true"
                 (click)="onStartDateChange(null); startDatePopover.hide()"></button>
             }
           </div>
@@ -629,7 +693,7 @@ import { StateDotComponent } from '../../../shared/components/state-dot/state-do
             <p-datepicker [ngModel]="dueDateValue()" (ngModelChange)="onDueDateChange($event); dueDatePopover.hide()"
               [inline]="true" styleClass="border-0 text-xs" />
             @if (task()?.dueDate) {
-              <button pButton label="Xóa ngày" severity="secondary" size="small" [text]="true"
+              <button pButton [label]="t().clearDate" severity="secondary" size="small" [text]="true"
                 (click)="onDueDateChange(null); dueDatePopover.hide()"></button>
             }
           </div>
@@ -639,23 +703,23 @@ import { StateDotComponent } from '../../../shared/components/state-dot/state-do
         <p-popover #estimatePopover>
           <div style="padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; width: 180px">
             <div class="flex items-center justify-between text-xs font-semibold text-gray-500 mb-1">
-              <span>Ước lượng</span>
+              <span>{{ t().estimateLabel }}</span>
               <span class="text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50 dark:bg-indigo-950/40 px-1.5 py-0.5 rounded">
-                {{ task()?.estimateValue !== null ? task()?.estimateValue : 0 }} pts
+                {{ localEstimate() !== null ? localEstimate() : 0 }} pts
               </span>
             </div>
             <div class="flex items-center gap-3 py-1">
               <p-slider 
-                [ngModel]="task()?.estimateValue || 0" 
+                [ngModel]="localEstimate() || 0" 
                 (ngModelChange)="onEstimateChange($event)"
                 [min]="0" 
                 [max]="20" 
                 [step]="0.5" 
                 class="w-full flex-1"
               ></p-slider>
-              @if (task()?.estimateValue !== null) {
+              @if (localEstimate() !== null) {
                 <button pButton icon="pi pi-times" severity="secondary" [text]="true" size="small"
-                  pTooltip="Xóa" (click)="onEstimateChange(null); estimatePopover.hide()" style="flex-shrink: 0; width: 20px; height: 20px; padding: 0"></button>
+                  [pTooltip]="t().deleteBtn" (click)="onEstimateChange(null); estimatePopover.hide()" style="flex-shrink: 0; width: 20px; height: 20px; padding: 0"></button>
               }
             </div>
           </div>
@@ -667,7 +731,7 @@ import { StateDotComponent } from '../../../shared/components/state-dot/state-do
             <div style="max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 1px">
               @if (!moduleOptions().length) {
                 <p style="padding: 6px; font-size: 11px; color: var(--text-color-secondary); text-align: center">
-                  Chưa có module
+                  {{ t().noModule }}
                 </p>
               }
               @for (m of moduleOptions(); track m.id) {
@@ -691,7 +755,7 @@ import { StateDotComponent } from '../../../shared/components/state-dot/state-do
             <div style="max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 1px">
               @if (!availableSprints().length) {
                 <p style="padding: 6px; font-size: 11px; color: var(--text-color-secondary); text-align: center">
-                  Chưa có sprint planning/active
+                  {{ t().noSprintPlanningOrActive }}
                 </p>
               }
               @for (s of availableSprints(); track s.id) {
@@ -710,12 +774,52 @@ import { StateDotComponent } from '../../../shared/components/state-dot/state-do
                 <button class="pop-item" style="padding: 5px 10px; font-size: 12px; border-radius: 4px; color: #ef4444"
                   (click)="setSprint(null); sprintPopover.hide()">
                   <i class="pi pi-times" style="font-size: 10px; flex-shrink: 0"></i>
-                  <span style="font-size: 12px">Gỡ khỏi sprint</span>
+                  <span style="font-size: 12px">{{ t().removeFromSprint }}</span>
                 </button>
               }
             </div>
           </div>
         </p-popover>
+
+        <!-- Close warning confirmation dialog -->
+        <p-dialog
+          [visible]="showCloseConfirm()"
+          (visibleChange)="showCloseConfirm.set($event)"
+          [modal]="true"
+          [header]="projectStore.projectLanguage() === 'en' ? 'Close Task Warning' : 'Cảnh báo đóng task'"
+          [style]="{ width: '450px' }"
+          [closable]="true"
+        >
+          <div class="flex flex-col gap-4">
+            <div class="text-sm text-gray-600 dark:text-surface-300">
+              {{ projectStore.projectLanguage() === 'en' ? 'This task has incomplete sub-tasks. Closing this task will leave them incomplete unless auto-closed.' : 'Task này có các sub-task chưa hoàn thành. Việc đóng task này sẽ để lại các sub-task ở trạng thái chưa hoàn thành trừ khi bạn tự động đóng.' }}
+            </div>
+            
+            <div class="max-h-48 overflow-y-auto border border-gray-200 dark:border-surface-700 rounded p-2 bg-gray-50 dark:bg-surface-800 flex flex-col gap-1">
+              @for (child of incompleteSubTasks(); track child.id) {
+                <div class="text-xs flex items-center gap-1.5 py-0.5 text-gray-700 dark:text-surface-200" [style.padding-left.px]="child.depth * 16">
+                  <i class="pi pi-sitemap text-gray-400"></i>
+                  <span class="font-semibold text-gray-500">{{ child.taskId }}:</span>
+                  <span class="truncate">{{ child.title }}</span>
+                </div>
+              }
+            </div>
+
+            <div class="flex items-center gap-2 mt-2">
+              <p-checkbox [binary]="true" [ngModel]="autoCloseChildren()" (ngModelChange)="autoCloseChildren.set($event)" id="autoCloseChildrenDetail" />
+              <label for="autoCloseChildrenDetail" class="text-sm font-medium text-gray-700 dark:text-surface-300 cursor-pointer">
+                {{ projectStore.projectLanguage() === 'en' ? 'Auto-close incomplete sub-tasks' : 'Tự động đóng các task con chưa hoàn thành' }}
+              </label>
+            </div>
+          </div>
+
+          <ng-template #footer>
+            <div class="flex justify-end gap-2 mt-4">
+              <button pButton [label]="projectStore.projectLanguage() === 'en' ? 'Cancel' : 'Hủy'" severity="secondary" (click)="showCloseConfirm.set(false); targetStateId.set(null)"></button>
+              <button pButton [label]="projectStore.projectLanguage() === 'en' ? 'Confirm' : 'Đồng ý'" severity="primary" (click)="confirmCloseTask()"></button>
+            </div>
+          </ng-template>
+        </p-dialog>
       </div>
     </ng-template>
     <p-toast />
@@ -748,6 +852,37 @@ export class TaskDetailPanelComponent implements OnInit, OnChanges, OnDestroy {
   // ─── Component State ────────────────────────────────────────────────────
   readonly task = this.taskStore.currentTask;
   readonly isVisible = signal(false);
+  readonly isTaskClosed = computed(() => this.task()?.state?.group === 'completed');
+  protected readonly showCloseConfirm = signal(false);
+  protected readonly targetStateId = signal<string | null>(null);
+  protected readonly autoCloseChildren = signal(false);
+
+  private getIncompleteDescendants(nodes: SubItemTreeNode[], depth = 1): Array<{ id: string; taskId: string; title: string; depth: number }> {
+    const result: Array<{ id: string; taskId: string; title: string; depth: number }> = [];
+    for (const node of nodes) {
+      const isCompleted = node.state?.group === 'completed';
+      if (!isCompleted) {
+        result.push({
+          id: node.id,
+          taskId: node.taskId,
+          title: node.title,
+          depth
+        });
+      }
+      if (node.children && node.children.length > 0) {
+        result.push(...this.getIncompleteDescendants(node.children, depth + 1));
+      }
+    }
+    return result;
+  }
+
+  protected readonly incompleteSubTasks = computed(() => {
+    const tree = this.stateService.subItemsTree();
+    return this.getIncompleteDescendants(tree);
+  });
+
+  protected readonly localEstimate = signal<number | null>(null);
+  private readonly estimateUpdate$ = new Subject<number | null>();
   /** Delayed true so Tiptap init happens in a separate macrotask from the mode-switch CD cycle */
   protected readonly showRte = signal(false);
   private _showRteTimer?: ReturnType<typeof setTimeout>;
@@ -756,6 +891,69 @@ export class TaskDetailPanelComponent implements OnInit, OnChanges, OnDestroy {
 
   /** Signal accessor for save status — passed to TaskHeaderComponent */
   readonly saveStatusSignal = computed(() => this.taskStore.saveStatus());
+
+  readonly t = computed(() => {
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    return isEn ? {
+      backToList: 'Back to list',
+      close: 'Close',
+      assigneeLabel: (count: number) => count === 1 ? '1 assignee' : `${count} assignees`,
+      assigneePlaceholder: 'Assignee',
+      noAssignee: 'No assignee',
+      searchAssigneePlaceholder: 'Search members...',
+      noMemberFound: 'No members found',
+      startDatePlaceholder: 'Start date',
+      dueDatePlaceholder: 'Due date',
+      clearDate: 'Clear date',
+      descriptionLabel: 'Description',
+      labelsPlaceholder: 'Search labels...',
+      noLabelFound: 'No labels found',
+      parentPlaceholder: 'Search parent task...',
+      noParent: 'No parent',
+      noParentFound: 'No parent task found',
+      estimateLabel: 'Estimate',
+      deleteBtn: 'Delete',
+      noModule: 'No module',
+      noSprintPlanningOrActive: 'No sprint planning or active',
+      removeFromSprint: 'Remove from sprint',
+      stateLabel: 'State',
+      toastSuccessHeader: 'Success',
+      toastErrorHeader: 'Error',
+      uploadFailed: 'Upload failed',
+      genericError: 'Error occurred',
+      closeTaskBtn: 'Close task',
+      reopenTaskBtn: 'Reopen task'
+    } : {
+      backToList: 'Quay lại danh sách',
+      close: 'Đóng',
+      assigneeLabel: (count: number) => count === 1 ? '1 người' : `${count} người`,
+      assigneePlaceholder: 'Người phụ trách',
+      noAssignee: 'Chưa giao',
+      searchAssigneePlaceholder: 'Tìm thành viên...',
+      noMemberFound: 'Không tìm thấy thành viên',
+      startDatePlaceholder: 'Bắt đầu',
+      dueDatePlaceholder: 'Hết hạn',
+      clearDate: 'Xóa ngày',
+      descriptionLabel: 'Mô tả',
+      labelsPlaceholder: 'Tìm nhãn...',
+      noLabelFound: 'Không tìm thấy nhãn',
+      parentPlaceholder: 'Tìm parent task...',
+      noParent: 'Không có parent',
+      noParentFound: 'Không tìm thấy parent',
+      estimateLabel: 'Ước lượng',
+      deleteBtn: 'Xóa',
+      noModule: 'Chưa có module',
+      noSprintPlanningOrActive: 'Chưa có sprint planning/active',
+      removeFromSprint: 'Gỡ khỏi sprint',
+      stateLabel: 'Trạng thái',
+      toastSuccessHeader: 'Thành công',
+      toastErrorHeader: 'Lỗi',
+      uploadFailed: 'Upload thất bại',
+      genericError: 'Có lỗi xảy ra',
+      closeTaskBtn: 'Đóng task',
+      reopenTaskBtn: 'Mở lại task'
+    };
+  });
 
   /** Sprints (planning/active) cho popover gán sprint — cache chung từ SprintService */
   protected readonly availableSprints = computed(() => this.sprintService.openSprints());
@@ -820,8 +1018,9 @@ export class TaskDetailPanelComponent implements OnInit, OnChanges, OnDestroy {
 
   protected readonly selectedStateName = computed(() => {
     const t = this.task();
-    if (!t) return 'Trạng thái';
-    return this.stateOptions().find((s) => s.id === t.stateId)?.name ?? 'Trạng thái';
+    const fallback = this.t().stateLabel;
+    if (!t) return fallback;
+    return this.stateOptions().find((s) => s.id === t.stateId)?.name ?? fallback;
   });
 
   protected readonly selectedStateRef = computed(() => {
@@ -844,9 +1043,19 @@ export class TaskDetailPanelComponent implements OnInit, OnChanges, OnDestroy {
   });
 
   protected isOverdue(): boolean {
-    const due = this.task()?.dueDate;
-    if (!due) return false;
-    return new Date(due).getTime() < new Date().setHours(0,0,0,0);
+    const t = this.task();
+    if (!t || !t.dueDate) return false;
+    const dueDateObj = new Date(t.dueDate);
+    dueDateObj.setHours(0, 0, 0, 0);
+    if (t.state?.group === 'completed') {
+      if (!t.completedAt) return false;
+      const completedDateObj = new Date(t.completedAt);
+      completedDateObj.setHours(0, 0, 0, 0);
+      return completedDateObj.getTime() > dueDateObj.getTime();
+    }
+    const todayObj = new Date();
+    todayObj.setHours(0, 0, 0, 0);
+    return todayObj.getTime() > dueDateObj.getTime();
   }
 
   // --- Search signals & computeds ---
@@ -934,8 +1143,61 @@ export class TaskDetailPanelComponent implements OnInit, OnChanges, OnDestroy {
   // --- Properties Update Methods ---
   protected selectState(stateId: string): void {
     const t = this.task();
-    if (t) {
+    if (!t) return;
+
+    const targetState = this.stateOptions().find((s) => s.id === stateId);
+    const isClosing = targetState?.group === 'completed';
+
+    if (isClosing && this.incompleteSubTasks().length > 0) {
+      this.targetStateId.set(stateId);
+      this.autoCloseChildren.set(false); // Unchecked by default
+      this.showCloseConfirm.set(true);
+    } else {
       this.taskStore.updateTask(this.projectId(), t.id, { stateId });
+    }
+  }
+
+  protected async confirmCloseTask(): Promise<void> {
+    const t = this.task();
+    const stateId = this.targetStateId();
+    if (t && stateId) {
+      const projId = this.projectId();
+      
+      // Update parent task
+      this.taskStore.updateTask(projId, t.id, { stateId });
+
+      if (this.autoCloseChildren()) {
+        const completedState = this.stateOptions().find((s) => s.group === 'completed');
+        const completedStateId = completedState ? completedState.id : stateId;
+        const incompleteChildren = this.incompleteSubTasks();
+
+        // Update all children
+        const updatePromises = incompleteChildren.map(child => 
+          firstValueFrom(this.taskService.updateTask(projId, child.id, { stateId: completedStateId }))
+        );
+        await Promise.allSettled(updatePromises);
+      }
+
+      // Reload detail panel and sub-items tree
+      this.taskStore.loadTask(projId, t.taskId);
+      this.stateService.loadSubItemsTree(projId, t.id);
+
+      this.showCloseConfirm.set(false);
+      this.targetStateId.set(null);
+    }
+  }
+
+  protected closeTask(): void {
+    const completedState = this.stateOptions().find((s) => s.group === 'completed');
+    if (completedState) {
+      this.selectState(completedState.id);
+    }
+  }
+
+  protected reopenTask(): void {
+    const activeState = this.stateOptions().find((s) => s.group !== 'completed' && s.group !== 'cancelled');
+    if (activeState) {
+      this.selectState(activeState.id);
     }
   }
 
@@ -1014,10 +1276,8 @@ export class TaskDetailPanelComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   protected onEstimateChange(val: number | null): void {
-    const t = this.task();
-    if (t) {
-      this.taskStore.updateTask(this.projectId(), t.id, { estimateValue: val });
-    }
+    this.localEstimate.set(val);
+    this.estimateUpdate$.next(val);
   }
 
   protected toggleModule(moduleId: string): void {
@@ -1051,8 +1311,8 @@ export class TaskDetailPanelComponent implements OnInit, OnChanges, OnDestroy {
         lastLoadedTaskId = taskId;
         untracked(() => {
           this.stateService.loadSubItemsTree(projectId, taskId);
-          const limit = this.viewMode === 'full-page' ? 20 : 15;
-          this.stateService.loadActivity(projectId, taskId, 'all', 1, limit);
+          this.taskStore.loadComments(projectId, taskId);
+          this.stateService.loadActivity(projectId, taskId, 'all', 1, 20);
         });
       }
     });
@@ -1066,6 +1326,17 @@ export class TaskDetailPanelComponent implements OnInit, OnChanges, OnDestroy {
           this._showRteTimer = setTimeout(() => this.showRte.set(true));
         } else {
           this.showRte.set(false);
+        }
+      });
+    });
+
+    // Sync localEstimate when task changes
+    effect(() => {
+      const val = this.task()?.estimateValue ?? null;
+      const status = this.taskStore.saveStatus();
+      untracked(() => {
+        if (status !== 'saving') {
+          this.localEstimate.set(val);
         }
       });
     });
@@ -1102,6 +1373,20 @@ export class TaskDetailPanelComponent implements OnInit, OnChanges, OnDestroy {
         this.isVisible.set(false);
       }
     });
+
+    // Debounce estimate updates
+    this.estimateUpdate$
+      .pipe(
+        debounceTime(500),
+        distinctUntilChanged(),
+        takeUntil(this.destroy$),
+      )
+      .subscribe((val) => {
+        const t = this.task();
+        if (t) {
+          this.taskStore.updateTask(this.projectId(), t.id, { estimateValue: val });
+        }
+      });
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -1327,6 +1612,13 @@ export class TaskDetailPanelComponent implements OnInit, OnChanges, OnDestroy {
     }
   }
 
+  protected onActivityLoadAll(): void {
+    const t = this.task();
+    if (t) {
+      this.stateService.loadAllActivity(this.projectId(), t.id);
+    }
+  }
+
   // ─── Attachment & Link Events ───────────────────────────────────────────
 
   protected onFileUpload(event: { files: FileList; title: string }): void {
@@ -1339,7 +1631,8 @@ export class TaskDetailPanelComponent implements OnInit, OnChanges, OnDestroy {
         error: (err) =>
           this.messageService.add({
             severity: 'error',
-            summary: err.error?.message ?? 'Upload thất bại',
+            summary: this.t().toastErrorHeader,
+            detail: err.error?.message ?? this.t().uploadFailed,
           }),
       });
     });
@@ -1353,7 +1646,8 @@ export class TaskDetailPanelComponent implements OnInit, OnChanges, OnDestroy {
       error: (err) =>
         this.messageService.add({
           severity: 'error',
-          summary: err.error?.message ?? 'Lỗi',
+          summary: this.t().toastErrorHeader,
+          detail: err.error?.message ?? this.t().genericError,
         }),
     });
   }

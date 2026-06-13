@@ -45,7 +45,6 @@ export const EMPTY_STATE_MAP: Record<string, EmptyStateConfig> = {
 const BASE_TABS: ActivityTab[] = [
   { label: 'Tất cả', value: 'all', icon: 'pi pi-list' },
   { label: 'Hoạt động', value: 'activity', icon: 'pi pi-bolt' },
-  { label: 'Bình luận', value: 'comments', icon: 'pi pi-comments' },
   { label: 'Lịch sử', value: 'history', icon: 'pi pi-history' },
 ];
 

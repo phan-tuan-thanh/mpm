@@ -40,7 +40,7 @@ import { Sprint, SprintStatus, CreateSprintDto } from '../../models/sprint.model
 
       <!-- Toolbar -->
       <div class="flex items-center gap-3 px-6 py-3 border-b border-gray-200 dark:border-surface-700 flex-shrink-0">
-        <h1 class="text-base font-semibold text-gray-900 dark:text-surface-0">Sprints</h1>
+        <h1 class="text-base font-semibold text-gray-900 dark:text-surface-0">{{ t().title }}</h1>
 
         <!-- Search -->
         <div class="relative">
@@ -48,7 +48,7 @@ import { Sprint, SprintStatus, CreateSprintDto } from '../../models/sprint.model
           <input
             pInputText
             type="text"
-            placeholder="Tìm kiếm sprint..."
+            [placeholder]="t().searchPlaceholder"
             [(ngModel)]="searchValue"
             (ngModelChange)="onSearchChange($event)"
             class="pl-8 pr-3 py-1.5 text-sm w-48 border border-gray-300 dark:border-surface-600 rounded-md bg-white dark:bg-surface-800 text-gray-900 dark:text-surface-0 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400"
@@ -71,9 +71,9 @@ import { Sprint, SprintStatus, CreateSprintDto } from '../../models/sprint.model
               class="pop-item font-medium text-gray-500"
               [class.selected]="selectedStatus === null"
             >
-              Tất cả trạng thái
+              {{ t().allStatus }}
             </div>
-            @for (opt of statusOptions; track opt.value) {
+            @for (opt of statusOptions(); track opt.value) {
               <div
                 (click)="selectedStatus = opt.value; statusPop.hide(); loadSprints()"
                 class="pop-item"
@@ -88,12 +88,12 @@ import { Sprint, SprintStatus, CreateSprintDto } from '../../models/sprint.model
         <!-- Selected count + bulk action -->
         @if (selectedIds().length > 0) {
           <span class="text-sm text-gray-500 dark:text-surface-400">
-            Đã chọn <strong class="text-gray-900 dark:text-surface-0">{{ selectedIds().length }}</strong> sprint
+            {{ t().selectedPrefix }} <strong class="text-gray-900 dark:text-surface-0">{{ selectedIds().length }}</strong> {{ t().selectedSuffix }}
           </span>
           <button
             pButton
             type="button"
-            label="Xóa đã chọn"
+            [label]="t().deleteSelected"
             icon="pi pi-trash"
             severity="danger"
             size="small"
@@ -108,7 +108,7 @@ import { Sprint, SprintStatus, CreateSprintDto } from '../../models/sprint.model
         <button
           pButton
           type="button"
-          label="Tạo Sprint"
+          [label]="t().createSprint"
           icon="pi pi-plus"
           size="small"
           [fluid]="false"
@@ -130,11 +130,11 @@ import { Sprint, SprintStatus, CreateSprintDto } from '../../models/sprint.model
           <div class="flex flex-col items-center justify-center h-64 gap-3 text-center">
             @if (hasFilter()) {
               <i class="pi pi-filter-slash text-4xl text-gray-300 dark:text-surface-600"></i>
-              <p class="text-gray-500 dark:text-surface-400 text-sm">Không tìm thấy sprint khớp với bộ lọc.</p>
+              <p class="text-gray-500 dark:text-surface-400 text-sm">{{ t().noSprintFoundFilter }}</p>
               <button
                 pButton
                 type="button"
-                label="Xóa bộ lọc"
+                [label]="t().clearFilters"
                 severity="secondary"
                 size="small"
                 [fluid]="false"
@@ -143,11 +143,11 @@ import { Sprint, SprintStatus, CreateSprintDto } from '../../models/sprint.model
               ></button>
             } @else {
               <i class="pi pi-flag text-4xl text-gray-300 dark:text-surface-600"></i>
-              <p class="text-gray-500 dark:text-surface-400 text-sm">Chưa có sprint nào. Tạo sprint đầu tiên!</p>
+              <p class="text-gray-500 dark:text-surface-400 text-sm">{{ t().noSprintFound }}</p>
               <button
                 pButton
                 type="button"
-                label="Tạo Sprint"
+                [label]="t().createSprint"
                 icon="pi pi-plus"
                 size="small"
                 [fluid]="false"
@@ -183,7 +183,7 @@ import { Sprint, SprintStatus, CreateSprintDto } from '../../models/sprint.model
                       {{ statusLabel(sprint.status) }}
                     </span>
                     @if (sprint.initialStoryPoints != null) {
-                      <span class="text-xs text-gray-400 dark:text-surface-500 flex-shrink-0">{{ sprint.initialStoryPoints }} SP</span>
+                      <span class="text-xs text-gray-400 dark:text-surface-500 flex-shrink-0">{{ sprint.initialStoryPoints }} {{ t().spUnit }}</span>
                     }
                   </div>
                   @if (sprint.goal) {
@@ -205,7 +205,7 @@ import { Sprint, SprintStatus, CreateSprintDto } from '../../models/sprint.model
                     <button
                       pButton
                       type="button"
-                      label="Bắt đầu"
+                      [label]="t().start"
                       icon="pi pi-play"
                       size="small"
                       [fluid]="false"
@@ -219,7 +219,7 @@ import { Sprint, SprintStatus, CreateSprintDto } from '../../models/sprint.model
                     <button
                       pButton
                       type="button"
-                      label="Hoàn thành"
+                      [label]="t().complete"
                       icon="pi pi-check"
                       size="small"
                       [fluid]="false"
@@ -248,7 +248,7 @@ import { Sprint, SprintStatus, CreateSprintDto } from '../../models/sprint.model
           <!-- Pagination -->
           @if (total() > 20) {
             <div class="flex items-center justify-between mt-4 pt-4 border-t border-gray-100 dark:border-surface-800">
-              <span class="text-xs text-gray-400 dark:text-surface-500">{{ total() }} sprint</span>
+              <span class="text-xs text-gray-400 dark:text-surface-500">{{ total() }} {{ t().selectedSuffix }}</span>
               <div class="flex items-center gap-1">
                 <button
                   pButton
@@ -281,7 +281,7 @@ import { Sprint, SprintStatus, CreateSprintDto } from '../../models/sprint.model
     <!-- Start Sprint Dialog -->
     <p-dialog
       [(visible)]="showStartDialog"
-      header="Bắt đầu Sprint"
+      [header]="t().startSprintHeader"
       [modal]="true"
       [style]="{ width: '400px' }"
       [closable]="true"
@@ -292,10 +292,10 @@ import { Sprint, SprintStatus, CreateSprintDto } from '../../models/sprint.model
         </div>
         <div>
           <p class="text-sm text-gray-700 dark:text-surface-200">
-            Bắt đầu sprint <strong class="text-gray-900 dark:text-surface-0">{{ startingSprintName }}</strong>?
+            {{ t().startSprintConfirm }} <strong class="text-gray-900 dark:text-surface-0">{{ startingSprintName }}</strong>?
           </p>
           <p class="text-xs text-gray-500 dark:text-surface-400 mt-1">
-            Sprint sẽ chuyển sang trạng thái <span class="font-medium text-green-600 dark:text-green-400">Đang chạy</span>.
+            Sprint sẽ chuyển sang trạng thái <span class="font-medium text-green-600 dark:text-green-400">{{ t().statusActive }}</span>.
           </p>
         </div>
       </div>
@@ -305,7 +305,7 @@ import { Sprint, SprintStatus, CreateSprintDto } from '../../models/sprint.model
           <button
             pButton
             type="button"
-            label="Hủy"
+            [label]="t().cancel"
             severity="secondary"
             size="small"
             [fluid]="false"
@@ -315,7 +315,7 @@ import { Sprint, SprintStatus, CreateSprintDto } from '../../models/sprint.model
           <button
             pButton
             type="button"
-            label="Bắt đầu"
+            [label]="t().start"
             icon="pi pi-play"
             severity="success"
             size="small"
@@ -331,19 +331,19 @@ import { Sprint, SprintStatus, CreateSprintDto } from '../../models/sprint.model
     <!-- Complete Sprint Dialog -->
     <p-dialog
       [(visible)]="showCompleteDialog"
-      header="Hoàn thành Sprint"
+      [header]="t().completeSprintHeader"
       [modal]="true"
       [style]="{ width: '460px' }"
       [closable]="true"
     >
       @if (completingSprintName) {
         <p class="text-sm text-gray-600 dark:text-surface-300 mb-4">
-          Sprint <strong class="text-gray-900 dark:text-surface-0">{{ completingSprintName }}</strong> sẽ được đánh dấu hoàn thành.
+          Sprint <strong class="text-gray-900 dark:text-surface-0">{{ completingSprintName }}</strong> {{ t().completeSprintDesc }}
         </p>
       }
 
       <div class="space-y-3">
-        <p class="text-sm font-medium text-gray-700 dark:text-surface-200">Task chưa hoàn thành sẽ được:</p>
+        <p class="text-sm font-medium text-gray-700 dark:text-surface-200">{{ t().incompleteTasksMoveTo }}</p>
 
         <!-- Option: backlog -->
         <label
@@ -359,8 +359,8 @@ import { Sprint, SprintStatus, CreateSprintDto } from '../../models/sprint.model
             class="mt-0.5 accent-indigo-600 dark:accent-indigo-400"
           />
           <div>
-            <p class="text-sm font-medium text-gray-900 dark:text-surface-0">Chuyển về Backlog</p>
-            <p class="text-xs text-gray-500 dark:text-surface-400 mt-0.5">Các task chưa xong sẽ quay lại backlog của dự án.</p>
+            <p class="text-sm font-medium text-gray-900 dark:text-surface-0">{{ t().moveToBacklog }}</p>
+            <p class="text-xs text-gray-500 dark:text-surface-400 mt-0.5">{{ t().moveToBacklogDesc }}</p>
           </div>
         </label>
 
@@ -378,8 +378,8 @@ import { Sprint, SprintStatus, CreateSprintDto } from '../../models/sprint.model
             class="mt-0.5 accent-indigo-600 dark:accent-indigo-400"
           />
           <div class="flex-1">
-            <p class="text-sm font-medium text-gray-900 dark:text-surface-0">Chuyển sang sprint khác</p>
-            <p class="text-xs text-gray-500 dark:text-surface-400 mt-0.5 mb-2">Chuyển toàn bộ task sang sprint đang lên kế hoạch.</p>
+            <p class="text-sm font-medium text-gray-900 dark:text-surface-0">{{ t().moveToSprint }}</p>
+            <p class="text-xs text-gray-500 dark:text-surface-400 mt-0.5 mb-2">{{ t().moveToSprintDesc }}</p>
             @if (completeMode === 'sprint') {
               <button
                 type="button"
@@ -400,7 +400,7 @@ import { Sprint, SprintStatus, CreateSprintDto } from '../../models/sprint.model
                       {{ s.name }}
                     </div>
                   } @empty {
-                    <div class="p-3 text-xs text-gray-400 text-center">Không có sprint nào đang lên kế hoạch</div>
+                    <div class="p-3 text-xs text-gray-400 text-center">{{ t().noPlanningSprint }}</div>
                   }
                 </div>
               </p-popover>
@@ -414,7 +414,7 @@ import { Sprint, SprintStatus, CreateSprintDto } from '../../models/sprint.model
           <button
             pButton
             type="button"
-            label="Hủy"
+            [label]="t().cancel"
             severity="secondary"
             size="small"
             [fluid]="false"
@@ -424,7 +424,7 @@ import { Sprint, SprintStatus, CreateSprintDto } from '../../models/sprint.model
           <button
             pButton
             type="button"
-            label="Xác nhận hoàn thành"
+            [label]="t().confirmComplete"
             icon="pi pi-check"
             size="small"
             [fluid]="false"
@@ -439,7 +439,7 @@ import { Sprint, SprintStatus, CreateSprintDto } from '../../models/sprint.model
     <!-- Delete Dialog -->
     <p-dialog
       [(visible)]="showDeleteDialog"
-      header="Xác nhận xóa"
+      [header]="t().confirmDeleteHeader"
       [modal]="true"
       [style]="{ width: '380px' }"
       [closable]="true"
@@ -456,7 +456,7 @@ import { Sprint, SprintStatus, CreateSprintDto } from '../../models/sprint.model
           <button
             pButton
             type="button"
-            label="Hủy"
+            [label]="t().cancel"
             severity="secondary"
             size="small"
             [fluid]="false"
@@ -466,7 +466,7 @@ import { Sprint, SprintStatus, CreateSprintDto } from '../../models/sprint.model
           <button
             pButton
             type="button"
-            label="Xóa"
+            [label]="t().deleteBtn"
             icon="pi pi-trash"
             severity="danger"
             size="small"
@@ -482,7 +482,7 @@ import { Sprint, SprintStatus, CreateSprintDto } from '../../models/sprint.model
     <!-- Create Dialog -->
     <p-dialog
       [(visible)]="showCreateDialog"
-      header="Tạo Sprint mới"
+      [header]="t().createSprintHeader"
       [modal]="true"
       [style]="{ width: '440px' }"
       [closable]="true"
@@ -490,26 +490,26 @@ import { Sprint, SprintStatus, CreateSprintDto } from '../../models/sprint.model
       <div class="space-y-4 py-2">
         <div class="flex flex-col gap-1.5">
           <label class="text-sm font-medium text-gray-700 dark:text-surface-300">
-            Tên Sprint <span class="text-red-500 dark:text-red-400">*</span>
+            {{ t().sprintNameLabel }} <span class="text-red-500 dark:text-red-400">*</span>
           </label>
           <input
             pInputText
             type="text"
             [(ngModel)]="newSprint.name"
-            placeholder="Nhập tên sprint..."
+            [placeholder]="t().sprintNamePlaceholder"
             class="text-sm"
           />
         </div>
         <div class="flex flex-col gap-1.5">
-          <label class="text-sm font-medium text-gray-700 dark:text-surface-300">Mục tiêu</label>
+          <label class="text-sm font-medium text-gray-700 dark:text-surface-300">{{ t().goalLabel }}</label>
           <app-rich-text-editor
             [(ngModel)]="newSprint.goal"
-            placeholder="Mục tiêu của sprint..."
+            [placeholder]="t().goalPlaceholder"
           ></app-rich-text-editor>
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div class="flex flex-col gap-1.5">
-            <label class="text-sm font-medium text-gray-700 dark:text-surface-300">Ngày bắt đầu</label>
+            <label class="text-sm font-medium text-gray-700 dark:text-surface-300">{{ t().startDateLabel }}</label>
             <input
               pInputText
               type="date"
@@ -518,7 +518,7 @@ import { Sprint, SprintStatus, CreateSprintDto } from '../../models/sprint.model
             />
           </div>
           <div class="flex flex-col gap-1.5">
-            <label class="text-sm font-medium text-gray-700 dark:text-surface-300">Ngày kết thúc</label>
+            <label class="text-sm font-medium text-gray-700 dark:text-surface-300">{{ t().endDateLabel }}</label>
             <input
               pInputText
               type="date"
@@ -534,7 +534,7 @@ import { Sprint, SprintStatus, CreateSprintDto } from '../../models/sprint.model
           <button
             pButton
             type="button"
-            label="Hủy"
+            [label]="t().cancel"
             severity="secondary"
             size="small"
             [fluid]="false"
@@ -544,7 +544,7 @@ import { Sprint, SprintStatus, CreateSprintDto } from '../../models/sprint.model
           <button
             pButton
             type="button"
-            label="Tạo Sprint"
+            [label]="t().createSprint"
             size="small"
             [fluid]="false"
             [disabled]="!newSprint.name?.trim() || creating()"
@@ -606,20 +606,130 @@ export class SprintListComponent implements OnInit, OnDestroy {
     () => !!this.searchValue || !!this.selectedStatus,
   );
 
-  readonly statusOptions = [
-    { label: 'Đang lên kế hoạch', value: 'planning' as SprintStatus },
-    { label: 'Đang chạy', value: 'active' as SprintStatus },
-    { label: 'Đã hoàn thành', value: 'completed' as SprintStatus },
-  ];
+  readonly t = computed(() => {
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    return isEn ? {
+      title: 'Sprints',
+      searchPlaceholder: 'Search sprint...',
+      allStatus: 'All statuses',
+      selectedPrefix: 'Selected',
+      selectedSuffix: 'sprint(s)',
+      deleteSelected: 'Delete selected',
+      createSprint: 'Create Sprint',
+      noSprintFoundFilter: 'No sprints found matching filters.',
+      clearFilters: 'Clear filters',
+      noSprintFound: 'No sprints yet. Create your first sprint!',
+      start: 'Start',
+      complete: 'Complete',
+      startSprintHeader: 'Start Sprint',
+      startSprintConfirm: 'Start sprint',
+      activeStatusDesc: 'The sprint status will change to Active.',
+      cancel: 'Cancel',
+      completeSprintHeader: 'Complete Sprint',
+      completeSprintDesc: 'will be marked as completed.',
+      incompleteTasksMoveTo: 'Incomplete tasks will be:',
+      moveToBacklog: 'Move to Backlog',
+      moveToBacklogDesc: 'Incomplete tasks will return to project backlog.',
+      moveToSprint: 'Move to another sprint',
+      moveToSprintDesc: 'Move all tasks to a planning sprint.',
+      selectSprintPlaceholder: 'Select sprint...',
+      noPlanningSprint: 'No planning sprints available',
+      confirmComplete: 'Confirm Complete',
+      confirmDeleteHeader: 'Confirm Delete',
+      deleteBtn: 'Delete',
+      createSprintHeader: 'Create new Sprint',
+      sprintNameLabel: 'Sprint Name',
+      sprintNamePlaceholder: 'Enter sprint name...',
+      goalLabel: 'Goal',
+      goalPlaceholder: 'Sprint goal...',
+      startDateLabel: 'Start Date',
+      endDateLabel: 'End Date',
+      spUnit: 'SP',
+      statusPlanning: 'Planning',
+      statusActive: 'Active',
+      statusCompleted: 'Completed',
+      toastSuccessCreate: 'Sprint created successfully',
+      toastErrorCreate: 'Could not create sprint',
+      toastSuccessStart: 'Sprint started successfully',
+      toastErrorStart: 'Could not start sprint',
+      toastSuccessComplete: 'Sprint completed successfully',
+      toastErrorComplete: 'Could not complete sprint',
+      toastSuccessDelete: 'Sprint(s) deleted successfully',
+      toastErrorDelete: 'Could not delete sprint(s)',
+      toastErrorLoad: 'Could not load sprints',
+      toastSuccessHeader: 'Success',
+      toastErrorHeader: 'Error'
+    } : {
+      title: 'Sprints',
+      searchPlaceholder: 'Tìm kiếm sprint...',
+      allStatus: 'Tất cả trạng thái',
+      selectedPrefix: 'Đã chọn',
+      selectedSuffix: 'sprint',
+      deleteSelected: 'Xóa đã chọn',
+      createSprint: 'Tạo Sprint',
+      noSprintFoundFilter: 'Không tìm thấy sprint khớp với bộ lọc.',
+      clearFilters: 'Xóa bộ lọc',
+      noSprintFound: 'Chưa có sprint nào. Tạo sprint đầu tiên!',
+      start: 'Bắt đầu',
+      complete: 'Hoàn thành',
+      startSprintHeader: 'Bắt đầu Sprint',
+      startSprintConfirm: 'Bắt đầu sprint',
+      activeStatusDesc: 'Sprint sẽ chuyển sang trạng thái Đang chạy.',
+      cancel: 'Hủy',
+      completeSprintHeader: 'Hoàn thành Sprint',
+      completeSprintDesc: 'sẽ được đánh dấu hoàn thành.',
+      incompleteTasksMoveTo: 'Task chưa hoàn thành sẽ được:',
+      moveToBacklog: 'Chuyển về Backlog',
+      moveToBacklogDesc: 'Các task chưa xong sẽ quay lại backlog của dự án.',
+      moveToSprint: 'Chuyển sang sprint khác',
+      moveToSprintDesc: 'Chuyển toàn bộ task sang sprint đang lên kế hoạch.',
+      selectSprintPlaceholder: 'Chọn sprint...',
+      noPlanningSprint: 'Không có sprint nào đang lên kế hoạch',
+      confirmComplete: 'Xác nhận hoàn thành',
+      confirmDeleteHeader: 'Xác nhận xóa',
+      deleteBtn: 'Xóa',
+      createSprintHeader: 'Tạo Sprint mới',
+      sprintNameLabel: 'Tên Sprint',
+      sprintNamePlaceholder: 'Nhập tên sprint...',
+      goalLabel: 'Mục tiêu',
+      goalPlaceholder: 'Mục tiêu của sprint...',
+      startDateLabel: 'Ngày bắt đầu',
+      endDateLabel: 'Ngày kết thúc',
+      spUnit: 'SP',
+      statusPlanning: 'Lên kế hoạch',
+      statusActive: 'Đang chạy',
+      statusCompleted: 'Hoàn thành',
+      toastSuccessCreate: 'Sprint đã được tạo',
+      toastErrorCreate: 'Không thể tạo sprint',
+      toastSuccessStart: 'Sprint đã được bắt đầu',
+      toastErrorStart: 'Không thể bắt đầu sprint',
+      toastSuccessComplete: 'Sprint đã hoàn thành',
+      toastErrorComplete: 'Không thể hoàn thành sprint',
+      toastSuccessDelete: 'Đã xóa sprint thành công',
+      toastErrorDelete: 'Không thể xóa sprint',
+      toastErrorLoad: 'Không thể tải danh sách sprint',
+      toastSuccessHeader: 'Thành công',
+      toastErrorHeader: 'Lỗi'
+    };
+  });
+
+  readonly statusOptions = computed(() => {
+    const trans = this.t();
+    return [
+      { label: trans.statusPlanning, value: 'planning' as SprintStatus },
+      { label: trans.statusActive, value: 'active' as SprintStatus },
+      { label: trans.statusCompleted, value: 'completed' as SprintStatus },
+    ];
+  });
 
   getStatusLabel(): string {
-    const found = this.statusOptions.find((o) => o.value === this.selectedStatus);
-    return found ? found.label : 'Tất cả trạng thái';
+    const found = this.statusOptions().find((o) => o.value === this.selectedStatus);
+    return found ? found.label : this.t().allStatus;
   }
 
   getTargetSprintLabel(): string {
     const found = this.planningSprints().find((s) => s.id === this.completeTargetSprintId);
-    return found ? found.name : 'Chọn sprint...';
+    return found ? found.name : this.t().selectSprintPlaceholder;
   }
 
   ngOnInit(): void {
@@ -662,8 +772,8 @@ export class SprintListComponent implements OnInit, OnDestroy {
           if (err?.status !== 404) {
             this.messageService.add({
               severity: 'error',
-              summary: 'Lỗi',
-              detail: 'Không thể tải danh sách sprint',
+              summary: this.t().toastErrorHeader,
+              detail: this.t().toastErrorLoad,
               life: 5000,
             });
           }
@@ -715,10 +825,11 @@ export class SprintListComponent implements OnInit, OnDestroy {
   }
 
   statusLabel(status: SprintStatus): string {
+    const trans = this.t();
     const map: Record<SprintStatus, string> = {
-      planning: 'Lên kế hoạch',
-      active: 'Đang chạy',
-      completed: 'Hoàn thành',
+      planning: trans.statusPlanning,
+      active: trans.statusActive,
+      completed: trans.statusCompleted,
     };
     return map[status] ?? status;
   }
@@ -736,8 +847,8 @@ export class SprintListComponent implements OnInit, OnDestroy {
           this.newSprint = { name: '' };
           this.messageService.add({
             severity: 'success',
-            summary: 'Thành công',
-            detail: 'Sprint đã được tạo',
+            summary: this.t().toastSuccessHeader,
+            detail: this.t().toastSuccessCreate,
             life: 3000,
           });
           this.loadSprints();
@@ -746,8 +857,8 @@ export class SprintListComponent implements OnInit, OnDestroy {
           this.creating.set(false);
           this.messageService.add({
             severity: 'error',
-            summary: 'Lỗi',
-            detail: 'Không thể tạo sprint',
+            summary: this.t().toastErrorHeader,
+            detail: this.t().toastErrorCreate,
             life: 5000,
           });
         },
@@ -772,8 +883,8 @@ export class SprintListComponent implements OnInit, OnDestroy {
           this.showStartDialog.set(false);
           this.messageService.add({
             severity: 'success',
-            summary: 'Đã bắt đầu',
-            detail: `Sprint "${this.startingSprintName}" đang chạy`,
+            summary: this.t().toastSuccessHeader,
+            detail: `${this.t().toastSuccessStart}: "${this.startingSprintName}"`,
             life: 3000,
           });
           this.loadSprints();
@@ -782,8 +893,8 @@ export class SprintListComponent implements OnInit, OnDestroy {
           this.starting.set(false);
           this.messageService.add({
             severity: 'error',
-            summary: 'Lỗi',
-            detail: err?.error?.message ?? 'Không thể bắt đầu sprint',
+            summary: this.t().toastErrorHeader,
+            detail: err?.error?.message ?? this.t().toastErrorStart,
             life: 5000,
           });
         },
@@ -815,8 +926,8 @@ export class SprintListComponent implements OnInit, OnDestroy {
           this.showCompleteDialog.set(false);
           this.messageService.add({
             severity: 'success',
-            summary: 'Hoàn thành',
-            detail: `Sprint "${this.completingSprintName}" đã hoàn thành`,
+            summary: this.t().toastSuccessHeader,
+            detail: `${this.t().toastSuccessComplete}: "${this.completingSprintName}"`,
             life: 3000,
           });
           this.loadSprints();
@@ -825,8 +936,8 @@ export class SprintListComponent implements OnInit, OnDestroy {
           this.completing.set(false);
           this.messageService.add({
             severity: 'error',
-            summary: 'Lỗi',
-            detail: err?.error?.message ?? 'Không thể hoàn thành sprint',
+            summary: this.t().toastErrorHeader,
+            detail: err?.error?.message ?? this.t().toastErrorComplete,
             life: 5000,
           });
         },
@@ -835,14 +946,20 @@ export class SprintListComponent implements OnInit, OnDestroy {
 
   confirmDelete(sprint: Sprint): void {
     this.deletingIds = [sprint.id];
-    this.deletingLabel = `Xóa sprint <strong class="text-gray-900 dark:text-surface-0">${sprint.name}</strong>? Hành động này không thể hoàn tác.`;
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    this.deletingLabel = isEn
+      ? `Delete sprint <strong class="text-gray-900 dark:text-surface-0">${sprint.name}</strong>? This action cannot be undone.`
+      : `Xóa sprint <strong class="text-gray-900 dark:text-surface-0">${sprint.name}</strong>? Hành động này không thể hoàn tác.`;
     this.showDeleteDialog.set(true);
   }
 
   confirmBulkDelete(): void {
     const count = this.selectedIds().length;
     this.deletingIds = this.selectedIds();
-    this.deletingLabel = `Xóa <strong class="text-gray-900 dark:text-surface-0">${count} sprint</strong> đã chọn? Hành động này không thể hoàn tác.`;
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    this.deletingLabel = isEn
+      ? `Delete <strong class="text-gray-900 dark:text-surface-0">${count} selected sprints</strong>? This action cannot be undone.`
+      : `Xóa <strong class="text-gray-900 dark:text-surface-0">${count} sprint</strong> đã chọn? Hành động này không thể hoàn tác.`;
     this.showDeleteDialog.set(true);
   }
 
@@ -859,8 +976,8 @@ export class SprintListComponent implements OnInit, OnDestroy {
           this.selectedIds.set([]);
           this.messageService.add({
             severity: 'success',
-            summary: 'Đã xóa',
-            detail: `${this.deletingIds.length} sprint đã được xóa`,
+            summary: this.t().toastSuccessHeader,
+            detail: this.t().toastSuccessDelete,
             life: 3000,
           });
           this.loadSprints();
@@ -869,8 +986,8 @@ export class SprintListComponent implements OnInit, OnDestroy {
           this.deleting.set(false);
           this.messageService.add({
             severity: 'error',
-            summary: 'Lỗi',
-            detail: 'Không thể xóa sprint',
+            summary: this.t().toastErrorHeader,
+            detail: this.t().toastErrorDelete,
             life: 5000,
           });
         },

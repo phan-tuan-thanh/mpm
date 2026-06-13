@@ -163,7 +163,7 @@ const ACTION_CONTROLS: readonly ActionControl[] = [
   {
     id: 'members:search',
     tab: 'members-tab',
-    templateSignatures: ['(ngModelChange)="onSearchChange($event)"', 'placeholder="Tìm tên hoặc email..."'],
+    templateSignatures: ['(ngModelChange)="onSearchChange($event)"', '[placeholder]="t().searchPlaceholder"'],
     handler: { name: 'onSearchChange', kind: 'method' },
     guard: 'always',
     guardToken: null,
@@ -171,7 +171,7 @@ const ACTION_CONTROLS: readonly ActionControl[] = [
   {
     id: 'members:add',
     tab: 'members-tab',
-    templateSignatures: ['(click)="showAddDialog()"', 'label="Thêm thành viên"'],
+    templateSignatures: ['(click)="showAddDialog()"', '[label]="t().addMemberBtn"'],
     handler: { name: 'showAddDialog', kind: 'method' },
     guard: 'notReadOnly',
     guardToken: '!isReadOnly()',
@@ -180,7 +180,7 @@ const ACTION_CONTROLS: readonly ActionControl[] = [
   {
     id: 'labels:bulk-delete',
     tab: 'labels-tab',
-    templateSignatures: ['(click)="confirmBulkDeleteProj()"', "[label]=\"'Xóa ' + projSelected().size\""],
+    templateSignatures: ['(click)="confirmBulkDeleteProj()"', '[label]="t().bulkDeleteLabel(projSelected().size)"'],
     handler: { name: 'confirmBulkDeleteProj', kind: 'method' },
     guard: 'hasSelection',
     guardToken: 'projSelected().size > 0',
@@ -188,7 +188,7 @@ const ACTION_CONTROLS: readonly ActionControl[] = [
   {
     id: 'labels:clear-selection',
     tab: 'labels-tab',
-    templateSignatures: ['(click)="clearProjSelection()"', 'pTooltip="Bỏ chọn tất cả"'],
+    templateSignatures: ['(click)="clearProjSelection()"', '[pTooltip]="t().deselectAllTooltip"'],
     handler: { name: 'clearProjSelection', kind: 'method' },
     guard: 'hasSelection',
     guardToken: 'projSelected().size > 0',
@@ -197,7 +197,7 @@ const ACTION_CONTROLS: readonly ActionControl[] = [
   {
     id: 'priorities:add',
     tab: 'priorities-tab',
-    templateSignatures: ['(click)="submitAdd()"', 'label="Thêm"'],
+    templateSignatures: ['(click)="submitAdd()"', '[label]="t().addBtn"'],
     handler: { name: 'submitAdd', kind: 'method' },
     guard: 'notReadOnly',
     guardToken: '!isReadOnly()',
@@ -206,7 +206,7 @@ const ACTION_CONTROLS: readonly ActionControl[] = [
   {
     id: 'states:apply-template',
     tab: 'states-tab',
-    templateSignatures: ['(click)="onApplyTemplate()"', 'label="Áp dụng lại template"'],
+    templateSignatures: ['(click)="onApplyTemplate()"', '[label]="t().reapplyTemplateBtn"'],
     handler: { name: 'onApplyTemplate', kind: 'method' },
     guard: 'isAdmin',
     guardToken: 'isAdmin()',
@@ -249,10 +249,10 @@ function isControlVisible(guard: GuardKind, s: RenderState): boolean {
 // ──────────────────────────────────────────────────────────────────────────
 
 const SECTION_TITLES: ReadonlyArray<{ tab: TabName; title: string }> = [
-  { tab: 'states-tab', title: 'Workspace Template' },
-  { tab: 'estimates-tab', title: 'Xem trước' },
-  { tab: 'general-info-tab', title: 'Thông tin chung' },
-  { tab: 'general-info-tab', title: 'Thông tin dự án' },
+  { tab: 'states-tab', title: '{{ t().templateSectionTitle }}' },
+  { tab: 'estimates-tab', title: '{{ t().previewTitle }}' },
+  { tab: 'general-info-tab', title: '{{ t().generalCardTitle }}' },
+  { tab: 'general-info-tab', title: '{{ t().metaCardTitle }}' },
 ];
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -359,7 +359,7 @@ describe('Project Settings tabs — Preservation [Property 2]', () => {
   describe('general-info-tab unchanged (Requirement 3.5)', () => {
     it('giữ nguyên các tiêu đề card nội dung', () => {
       const headings = headingTexts('general-info-tab');
-      expect(headings).toEqual(expect.arrayContaining(['Thông tin chung', 'Thông tin dự án']));
+      expect(headings).toEqual(expect.arrayContaining(['{{ t().generalCardTitle }}', '{{ t().metaCardTitle }}']));
     });
 
     it('giữ nguyên nhịp spacing chuẩn (space-y-5 / gap-5)', () => {

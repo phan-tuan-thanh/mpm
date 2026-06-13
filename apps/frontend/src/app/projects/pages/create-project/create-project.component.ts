@@ -64,6 +64,88 @@ export class CreateProjectComponent implements OnInit, OnDestroy {
   readonly workspaceTemplates = signal<WorkspaceStateTemplate[]>([]);
   readonly hasWorkspaceTemplates = computed(() => this.workspaceTemplates().length > 0);
 
+  // Localization
+  readonly t = computed(() => {
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    return isEn ? {
+      breadcrumbProjects: 'Projects',
+      breadcrumbCreate: 'Create new project',
+      title: 'Create new project',
+      subtitle: 'Set up a new collaborative workspace for your team.',
+      iconLabel: 'Icon',
+      nameLabel: 'Project Name',
+      nameRequired: 'Project name is required (maximum 100 characters).',
+      namePlaceholder: 'e.g. Project Management System',
+      keyLabel: 'Project Key',
+      keyPlaceholder: 'e.g. PMS',
+      keyHint: 'Used as task code prefix (e.g. PMS-1). Length 2-5 uppercase letters.',
+      keyRequired: 'Project Key does not match the format (2-5 uppercase letters).',
+      keyExists: `Project Key "${this.key}" is already taken.`,
+      descriptionLabel: 'Description (Optional)',
+      descriptionPlaceholder: 'Brief description of project goals...',
+      initStates: 'Initialization States',
+      defaultStateLabel: 'Default (Blank)',
+      defaultStateDesc: 'Initialize 3 basic states: Backlog, In Progress, Done.',
+      workspaceStateLabel: 'From Workspace Template',
+      workspaceStateDesc: (count: number) => `Use ${count} predefined states for the workspace.`,
+      privacyLabel: 'Privacy Level',
+      privacySecretBtn: 'Secret',
+      privacyPublicBtn: 'Public',
+      privacySecretDesc: 'Only invited members can access this project.',
+      privacyPublicDesc: 'Anyone in the workspace can find and join this project.',
+      leadLabel: 'Lead',
+      selectLead: 'Select lead',
+      timezoneLabel: 'Timezone',
+      selectTimezone: 'Select timezone',
+      searchTimezonePlaceholder: 'Search timezone...',
+      noTimezoneFound: 'No timezones found',
+      cancelBtn: 'Cancel',
+      createBtn: 'Create Project',
+      successSummary: 'Success',
+      successDetail: (projectName: string) => `Project "${projectName}" was successfully created.`,
+      errorSummary: 'Create Project Error',
+      errorDetail: (msg: string) => msg || 'An error occurred while creating the project.',
+    } : {
+      breadcrumbProjects: 'Dự án',
+      breadcrumbCreate: 'Tạo dự án mới',
+      title: 'Tạo dự án mới',
+      subtitle: 'Thiết lập không gian cộng tác mới cho nhóm của bạn.',
+      iconLabel: 'Icon',
+      nameLabel: 'Tên dự án',
+      nameRequired: 'Tên dự án là bắt buộc (tối đa 100 ký tự).',
+      namePlaceholder: 'Ví dụ: Project Management System',
+      keyLabel: 'Mã dự án (Key)',
+      keyPlaceholder: 'Ví dụ: PMS',
+      keyHint: 'Được dùng làm tiền tố mã công việc (ví dụ: PMS-1). Độ dài 2-5 chữ cái in hoa.',
+      keyRequired: 'Mã dự án không khớp định dạng (2-5 chữ cái in hoa).',
+      keyExists: `Mã dự án "${this.key}" đã được sử dụng.`,
+      descriptionLabel: 'Mô tả (Không bắt buộc)',
+      descriptionPlaceholder: 'Mô tả tóm tắt mục tiêu dự án...',
+      initStates: 'Trạng thái khởi tạo',
+      defaultStateLabel: 'Mặc định (Blank)',
+      defaultStateDesc: 'Khởi tạo 3 trạng thái cơ bản: Backlog, In Progress, Done.',
+      workspaceStateLabel: 'Từ Workspace Template',
+      workspaceStateDesc: (count: number) => `Sử dụng ${count} trạng thái đã được định nghĩa sẵn cho workspace.`,
+      privacyLabel: 'Quyền riêng tư',
+      privacySecretBtn: 'Bảo mật (Secret)',
+      privacyPublicBtn: 'Công khai (Public)',
+      privacySecretDesc: 'Chỉ thành viên được mời mới có thể truy cập dự án này.',
+      privacyPublicDesc: 'Tất cả mọi người trong workspace đều có thể tìm thấy và tự tham gia dự án này.',
+      leadLabel: 'Người phụ trách (Lead)',
+      selectLead: 'Chọn người phụ trách',
+      timezoneLabel: 'Múi giờ',
+      selectTimezone: 'Chọn múi giờ',
+      searchTimezonePlaceholder: 'Tìm kiếm múi giờ...',
+      noTimezoneFound: 'Không tìm thấy múi giờ',
+      cancelBtn: 'Hủy bỏ',
+      createBtn: 'Tạo dự án',
+      successSummary: 'Thành công',
+      successDetail: (projectName: string) => `Dự án "${projectName}" đã được tạo thành công.`,
+      errorSummary: 'Lỗi tạo dự án',
+      errorDetail: (msg: string) => msg || 'Có lỗi xảy ra khi tạo dự án.',
+    };
+  });
+
   // Lead options computed (only current user for new projects)
   readonly leadOptions = computed(() => {
     const user = this.authService.currentUser();
@@ -86,17 +168,17 @@ export class CreateProjectComponent implements OnInit, OnDestroy {
 
   getTimezoneLabel(): string {
     const found = this.timezoneOptions.find((o) => o.value === this.timezone);
-    return found ? found.label : 'Chọn múi giờ';
+    return found ? found.label : this.t().selectTimezone;
   }
 
   getLeadLabel(): string {
     const found = this.leadOptions().find((o) => o.value === this.leadId);
-    return found ? found.label : 'Chọn người phụ trách';
+    return found ? found.label : this.t().selectLead;
   }
 
   // Form States
   keyEditedByUser = false;
-  keyError = '';
+  keyAlreadyExists = signal<boolean>(false);
   readonly isSubmitting = signal<boolean>(false);
 
   private readonly keyCheckSubject = new Subject<string>();
@@ -120,11 +202,7 @@ export class CreateProjectComponent implements OnInit, OnDestroy {
         }),
       )
       .subscribe((project) => {
-        if (project) {
-          this.keyError = `Mã dự án "${this.key}" đã được sử dụng.`;
-        } else {
-          this.keyError = '';
-        }
+        this.keyAlreadyExists.set(!!project);
       });
 
     // Default lead to current user
@@ -159,10 +237,11 @@ export class CreateProjectComponent implements OnInit, OnDestroy {
 
   onSubmit(event: Event): void {
     event.preventDefault();
-    if (!this.name || !this.key || this.keyError) return;
+    if (!this.name || !this.key || this.keyAlreadyExists()) return;
 
     this.isSubmitting.set(true);
 
+    const trans = this.t();
     this.projectService
       .createProject({
         name: this.name,
@@ -178,8 +257,8 @@ export class CreateProjectComponent implements OnInit, OnDestroy {
         next: (project) => {
           this.messageService.add({
             severity: 'success',
-            summary: 'Thành công',
-            detail: `Dự án "${project.name}" đã được tạo thành công.`,
+            summary: trans.successSummary,
+            detail: trans.successDetail(project.name),
           });
           this.projectStore.loadProjects(); // Reload projects list
           void this.router.navigate(['/projects', project.key, 'board']);
@@ -188,8 +267,8 @@ export class CreateProjectComponent implements OnInit, OnDestroy {
           this.isSubmitting.set(false);
           this.messageService.add({
             severity: 'error',
-            summary: 'Lỗi tạo dự án',
-            detail: err.error?.message || 'Có lỗi xảy ra khi tạo dự án.',
+            summary: trans.errorSummary,
+            detail: trans.errorDetail(err.error?.message),
           });
         },
       });

@@ -32,25 +32,32 @@ type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
     @if (!editing()) {
       <div
         data-testid="description-read"
-        class="group relative -mx-2 px-2 py-1 rounded-lg cursor-text transition-colors hover:bg-gray-50 dark:hover:bg-surface-800"
+        class="group relative -mx-2 px-2 py-1 rounded-lg transition-colors"
+        [class.cursor-text]="!disabled"
+        [class.hover:bg-gray-50]="!disabled"
+        [class.dark:hover:bg-surface-800]="!disabled"
       >
-        <button
-          pButton type="button" icon="pi pi-pencil" [text]="true" size="small"
-          data-testid="description-edit-btn"
-          class="!absolute top-1 right-1 z-10 opacity-0 group-hover:opacity-100"
-          (click)="enterEdit()"
-        ></button>
+        @if (!disabled) {
+          <button
+            pButton type="button" icon="pi pi-pencil" [text]="true" size="small"
+            data-testid="description-edit-btn"
+            class="!absolute top-1 right-1 z-10 opacity-0 group-hover:opacity-100"
+            (click)="enterEdit()"
+          ></button>
+        }
         @if (isEmpty()) {
           <p
             data-testid="description-placeholder"
             class="text-sm italic text-gray-400 dark:text-surface-500 min-h-[2.5rem] flex items-center"
-            (click)="enterEdit()"
+            [class.cursor-text]="!disabled"
+            (click)="!disabled && enterEdit()"
           >Thêm mô tả…</p>
         } @else {
           <app-rich-text-viewer
             [doc]="docSignal()"
-            (editRequested)="enterEdit()"
-            (checkboxToggled)="checkboxToggled.emit($event)"
+            [disabled]="disabled"
+            (editRequested)="!disabled && enterEdit()"
+            (checkboxToggled)="!disabled && checkboxToggled.emit($event)"
           />
         }
       </div>
@@ -77,6 +84,8 @@ export class TaskDescriptionSectionComponent {
 
   protected readonly docSignal = signal<TiptapDoc | null>(null);
   protected readonly statusSignal = signal<SaveStatus>('idle');
+
+  @Input() disabled = false;
 
   @Input() set doc(v: TiptapDoc | null | undefined) { this.docSignal.set(v ?? null); }
   @Input() set saveStatus(v: SaveStatus) { this.statusSignal.set(v); }

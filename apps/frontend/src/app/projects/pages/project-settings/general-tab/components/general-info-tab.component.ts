@@ -41,7 +41,7 @@ import { IconDisplayComponent } from '../../../../../shared/components/icon-disp
       @if (isReadOnly()) {
         <div class="rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 p-3 flex gap-2 text-xs text-amber-700 dark:text-amber-400 font-medium mb-5">
           <i class="pi pi-lock text-sm mt-0.5"></i>
-          <span>Chế độ xem. Chỉ Scrum Master hoặc Admin mới có thể chỉnh sửa.</span>
+          <span>{{ t().readOnlyBanner }}</span>
         </div>
       }
 
@@ -54,8 +54,8 @@ import { IconDisplayComponent } from '../../../../../shared/components/icon-disp
           <!-- Card: Thông tin chung -->
           <div class="bg-surface-0 dark:bg-surface-900 rounded-xl border border-surface-100 dark:border-surface-800 shadow-sm overflow-hidden">
             <div class="px-5 py-3.5 border-b border-surface-100 dark:border-surface-800">
-              <h2 class="text-sm font-bold text-gray-900 dark:text-surface-0">Thông tin chung</h2>
-              <p class="text-xs text-gray-400 dark:text-surface-500 mt-0.5">Quản lý nhận diện dự án bao gồm biểu tượng, tên gọi, ảnh bìa và mô tả chi tiết.</p>
+              <h2 class="text-sm font-bold text-gray-900 dark:text-surface-0">{{ t().generalCardTitle }}</h2>
+              <p class="text-xs text-gray-400 dark:text-surface-500 mt-0.5">{{ t().generalCardDesc }}</p>
             </div>
             <div class="p-5 space-y-5">
 
@@ -77,7 +77,7 @@ import { IconDisplayComponent } from '../../../../../shared/components/icon-disp
                 </div>
                 <!-- Name Input -->
                 <div class="flex-1 flex flex-col gap-1.5">
-                  <label for="name" class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wider select-none">Tên dự án <span class="text-red-500 normal-case">*</span></label>
+                  <label for="name" class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wider select-none">{{ t().projectNameLabel }} <span class="text-red-500 normal-case">*</span></label>
                   <input id="name" name="name" type="text" pInputText [(ngModel)]="name" [disabled]="isReadOnly() || isSubmitting()" required maxlength="100" class="w-full" style="height: 38px;" />
                 </div>
               </div>
@@ -87,27 +87,27 @@ import { IconDisplayComponent } from '../../../../../shared/components/icon-disp
 
               <!-- Cover image section -->
               <div class="space-y-2">
-                <label class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wider">Ảnh bìa</label>
+                <label class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wider">{{ t().coverLabel }}</label>
                 <div class="relative group rounded-lg overflow-hidden border border-gray-200 dark:border-surface-700 bg-gray-50 dark:bg-surface-800 h-32 flex items-center justify-center">
                   @if (coverPreviewUrl()) {
                     <img [src]="coverPreviewUrl()" class="w-full h-full object-cover" />
                     @if (!isReadOnly()) {
                       <div class="absolute inset-0 bg-black/45 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition duration-200">
-                        <button pButton type="button" icon="pi pi-trash" severity="danger" size="small" label="Xóa ảnh bìa" [fluid]="false" (click)="onDeleteCover()"></button>
+                        <button pButton type="button" icon="pi pi-trash" severity="danger" size="small" [label]="t().deleteCoverBtn" [fluid]="false" (click)="onDeleteCover()"></button>
                       </div>
                     }
                   } @else {
                     <div class="flex flex-col items-center gap-1">
                       <i class="pi pi-image text-2xl text-gray-300 dark:text-surface-600"></i>
-                      <p class="text-xs text-gray-400 dark:text-surface-500">Không có ảnh bìa</p>
+                      <p class="text-xs text-gray-400 dark:text-surface-500">{{ t().noCoverLabel }}</p>
                     </div>
                   }
                 </div>
                 @if (!isReadOnly()) {
                   <div class="flex items-center gap-2 pt-1">
                     <input type="file" #coverInput accept="image/png, image/jpeg, image/webp" class="hidden" (change)="onCoverFileSelected($event)" />
-                    <button pButton type="button" icon="pi pi-upload" label="Tải lên ảnh bìa" severity="secondary" size="small" [outlined]="true" [fluid]="false" (click)="coverInput.click()" [disabled]="isUploadingCover()"></button>
-                    <span class="text-xs text-gray-400 dark:text-surface-500">JPG, PNG, WEBP · tối đa 5MB</span>
+                    <button pButton type="button" icon="pi pi-upload" [label]="t().uploadCoverBtn" severity="secondary" size="small" [outlined]="true" [fluid]="false" (click)="coverInput.click()" [disabled]="isUploadingCover()"></button>
+                    <span class="text-xs text-gray-400 dark:text-surface-500">{{ t().coverConstraint }}</span>
                   </div>
                 }
               </div>
@@ -117,9 +117,9 @@ import { IconDisplayComponent } from '../../../../../shared/components/icon-disp
 
               <!-- Description section -->
               <div class="space-y-2">
-                <label class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wider">Mô tả dự án</label>
+                <label class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wider">{{ t().descriptionLabel }}</label>
                 <div>
-                  <app-rich-text-editor name="description" [(ngModel)]="description" placeholder="Không có mô tả cho dự án này."></app-rich-text-editor>
+                  <app-rich-text-editor name="description" [(ngModel)]="description" [placeholder]="t().descriptionPlaceholder"></app-rich-text-editor>
                 </div>
               </div>
 
@@ -135,26 +135,26 @@ import { IconDisplayComponent } from '../../../../../shared/components/icon-disp
           <!-- Card: Thông tin dự án -->
           <div class="bg-surface-0 dark:bg-surface-900 rounded-xl border border-surface-100 dark:border-surface-800 shadow-sm overflow-hidden">
             <div class="px-5 py-3.5 border-b border-surface-100 dark:border-surface-800">
-              <h2 class="text-sm font-bold text-gray-900 dark:text-surface-0">Thông tin dự án</h2>
-              <p class="text-xs text-gray-400 dark:text-surface-500 mt-0.5">Mã, quyền riêng tư và người phụ trách dự án.</p>
+              <h2 class="text-sm font-bold text-gray-900 dark:text-surface-0">{{ t().metaCardTitle }}</h2>
+              <p class="text-xs text-gray-400 dark:text-surface-500 mt-0.5">{{ t().metaCardDesc }}</p>
             </div>
             <div class="p-4 space-y-4">
 
               <!-- Key -->
               <div class="flex flex-col gap-1.5">
-                <label class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wider">Mã dự án (Key)</label>
+                <label class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wider">{{ t().keyLabel }}</label>
                 <div class="flex items-center gap-2">
                   <p-chip [label]="projectKey()" class="font-bold text-indigo-700 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-800 rounded px-2.5 py-1 text-xs"></p-chip>
-                  <span class="text-xs text-gray-400 dark:text-surface-500"><i class="pi pi-lock text-[10px] mr-0.5"></i>Cố định</span>
+                  <span class="text-xs text-gray-400 dark:text-surface-500"><i class="pi pi-lock text-[10px] mr-0.5"></i>{{ t().fixedKeyLabel }}</span>
                 </div>
               </div>
 
               <!-- Privacy -->
               <div class="flex flex-col gap-1.5">
-                <label class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wider">Quyền riêng tư</label>
+                <label class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wider">{{ t().privacyLabel }}</label>
                 <div class="mt-1">
                   <p-selectbutton
-                    [options]="privacyOptions"
+                    [options]="privacyOptions()"
                     [(ngModel)]="network"
                     name="network"
                     [allowEmpty]="false"
@@ -170,7 +170,7 @@ import { IconDisplayComponent } from '../../../../../shared/components/icon-disp
 
               <!-- Lead -->
               <div class="flex flex-col gap-1.5">
-                <label class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wider">Người phụ trách</label>
+                <label class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wider">{{ t().leadLabel }}</label>
                 <button
                   type="button"
                   (click)="leadPop.toggle($event)"
@@ -197,7 +197,7 @@ import { IconDisplayComponent } from '../../../../../shared/components/icon-disp
 
               <!-- Timezone -->
               <div class="flex flex-col gap-1.5">
-                <label class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wider">Múi giờ <span class="normal-case font-normal">(theo IANA)</span></label>
+                <label class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wider">{{ t().timezoneLabel }} <span class="normal-case font-normal">({{ t().ianaTimezoneHint }})</span></label>
                 <button
                   type="button"
                   (click)="timezonePop.toggle($event); timezoneSearch.set('')"
@@ -212,7 +212,7 @@ import { IconDisplayComponent } from '../../../../../shared/components/icon-disp
                     <input
                       type="text"
                       pInputText
-                      placeholder="Tìm kiếm múi giờ..."
+                      [placeholder]="t().searchTimezonePlaceholder"
                       class="w-full text-xs p-1"
                       [ngModel]="timezoneSearch()"
                       (ngModelChange)="timezoneSearch.set($event)"
@@ -229,10 +229,29 @@ import { IconDisplayComponent } from '../../../../../shared/components/icon-disp
                         {{ opt.label }}
                       </div>
                     } @empty {
-                      <div class="p-3 text-xs text-gray-400 text-center">Không tìm thấy múi giờ</div>
+                      <div class="p-3 text-xs text-gray-400 text-center">{{ t().noTimezoneFound }}</div>
                     }
                   </div>
                 </p-popover>
+              </div>
+
+              <div class="border-t border-surface-100 dark:border-surface-800"></div>
+
+              <!-- Language Settings -->
+              <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wider">{{ t().langLabel }}</label>
+                <div class="mt-1">
+                  <p-selectbutton
+                    [options]="languageOptions()"
+                    [(ngModel)]="language"
+                    name="language"
+                    [allowEmpty]="false"
+                    optionLabel="label"
+                    optionValue="value"
+                    [disabled]="isReadOnly() || isSubmitting()"
+                    size="small"
+                  />
+                </div>
               </div>
 
             </div>
@@ -241,7 +260,7 @@ import { IconDisplayComponent } from '../../../../../shared/components/icon-disp
           <!-- Save button -->
           @if (!isReadOnly()) {
             <div class="flex justify-end">
-              <button pButton type="submit" label="Lưu thay đổi" [disabled]="isSubmitting() || !name" [fluid]="false"></button>
+              <button pButton type="submit" [label]="t().saveBtn" [disabled]="isSubmitting() || !name" [fluid]="false"></button>
             </div>
           }
 
@@ -275,14 +294,120 @@ import { IconDisplayComponent } from '../../../../../shared/components/icon-disp
 })
 export class GeneralInfoTabComponent implements OnInit {
   readonly ProjectNetwork = ProjectNetwork;
-  readonly privacyOptions = [
-    { label: 'Bảo mật', value: ProjectNetwork.SECRET },
-    { label: 'Công khai', value: ProjectNetwork.PUBLIC },
-  ];
+
   readonly projectStore = inject(ProjectStore);
   private readonly projectService = inject(ProjectService);
   private readonly authService = inject(AuthService);
   private readonly messageService = inject(MessageService);
+
+  readonly t = computed(() => {
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    return isEn ? {
+      readOnlyBanner: 'Read-only view. Only Scrum Master or Admin can edit.',
+      generalCardTitle: 'General Info',
+      generalCardDesc: 'Manage project identity including icon, name, cover image, and description.',
+      projectNameLabel: 'Project Name',
+      coverLabel: 'Cover Image',
+      deleteCoverBtn: 'Delete cover image',
+      noCoverLabel: 'No cover image',
+      uploadCoverBtn: 'Upload cover image',
+      coverConstraint: 'JPG, PNG, WEBP · max 5MB',
+      descriptionLabel: 'Project Description',
+      descriptionPlaceholder: 'No description for this project.',
+      metaCardTitle: 'Project Information',
+      metaCardDesc: 'Key, privacy, and lead.',
+      keyLabel: 'Project Key (Key)',
+      fixedKeyLabel: 'Fixed',
+      privacyLabel: 'Privacy',
+      privacySecret: 'Secret',
+      privacyPublic: 'Public',
+      leadLabel: 'Lead',
+      timezoneLabel: 'Timezone',
+      ianaTimezoneHint: 'according to IANA',
+      searchTimezonePlaceholder: 'Search timezone...',
+      noTimezoneFound: 'No timezone found',
+      selectTimezone: 'Select timezone',
+      selectLead: 'Select lead',
+      langLabel: 'Display Language',
+      langVi: 'Tiếng Việt',
+      langEn: 'English',
+      saveBtn: 'Save Changes',
+      fileLargeSummary: 'File Too Large',
+      fileLargeDetail: 'Cover image size must not exceed 5MB.',
+      uploadSuccessSummary: 'Success',
+      uploadSuccessDetail: 'Cover image uploaded successfully.',
+      uploadFailedSummary: 'Upload Failed',
+      uploadFailedDetail: (err: string) => err || 'An error occurred while uploading cover image.',
+      deleteSuccessSummary: 'Success',
+      deleteSuccessDetail: 'Project cover image deleted.',
+      deleteFailedSummary: 'Deletion Failed',
+      deleteFailedDetail: (err: string) => err || 'An error occurred while deleting cover image.',
+      saveSuccessSummary: 'Success',
+      saveSuccessDetail: 'Project configuration updated.',
+      saveFailedSummary: 'Failed',
+      saveFailedDetail: (err: string) => err || 'An error occurred while updating.',
+    } : {
+      readOnlyBanner: 'Chế độ xem. Chỉ Scrum Master hoặc Admin mới có thể chỉnh sửa.',
+      generalCardTitle: 'Thông tin chung',
+      generalCardDesc: 'Quản lý nhận diện dự án bao gồm biểu tượng, tên gọi, ảnh bìa và mô tả chi tiết.',
+      projectNameLabel: 'Tên dự án',
+      coverLabel: 'Ảnh bìa',
+      deleteCoverBtn: 'Xóa ảnh bìa',
+      noCoverLabel: 'Không có ảnh bìa',
+      uploadCoverBtn: 'Tải lên ảnh bìa',
+      coverConstraint: 'JPG, PNG, WEBP · tối đa 5MB',
+      descriptionLabel: 'Mô tả dự án',
+      descriptionPlaceholder: 'Không có mô tả cho dự án này.',
+      metaCardTitle: 'Thông tin dự án',
+      metaCardDesc: 'Mã, quyền riêng tư và người phụ trách dự án.',
+      keyLabel: 'Mã dự án (Key)',
+      fixedKeyLabel: 'Cố định',
+      privacyLabel: 'Quyền riêng tư',
+      privacySecret: 'Bảo mật',
+      privacyPublic: 'Công khai',
+      leadLabel: 'Người phụ trách',
+      timezoneLabel: 'Múi giờ',
+      ianaTimezoneHint: 'theo IANA',
+      searchTimezonePlaceholder: 'Tìm kiếm múi giờ...',
+      noTimezoneFound: 'Không tìm thấy múi giờ',
+      selectTimezone: 'Chọn múi giờ',
+      selectLead: 'Chọn người phụ trách',
+      langLabel: 'Ngôn ngữ hiển thị',
+      langVi: 'Tiếng Việt',
+      langEn: 'English',
+      saveBtn: 'Lưu thay đổi',
+      fileLargeSummary: 'Kích thước file lớn',
+      fileLargeDetail: 'Kích thước ảnh bìa không được vượt quá 5MB.',
+      uploadSuccessSummary: 'Thành công',
+      uploadSuccessDetail: 'Tải lên ảnh bìa thành công.',
+      uploadFailedSummary: 'Tải lên thất bại',
+      uploadFailedDetail: (err: string) => err || 'Có lỗi xảy ra khi tải lên ảnh bìa.',
+      deleteSuccessSummary: 'Thành công',
+      deleteSuccessDetail: 'Đã xóa ảnh bìa dự án.',
+      deleteFailedSummary: 'Xóa thất bại',
+      deleteFailedDetail: (err: string) => err || 'Có lỗi xảy ra khi xóa ảnh bìa.',
+      saveSuccessSummary: 'Thành công',
+      saveSuccessDetail: 'Cấu hình dự án đã được cập nhật.',
+      saveFailedSummary: 'Thất bại',
+      saveFailedDetail: (err: string) => err || 'Có lỗi xảy ra khi cập nhật.',
+    };
+  });
+
+  readonly privacyOptions = computed(() => {
+    const trans = this.t();
+    return [
+      { label: trans.privacySecret, value: ProjectNetwork.SECRET },
+      { label: trans.privacyPublic, value: ProjectNetwork.PUBLIC },
+    ];
+  });
+
+  readonly languageOptions = computed(() => {
+    const trans = this.t();
+    return [
+      { label: trans.langVi, value: 'vi' },
+      { label: trans.langEn, value: 'en' },
+    ];
+  });
 
   // States
   name = '';
@@ -291,6 +416,7 @@ export class GeneralInfoTabComponent implements OnInit {
   network = ProjectNetwork.SECRET;
   leadId: string | null = null;
   timezone = 'Asia/Saigon';
+  language: 'vi' | 'en' = 'vi';
 
   readonly isSubmitting = signal<boolean>(false);
   readonly isUploadingCover = signal<boolean>(false);
@@ -352,12 +478,12 @@ export class GeneralInfoTabComponent implements OnInit {
 
   getTimezoneLabel(): string {
     const found = this.timezoneOptions.find((o) => o.value === this.timezone);
-    return found ? found.label : 'Chọn múi giờ';
+    return found ? found.label : this.t().selectTimezone;
   }
 
   getLeadLabel(): string {
     const found = this.leadOptions().find((o) => o.value === this.leadId);
-    return found ? found.label : 'Chọn người phụ trách';
+    return found ? found.label : this.t().selectLead;
   }
 
   // Kiểm tra quyền read-only
@@ -384,6 +510,7 @@ export class GeneralInfoTabComponent implements OnInit {
       this.network = project.network || ProjectNetwork.SECRET;
       this.leadId = project.lead?.userId || null;
       this.timezone = project.timezone || 'Asia/Saigon';
+      this.language = this.projectStore.projectLanguage();
       
       // Load members for dropdown selection
       this.projectStore.loadMembers(project.id);
@@ -394,11 +521,12 @@ export class GeneralInfoTabComponent implements OnInit {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (!file) return;
 
+    const trans = this.t();
     if (file.size > 5 * 1024 * 1024) {
       this.messageService.add({
         severity: 'error',
-        summary: 'Kích thước file lớn',
-        detail: 'Kích thước ảnh bìa không được vượt quá 5MB.',
+        summary: trans.fileLargeSummary,
+        detail: trans.fileLargeDetail,
       });
       return;
     }
@@ -417,16 +545,16 @@ export class GeneralInfoTabComponent implements OnInit {
         });
         this.messageService.add({
           severity: 'success',
-          summary: 'Thành công',
-          detail: 'Tải lên ảnh bìa thành công.',
+          summary: trans.uploadSuccessSummary,
+          detail: trans.uploadSuccessDetail,
         });
       },
       error: (err) => {
         this.isUploadingCover.set(false);
         this.messageService.add({
           severity: 'error',
-          summary: 'Tải lên thất bại',
-          detail: err.error?.message || 'Có lỗi xảy ra khi tải lên ảnh bìa.',
+          summary: trans.uploadFailedSummary,
+          detail: trans.uploadFailedDetail(err.error?.message),
         });
       },
     });
@@ -436,6 +564,7 @@ export class GeneralInfoTabComponent implements OnInit {
     const project = this.projectStore.currentProject();
     if (!project) return;
 
+    const trans = this.t();
     this.projectService.deleteCover(project.id).subscribe({
       next: () => {
         this.projectStore.setCurrentProject({
@@ -444,15 +573,15 @@ export class GeneralInfoTabComponent implements OnInit {
         });
         this.messageService.add({
           severity: 'success',
-          summary: 'Thành công',
-          detail: 'Đã xóa ảnh bìa dự án.',
+          summary: trans.deleteSuccessSummary,
+          detail: trans.deleteSuccessDetail,
         });
       },
       error: (err) => {
         this.messageService.add({
           severity: 'error',
-          summary: 'Xóa thất bại',
-          detail: err.error?.message || 'Có lỗi xảy ra khi xóa ảnh bìa.',
+          summary: trans.deleteFailedSummary,
+          detail: trans.deleteFailedDetail(err.error?.message),
         });
       },
     });
@@ -465,6 +594,9 @@ export class GeneralInfoTabComponent implements OnInit {
 
     this.isSubmitting.set(true);
 
+    this.projectStore.setProjectLanguage(this.language);
+
+    const trans = this.t();
     this.projectService
       .updateProject(project.id, {
         name: this.name,
@@ -479,8 +611,8 @@ export class GeneralInfoTabComponent implements OnInit {
           this.isSubmitting.set(false);
           this.messageService.add({
             severity: 'success',
-            summary: 'Thành công',
-            detail: 'Cấu hình dự án đã được cập nhật.',
+            summary: trans.saveSuccessSummary,
+            detail: trans.saveSuccessDetail,
           });
           // Update store
           this.projectStore.setCurrentProject(updatedProject);
@@ -489,8 +621,8 @@ export class GeneralInfoTabComponent implements OnInit {
           this.isSubmitting.set(false);
           this.messageService.add({
             severity: 'error',
-            summary: 'Thất bại',
-            detail: err.error?.message || 'Có lỗi xảy ra khi cập nhật.',
+            summary: trans.saveFailedSummary,
+            detail: trans.saveFailedDetail(err.error?.message),
           });
         },
       });

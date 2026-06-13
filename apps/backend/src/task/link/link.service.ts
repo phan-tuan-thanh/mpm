@@ -6,6 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { TaskLink } from '../entities/task-link.entity';
+import { Task } from '../entities/task.entity';
 import { ActivityService } from '../activity/activity.service';
 
 const ALLOWED_SCHEMES = ['http:', 'https:'];
@@ -15,14 +16,26 @@ export class LinkService {
   constructor(
     @InjectRepository(TaskLink)
     private readonly linkRepo: Repository<TaskLink>,
+    @InjectRepository(Task)
+    private readonly taskRepo: Repository<Task>,
     private readonly activityService: ActivityService,
   ) {}
+
+  private async checkTaskNotCompleted(taskId: string): Promise<void> {
+    const task = await this.taskRepo.findOne({ where: { id: taskId }, relations: ['state'] });
+    if (!task) throw new NotFoundException('Task not found');
+    if (task.state?.group === 'completed') {
+      throw new UnprocessableEntityException('Cannot modify links of a completed/closed task');
+    }
+  }
 
   async create(
     taskId: string,
     userId: string,
     dto: { url: string; title?: string },
   ): Promise<TaskLink> {
+    await this.checkTaskNotCompleted(taskId);
+
     let parsed: URL;
     try {
       parsed = new URL(dto.url);
@@ -50,6 +63,8 @@ export class LinkService {
   }
 
   async delete(linkId: string, taskId: string, userId: string): Promise<void> {
+    await this.checkTaskNotCompleted(taskId);
+
     const link = await this.linkRepo.findOne({ where: { id: linkId, taskId } });
     if (!link) throw new NotFoundException('Link not found');
 

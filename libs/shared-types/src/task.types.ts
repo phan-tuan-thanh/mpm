@@ -364,6 +364,7 @@ export interface DisplayProperties {
   taskCreationViewMode?: 'right-pane' | 'full-page' | 'popup';
   taskDetailViewMode?: 'right-pane' | 'full-page' | 'popup';
   maxSubItemDepth: number; // 0 = ẩn sub-items, 1 = chỉ con trực tiếp, v.v.
+  kanbanColumnWidth?: number; // chiều rộng cột kanban
 }
 
 export const DEFAULT_DISPLAY_PROPS: DisplayProperties = {
@@ -385,4 +386,5 @@ export const DEFAULT_DISPLAY_PROPS: DisplayProperties = {
   taskCreationViewMode: 'popup',
   taskDetailViewMode: 'right-pane',
   maxSubItemDepth: 3,
+  kanbanColumnWidth: 288,
 };

@@ -1,6 +1,7 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import type { ModuleLifecycleStatus } from '@mpm/shared-types';
+import { ProjectStore } from '../../../projects/state/project.store';
 
 export interface StatusConfig {
   label: string;
@@ -17,6 +18,16 @@ export const STATUS_CONFIG: Record<ModuleLifecycleStatus, StatusConfig> = {
   deprecated:  { label: 'Sắp loại bỏ',        color: '#EF4444', icon: 'pi pi-exclamation-triangle', opacity: 0.8 },
   retired:     { label: 'Đã ngừng',           color: '#374151', icon: 'pi pi-lock',                 opacity: 0.6 },
   cancelled:   { label: 'Đã hủy',             color: '#9CA3AF', icon: 'pi pi-times-circle',         opacity: 0.6 },
+};
+
+export const STATUS_CONFIG_EN: Record<ModuleLifecycleStatus, string> = {
+  planning:    'Planning',
+  active:      'Active',
+  maintenance: 'Maintenance',
+  suspended:   'Suspended',
+  deprecated:  'Deprecated',
+  retired:     'Retired',
+  cancelled:   'Cancelled',
 };
 
 @Component({
@@ -38,9 +49,15 @@ export const STATUS_CONFIG: Record<ModuleLifecycleStatus, StatusConfig> = {
 })
 export class ModuleStatusBadgeComponent {
   @Input({ required: true }) status!: ModuleLifecycleStatus;
+  private readonly projectStore = inject(ProjectStore);
 
   get config(): StatusConfig {
-    return STATUS_CONFIG[this.status] ?? STATUS_CONFIG['planning'];
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    const cfg = STATUS_CONFIG[this.status] ?? STATUS_CONFIG['planning'];
+    return {
+      ...cfg,
+      label: isEn ? (STATUS_CONFIG_EN[this.status] ?? cfg.label) : cfg.label,
+    };
   }
 
   get bgColor(): string {

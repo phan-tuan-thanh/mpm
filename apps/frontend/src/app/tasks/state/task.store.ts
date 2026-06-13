@@ -462,6 +462,27 @@ export class TaskStore {
       });
   }
 
+  loadAllActivity(projectId: string, taskId: string): void {
+    if (this.activityFilter() === 'comments') return;
+    this.activityLoading.set(true);
+
+    this.taskService
+      .getActivityFiltered(projectId, taskId, this.activityFilter(), 1, 10000)
+      .pipe(
+        catchError(() => {
+          return of(null);
+        }),
+        finalize(() => this.activityLoading.set(false)),
+      )
+      .subscribe((res) => {
+        if (res) {
+          this.activityEntries.set(res.data);
+          this.activityHasMore.set(false);
+          this.activityPage.set(res.page);
+        }
+      });
+  }
+
   loadComments(projectId: string, taskId: string): void {
     this.activityLoading.set(true);
     this.taskService.getComments(projectId, taskId)

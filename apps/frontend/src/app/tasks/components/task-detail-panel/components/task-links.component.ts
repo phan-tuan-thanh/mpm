@@ -18,19 +18,24 @@ import type { TaskLink } from '@mpm/shared-types';
         <div class="flex items-center gap-2 py-1 text-sm">
           <span>🔗</span>
           <a [href]="link.url" target="_blank" class="flex-1 text-indigo-600 hover:underline truncate">{{ link.title || link.url }}</a>
-          <button pButton icon="pi pi-times" severity="danger" size="small" text (click)="delete.emit(link)"></button>
+          @if (!disabled) {
+            <button pButton icon="pi pi-times" severity="danger" size="small" text (click)="delete.emit(link)"></button>
+          }
         </div>
       }
-      <div class="flex gap-2 mt-1">
-        <input pInputText class="flex-1 text-xs" placeholder="URL..." [(ngModel)]="newLinkUrl" />
-        <input pInputText class="flex-1 text-xs" placeholder="Title (tùy chọn)" [(ngModel)]="newLinkTitle" />
-        <button pButton label="Thêm" size="small" (click)="onAdd()" [disabled]="!newLinkUrl.trim()"></button>
-      </div>
+      @if (!disabled) {
+        <div class="flex gap-2 mt-1">
+          <input pInputText class="flex-1 text-xs" placeholder="URL..." [(ngModel)]="newLinkUrl" />
+          <input pInputText class="flex-1 text-xs" placeholder="Title (tùy chọn)" [(ngModel)]="newLinkTitle" />
+          <button pButton label="Thêm" size="small" (click)="onAdd()" [disabled]="!newLinkUrl.trim()"></button>
+        </div>
+      }
     </div>
   `,
 })
 export class TaskLinksComponent {
   @Input() links: TaskLink[] = [];
+  @Input() disabled = false;
   @Output() add = new EventEmitter<{ url: string; title?: string }>();
   @Output() delete = new EventEmitter<TaskLink>();
 
@@ -38,6 +43,7 @@ export class TaskLinksComponent {
   protected newLinkTitle = '';
 
   protected onAdd(): void {
+    if (this.disabled) return;
     if (this.newLinkUrl.trim()) {
       this.add.emit({ url: this.newLinkUrl, title: this.newLinkTitle || undefined });
       this.newLinkUrl = '';

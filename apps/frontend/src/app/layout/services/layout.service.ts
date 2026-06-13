@@ -28,6 +28,8 @@ interface StoredConfig {
   surface?: string | null;
   menuMode?: MenuMode;
   sidebarCollapsed?: boolean;
+  menuIconSize?: number;
+  appIconSize?: number;
 }
 
 const defaultConfig: Required<StoredConfig> = {
@@ -37,6 +39,8 @@ const defaultConfig: Required<StoredConfig> = {
   surface: null,
   menuMode: 'static',
   sidebarCollapsed: false,
+  menuIconSize: 18,
+  appIconSize: 16,
 };
 
 @Injectable({
@@ -64,6 +68,8 @@ export class LayoutService {
   readonly surface = signal<string | null>(null);
   readonly menuMode = signal<MenuMode>('static');
   readonly isCollapsed = signal<boolean>(false);
+  readonly menuIconSize = signal<number>(18);
+  readonly appIconSize = signal<number>(16);
   readonly isOverlayOpen = signal<boolean>(false);
   readonly fullBleed = signal<boolean>(false);
   readonly isMobile = signal<boolean>(false);
@@ -98,6 +104,8 @@ export class LayoutService {
       this.surface.set(stored.surface ?? null);
       this.menuMode.set(stored.menuMode);
       this.isCollapsed.set(stored.sidebarCollapsed);
+      this.menuIconSize.set(stored.menuIconSize);
+      this.appIconSize.set(stored.appIconSize);
 
       // Mobile detection — service is app-scoped so no cleanup needed
       const checkMobile = () => this.isMobile.set(window.innerWidth < 768);
@@ -114,10 +122,12 @@ export class LayoutService {
       this.saveConfig();
     });
 
-    // Persist sidebar/menu changes
+    // Persist sidebar/menu/icon-size changes
     effect(() => {
       void this.menuMode();
       void this.isCollapsed();
+      void this.menuIconSize();
+      void this.appIconSize();
       if (isPlatformBrowser(this.platformId)) this.saveConfig();
     });
 
@@ -282,6 +292,8 @@ export class LayoutService {
         surface: this.surface(),
         menuMode: this.menuMode(),
         sidebarCollapsed: this.isCollapsed(),
+        menuIconSize: this.menuIconSize(),
+        appIconSize: this.appIconSize(),
       }));
     } catch {}
   }

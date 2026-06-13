@@ -37,10 +37,10 @@ interface AttachmentUpdate {
   `],
   template: `
     <div class="mt-4 px-2"
-         (dragover)="$event.preventDefault()"
-         (drop)="onDrop($event)">
+         (dragover)="!disabled() && $event.preventDefault()"
+         (drop)="!disabled() && onDrop($event)">
 
-      <!-- Header -->
+       <!-- Header -->
       <div class="flex items-center gap-1 mb-2 cursor-pointer select-none group"
            (click)="collapsed.set(!collapsed())">
         <i class="pi text-[9px] text-gray-400 dark:text-surface-500 transition-transform duration-150"
@@ -55,8 +55,10 @@ interface AttachmentUpdate {
       @if (!collapsed()) {
 
       <!-- Drop line before first group -->
-      <div class="drop-line my-px mx-1"
-           [class.show]="isGroupLine(0)"></div>
+      @if (!disabled()) {
+        <div class="drop-line my-px mx-1"
+             [class.show]="isGroupLine(0)"></div>
+      }
 
       <!-- Named groups -->
       @for (group of namedGroups(); let gi = $index; track group.key) {
@@ -64,51 +66,57 @@ interface AttachmentUpdate {
         <div
           class="mb-0.5 rounded border transition-colors"
           [class.border-transparent]="!isFileDropOnGroup(group.key)"
-          [class.border-indigo-200]="isFileDropOnGroup(group.key)"
-          [class.dark:border-indigo-700]="isFileDropOnGroup(group.key)"
+          [class.border-indigo-200]="!disabled() && isFileDropOnGroup(group.key)"
+          [class.dark:border-indigo-700]="!disabled() && isFileDropOnGroup(group.key)"
           [class.opacity-30]="dragItem()?.type === 'group' && dragItem()?.key === group.key"
-          (dragover)="$event.preventDefault()"
-          (drop)="onDrop($event)"
+          (dragover)="!disabled() && $event.preventDefault()"
+          (drop)="!disabled() && onDrop($event)"
         >
           <!-- Group header — drag handle for group, drop zone for files -->
           <div
             class="flex items-center gap-1.5 px-1.5 py-1 text-xs font-semibold
                    text-gray-700 dark:text-surface-200 select-none rounded-t"
-            [class.cursor-grab]="!group.isPending && dragItem()?.type !== 'file'"
-            [class.cursor-default]="group.isPending"
-            [attr.draggable]="!group.isPending && dragItem()?.type !== 'file'"
+            [class.cursor-grab]="!disabled() && !group.isPending && dragItem()?.type !== 'file'"
+            [class.cursor-default]="disabled() || group.isPending"
+            [attr.draggable]="!disabled() && !group.isPending && dragItem()?.type !== 'file' ? 'true' : null"
             (dragstart)="onDragStartGroup($event, group)"
             (dragend)="clearDrag()"
-            (dragover)="onDragOverGroupHeader($event, group, gi)"
-            (drop)="onDrop($event)"
+            (dragover)="!disabled() && onDragOverGroupHeader($event, group, gi)"
+            (drop)="!disabled() && onDrop($event)"
           >
-            <i class="pi pi-folder text-xs text-gray-400 dark:text-surface-500 flex-shrink-0 cursor-grab"></i>
+            <i class="pi pi-folder text-xs text-gray-400 dark:text-surface-500 flex-shrink-0" [class.cursor-grab]="!disabled()"></i>
             <span class="flex-1 truncate">{{ group.title }}</span>
             <span class="text-[10px] font-normal text-gray-400 dark:text-surface-500 shrink-0">
               ({{ group.items.length }})
             </span>
-            <button pButton icon="pi pi-plus" size="small" severity="secondary" text
-                    pTooltip="Thêm file vào nhóm" tooltipPosition="top"
-                    (click)="onAddFilesToGroup(group)"></button>
-            <button pButton icon="pi pi-trash" size="small" severity="danger" text
-                    pTooltip="Xóa nhóm" tooltipPosition="left"
-                    (click)="onDeleteGroup(group)"></button>
+            @if (!disabled()) {
+              <button pButton icon="pi pi-plus" size="small" severity="secondary" text
+                      pTooltip="Thêm file vào nhóm" tooltipPosition="top"
+                      (click)="onAddFilesToGroup(group)"></button>
+              <button pButton icon="pi pi-trash" size="small" severity="danger" text
+                      pTooltip="Xóa nhóm" tooltipPosition="left"
+                      (click)="onDeleteGroup(group)"></button>
+            }
           </div>
 
           <!-- Files in group -->
           <div class="pl-2 pr-0.5 pb-0.5">
-            <div class="drop-line my-px mx-1"
-                 [class.show]="isFileLine(group.key, 0)"></div>
+            @if (!disabled()) {
+              <div class="drop-line my-px mx-1"
+                   [class.show]="isFileLine(group.key, 0)"></div>
+            }
 
             @for (att of group.items; let fi = $index; track att.id) {
               <div
-                class="flex items-center gap-2 py-0.5 rounded cursor-grab transition-opacity"
+                class="flex items-center gap-2 py-0.5 rounded transition-opacity"
                 [class.opacity-30]="dragItem()?.type === 'file' && dragItem()?.key === att.id"
-                draggable="true"
+                [class.cursor-grab]="!disabled()"
+                [class.cursor-default]="disabled()"
+                [attr.draggable]="!disabled() ? 'true' : null"
                 (dragstart)="onDragStartFile($event, att, group.key)"
                 (dragend)="clearDrag()"
-                (dragover)="onDragOverFile($event, group.key, fi)"
-                (drop)="onDrop($event)"
+                (dragover)="!disabled() && onDragOverFile($event, group.key, fi)"
+                (drop)="!disabled() && onDrop($event)"
               >
                 <i class="pi pi-paperclip text-[10px] text-gray-400 dark:text-surface-500 flex-shrink-0"></i>
                 <a [href]="attachmentService.getDownloadUrl(projectId(), taskId(), att.id)"
@@ -122,15 +130,19 @@ interface AttachmentUpdate {
                      pTooltip="Trùng tên với file khác" tooltipPosition="top"></i>
                 }
                 <span class="text-[10px] text-gray-400 dark:text-surface-500 shrink-0">{{ formatSize(att.sizeBytes) }}</span>
-                <button pButton icon="pi pi-times" size="small" severity="danger" text
-                        (click)="delete.emit(att)"></button>
+                @if (!disabled()) {
+                  <button pButton icon="pi pi-times" size="small" severity="danger" text
+                          (click)="delete.emit(att)"></button>
+                }
               </div>
 
-              <div class="drop-line my-px mx-1"
-                   [class.show]="isFileLine(group.key, fi + 1)"></div>
+              @if (!disabled()) {
+                <div class="drop-line my-px mx-1"
+                     [class.show]="isFileLine(group.key, fi + 1)"></div>
+              }
             }
 
-            @if (group.isPending && group.items.length === 0) {
+            @if (group.isPending && group.items.length === 0 && !disabled()) {
               <div class="py-1 px-1 text-[10px] text-gray-400 dark:text-surface-500 italic">
                 Nhấn <i class="pi pi-plus text-[9px]"></i> để thêm file
               </div>
@@ -139,25 +151,31 @@ interface AttachmentUpdate {
         </div>
 
         <!-- Drop line after group -->
-        <div class="drop-line my-px mx-1"
-             [class.show]="isGroupLine(gi + 1)"></div>
+        @if (!disabled()) {
+          <div class="drop-line my-px mx-1"
+               [class.show]="isGroupLine(gi + 1)"></div>
+        }
       }
 
       <!-- Ungrouped files -->
       @if (ungroupedFiles().length > 0) {
         <div class="mt-0.5">
-          <div class="drop-line my-px mx-1"
-               [class.show]="isUngroupedLine(0)"></div>
+          @if (!disabled()) {
+            <div class="drop-line my-px mx-1"
+                 [class.show]="isUngroupedLine(0)"></div>
+          }
 
           @for (att of ungroupedFiles(); let ui = $index; track att.id) {
             <div
-              class="flex items-center gap-2 py-1 rounded cursor-grab transition-opacity"
+              class="flex items-center gap-2 py-1 rounded transition-opacity"
               [class.opacity-30]="dragItem()?.type === 'file' && dragItem()?.key === att.id"
-              draggable="true"
+              [class.cursor-grab]="!disabled()"
+              [class.cursor-default]="disabled()"
+              [attr.draggable]="!disabled() ? 'true' : null"
               (dragstart)="onDragStartFile($event, att, '__ung__')"
               (dragend)="clearDrag()"
-              (dragover)="onDragOverUngrouped($event, ui)"
-              (drop)="onDrop($event)"
+              (dragover)="!disabled() && onDragOverUngrouped($event, ui)"
+              (drop)="!disabled() && onDrop($event)"
             >
               <i class="pi pi-paperclip text-xs text-gray-400 dark:text-surface-500 flex-shrink-0"></i>
               <a [href]="attachmentService.getDownloadUrl(projectId(), taskId(), att.id)"
@@ -170,18 +188,22 @@ interface AttachmentUpdate {
                    pTooltip="Trùng tên với file khác" tooltipPosition="top"></i>
               }
               <span class="text-xs text-gray-400 dark:text-surface-500 shrink-0">{{ formatSize(att.sizeBytes) }}</span>
-              <button pButton icon="pi pi-times" size="small" severity="danger" text
-                      (click)="delete.emit(att)"></button>
+              @if (!disabled()) {
+                <button pButton icon="pi pi-times" size="small" severity="danger" text
+                        (click)="delete.emit(att)"></button>
+              }
             </div>
 
-            <div class="drop-line my-px mx-1"
-                 [class.show]="isUngroupedLine(ui + 1)"></div>
+            @if (!disabled()) {
+              <div class="drop-line my-px mx-1"
+                   [class.show]="isUngroupedLine(ui + 1)"></div>
+            }
           }
         </div>
       }
 
       <!-- Ungroup drop zone: shown when dragging a titled file -->
-      @if (isDraggingTitledFile()) {
+      @if (!disabled() && isDraggingTitledFile()) {
         <div
           class="mt-1 flex items-center gap-1.5 py-1.5 px-2 rounded border border-dashed
                  text-xs transition-colors cursor-default"
@@ -203,7 +225,7 @@ interface AttachmentUpdate {
       }
 
       <!-- New group inline input -->
-      @if (newGroupMode()) {
+      @if (!disabled() && newGroupMode()) {
         <div class="flex items-center gap-1.5 mt-2">
           <i class="pi pi-folder text-xs text-indigo-400 flex-shrink-0"></i>
           <input
@@ -242,21 +264,23 @@ interface AttachmentUpdate {
       }
 
       <!-- Controls: create group + upload ungrouped -->
-      <div class="flex items-center gap-2 mt-2 pt-1.5 border-t border-gray-100 dark:border-surface-700">
-        @if (!newGroupMode()) {
-          <button pButton label="Tạo nhóm" icon="pi pi-folder-plus" size="small"
-                  severity="secondary" text [fluid]="false"
-                  (click)="startNewGroup()"></button>
-        }
+      @if (!disabled()) {
+        <div class="flex items-center gap-2 mt-2 pt-1.5 border-t border-gray-100 dark:border-surface-700">
+          @if (!newGroupMode()) {
+            <button pButton label="Tạo nhóm" icon="pi pi-folder-plus" size="small"
+                    severity="secondary" text [fluid]="false"
+                    (click)="startNewGroup()"></button>
+          }
 
-        <label class="flex items-center gap-1 text-xs text-gray-500 dark:text-surface-400
-                       hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors cursor-pointer">
-          <input #ungroupedInput type="file" class="hidden" multiple
-                 (change)="onUngroupedFileChange($event)" />
-          <i class="pi pi-upload text-[10px]"></i>
-          <span>Upload file</span>
-        </label>
-      </div>
+          <label class="flex items-center gap-1 text-xs text-gray-500 dark:text-surface-400
+                         hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors cursor-pointer">
+            <input #ungroupedInput type="file" class="hidden" multiple
+                   (change)="onUngroupedFileChange($event)" />
+            <i class="pi pi-upload text-[10px]"></i>
+            <span>Upload file</span>
+          </label>
+        </div>
+      }
 
       <!-- Shared file input for per-group uploads -->
       <input #groupFileInput type="file" class="hidden" multiple
@@ -274,6 +298,7 @@ export class TaskAttachmentsComponent {
   readonly projectId = input<string>('');
   readonly taskId = input<string>('');
   readonly attachments = input<TaskAttachment[]>([]);
+  readonly disabled = input<boolean>(false);
 
   @Output() upload = new EventEmitter<{ files: FileList; title: string }>();
   @Output() delete = new EventEmitter<TaskAttachment>();
@@ -383,6 +408,7 @@ export class TaskAttachmentsComponent {
   // ── Drag handlers ─────────────────────────────────────────────────────────
 
   protected onDragStartGroup(event: DragEvent, group: DisplayGroup): void {
+    if (this.disabled()) return;
     this.dragItem.set({ type: 'group', key: group.key, fromGroupKey: '' });
     if (event.dataTransfer) {
       event.dataTransfer.effectAllowed = 'move';
@@ -391,6 +417,7 @@ export class TaskAttachmentsComponent {
   }
 
   protected onDragStartFile(event: DragEvent, att: TaskAttachment, fromGroupKey: string): void {
+    if (this.disabled()) return;
     this.dragItem.set({ type: 'file', key: att.id, fromGroupKey });
     if (event.dataTransfer) {
       event.dataTransfer.effectAllowed = 'move';
@@ -399,6 +426,7 @@ export class TaskAttachmentsComponent {
   }
 
   protected onDragOverGroupHeader(event: DragEvent, group: DisplayGroup, gi: number): void {
+    if (this.disabled()) return;
     event.preventDefault();
     const item = this.dragItem();
     if (!item) return;
@@ -413,6 +441,7 @@ export class TaskAttachmentsComponent {
   }
 
   protected onDragOverFile(event: DragEvent, groupKey: string, fi: number): void {
+    if (this.disabled()) return;
     event.preventDefault();
     const item = this.dragItem();
     if (item?.type !== 'file') return;
@@ -421,6 +450,7 @@ export class TaskAttachmentsComponent {
   }
 
   protected onDragOverUngrouped(event: DragEvent, ui: number): void {
+    if (this.disabled()) return;
     event.preventDefault();
     const item = this.dragItem();
     if (item?.type !== 'file') return;

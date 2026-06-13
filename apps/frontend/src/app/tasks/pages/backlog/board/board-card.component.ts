@@ -146,8 +146,8 @@ import type { TaskListItem, DisplayProperties, Label } from '@mpm/shared-types';
         }
         @if (displayProps.showDueDate && task.dueDate) {
           <span class="text-[10px] flex items-center gap-0.5"
-                [class.text-red-500]="isOverdue(task.dueDate)"
-                [class.text-gray-400]="!isOverdue(task.dueDate)"
+                [class.text-red-500]="isOverdue(task)"
+                [class.text-gray-400]="!isOverdue(task)"
                 pTooltip="Due date">
             <i class="pi pi-calendar" style="font-size: 9px"></i>
             {{ formatDate(task.dueDate) }}
@@ -220,7 +220,24 @@ export class BoardCardComponent {
     return modules.slice(this.displayProps.maxModules).map(m => m.name).join(', ');
   }
 
-  protected isOverdue(d: string | null): boolean { return !!d && new Date(d) < new Date(); }
+  protected isOverdue(task: TaskListItem): boolean {
+    const due = task.dueDate;
+    if (!due) return false;
+    const isCompleted = task.state?.group === 'completed';
+    if (isCompleted) {
+      if (!task.completedAt) return false;
+      const completedDateObj = new Date(task.completedAt);
+      completedDateObj.setHours(0, 0, 0, 0);
+      const dueDateObj = new Date(due);
+      dueDateObj.setHours(0, 0, 0, 0);
+      return completedDateObj.getTime() > dueDateObj.getTime();
+    }
+    const todayObj = new Date();
+    todayObj.setHours(0, 0, 0, 0);
+    const dueDateObj = new Date(due);
+    dueDateObj.setHours(0, 0, 0, 0);
+    return todayObj.getTime() > dueDateObj.getTime();
+  }
 
   protected formatDate(d: string): string {
     return new Date(d).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });

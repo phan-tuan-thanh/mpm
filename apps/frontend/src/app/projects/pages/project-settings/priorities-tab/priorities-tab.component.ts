@@ -73,10 +73,93 @@ export class PrioritiesTabComponent implements OnInit {
     this.editDraft.update(d => ({ ...d, colorLight: light, colorDark: dark }));
   }
 
+  readonly t = computed(() => {
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    return isEn ? {
+      addSectionTitle: 'Add new priority',
+      iconTooltip: 'Choose icon',
+      namePlaceholder: 'Name (e.g. Critical)',
+      slugPlaceholder: 'Slug (e.g. critical)',
+      quickColorTitle: 'Quick Colors (Light / Dark)',
+      customColorBtn: 'Customize Light & Dark colors',
+      lightModeLabel: 'Light mode color:',
+      darkModeLabel: 'Dark mode color:',
+      colorTooltip: 'Choose color pair',
+      addBtn: 'Add',
+      previewTitle: 'Preview:',
+      previewDefaultName: 'Priority name',
+      systemBadge: 'System',
+      slugTooltip: 'Identifier slug',
+      editTooltip: 'Edit',
+      deleteTooltip: 'Delete',
+      editIconTooltip: 'Choose icon',
+      editColorTooltip: 'Choose color pair',
+      customEditColorBtn: 'Customize Light & Dark colors',
+      slugLabel: 'Slug:',
+      deleteDialogHeader: 'Delete priority',
+      deleteDialogMsg: (name: string) => `Tasks using priority "${name}" will be migrated to:`,
+      migrationPlaceholder: 'Select replacement priority...',
+      cancelBtn: 'Cancel',
+      confirmDeleteBtn: 'Confirm delete',
+      loadErrorDetail: 'Failed to load priority list.',
+      saveSuccessDetail: (name: string) => `Updated "${name}" successfully.`,
+      saveErrorDetail: 'Failed to update.',
+      deleteSuccessDetail: 'Deleted and migrated tasks successfully.',
+      deleteErrorDetail: 'Failed to delete.',
+      addSuccessDetail: (name: string) => `Added "${name}" successfully.`,
+      addErrorDetail: 'Failed to add.',
+      reorderErrorDetail: 'Failed to save order.',
+      errorSummary: 'Error',
+      savedSummary: 'Saved',
+      deletedSummary: 'Deleted',
+      successSummary: 'Success',
+      reorderErrorSummary: 'Reorder error',
+    } : {
+      addSectionTitle: 'Thêm mức ưu tiên mới',
+      iconTooltip: 'Chọn icon nhận diện',
+      namePlaceholder: 'Tên (vd: Critical)',
+      slugPlaceholder: 'Slug (vd: critical)',
+      quickColorTitle: 'Màu chọn nhanh (Light / Dark)',
+      customColorBtn: 'Tự tùy chỉnh màu sắc Light & Dark',
+      lightModeLabel: 'Màu Light mode:',
+      darkModeLabel: 'Màu Dark mode:',
+      colorTooltip: 'Chọn cặp màu sắc',
+      addBtn: 'Thêm',
+      previewTitle: 'Xem trước mức ưu tiên:',
+      previewDefaultName: 'Tên mức ưu tiên',
+      systemBadge: 'Hệ thống',
+      slugTooltip: 'Slug nhận dạng',
+      editTooltip: 'Chỉnh sửa',
+      deleteTooltip: 'Xóa',
+      editIconTooltip: 'Chọn icon',
+      editColorTooltip: 'Chọn cặp màu sắc',
+      customEditColorBtn: 'Tùy chỉnh màu sắc Light & Dark',
+      slugLabel: 'Slug:',
+      deleteDialogHeader: 'Xóa mức ưu tiên',
+      deleteDialogMsg: (name: string) => `Công việc đang dùng mức "${name}" sẽ được chuyển sang:`,
+      migrationPlaceholder: 'Chọn mức thay thế...',
+      cancelBtn: 'Hủy',
+      confirmDeleteBtn: 'Xác nhận xóa',
+      loadErrorDetail: 'Không thể tải danh sách mức ưu tiên.',
+      saveSuccessDetail: (name: string) => `Cập nhật "${name}" thành công.`,
+      saveErrorDetail: 'Không thể cập nhật.',
+      deleteSuccessDetail: 'Xóa và chuyển công việc thành công.',
+      deleteErrorDetail: 'Không thể xóa.',
+      addSuccessDetail: (name: string) => `Đã thêm "${name}".`,
+      addErrorDetail: 'Không thể thêm.',
+      reorderErrorDetail: 'Không thể lưu thứ tự.',
+      errorSummary: 'Lỗi',
+      savedSummary: 'Đã lưu',
+      deletedSummary: 'Đã xóa',
+      successSummary: 'Thành công',
+      reorderErrorSummary: 'Lỗi sắp xếp',
+    };
+  });
+
   readonly previewPriority = computed(() => {
     const draft = this.addDraft();
     return {
-      name: draft.name.trim() || 'Tên mức ưu tiên',
+      name: draft.name.trim() || this.t().previewDefaultName,
       icon: draft.icon,
       colorLight: draft.colorLight,
       colorDark: draft.colorDark
@@ -100,7 +183,7 @@ export class PrioritiesTabComponent implements OnInit {
 
   getMigrationTargetLabel(): string {
     const found = this.migrationTargets().find((t) => t.value === this.selectedMigrateValue());
-    return found ? found.name : 'Chọn mức thay thế...';
+    return found ? found.name : this.t().migrationPlaceholder;
   }
 
   draggedId: string | null = null;
@@ -134,7 +217,8 @@ export class PrioritiesTabComponent implements OnInit {
       next: res => { this.priorities.set(res.data); this.isLoading.set(false); },
       error: () => {
         this.isLoading.set(false);
-        this.messageService.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải danh sách mức ưu tiên.' });
+        const tr = this.t();
+        this.messageService.add({ severity: 'error', summary: tr.errorSummary, detail: tr.loadErrorDetail });
       },
     });
   }
@@ -159,12 +243,16 @@ export class PrioritiesTabComponent implements OnInit {
     const draft = this.editDraft();
     this.priorityService.updatePriority(this.projectId, p.id, draft).subscribe({
       next: () => {
+        const tr = this.t();
         this.editingId.set(null);
         this.showCustomEditColors.set(false);
         this.reload();
-        this.messageService.add({ severity: 'success', summary: 'Đã lưu', detail: `Cập nhật "${draft.name}" thành công.` });
+        this.messageService.add({ severity: 'success', summary: tr.savedSummary, detail: tr.saveSuccessDetail(draft.name) });
       },
-      error: err => this.messageService.add({ severity: 'error', summary: 'Lỗi', detail: err.error?.message || 'Không thể cập nhật.' }),
+      error: err => {
+        const tr = this.t();
+        this.messageService.add({ severity: 'error', summary: tr.errorSummary, detail: err.error?.message || tr.saveErrorDetail });
+      },
     });
   }
 
@@ -183,15 +271,17 @@ export class PrioritiesTabComponent implements OnInit {
     this.isDeleting.set(true);
     this.priorityService.deletePriority(this.projectId, p.id, { migrateToValue }).subscribe({
       next: () => {
+        const tr = this.t();
         this.isDeleting.set(false);
         this.displayDeleteDialog.set(false);
         this.priorityToDelete.set(null);
         this.reload();
-        this.messageService.add({ severity: 'success', summary: 'Đã xóa', detail: 'Xóa và chuyển công việc thành công.' });
+        this.messageService.add({ severity: 'success', summary: tr.deletedSummary, detail: tr.deleteSuccessDetail });
       },
       error: err => {
+        const tr = this.t();
         this.isDeleting.set(false);
-        this.messageService.add({ severity: 'error', summary: 'Lỗi', detail: err.error?.message || 'Không thể xóa.' });
+        this.messageService.add({ severity: 'error', summary: tr.errorSummary, detail: err.error?.message || tr.deleteErrorDetail });
       },
     });
   }
@@ -205,13 +295,17 @@ export class PrioritiesTabComponent implements OnInit {
       value: draft.value.toLowerCase().replace(/[^a-z0-9_-]/g, '-'),
     }).subscribe({
       next: () => {
+        const tr = this.t();
         this.showAddForm.set(false);
         this.addDraft.set({ name: '', value: '', colorLight: '#9CA3AF', colorDark: '#6B7280', icon: 'pi pi-flag' });
         this.showCustomAddColors.set(false);
         this.reload();
-        this.messageService.add({ severity: 'success', summary: 'Thành công', detail: `Đã thêm "${draft.name}".` });
+        this.messageService.add({ severity: 'success', summary: tr.successSummary, detail: tr.addSuccessDetail(draft.name) });
       },
-      error: err => this.messageService.add({ severity: 'error', summary: 'Lỗi', detail: err.error?.message || 'Không thể thêm.' }),
+      error: err => {
+        const tr = this.t();
+        this.messageService.add({ severity: 'error', summary: tr.errorSummary, detail: err.error?.message || tr.addErrorDetail });
+      },
     });
   }
 
@@ -238,7 +332,11 @@ export class PrioritiesTabComponent implements OnInit {
       items: list.map((p, i) => ({ priorityId: p.id, order: i + 1 })),
     }).subscribe({
       next: () => this.reload(),
-      error: () => { this.reload(); this.messageService.add({ severity: 'error', summary: 'Lỗi sắp xếp', detail: 'Không thể lưu thứ tự.' }); },
+      error: () => {
+        const tr = this.t();
+        this.reload();
+        this.messageService.add({ severity: 'error', summary: tr.reorderErrorSummary, detail: tr.reorderErrorDetail });
+      },
     });
   }
 }

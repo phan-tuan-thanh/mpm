@@ -2,7 +2,7 @@
   <!-- Create form — dashed box giống tab label, đặt ở top của tab -->
   @if (!isReadOnly()) {
     <div class="border border-dashed border-surface-300 dark:border-surface-700 rounded-xl p-4 space-y-3 bg-surface-50/20">
-      <p class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wide">Thêm mức ưu tiên mới</p>
+      <p class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wide">{{ t().addSectionTitle }}</p>
       
       <div class="flex items-center gap-2 flex-wrap">
         <!-- Icon Picker -->
@@ -15,7 +15,7 @@
         <button type="button"
           class="w-8 h-8 flex items-center justify-center rounded border border-gray-200 dark:border-surface-600 hover:bg-gray-100 dark:hover:bg-surface-800 cursor-pointer text-gray-500 dark:text-surface-400 shrink-0"
           (click)="addIconPop.toggle($event)"
-          pTooltip="Chọn icon nhận diện"
+          [pTooltip]="t().iconTooltip"
           tooltipPosition="top"
         >
           @if (addDraft().icon) {
@@ -26,14 +26,14 @@
         </button>
 
         <!-- Name Input -->
-        <input pInputText type="text" placeholder="Tên (vd: Critical)" style="height:32px;font-size:12px;width:160px"
+        <input pInputText type="text" [placeholder]="t().namePlaceholder" style="height:32px;font-size:12px;width:160px"
           [ngModel]="addDraft().name"
           (ngModelChange)="addDraft.update(d => ({ ...d, name: $event, value: $event.toLowerCase().replace(/[^a-z0-9_-]/g, '-') }))"
           (keyup.enter)="submitAdd()"
         />
 
         <!-- Slug Input -->
-        <input pInputText type="text" placeholder="Slug (vd: critical)" style="height:32px;font-size:12px;width:120px" class="font-mono"
+        <input pInputText type="text" [placeholder]="t().slugPlaceholder" style="height:32px;font-size:12px;width:120px" class="font-mono"
           [ngModel]="addDraft().value"
           (ngModelChange)="addDraft.update(d => ({ ...d, value: $event }))"
           (keyup.enter)="submitAdd()"
@@ -42,7 +42,7 @@
         <!-- Color Picker Popover Button -->
         <p-popover #colorPop styleClass="p-2" appendTo="body">
           <div class="space-y-3 p-1">
-            <div class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Màu chọn nhanh (Light / Dark)</div>
+            <div class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">{{ t().quickColorTitle }}</div>
             <div class="grid grid-cols-5 gap-2 w-48">
               @for (pair of presetPairs; track pair.light) {
                 <button type="button" 
@@ -61,20 +61,20 @@
                 class="text-[11px] font-semibold text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center gap-1 cursor-pointer select-none"
                 (click)="showCustomAddColors.set(!showCustomAddColors())">
                 <i class="pi" [class]="showCustomAddColors() ? 'pi-chevron-down' : 'pi-chevron-right'"></i>
-                Tự tùy chỉnh màu sắc Light & Dark
+                {{ t().customColorBtn }}
               </button>
               
               @if (showCustomAddColors()) {
                 <div class="mt-2 space-y-3 pl-1">
                   <div>
-                    <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">Màu Light mode:</div>
+                    <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">{{ t().lightModeLabel }}</div>
                     <app-color-picker-panel
                       [value]="addDraft().colorLight"
                       (valueChange)="addDraft.update(d => ({ ...d, colorLight: $event }))"
                     />
                   </div>
                   <div>
-                    <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">Màu Dark mode:</div>
+                    <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">{{ t().darkModeLabel }}</div>
                     <app-color-picker-panel
                       [value]="addDraft().colorDark"
                       (valueChange)="addDraft.update(d => ({ ...d, colorDark: $event }))"
@@ -89,18 +89,18 @@
           class="w-8 h-8 rounded-full border border-black/10 hover:scale-115 active:scale-95 transition cursor-pointer flex-shrink-0"
           [style.background]="getPresetGradient(addDraft().colorLight, addDraft().colorDark)"
           (click)="colorPop.toggle($event)"
-          pTooltip="Chọn cặp màu sắc"
+          [pTooltip]="t().colorTooltip"
           tooltipPosition="top"
         ></button>
 
         <!-- Submit Button -->
-        <button pButton type="button" label="Thêm" icon="pi pi-plus" size="small" [fluid]="false"
+        <button pButton type="button" [label]="t().addBtn" icon="pi pi-plus" size="small" [fluid]="false"
           [disabled]="!addDraft().name.trim() || !addDraft().value.trim()" (click)="submitAdd()"></button>
       </div>
 
       <!-- Live Preview -->
       <div class="pt-2 border-t border-dashed border-surface-200 dark:border-surface-700 flex items-center gap-2 flex-wrap">
-        <span class="text-xs text-gray-500 dark:text-surface-400 font-medium select-none">Xem trước mức ưu tiên:</span>
+        <span class="text-xs text-gray-500 dark:text-surface-400 font-medium select-none">{{ t().previewTitle }}</span>
         <span class="text-xs px-2.5 py-0.5 rounded-full font-medium border border-gray-300 dark:border-surface-600 select-none cursor-default flex items-center gap-1"
               [style.background]="(layoutService.isDarkMode() ? previewPriority().colorDark : previewPriority().colorLight) + '22'"
               [style.color]="layoutService.isDarkMode() ? previewPriority().colorDark : previewPriority().colorLight">
@@ -162,7 +162,7 @@
           <div class="flex items-center gap-2 flex-1 flex-wrap">
             <p-popover #editColorPop styleClass="p-2" appendTo="body">
               <div class="space-y-3 p-1">
-                <div class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Màu chọn nhanh (Light / Dark)</div>
+                <div class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">{{ t().quickColorTitle }}</div>
                 <div class="grid grid-cols-5 gap-2 w-48">
                   @for (pair of presetPairs; track pair.light) {
                     <button type="button" 
@@ -180,20 +180,20 @@
                     class="text-[11px] font-semibold text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center gap-1 cursor-pointer select-none"
                     (click)="showCustomEditColors.set(!showCustomEditColors())">
                     <i class="pi" [class]="showCustomEditColors() ? 'pi-chevron-down' : 'pi-chevron-right'"></i>
-                    Tùy chỉnh màu sắc Light & Dark
+                    {{ t().customEditColorBtn }}
                   </button>
                   
                   @if (showCustomEditColors()) {
                     <div class="mt-2 space-y-3 pl-1">
                       <div>
-                        <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">Màu Light mode:</div>
+                        <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">{{ t().lightModeLabel }}</div>
                         <app-color-picker-panel
                           [value]="editDraft().colorLight"
                           (valueChange)="editDraft.update(d => ({ ...d, colorLight: $event }))"
                         />
                       </div>
                       <div>
-                        <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">Màu Dark mode:</div>
+                        <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">{{ t().darkModeLabel }}</div>
                         <app-color-picker-panel
                           [value]="editDraft().colorDark"
                           (valueChange)="editDraft.update(d => ({ ...d, colorDark: $event }))"
@@ -209,7 +209,7 @@
               [style.background]="getPresetGradient(editDraft().colorLight, editDraft().colorDark)"
               (click)="editColorPop.toggle($event)"
               (pointerdown)="$event.stopPropagation()"
-              pTooltip="Chọn cặp màu sắc"
+              [pTooltip]="t().editColorTooltip"
               tooltipPosition="top"
             ></button>
 
@@ -224,7 +224,7 @@
               class="w-7 h-7 flex items-center justify-center rounded border border-gray-200 dark:border-surface-600 hover:bg-gray-100 dark:hover:bg-surface-800 cursor-pointer text-gray-500 dark:text-surface-400 shrink-0"
               (click)="editIconPop.toggle($event)"
               (pointerdown)="$event.stopPropagation()"
-              pTooltip="Chọn icon"
+              [pTooltip]="t().editIconTooltip"
               tooltipPosition="top"
             >
               @if (editDraft().icon) {
@@ -241,7 +241,7 @@
             />
             
             <span class="text-xs font-mono text-gray-400 dark:text-surface-500 ml-2 select-none">
-              Slug: {{ p.value }}
+              {{ t().slugLabel }} {{ p.value }}
             </span>
           </div>
           
@@ -263,17 +263,17 @@
           <div class="flex-1"></div>
 
           @if (p.isSystem) {
-            <span class="text-xs text-gray-400 dark:text-surface-500 italic mr-1 shrink-0 select-none">Hệ thống</span>
+            <span class="text-xs text-gray-400 dark:text-surface-500 italic mr-1 shrink-0 select-none">{{ t().systemBadge }}</span>
           }
-          <span class="text-xs font-mono text-gray-400 dark:text-surface-500 mr-2 shrink-0 select-none" pTooltip="Slug nhận dạng">
+          <span class="text-xs font-mono text-gray-400 dark:text-surface-500 mr-2 shrink-0 select-none" [pTooltip]="t().slugTooltip">
             {{ p.value }}
           </span>
 
           @if (!isReadOnly()) {
             <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button pButton type="button" icon="pi pi-pencil" class="p-button-text p-button-sm" pTooltip="Chỉnh sửa" (pointerdown)="$event.stopPropagation()" (click)="startEdit(p)"></button>
+              <button pButton type="button" icon="pi pi-pencil" class="p-button-text p-button-sm" [pTooltip]="t().editTooltip" (pointerdown)="$event.stopPropagation()" (click)="startEdit(p)"></button>
               @if (!p.isSystem) {
-                <button pButton type="button" icon="pi pi-trash" class="p-button-text p-button-sm p-button-danger" pTooltip="Xóa" (pointerdown)="$event.stopPropagation()" (click)="openDeleteDialog(p)"></button>
+                <button pButton type="button" icon="pi pi-trash" class="p-button-text p-button-sm p-button-danger" [pTooltip]="t().deleteTooltip" (pointerdown)="$event.stopPropagation()" (click)="openDeleteDialog(p)"></button>
               }
             </div>
           }
@@ -312,7 +312,7 @@
 
 <!-- Delete confirmation dialog -->
 <p-dialog
-  header="Xóa mức ưu tiên"
+  [header]="t().deleteDialogHeader"
   [visible]="displayDeleteDialog()"
   (visibleChange)="displayDeleteDialog.set($event)"
   [modal]="true"
@@ -323,7 +323,7 @@
   @if (priorityToDelete()) {
     <div class="space-y-4">
       <p class="text-sm text-gray-600 dark:text-surface-300">
-        Công việc đang dùng mức <strong>{{ priorityToDelete()!.name }}</strong> sẽ được chuyển sang:
+        {{ t().deleteDialogMsg(priorityToDelete()!.name) }}
       </p>
       <div class="relative">
         <button
@@ -352,8 +352,8 @@
     </div>
   }
   <ng-template pTemplate="footer">
-    <button pButton type="button" label="Hủy" class="p-button-text" (click)="displayDeleteDialog.set(false)"></button>
-    <button pButton type="button" label="Xác nhận xóa" class="p-button-danger"
+    <button pButton type="button" [label]="t().cancelBtn" class="p-button-text" (click)="displayDeleteDialog.set(false)"></button>
+    <button pButton type="button" [label]="t().confirmDeleteBtn" class="p-button-danger"
       [disabled]="!selectedMigrateValue()"
       [loading]="isDeleting()"
       (click)="confirmDelete()">

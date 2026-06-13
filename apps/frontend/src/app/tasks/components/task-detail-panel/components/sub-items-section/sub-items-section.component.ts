@@ -49,14 +49,16 @@ import { SubItemQuickToolbarComponent } from '../sub-item-quick-toolbar/sub-item
 
       <h3 class="text-sm font-semibold text-gray-700 dark:text-surface-200 cursor-pointer select-none" (click)="expanded.set(!expanded())">Sub-items</h3>
 
-      <!-- Pill badge: "done/total", green when 100% complete, gray otherwise -->
+      <!-- Pill badge: "done/total", primary when 100% complete, gray otherwise -->
       @if (totalCount > 0) {
         <span
-          class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[11px] font-semibold leading-none select-none"
-          [class.bg-green-100]="doneCount === totalCount"
-          [class.text-green-700]="doneCount === totalCount"
-          [class.dark:bg-green-900\/40]="doneCount === totalCount"
-          [class.dark:text-green-400]="doneCount === totalCount"
+          class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[11px] font-semibold leading-none select-none border border-transparent"
+          [class.bg-indigo-50]="doneCount === totalCount"
+          [class.text-indigo-700]="doneCount === totalCount"
+          [class.border-indigo-150]="doneCount === totalCount"
+          [class.dark:bg-indigo-950\/30]="doneCount === totalCount"
+          [class.dark:text-indigo-400]="doneCount === totalCount"
+          [class.dark:border-indigo-900\/20]="doneCount === totalCount"
           [class.bg-gray-100]="doneCount !== totalCount"
           [class.text-gray-500]="doneCount !== totalCount"
           [class.dark:bg-surface-700]="doneCount !== totalCount"
@@ -70,7 +72,7 @@ import { SubItemQuickToolbarComponent } from '../sub-item-quick-toolbar/sub-item
       <div class="flex-1"></div>
 
       <!-- Add button (shown when not in adding mode, has items, and is expanded) -->
-      @if (!isAddingMode() && items.length > 0 && expanded()) {
+      @if (!disabled && !isAddingMode() && items.length > 0 && expanded()) {
         <button
           pButton
           class="p-button-text p-button-sm"
@@ -90,6 +92,7 @@ import { SubItemQuickToolbarComponent } from '../sub-item-quick-toolbar/sub-item
       @if (items.length > 0) {
         <app-sub-item-tree
           [items]="items"
+          [disabled]="disabled"
           (itemClicked)="subItemClicked.emit($event)"
           (saveRequested)="saveRequested.emit($event)"
         />
@@ -102,14 +105,16 @@ import { SubItemQuickToolbarComponent } from '../sub-item-quick-toolbar/sub-item
           <p class="text-sm text-gray-500 dark:text-surface-400 mb-3">
             Chưa có sub-item nào. Chia nhỏ công việc để dễ theo dõi tiến độ.
           </p>
-          <button
-            pButton
-            class="p-button-outlined p-button-sm"
-            icon="pi pi-plus"
-            label="Thêm sub-item"
-            (click)="enterAddMode()"
-            aria-label="Thêm sub-item"
-          ></button>
+          @if (!disabled) {
+            <button
+              pButton
+              class="p-button-outlined p-button-sm"
+              icon="pi pi-plus"
+              label="Thêm sub-item"
+              (click)="enterAddMode()"
+              aria-label="Thêm sub-item"
+            ></button>
+          }
         </div>
       }
 
@@ -188,6 +193,8 @@ export class SubItemsSectionComponent {
   /** Current task ID (parent for new sub-items) */
   @Input() taskId = '';
 
+  @Input() disabled = false;
+
   /** Emits CreateSubItemDto when a new sub-item is submitted */
   @Output() createSubItem = new EventEmitter<CreateSubItemDto>();
 
@@ -223,6 +230,7 @@ export class SubItemsSectionComponent {
 
   /** Show the inline add form and focus input */
   enterAddMode(): void {
+    if (this.disabled) return;
     this.expanded.set(true);
     this.isAddingMode.set(true);
     // Cho Angular render xong rồi focus

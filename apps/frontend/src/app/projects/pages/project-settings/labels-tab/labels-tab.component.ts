@@ -40,8 +40,8 @@ import { IconDisplayComponent } from '../../../../shared/components/icon-display
       <!-- Common Icon Config -->
       <div class="bg-surface-50/20 rounded-xl border border-dashed border-surface-300 dark:border-surface-700 p-4 flex items-center justify-between">
         <div>
-          <h3 class="text-xs font-semibold text-gray-900 dark:text-surface-0 uppercase tracking-wide">Biểu tượng chung của Labels</h3>
-          <p class="text-[11px] text-gray-400 dark:text-surface-500 mt-0.5">Biểu tượng này được hiển thị đồng bộ trên mọi nhãn của dự án.</p>
+          <h3 class="text-xs font-semibold text-gray-900 dark:text-surface-0 uppercase tracking-wide">{{ t().commonIconTitle }}</h3>
+          <p class="text-[11px] text-gray-400 dark:text-surface-500 mt-0.5">{{ t().commonIconDesc }}</p>
         </div>
         <div class="relative flex items-center gap-2">
           <p-popover #commonIconPop styleClass="!p-0" appendTo="body">
@@ -53,7 +53,7 @@ import { IconDisplayComponent } from '../../../../shared/components/icon-display
           <button type="button"
             class="w-10 h-8 flex items-center justify-center rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 text-primary hover:border-primary cursor-pointer transition shrink-0"
             (click)="commonIconPop.toggle($event)"
-            pTooltip="Thay đổi biểu tượng chung"
+            [pTooltip]="t().commonIconTooltip"
             tooltipPosition="top"
           >
             <app-icon-display [icon]="commonLabelsIcon()" class="text-sm"></app-icon-display>
@@ -64,32 +64,32 @@ import { IconDisplayComponent } from '../../../../shared/components/icon-display
       <!-- Create form — dashed box, đặt ở top của tab -->
       <div id="create-label-form" class="border border-dashed border-surface-300 dark:border-surface-700 rounded-xl p-4 space-y-3 bg-surface-50/20">
         <div class="flex items-center justify-between flex-wrap gap-2">
-          <p class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wide">Thêm label mới</p>
+          <p class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wide">{{ t().addNewTitle }}</p>
           
           <!-- Scoped Toggle -->
           <label class="flex items-center gap-1.5 text-xs text-gray-600 dark:text-surface-300 cursor-pointer select-none">
             <input type="checkbox" [checked]="isScopedLabel()" (change)="isScopedLabel.set(!isScopedLabel())"
               class="cursor-pointer rounded border-gray-300">
-            Scoped Label (nhóm::giá trị)
+            {{ t().scopedLabelToggle }}
           </label>
         </div>
 
         <div class="flex items-center gap-2 flex-wrap">
           <!-- Input Fields (Normal vs Scoped) -->
           @if (isScopedLabel()) {
-            <input pInputText [(ngModel)]="scopePrefix" placeholder="Nhóm (ví dụ: type)" style="height:32px;font-size:12px;width:120px" (keyup.enter)="createLabel()" />
+            <input pInputText [(ngModel)]="scopePrefix" [placeholder]="t().scopedGroupPlaceholder" style="height:32px;font-size:12px;width:120px" (keyup.enter)="createLabel()" />
             <span class="text-gray-400 font-bold select-none">::</span>
-            <input pInputText [(ngModel)]="scopeValue" placeholder="Giá trị (ví dụ: bug)" style="height:32px;font-size:12px;width:120px" (keyup.enter)="createLabel()" />
+            <input pInputText [(ngModel)]="scopeValue" [placeholder]="t().scopedValuePlaceholder" style="height:32px;font-size:12px;width:120px" (keyup.enter)="createLabel()" />
           } @else {
-            <input pInputText [(ngModel)]="newName" placeholder="Tên label" style="height:32px;font-size:12px;width:160px" (keyup.enter)="createLabel()" />
+            <input pInputText [(ngModel)]="newName" [placeholder]="t().labelNamePlaceholder" style="height:32px;font-size:12px;width:160px" (keyup.enter)="createLabel()" />
           }
 
-          <input pInputText [(ngModel)]="newDescription" placeholder="Mô tả (tuỳ chọn)" style="height:32px;font-size:12px;flex:1;min-width:140px" (keyup.enter)="createLabel()" />
+          <input pInputText [(ngModel)]="newDescription" [placeholder]="t().descPlaceholder" style="height:32px;font-size:12px;flex:1;min-width:140px" (keyup.enter)="createLabel()" />
 
           <!-- Color Popover Button -->
           <p-popover #colorPop styleClass="p-2" appendTo="body">
             <div class="space-y-3 p-1">
-              <div class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Màu chọn nhanh (Light / Dark)</div>
+              <div class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">{{ t().quickColorTitle }}</div>
               <div class="grid grid-cols-5 gap-2 w-48">
                 @for (pair of presetPairs; track pair.light) {
                   <button type="button" 
@@ -108,20 +108,20 @@ import { IconDisplayComponent } from '../../../../shared/components/icon-display
                   class="text-[11px] font-semibold text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center gap-1 cursor-pointer select-none"
                   (click)="showCustomAddColors.set(!showCustomAddColors())">
                   <i class="pi" [class]="showCustomAddColors() ? 'pi-chevron-down' : 'pi-chevron-right'"></i>
-                  Tự tùy chỉnh màu sắc Light & Dark
+                  {{ t().customColorBtn }}
                 </button>
                 
                 @if (showCustomAddColors()) {
                   <div class="mt-2 space-y-3 pl-1">
                     <div>
-                      <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">Màu Light mode:</div>
+                      <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">{{ t().lightModeLabel }}</div>
                       <app-color-picker-panel
                         [value]="newColorLight()"
                         (valueChange)="newColorLight.set($event)"
                       />
                     </div>
                     <div>
-                      <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">Màu Dark mode:</div>
+                      <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">{{ t().darkModeLabel }}</div>
                       <app-color-picker-panel
                         [value]="newColorDark()"
                         (valueChange)="newColorDark.set($event)"
@@ -136,7 +136,7 @@ import { IconDisplayComponent } from '../../../../shared/components/icon-display
             class="w-8 h-8 rounded-full border border-black/10 hover:scale-115 active:scale-95 transition cursor-pointer flex-shrink-0"
             [style.background]="getPresetGradient(newColorLight(), newColorDark())"
             (click)="colorPop.toggle($event)"
-            pTooltip="Chọn cặp màu sắc"
+            [pTooltip]="t().colorTooltip"
             tooltipPosition="top"
           ></button>
 
@@ -144,17 +144,17 @@ import { IconDisplayComponent } from '../../../../shared/components/icon-display
           @if (isScopedLabel()) {
             <label class="flex items-center gap-1.5 text-xs text-gray-600 dark:text-surface-300 cursor-pointer select-none">
               <p-checkbox [(ngModel)]="isExclusive" [binary]="true" />
-              Single Choice (Mỗi task chỉ chọn tối đa 1 nhãn)
+              {{ t().singleChoiceToggle }}
             </label>
           }
 
-          <button pButton label="Thêm" icon="pi pi-plus" size="small" [fluid]="false"
+          <button pButton [label]="t().addBtn" icon="pi pi-plus" size="small" [fluid]="false"
             [disabled]="isScopedLabel() ? (!scopePrefix().trim() || !scopeValue().trim()) : !newName().trim()" (click)="createLabel()"></button>
         </div>
 
         <!-- Live Preview -->
         <div class="pt-2 border-t border-dashed border-surface-200 dark:border-surface-700 flex items-center gap-2 flex-wrap">
-          <span class="text-xs text-gray-500 dark:text-surface-400 font-medium select-none">Xem trước nhãn:</span>
+          <span class="text-xs text-gray-500 dark:text-surface-400 font-medium select-none">{{ t().previewLabelTitle }}</span>
           @if (isScopedLabel()) {
             <span class="inline-flex items-center text-xs rounded-full overflow-hidden border border-gray-300 dark:border-surface-600 font-medium select-none cursor-default">
               <span class="px-2 py-0.5 flex items-center gap-1"
@@ -188,9 +188,9 @@ import { IconDisplayComponent } from '../../../../shared/components/icon-display
       @if (projSelected().size > 0) {
         <div class="flex items-center justify-end gap-2">
           <button pButton icon="pi pi-trash" severity="danger" size="small" [fluid]="false"
-            [label]="'Xóa ' + projSelected().size" (click)="confirmBulkDeleteProj()"></button>
+            [label]="t().bulkDeleteLabel(projSelected().size)" (click)="confirmBulkDeleteProj()"></button>
           <button pButton icon="pi pi-times" severity="secondary" size="small" text [fluid]="false"
-            pTooltip="Bỏ chọn tất cả" (click)="clearProjSelection()"></button>
+            [pTooltip]="t().deselectAllTooltip" (click)="clearProjSelection()"></button>
         </div>
       }
 
@@ -200,7 +200,7 @@ import { IconDisplayComponent } from '../../../../shared/components/icon-display
           <div class="relative max-w-xs flex-1">
             <i class="pi pi-search absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-surface-500 text-xs pointer-events-none"></i>
             <input pInputText class="w-full !pl-7" style="height:32px;font-size:12px"
-              placeholder="Tìm theo tên hoặc mô tả..."
+              [placeholder]="t().searchPlaceholder"
               [ngModel]="projSearch()" (ngModelChange)="setProjSearch($event)" />
           </div>
 
@@ -208,13 +208,13 @@ import { IconDisplayComponent } from '../../../../shared/components/icon-display
             <label class="flex items-center gap-2 text-xs text-gray-600 dark:text-surface-300 cursor-pointer select-none">
               <input type="checkbox" [checked]="isAllPaginatedSelected()" (change)="toggleSelectAllPaginated()"
                 class="cursor-pointer rounded border-gray-300">
-              Chọn tất cả trên trang này ({{ paginatedProjectLabels().length }})
+              {{ t().selectAllOnPage(paginatedProjectLabels().length) }}
             </label>
           }
         </div>
 
         <div class="flex items-center gap-1 flex-wrap">
-          @for (chip of filterChips; track chip.value) {
+          @for (chip of filterChips(); track chip.value) {
             <button type="button"
               class="px-2.5 py-0.5 text-xs rounded-full border transition-colors"
               [class]="projFilter() === chip.value
@@ -239,7 +239,7 @@ import { IconDisplayComponent } from '../../../../shared/components/icon-display
                 <!-- Color Picker button -->
                 <p-popover #editColorPop styleClass="p-2" appendTo="body">
                   <div class="space-y-3 p-1">
-                    <div class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Màu chọn nhanh (Light / Dark)</div>
+                    <div class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">{{ t().quickColorTitle }}</div>
                     <div class="grid grid-cols-5 gap-2 w-48">
                       @for (pair of presetPairs; track pair.light) {
                         <button type="button" 
@@ -257,20 +257,20 @@ import { IconDisplayComponent } from '../../../../shared/components/icon-display
                         class="text-[11px] font-semibold text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center gap-1 cursor-pointer select-none"
                         (click)="showCustomEditColors.set(!showCustomEditColors())">
                         <i class="pi" [class]="showCustomEditColors() ? 'pi-chevron-down' : 'pi-chevron-right'"></i>
-                        Tự tùy chỉnh màu sắc Light & Dark
+                        {{ t().customColorBtn }}
                       </button>
                       
                       @if (showCustomEditColors()) {
                         <div class="mt-2 space-y-3 pl-1">
                           <div>
-                            <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">Màu Light mode:</div>
+                            <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">{{ t().lightModeLabel }}</div>
                             <app-color-picker-panel
                               [value]="editColorLight()"
                               (valueChange)="editColorLight.set($event)"
                             />
                           </div>
                           <div>
-                            <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">Màu Dark mode:</div>
+                            <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">{{ t().darkModeLabel }}</div>
                             <app-color-picker-panel
                               [value]="editColorDark()"
                               (valueChange)="editColorDark.set($event)"
@@ -285,12 +285,12 @@ import { IconDisplayComponent } from '../../../../shared/components/icon-display
                   class="w-7 h-7 rounded-full border border-black/10 hover:scale-110 active:scale-95 transition cursor-pointer flex-shrink-0"
                   [style.background]="getPresetGradient(editColorLight(), editColorDark())"
                   (click)="editColorPop.toggle($event)"
-                  pTooltip="Chọn màu sắc"
+                  [pTooltip]="t().colorTooltip"
                   tooltipPosition="top"
                 ></button>
 
-                <input pInputText [(ngModel)]="editName" placeholder="Tên label" style="height:28px;font-size:12px;width:160px" />
-                <input pInputText [(ngModel)]="editDescription" placeholder="Mô tả (tuỳ chọn)" style="height:28px;font-size:12px;flex:1;min-width:120px" />
+                <input pInputText [(ngModel)]="editName" [placeholder]="t().labelNamePlaceholder" style="height:28px;font-size:12px;width:160px" />
+                <input pInputText [(ngModel)]="editDescription" [placeholder]="t().descPlaceholder" style="height:28px;font-size:12px;flex:1;min-width:120px" />
                 
                 @if (isScoped(editName)) {
                   <label class="flex items-center gap-1 text-xs text-gray-500 dark:text-surface-400 cursor-pointer select-none">
@@ -349,11 +349,11 @@ import { IconDisplayComponent } from '../../../../shared/components/icon-display
               <!-- Action buttons -->
               <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button pButton icon="pi pi-copy" size="small" severity="secondary" text [fluid]="false"
-                  pTooltip="Sao chép" (click)="cloneLabel(label)"></button>
+                  [pTooltip]="t().copyTooltip" (click)="cloneLabel(label)"></button>
                 <button pButton icon="pi pi-pencil" size="small" severity="secondary" text [fluid]="false"
-                  pTooltip="Sửa" (click)="startEdit(label)"></button>
+                  [pTooltip]="t().editTooltip" (click)="startEdit(label)"></button>
                 <button pButton icon="pi pi-trash" size="small" severity="danger" text [fluid]="false"
-                  pTooltip="Xóa" (click)="confirmDelete(label)"></button>
+                  [pTooltip]="t().deleteTooltip" (click)="confirmDelete(label)"></button>
               </div>
             }
           </div>
@@ -363,9 +363,9 @@ import { IconDisplayComponent } from '../../../../shared/components/icon-display
           <div class="flex flex-col items-center gap-3 py-12 text-center text-gray-400 dark:text-surface-500">
             <i class="pi pi-tags text-4xl opacity-30"></i>
             @if (projSearch() || projFilter() !== 'all') {
-              <span class="text-sm">Không tìm thấy label khớp</span>
+              <span class="text-sm">{{ t().noMatchingFound }}</span>
             } @else {
-              <span class="text-sm">Chưa có label nào. Tạo label đầu tiên bên trên.</span>
+              <span class="text-sm">{{ t().emptyStateDesc }}</span>
             }
           </div>
         }
@@ -420,14 +420,135 @@ export class LabelsTabComponent implements OnInit {
     { light: '#6B7280', dark: '#9CA3AF' }  // Gray
   ];
 
+  // ── Localization ──────────────────────────────────────────────
+  readonly t = computed(() => {
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    return isEn ? {
+      commonIconTitle: 'Common Label Icon',
+      commonIconDesc: 'This icon is displayed uniformly on every project label.',
+      commonIconTooltip: 'Change common icon',
+      addNewTitle: 'Add new label',
+      scopedLabelToggle: 'Scoped Label (group::value)',
+      scopedGroupPlaceholder: 'Group (e.g. type)',
+      scopedValuePlaceholder: 'Value (e.g. bug)',
+      labelNamePlaceholder: 'Label name',
+      descPlaceholder: 'Description (optional)',
+      quickColorTitle: 'Quick Colors (Light / Dark)',
+      customColorBtn: 'Customize Light & Dark colors',
+      lightModeLabel: 'Light mode color:',
+      darkModeLabel: 'Dark mode color:',
+      colorTooltip: 'Choose color pair',
+      singleChoiceToggle: 'Single Choice (Each task can select at most 1 label)',
+      addBtn: 'Add',
+      cancelBtn: 'Cancel',
+      previewLabelTitle: 'Label preview:',
+      bulkDeleteLabel: (count: number) => `Delete ${count}`,
+      deselectAllTooltip: 'Deselect all',
+      searchPlaceholder: 'Search by name or description...',
+      selectAllOnPage: (count: number) => `Select all on this page (${count})`,
+      copyTooltip: 'Clone',
+      editTooltip: 'Edit',
+      deleteTooltip: 'Delete',
+      noMatchingFound: 'No matching label found',
+      emptyStateDesc: 'No labels yet. Create the first label above.',
+      chipAll: 'All',
+      chipRegular: 'Regular',
+      chipScoped: 'Scoped',
+      chipSingle: 'Single',
+      chipMulti: 'Multi',
+      scopedEmptyWarn: 'Please fill in both Group and Value for the Scoped Label.',
+      createSuccessDetail: 'Successfully created new label.',
+      createErrorDetail: 'Could not create label. Please try again.',
+      updateSuccessDetail: 'Label updated successfully.',
+      updateErrorDetail: 'Could not update label.',
+      commonIconSuccessDetail: 'Common label icon updated successfully.',
+      cloneDetail: (name: string) => `Filled label info for "${name}" into the form above.`,
+      confirmDeleteHeader: 'Confirm Deletion',
+      confirmDeleteMsg: (name: string) => `Delete label "${name}"?`,
+      deleteSuccessDetail: 'Label deleted successfully.',
+      deleteErrorDetail: 'Could not delete label.',
+      bulkConfirmHeader: 'Delete Multiple Labels',
+      bulkConfirmMsg: (count: number) => `Delete ${count} selected label(s)?`,
+      bulkConfirmBtn: (count: number) => `Delete ${count} label(s)`,
+      bulkDeleteSuccessDetail: (ok: number, total: number) => `Deleted ${ok}/${total} label(s).`,
+      previewGroupName: 'group',
+      previewValueName: 'value',
+      previewLabelName: 'Label name',
+      applyTemplateSuccessSummary: 'Success',
+      deleteErrorSummary: 'Error',
+      cloneLabelName: 'Clone label',
+      deleteBtn: 'Delete',
+      successSummary: 'Success',
+    } : {
+      commonIconTitle: 'Biểu tượng chung của Labels',
+      commonIconDesc: 'Biểu tượng này được hiển thị đồng bộ trên mọi nhãn của dự án.',
+      commonIconTooltip: 'Thay đổi biểu tượng chung',
+      addNewTitle: 'Thêm label mới',
+      scopedLabelToggle: 'Scoped Label (nhóm::giá trị)',
+      scopedGroupPlaceholder: 'Nhóm (ví dụ: type)',
+      scopedValuePlaceholder: 'Giá trị (ví dụ: bug)',
+      labelNamePlaceholder: 'Tên label',
+      descPlaceholder: 'Mô tả (tuỳ chọn)',
+      quickColorTitle: 'Màu chọn nhanh (Light / Dark)',
+      customColorBtn: 'Tự tùy chỉnh màu sắc Light & Dark',
+      lightModeLabel: 'Màu Light mode:',
+      darkModeLabel: 'Màu Dark mode:',
+      colorTooltip: 'Chọn cặp màu sắc',
+      singleChoiceToggle: 'Single Choice (Mỗi task chỉ chọn tối đa 1 nhãn)',
+      addBtn: 'Thêm',
+      cancelBtn: 'Hủy',
+      previewLabelTitle: 'Xem trước nhãn:',
+      bulkDeleteLabel: (count: number) => `Xóa ${count}`,
+      deselectAllTooltip: 'Bỏ chọn tất cả',
+      searchPlaceholder: 'Tìm theo tên hoặc mô tả...',
+      selectAllOnPage: (count: number) => `Chọn tất cả trên trang này (${count})`,
+      copyTooltip: 'Sao chép',
+      editTooltip: 'Sửa',
+      deleteTooltip: 'Xóa',
+      noMatchingFound: 'Không tìm thấy label khớp',
+      emptyStateDesc: 'Chưa có label nào. Tạo label đầu tiên bên trên.',
+      chipAll: 'Tất cả',
+      chipRegular: 'Thường',
+      chipScoped: 'Scoped',
+      chipSingle: 'Single',
+      chipMulti: 'Multi',
+      scopedEmptyWarn: 'Vui lòng điền đầy đủ Nhóm và Giá trị cho Scoped Label.',
+      createSuccessDetail: 'Đã tạo label mới',
+      createErrorDetail: 'Không thể tạo label. Vui lòng thử lại.',
+      updateSuccessDetail: 'Đã cập nhật label',
+      updateErrorDetail: 'Không thể cập nhật label.',
+      commonIconSuccessDetail: 'Đã cập nhật biểu tượng chung cho các nhãn.',
+      cloneDetail: (name: string) => `Đã điền thông tin nhãn "${name}" vào form thêm mới ở trên.`,
+      confirmDeleteHeader: 'Xác nhận xóa',
+      confirmDeleteMsg: (name: string) => `Xóa label "${name}"?`,
+      deleteSuccessDetail: 'Đã xóa label',
+      deleteErrorDetail: 'Không thể xóa label.',
+      bulkConfirmHeader: 'Xóa nhiều labels',
+      bulkConfirmMsg: (count: number) => `Xóa ${count} label đã chọn?`,
+      bulkConfirmBtn: (count: number) => `Xóa ${count} labels`,
+      bulkDeleteSuccessDetail: (ok: number, total: number) => `Đã xóa ${ok}/${total} labels`,
+      previewGroupName: 'nhóm',
+      previewValueName: 'giá trị',
+      previewLabelName: 'Tên label',
+      applyTemplateSuccessSummary: 'Thành công',
+      deleteErrorSummary: 'Lỗi',
+      cloneLabelName: 'Sao chép nhãn',
+      deleteBtn: 'Xóa',
+      successSummary: 'Thành công',
+    };
+  });
+
   // ── Filter chips ──────────────────────────────────────────────
-  readonly filterChips: { label: string; value: 'all'|'regular'|'scoped'|'single'|'multi' }[] = [
-    { label: 'Tất cả', value: 'all' },
-    { label: 'Thường',  value: 'regular' },
-    { label: 'Scoped',  value: 'scoped' },
-    { label: 'Single',  value: 'single' },
-    { label: 'Multi',   value: 'multi' },
-  ];
+  readonly filterChips = computed(() => {
+    const trans = this.t();
+    return [
+      { label: trans.chipAll, value: 'all' as const },
+      { label: trans.chipRegular, value: 'regular' as const },
+      { label: trans.chipScoped, value: 'scoped' as const },
+      { label: trans.chipSingle, value: 'single' as const },
+      { label: trans.chipMulti, value: 'multi' as const },
+    ];
+  });
 
   // ── Editing state ─────────────────────────────────────────────
   protected editingId = signal<string | null>(null);
@@ -439,88 +560,6 @@ export class LabelsTabComponent implements OnInit {
   protected editDescription = '';
 
   // ── Create state ──────────────────────────────────────────────
-  protected isScopedLabel = signal(false);
-  protected scopePrefix = signal('');
-  protected scopeValue = signal('');
-
-  protected newName = signal('');
-  protected newColorLight = signal('#EF4444');
-  protected newColorDark = signal('#F87171');
-  protected showCustomAddColors = signal(false);
-  protected isExclusive = signal(true);
-  protected newDescription = signal('');
-
-  protected selectedCommonIcon = signal<string | null>(null);
-
-  readonly commonLabelsIcon = computed(() => {
-    if (this.selectedCommonIcon()) {
-      return this.selectedCommonIcon()!;
-    }
-    const labels = this.labelStore.labels().filter(l => l.scope === 'project' || !l.scope);
-    const found = labels.find(l => l.icon);
-    return found?.icon ?? 'pi pi-tag';
-  });
-
-  // ── Live Preview badge computed ────────────────────────────────
-  readonly previewLabel = computed(() => {
-    const isScoped = this.isScopedLabel();
-    const prefix = this.scopePrefix().trim();
-    const val = this.scopeValue().trim();
-    const normalName = this.newName().trim();
-    const name = isScoped 
-      ? (prefix || val ? `${prefix || 'nhóm'}::${val || 'giá trị'}` : 'nhóm::giá trị')
-      : (normalName || 'Tên label');
-    
-    return {
-      name,
-      colorLight: this.newColorLight(),
-      colorDark: this.newColorDark(),
-      icon: this.commonLabelsIcon() || null
-    };
-  });
-
-  // ── Filter / search ───────────────────────────────────────────
-  protected projSearch = signal('');
-  protected projFilter = signal<'all'|'regular'|'scoped'|'single'|'multi'>('all');
-
-  protected setProjSearch(val: string): void { this.projSearch.set(val); this.projPage.set(0); this.projSelected.set(new Set()); }
-  protected setProjFilter(val: 'all'|'regular'|'scoped'|'single'|'multi'): void { this.projFilter.set(val); this.projPage.set(0); this.projSelected.set(new Set()); }
-
-  // ── Computed labels ───────────────────────────────────────────
-  readonly filteredProjectLabels = computed(() => {
-    const q = this.projSearch().toLowerCase();
-    const f = this.projFilter();
-    return this.labelStore.labels()
-      .filter(l => l.scope === 'project' || !l.scope)
-      .filter(l => {
-        if (q && !l.name.toLowerCase().includes(q) && !(l.description ?? '').toLowerCase().includes(q)) return false;
-        const scoped = l.name.includes('::');
-        if (f === 'regular') return !scoped;
-        if (f === 'scoped')  return scoped;
-        if (f === 'single')  return scoped && l.isExclusive !== false;
-        if (f === 'multi')   return scoped && l.isExclusive === false;
-        return true;
-      });
-  });
-
-  // ── Pagination ────────────────────────────────────────────────
-  readonly PAGE_SIZE = 10;
-  readonly projPage = signal(0);
-
-  readonly paginatedProjectLabels = computed(() => {
-    const all = this.filteredProjectLabels();
-    const start = this.projPage() * this.PAGE_SIZE;
-    return all.slice(start, start + this.PAGE_SIZE);
-  });
-
-  readonly projTotalPages = computed(() => Math.max(1, Math.ceil(this.filteredProjectLabels().length / this.PAGE_SIZE)));
-  protected projEndIdx(): number { return Math.min((this.projPage() + 1) * this.PAGE_SIZE, this.filteredProjectLabels().length); }
-  protected pageRange(total: number): number[] { return Array.from({ length: total }, (_, i) => i); }
-
-  // ── Multi-select / Bulk Select ────────────────────────────────
-  protected projSelected = signal<Set<string>>(new Set());
-  protected isProjSelected(id: string): boolean { return this.projSelected().has(id); }
-  
   protected toggleProjSelect(id: string): void {
     this.projSelected.update(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
   }
@@ -638,11 +677,12 @@ export class LabelsTabComponent implements OnInit {
   // ── CRUD ──────────────────────────────────────────────────────
   protected async createLabel(): Promise<void> {
     let nameToCreate = '';
+    const trans = this.t();
     if (this.isScopedLabel()) {
       const prefix = this.scopePrefix().trim();
       const val = this.scopeValue().trim();
       if (!prefix || !val) {
-        this.messageService.add({ severity: 'warn', summary: 'Lỗi', detail: 'Vui lòng điền đầy đủ Nhóm và Giá trị cho Scoped Label.' });
+        this.messageService.add({ severity: 'warn', summary: trans.deleteErrorSummary, detail: trans.scopedEmptyWarn });
         return;
       }
       nameToCreate = `${prefix}::${val}`;
@@ -668,9 +708,9 @@ export class LabelsTabComponent implements OnInit {
       this.newColorDark.set('#F87171');
       this.isExclusive.set(true);
       this.showCustomAddColors.set(false);
-      this.messageService.add({ severity: 'success', summary: 'Thành công', detail: 'Đã tạo label mới' });
+      this.messageService.add({ severity: 'success', summary: trans.applyTemplateSuccessSummary, detail: trans.createSuccessDetail });
     } else {
-      this.messageService.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tạo label. Vui lòng thử lại.' });
+      this.messageService.add({ severity: 'error', summary: trans.deleteErrorSummary, detail: trans.createErrorDetail });
     }
   }
 
@@ -687,6 +727,7 @@ export class LabelsTabComponent implements OnInit {
   protected async saveEdit(label: Label): Promise<void> {
     const nameTrimmed = this.editName.trim();
     const isEditScoped = nameTrimmed.includes('::');
+    const trans = this.t();
     const success = await this.labelStore.updateLabel(this.projectId, label.id, {
       name: nameTrimmed || label.name,
       colorLight: this.editColorLight(),
@@ -698,9 +739,9 @@ export class LabelsTabComponent implements OnInit {
     if (success) {
       this.editingId.set(null);
       this.showCustomEditColors.set(false);
-      this.messageService.add({ severity: 'success', summary: 'Thành công', detail: 'Đã cập nhật label' });
+      this.messageService.add({ severity: 'success', summary: trans.applyTemplateSuccessSummary, detail: trans.updateSuccessDetail });
     } else {
-      this.messageService.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể cập nhật label.' });
+      this.messageService.add({ severity: 'error', summary: trans.deleteErrorSummary, detail: trans.updateErrorDetail });
     }
   }
 
@@ -709,6 +750,7 @@ export class LabelsTabComponent implements OnInit {
   protected async updateCommonIcon(newIcon: string): Promise<void> {
     this.selectedCommonIcon.set(newIcon);
 
+    const trans = this.t();
     const labelsToUpdate = this.labelStore.labels().filter(l => l.scope === 'project' || !l.scope);
     if (labelsToUpdate.length > 0) {
       for (const label of labelsToUpdate) {
@@ -726,8 +768,8 @@ export class LabelsTabComponent implements OnInit {
 
     this.messageService.add({
       severity: 'success',
-      summary: 'Thành công',
-      detail: `Đã cập nhật biểu tượng chung cho các nhãn.`,
+      summary: trans.applyTemplateSuccessSummary,
+      detail: trans.commonIconSuccessDetail,
     });
   }
 
@@ -761,11 +803,12 @@ export class LabelsTabComponent implements OnInit {
     this.isExclusive.set(hasScope ? label.isExclusive !== false : true);
     this.newDescription.set(label.description ?? '');
 
+    const trans = this.t();
     // Show a success message
     this.messageService.add({
       severity: 'info',
-      summary: 'Sao chép nhãn',
-      detail: `Đã điền thông tin nhãn "${label.name}" vào form thêm mới ở trên.`,
+      summary: trans.cloneLabelName || 'Sao chép nhãn',
+      detail: trans.cloneDetail(label.name),
     });
 
     // Smooth scroll to the top of the tab
@@ -773,19 +816,20 @@ export class LabelsTabComponent implements OnInit {
   }
 
   protected confirmDelete(label: Label): void {
+    const trans = this.t();
     this.confirmService.confirm({
-      message: `Xóa label "${label.name}"?`,
-      header: 'Xác nhận xóa',
+      message: trans.confirmDeleteMsg(label.name),
+      header: trans.confirmDeleteHeader,
       icon: 'pi pi-exclamation-triangle',
-      acceptLabel: 'Xóa',
-      rejectLabel: 'Hủy',
+      acceptLabel: trans.deleteBtn,
+      rejectLabel: trans.cancelBtn,
       acceptButtonStyleClass: 'p-button-danger',
       accept: async () => {
         const success = await this.labelStore.deleteLabel(this.projectId, label.id);
         if (success) {
-          this.messageService.add({ severity: 'success', summary: 'Thành công', detail: 'Đã xóa label' });
+          this.messageService.add({ severity: 'success', summary: trans.applyTemplateSuccessSummary, detail: trans.deleteSuccessDetail });
         } else {
-          this.messageService.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể xóa label.' });
+          this.messageService.add({ severity: 'error', summary: trans.deleteErrorSummary, detail: trans.deleteErrorDetail });
         }
       },
     });
@@ -794,12 +838,13 @@ export class LabelsTabComponent implements OnInit {
   protected confirmBulkDeleteProj(): void {
     const ids = Array.from(this.projSelected());
     if (!ids.length) return;
+    const trans = this.t();
     this.confirmService.confirm({
-      message: `Xóa ${ids.length} label đã chọn?`,
-      header: 'Xóa nhiều labels',
+      message: trans.bulkConfirmMsg(ids.length),
+      header: trans.bulkConfirmHeader,
       icon: 'pi pi-exclamation-triangle',
-      acceptLabel: `Xóa ${ids.length} labels`,
-      rejectLabel: 'Hủy',
+      acceptLabel: trans.bulkConfirmBtn(ids.length),
+      rejectLabel: trans.cancelBtn,
       acceptButtonStyleClass: 'p-button-danger',
       accept: async () => {
         let ok = 0;
@@ -808,8 +853,93 @@ export class LabelsTabComponent implements OnInit {
           if (success) ok++;
         }
         this.projSelected.set(new Set());
-        this.messageService.add({ severity: 'success', summary: 'Thành công', detail: `Đã xóa ${ok}/${ids.length} labels` });
+        this.messageService.add({ severity: 'success', summary: trans.applyTemplateSuccessSummary, detail: trans.bulkDeleteSuccessDetail(ok, ids.length) });
       },
     });
   }
+
+  // ── Create state ──────────────────────────────────────────────
+  protected isScopedLabel = signal(false);
+  protected scopePrefix = signal('');
+  protected scopeValue = signal('');
+
+  protected newName = signal('');
+  protected newColorLight = signal('#EF4444');
+  protected newColorDark = signal('#F87171');
+  protected showCustomAddColors = signal(false);
+  protected isExclusive = signal(true);
+  protected newDescription = signal('');
+
+  protected selectedCommonIcon = signal<string | null>(null);
+
+  readonly commonLabelsIcon = computed(() => {
+    if (this.selectedCommonIcon()) {
+      return this.selectedCommonIcon()!;
+    }
+    const labels = this.labelStore.labels().filter(l => l.scope === 'project' || !l.scope);
+    const found = labels.find(l => l.icon);
+    return found?.icon ?? 'pi pi-tag';
+  });
+
+  // ── Live Preview badge computed ────────────────────────────────
+  readonly previewLabel = computed(() => {
+    const isScoped = this.isScopedLabel();
+    const prefix = this.scopePrefix().trim();
+    const val = this.scopeValue().trim();
+    const normalName = this.newName().trim();
+    const trans = this.t();
+    const name = isScoped 
+      ? (prefix || val ? `${prefix || trans.previewGroupName}::${val || trans.previewValueName}` : `${trans.previewGroupName}::${trans.previewValueName}`)
+      : (normalName || trans.previewLabelName);
+    
+    return {
+      name,
+      colorLight: this.newColorLight(),
+      colorDark: this.newColorDark(),
+      icon: this.commonLabelsIcon() || null
+    };
+  });
+
+  // ── Filter / search ───────────────────────────────────────────
+  protected projSearch = signal('');
+  protected projFilter = signal<'all'|'regular'|'scoped'|'single'|'multi'>('all');
+
+  protected setProjSearch(val: string): void { this.projSearch.set(val); this.projPage.set(0); this.projSelected.set(new Set()); }
+  protected setProjFilter(val: 'all'|'regular'|'scoped'|'single'|'multi'): void { this.projFilter.set(val); this.projPage.set(0); this.projSelected.set(new Set()); }
+
+  // ── Computed labels ───────────────────────────────────────────
+  readonly filteredProjectLabels = computed(() => {
+    const q = this.projSearch().toLowerCase();
+    const f = this.projFilter();
+    return this.labelStore.labels()
+      .filter(l => l.scope === 'project' || !l.scope)
+      .filter(l => {
+        if (q && !l.name.toLowerCase().includes(q) && !(l.description ?? '').toLowerCase().includes(q)) return false;
+        const scoped = l.name.includes('::');
+        if (f === 'regular') return !scoped;
+        if (f === 'scoped')  return scoped;
+        if (f === 'single')  return scoped && l.isExclusive !== false;
+        if (f === 'multi')   return scoped && l.isExclusive === false;
+        return true;
+      });
+  });
+
+  // ── Pagination ────────────────────────────────────────────────
+  readonly PAGE_SIZE = 10;
+  readonly projPage = signal(0);
+
+  readonly paginatedProjectLabels = computed(() => {
+    const all = this.filteredProjectLabels();
+    const start = this.projPage() * this.PAGE_SIZE;
+    return all.slice(start, start + this.PAGE_SIZE);
+  });
+
+  readonly projTotalPages = computed(() => Math.max(1, Math.ceil(this.filteredProjectLabels().length / this.PAGE_SIZE)));
+  protected projEndIdx(): number { return Math.min((this.projPage() + 1) * this.PAGE_SIZE, this.filteredProjectLabels().length); }
+  protected pageRange(total: number): number[] { return Array.from({ length: total }, (_, i) => i); }
+
+  // ── Multi-select / Bulk Select ────────────────────────────────
+  protected projSelected = signal<Set<string>>(new Set());
+  protected isProjSelected(id: string): boolean { return this.projSelected().has(id); }
+
 }

@@ -101,6 +101,11 @@ export class TaskDetailStateService {
     this.taskStore.loadMoreActivity(projectId, taskId);
   }
 
+  /** Load all remaining activity entries via TaskStore. */
+  loadAllActivity(projectId: string, taskId: string): void {
+    this.taskStore.loadAllActivity(projectId, taskId);
+  }
+
   /** Mark a field as currently saving. */
   addSavingField(field: string): void {
     this.savingFields.update((prev) => {

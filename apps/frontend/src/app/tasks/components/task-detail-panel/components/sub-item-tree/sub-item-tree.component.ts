@@ -11,7 +11,8 @@ import {
   ElementRef,
 } from '@angular/core';
 import { Tooltip } from 'primeng/tooltip';
-import type { SubItemTreeNode } from '@mpm/shared-types';
+import { StateDotComponent } from '../../../../../shared/components/state-dot/state-dot.component';
+import type { SubItemTreeNode, TaskType } from '@mpm/shared-types';
 
 interface FlatNode {
   node: SubItemTreeNode;
@@ -27,12 +28,40 @@ type DropTarget =
 const MAX_DEPTH = 5;
 const INDENT_PX = 20;
 
+const TYPE_CONFIG = {
+  epic: { icon: 'pi pi-bolt', color: '#8B5CF6' },
+  story: { icon: 'pi pi-book', color: '#3B82F6' },
+  task: { icon: 'pi pi-check-circle', color: '#10B981' },
+  subtask: { icon: 'pi pi-minus-circle', color: '#6B7280' }
+} as Record<TaskType, { icon: string; color: string }>;
+
 @Component({
   standalone: true,
   selector: 'app-sub-item-tree',
-  imports: [Tooltip],
+  imports: [Tooltip, StateDotComponent],
   template: `
     <div class="sub-item-tree relative select-none">
+
+      <!-- Expand/Collapse All Toolbar -->
+      <div class="flex items-center justify-end gap-1 mb-2.5 text-[11px] border-b border-gray-100 dark:border-surface-800 pb-1.5">
+        <button
+          type="button"
+          class="text-gray-400 hover:text-indigo-600 dark:text-surface-500 dark:hover:text-indigo-400 font-semibold cursor-pointer flex items-center gap-1 bg-transparent border-none py-0.5 px-1.5 rounded transition select-none"
+          (click)="collapseAll()"
+        >
+          <i class="pi pi-minus-circle text-[10px]"></i>
+          Thu gọn hết
+        </button>
+        <span class="text-gray-200 dark:text-surface-800 select-none">|</span>
+        <button
+          type="button"
+          class="text-gray-400 hover:text-indigo-600 dark:text-surface-500 dark:hover:text-indigo-400 font-semibold cursor-pointer flex items-center gap-1 bg-transparent border-none py-0.5 px-1.5 rounded transition select-none"
+          (click)="expandAll()"
+        >
+          <i class="pi pi-plus-circle text-[10px]"></i>
+          Mở rộng hết
+        </button>
+      </div>
 
       @for (flat of flatNodes(); track flat.node.id) {
 
@@ -45,9 +74,13 @@ const INDENT_PX = 20;
         }
 
         <!-- Row — pointerdown here activates drag after DRAG_THRESHOLD movement -->
+        <!-- Row — pointerdown here activates drag after DRAG_THRESHOLD movement -->
         <div
           [attr.data-node-id]="flat.node.id"
-          class="flex items-center gap-1.5 py-1.5 rounded transition-colors duration-100 group text-sm cursor-grab active:cursor-grabbing"
+          class="flex items-center gap-1.5 py-1.5 rounded transition-colors duration-100 group text-sm"
+          [class.cursor-grab]="!disabled"
+          [class.active:cursor-grabbing]="!disabled"
+          [class.cursor-default]="disabled"
           [class.opacity-30]="draggingId() === flat.node.id"
           [class.bg-indigo-50]="isDropChild(flat.node.id)"
           [class.dark:bg-indigo-950]="isDropChild(flat.node.id)"
@@ -74,13 +107,14 @@ const INDENT_PX = 20;
             <span class="w-5 flex-shrink-0"></span>
           }
 
-          <!-- State colored dot -->
-          <span
-            class="w-2.5 h-2.5 rounded-full flex-shrink-0"
-            [style.background-color]="flat.node.state?.color ?? '#9CA3AF'"
-            [pTooltip]="flat.node.state?.name ?? 'Không xác định'"
+          <!-- Type icon -->
+          <i
+            [class]="typeIcon(flat.node.type)"
+            [style.color]="typeColor(flat.node.type)"
+            class="flex-shrink-0 text-[11px]"
+            [pTooltip]="flat.node.type"
             tooltipPosition="top"
-          ></span>
+          ></i>
 
           <!-- Task ID -->
           <span class="font-mono text-xs text-gray-400 dark:text-surface-500 flex-shrink-0">
@@ -151,6 +185,17 @@ const INDENT_PX = 20;
             </button>
 
           </div>
+
+          <!-- State icon / dot (always visible on the right) -->
+          @if (flat.node.state) {
+            <app-state-dot [state]="flat.node.state" [size]="10" class="flex-shrink-0 ml-1.5" />
+          } @else {
+            <span
+              class="w-2.5 h-2.5 rounded-full flex-shrink-0 bg-gray-400 dark:bg-surface-600 ml-1.5"
+              [pTooltip]="'Không xác định'"
+              tooltipPosition="top"
+            ></span>
+          }
         </div>
 
         <!-- Drop line as CHILD (below this row, indented deeper) -->
@@ -203,10 +248,12 @@ const INDENT_PX = 20;
         [style.left.px]="ghostX()"
         [style.top.px]="ghostY()"
       >
-        <span
-          class="w-2 h-2 rounded-full flex-shrink-0"
-          [style.background-color]="draggingNode()!.state?.color ?? '#9CA3AF'"
-        ></span>
+        <!-- Type icon -->
+        <i
+          [class]="typeIcon(draggingNode()!.type)"
+          [style.color]="typeColor(draggingNode()!.type)"
+          class="flex-shrink-0 text-[11px]"
+        ></i>
         <span class="text-xs font-mono text-gray-400">{{ draggingNode()!.taskId }}</span>
         <span class="text-sm text-gray-800 dark:text-surface-100 font-medium truncate">
           {{ draggingNode()!.title }}
@@ -222,6 +269,7 @@ export class SubItemTreeComponent implements OnChanges, OnDestroy {
   constructor(private readonly el: ElementRef<HTMLElement>) {}
 
   @Input() items: SubItemTreeNode[] = [];
+  @Input() disabled = false;
 
   /** Emits the task ID when the view (eye) icon is clicked */
   @Output() itemClicked = new EventEmitter<string>();
@@ -278,9 +326,6 @@ export class SubItemTreeComponent implements OnChanges, OnDestroy {
     if (changes['items']) {
       this._items.set(this.items);
       this.pendingMoves.set([]); // server data is now source of truth
-      if (this.expandedNodes().size === 0 && this.items.length > 0) {
-        this.initExpandedState(this.items);
-      }
     }
   }
 
@@ -289,6 +334,16 @@ export class SubItemTreeComponent implements OnChanges, OnDestroy {
   }
 
   // ─── Expand / Collapse ────────────────────────────────────────────────────
+
+  expandAll(): void {
+    const ids = new Set<string>();
+    this.collectExpandableIds(this.items, ids);
+    this.expandedNodes.set(ids);
+  }
+
+  collapseAll(): void {
+    this.expandedNodes.set(new Set<string>());
+  }
 
   isExpanded(nodeId: string): boolean {
     return this.expandedNodes().has(nodeId);
@@ -318,6 +373,7 @@ export class SubItemTreeComponent implements OnChanges, OnDestroy {
    * short movements are treated as regular clicks and ignored.
    */
   onRowPointerDown(node: SubItemTreeNode, event: PointerEvent): void {
+    if (this.disabled) return;
     // Let button clicks through — they stop propagation on their own pointerdown
     if ((event.target as HTMLElement).closest('button')) return;
 
@@ -534,6 +590,14 @@ export class SubItemTreeComponent implements OnChanges, OnDestroy {
   }
 
   // ─── Utility (template) ───────────────────────────────────────────────────
+
+  typeIcon(type: TaskType): string {
+    return TYPE_CONFIG[type]?.icon ?? 'pi pi-circle';
+  }
+
+  typeColor(type: TaskType): string {
+    return TYPE_CONFIG[type]?.color ?? '#9CA3AF';
+  }
 
   getInitial(name: string): string {
     return name?.charAt(0)?.toUpperCase() || '?';

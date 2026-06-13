@@ -56,7 +56,7 @@ import { StateDotComponent } from '../../../../shared/components/state-dot/state
         <i class="pi text-[9px] text-gray-500 dark:text-surface-400" [class.pi-chevron-right]="!isExpanded" [class.pi-chevron-down]="isExpanded"></i>
       </button>
     }
-    <i class="flex-shrink-0 text-xs mr-2" [class]="typeIcon(task.type)" [style.color]="typeColor(task.type)" [pTooltip]="task.type"></i>
+    <i class="flex-shrink-0 mr-2" [class]="typeIcon(task.type)" [style.color]="typeColor(task.type)" [style.font-size.px]="layoutService.appIconSize() - 2" [pTooltip]="task.type"></i>
     <span class="flex-1 text-sm text-gray-800 dark:text-surface-100 truncate">{{ task.title }}</span>
     @if (depth === 0 && task.parentId && task.parent) {
       <span class="flex items-center gap-1 text-xs text-gray-400 dark:text-surface-500 flex-shrink-0 mr-2 max-w-[200px]" [pTooltip]="task.parent.taskId + ' · ' + task.parent.title">
@@ -97,7 +97,7 @@ import { StateDotComponent } from '../../../../shared/components/state-dot/state
                       [style.background]="getScopeColor(label.name, layoutService.isDarkMode(), (layoutService.isDarkMode() ? label.colorDark : label.colorLight))"
                       [style.color]="layoutService.getTextColor(getScopeColor(label.name, layoutService.isDarkMode(), (layoutService.isDarkMode() ? label.colorDark : label.colorLight)))">
                   @if (label.icon) {
-                    <app-icon-display [icon]="label.icon" class="text-[9px]"></app-icon-display>
+                    <app-icon-display [icon]="label.icon" [size]="layoutService.appIconSize() - 5"></app-icon-display>
                   }
                   {{ getScope(label.name) }}
                 </span>
@@ -111,7 +111,7 @@ import { StateDotComponent } from '../../../../shared/components/state-dot/state
                     [style.color]="layoutService.isDarkMode() ? label.colorDark : label.colorLight"
                     [pTooltip]="label.description ? label.name + ': ' + label.description : label.name">
                 @if (label.icon) {
-                  <app-icon-display [icon]="label.icon" class="text-[9px]"></app-icon-display>
+                  <app-icon-display [icon]="label.icon" [size]="layoutService.appIconSize() - 5"></app-icon-display>
                 }
                 {{ label.name }}
               </span>
@@ -146,7 +146,7 @@ import { StateDotComponent } from '../../../../shared/components/state-dot/state
     @if (displayProps.showSprint !== false && task.sprintId && sprintName(task.sprintId)) {
       <span class="inline-flex items-center gap-1 text-xs px-1.5 py-px rounded bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-900 text-indigo-600 dark:text-indigo-400 max-w-[96px] flex-shrink-0 mr-2 cursor-default"
             [pTooltip]="'Sprint: ' + sprintName(task.sprintId)">
-        <app-icon-display [icon]="sprintIcon()" class="text-[10px] flex-shrink-0"></app-icon-display>
+        <app-icon-display [icon]="sprintIcon()" [size]="layoutService.appIconSize() - 4" class="flex-shrink-0"></app-icon-display>
         <span class="truncate" style="max-width:80px">{{ sprintName(task.sprintId) }}</span>
       </span>
     }
@@ -157,10 +157,10 @@ import { StateDotComponent } from '../../../../shared/components/state-dot/state
       <span class="flex items-center gap-0.5 text-xs text-gray-400 dark:text-surface-500 flex-shrink-0 mr-2" pTooltip="Start date"><i class="pi pi-calendar text-[10px]"></i>{{ formatDate(task.startDate) }}</span>
     }
     @if (displayProps.showDueDate && task.dueDate) {
-      <span class="flex items-center gap-0.5 text-xs flex-shrink-0 mr-2" [class.text-red-500]="isOverdue(task.dueDate)" [class.text-gray-400]="!isOverdue(task.dueDate)" [class.dark:text-surface-500]="!isOverdue(task.dueDate)" pTooltip="Due date"><i class="pi pi-calendar text-[10px]"></i>{{ formatDate(task.dueDate) }}</span>
+      <span class="flex items-center gap-0.5 text-xs flex-shrink-0 mr-2" [class.text-red-500]="isOverdue(task)" [class.text-gray-400]="!isOverdue(task)" [class.dark:text-surface-500]="!isOverdue(task)" pTooltip="Due date"><i class="pi pi-calendar text-[10px]"></i>{{ formatDate(task.dueDate) }}</span>
     }
     @if (displayProps.showPriority && task.priority !== 'none') {
-      <app-icon-display [icon]="priorityIcon(task.priority)" class="flex-shrink-0 text-xs mr-2 leading-none" [style.color]="priorityColor(task.priority)" [pTooltip]="'Priority: ' + task.priority" />
+      <app-icon-display [icon]="priorityIcon(task.priority)" [size]="layoutService.appIconSize() - 2" class="flex-shrink-0 mr-2 leading-none" [style.color]="priorityColor(task.priority)" [pTooltip]="'Priority: ' + task.priority" />
     }
     @if (displayProps.showState && task.state) {
       <app-state-dot [state]="task.state" [size]="12" class="flex-shrink-0 mr-2" />
@@ -213,7 +213,24 @@ export class TaskRowComponent {
     return this.priorityConfigService.getConfig(this.projectStore.currentProject()?.id ?? '', p).colorLight;
   }
 
-  protected isOverdue(d: string | null): boolean { return !!d && new Date(d) < new Date(); }
+  protected isOverdue(task: TaskListItem): boolean {
+    const due = task.dueDate;
+    if (!due) return false;
+    const isCompleted = task.state?.group === 'completed';
+    if (isCompleted) {
+      if (!task.completedAt) return false;
+      const completedDateObj = new Date(task.completedAt);
+      completedDateObj.setHours(0, 0, 0, 0);
+      const dueDateObj = new Date(due);
+      dueDateObj.setHours(0, 0, 0, 0);
+      return completedDateObj.getTime() > dueDateObj.getTime();
+    }
+    const todayObj = new Date();
+    todayObj.setHours(0, 0, 0, 0);
+    const dueDateObj = new Date(due);
+    dueDateObj.setHours(0, 0, 0, 0);
+    return todayObj.getTime() > dueDateObj.getTime();
+  }
   protected formatDate(d: string): string {
     return new Date(d).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
   }

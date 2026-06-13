@@ -27,7 +27,7 @@ import { IconDisplayComponent } from '../../../shared/components/icon-display/ic
       <!-- Project Switcher -->
       <div class="p-3 border-b border-surface-100 dark:border-surface-800 overflow-visible">
         @if (isExpanded()) {
-          <span class="block text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-surface-400 mb-2 px-1">Dự án</span>
+          <span class="block text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-surface-400 mb-2 px-1">{{ t().projectsHeader }}</span>
           <button
             (click)="projectPop.toggle($event); projectSearch.set('')"
             class="w-full flex items-center justify-between gap-2 px-3 py-2 text-sm border border-surface-200 dark:border-surface-800 rounded-lg bg-white dark:bg-surface-900 text-gray-800 dark:text-surface-100 font-semibold cursor-pointer hover:bg-surface-50 dark:hover:bg-surface-800 transition-all select-none"
@@ -43,18 +43,18 @@ import { IconDisplayComponent } from '../../../shared/components/icon-display/ic
                 }
                 <span class="truncate text-left">{{ project.name }}</span>
               } @else {
-                <span class="text-gray-400 dark:text-surface-500">Chọn dự án</span>
+                <span class="text-gray-400 dark:text-surface-500">{{ t().selectProject }}</span>
               }
             </div>
             <i class="pi pi-chevron-down text-xs opacity-60 flex-shrink-0"></i>
           </button>
-
+ 
           <p-popover #projectPop appendTo="body" styleClass="!p-0">
             <div class="p-2 border-b border-surface-100 dark:border-surface-800 bg-surface-50 dark:bg-surface-900">
               <input
                 type="text"
                 pInputText
-                placeholder="Tìm dự án..."
+                [placeholder]="t().searchProjectPlaceholder"
                 class="w-full text-xs p-1"
                 [ngModel]="projectSearch()"
                 (ngModelChange)="projectSearch.set($event)"
@@ -78,7 +78,7 @@ import { IconDisplayComponent } from '../../../shared/components/icon-display/ic
                   <span class="truncate">{{ project.name }}</span>
                 </div>
               } @empty {
-                <div class="p-3 text-xs text-gray-400 text-center">Không tìm thấy dự án</div>
+                <div class="p-3 text-xs text-gray-400 text-center">{{ t().noProjectFound }}</div>
               }
             </div>
           </p-popover>
@@ -88,7 +88,7 @@ import { IconDisplayComponent } from '../../../shared/components/icon-display/ic
             <button
               (click)="layoutService.toggleSidebar()"
               class="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition duration-200 cursor-pointer"
-              title="Chuyển dự án"
+              [title]="t().switchProject"
             >
               @if (projectStore.currentProject()?.emoji) {
                 <app-icon-display [icon]="projectStore.currentProject()?.emoji" class="text-lg"></app-icon-display>
@@ -108,11 +108,11 @@ import { IconDisplayComponent } from '../../../shared/components/icon-display/ic
           routerLinkActive="bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 font-semibold border-l-4 border-indigo-600"
           [routerLinkActiveOptions]="{ exact: true }"
           class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 dark:text-surface-400 hover:bg-gray-50 dark:hover:bg-surface-800 hover:text-gray-900 dark:hover:text-surface-100 transition duration-200"
-          [title]="!isExpanded() ? 'Dự án' : ''"
+          [title]="!isExpanded() ? t().projectsLink : ''"
         >
-          <i class="pi pi-th-large text-base"></i>
+          <i class="pi pi-th-large" [style.font-size.px]="layoutService.menuIconSize()"></i>
           @if (isExpanded()) {
-            <span>Dự án</span>
+            <span>{{ t().projectsLink }}</span>
           }
         </a>
 
@@ -123,11 +123,11 @@ import { IconDisplayComponent } from '../../../shared/components/icon-display/ic
             routerLinkActive="bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 font-semibold border-l-4 border-indigo-600"
             [routerLinkActiveOptions]="{ exact: false }"
             class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 dark:text-surface-400 hover:bg-gray-50 dark:hover:bg-surface-800 hover:text-gray-900 dark:hover:text-surface-100 transition duration-200"
-            [title]="!isExpanded() ? 'Work Items' : ''"
+            [title]="!isExpanded() ? t().workItems : ''"
           >
-            <i class="pi pi-align-left text-base"></i>
+            <i class="pi pi-align-left" [style.font-size.px]="layoutService.menuIconSize()"></i>
             @if (isExpanded()) {
-              <span>Work Items</span>
+              <span>{{ t().workItems }}</span>
             }
           </a>
 
@@ -143,7 +143,7 @@ import { IconDisplayComponent } from '../../../shared/components/icon-display/ic
                   : 'text-gray-600 dark:text-surface-400 hover:bg-gray-50 dark:hover:bg-surface-800 hover:text-gray-900 dark:hover:text-surface-100'"
                 [title]="!isExpanded() ? 'Sprints' : ''"
               >
-                <app-icon-display [icon]="sprintIcon()" class="text-base flex-shrink-0"></app-icon-display>
+                <app-icon-display [icon]="sprintIcon()" [size]="layoutService.menuIconSize()" class="flex-shrink-0"></app-icon-display>
                 @if (isExpanded()) {
                   <span class="flex-1 text-left">{{ sprintLabel() }}</span>
                   <i class="pi text-[10px] text-gray-400 dark:text-surface-500 transition-transform duration-200"
@@ -153,14 +153,14 @@ import { IconDisplayComponent } from '../../../shared/components/icon-display/ic
 
               @if (isExpanded() && isSprintsOpen()) {
                 <div class="mt-0.5 ml-4 pl-3 border-l border-gray-100 dark:border-surface-800 space-y-0.5">
-                  @for (sub of sprintSubItems; track sub.label) {
+                  @for (sub of sprintSubItems(); track sub.label) {
                     <a
                       [routerLink]="['/projects', currentKey(), 'sprints', sub.route]"
                       [routerLinkActiveOptions]="{ exact: true }"
                       routerLinkActive="bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 font-semibold"
                       class="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs text-gray-500 dark:text-surface-400 hover:bg-gray-50 dark:hover:bg-surface-800 hover:text-gray-700 dark:hover:text-surface-100 transition"
                     >
-                      <i [class]="'pi ' + sub.icon + ' text-[10px]'"></i>
+                      <i [class]="'pi ' + sub.icon" [style.font-size.px]="layoutService.menuIconSize() - 6"></i>
                       {{ sub.label }}
                     </a>
                   }
@@ -176,11 +176,11 @@ import { IconDisplayComponent } from '../../../shared/components/icon-display/ic
               routerLinkActive="bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 font-semibold border-l-4 border-indigo-600"
               [routerLinkActiveOptions]="{ exact: false }"
               class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 dark:text-surface-400 hover:bg-gray-50 dark:hover:bg-surface-800 hover:text-gray-900 dark:hover:text-surface-100 transition duration-200"
-              [title]="!isExpanded() ? 'Modules' : ''"
+              [title]="!isExpanded() ? t().modules : ''"
             >
-              <i class="pi pi-box text-base"></i>
+              <i class="pi pi-box" [style.font-size.px]="layoutService.menuIconSize()"></i>
               @if (isExpanded()) {
-                <span>Modules</span>
+                <span>{{ t().modules }}</span>
               }
             </a>
           }
@@ -192,11 +192,11 @@ import { IconDisplayComponent } from '../../../shared/components/icon-display/ic
               routerLinkActive="bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 font-semibold border-l-4 border-indigo-600"
               [routerLinkActiveOptions]="{ exact: false }"
               class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 dark:text-surface-400 hover:bg-gray-50 dark:hover:bg-surface-800 hover:text-gray-900 dark:hover:text-surface-100 transition duration-200"
-              [title]="!isExpanded() ? 'Custom Views' : ''"
+              [title]="!isExpanded() ? t().customViews : ''"
             >
-              <i class="pi pi-filter text-base"></i>
+              <i class="pi pi-filter" [style.font-size.px]="layoutService.menuIconSize()"></i>
               @if (isExpanded()) {
-                <span>Custom Views</span>
+                <span>{{ t().customViews }}</span>
               }
             </a>
           }
@@ -208,11 +208,11 @@ import { IconDisplayComponent } from '../../../shared/components/icon-display/ic
               routerLinkActive="bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 font-semibold border-l-4 border-indigo-600"
               [routerLinkActiveOptions]="{ exact: false }"
               class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 dark:text-surface-400 hover:bg-gray-50 dark:hover:bg-surface-800 hover:text-gray-900 dark:hover:text-surface-100 transition duration-200"
-              [title]="!isExpanded() ? 'Pages' : ''"
+              [title]="!isExpanded() ? t().pages : ''"
             >
-              <i class="pi pi-file text-base"></i>
+              <i class="pi pi-file" [style.font-size.px]="layoutService.menuIconSize()"></i>
               @if (isExpanded()) {
-                <span>Pages (Tài liệu)</span>
+                <span>{{ t().pages }}</span>
               }
             </a>
           }
@@ -224,11 +224,11 @@ import { IconDisplayComponent } from '../../../shared/components/icon-display/ic
               routerLinkActive="bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 font-semibold border-l-4 border-indigo-600"
               [routerLinkActiveOptions]="{ exact: false }"
               class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 dark:text-surface-400 hover:bg-gray-50 dark:hover:bg-surface-800 hover:text-gray-900 dark:hover:text-surface-100 transition duration-200"
-              [title]="!isExpanded() ? 'Intake' : ''"
+              [title]="!isExpanded() ? t().intake : ''"
             >
-              <i class="pi pi-inbox text-base"></i>
+              <i class="pi pi-inbox" [style.font-size.px]="layoutService.menuIconSize()"></i>
               @if (isExpanded()) {
-                <span>Intake (Yêu cầu)</span>
+                <span>{{ t().intake }}</span>
               }
             </a>
           }
@@ -242,11 +242,11 @@ import { IconDisplayComponent } from '../../../shared/components/icon-display/ic
               [ngClass]="isOnSettings()
                 ? 'bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 font-semibold border-l-4 border-indigo-600'
                 : 'text-gray-600 dark:text-surface-400 hover:bg-gray-50 dark:hover:bg-surface-800 hover:text-gray-900 dark:hover:text-surface-100'"
-              [title]="!isExpanded() ? 'Cài đặt' : ''"
+              [title]="!isExpanded() ? t().settings : ''"
             >
-              <i class="pi pi-cog text-base flex-shrink-0"></i>
+              <i class="pi pi-cog flex-shrink-0" [style.font-size.px]="layoutService.menuIconSize()"></i>
               @if (isExpanded()) {
-                <span class="flex-1 text-left">Cài đặt</span>
+                <span class="flex-1 text-left">{{ t().settings }}</span>
                 <i class="pi text-[10px] text-gray-400 dark:text-surface-500 transition-transform duration-200"
                    [ngClass]="isSettingsOpen() ? 'pi-chevron-down' : 'pi-chevron-right'"></i>
               }
@@ -254,15 +254,13 @@ import { IconDisplayComponent } from '../../../shared/components/icon-display/ic
 
             @if (isExpanded() && isSettingsOpen()) {
               <div class="mt-0.5 ml-4 pl-3 border-l border-gray-100 dark:border-surface-800 space-y-0.5">
-                @for (sub of settingsSubItems; track sub.label) {
+                @for (sub of settingsSubItems(); track sub.label) {
                   <a
                     [routerLink]="['/projects', currentKey(), 'settings'].concat(sub.route)"
                     class="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs transition"
-                    [ngClass]="isSettingsSubItemActive(sub)
-                      ? (sub.danger ? 'bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 font-semibold' : 'bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 font-semibold')
-                      : (sub.danger ? 'text-red-400 dark:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 hover:text-red-600 dark:hover:text-red-400' : 'text-gray-500 dark:text-surface-400 hover:bg-gray-50 dark:hover:bg-surface-800 hover:text-gray-700 dark:hover:text-surface-100')"
+                    [ngClass]="isSettingsSubItemActive(sub)"
                   >
-                    <i [class]="'pi ' + sub.icon + ' text-[10px]'"></i>
+                    <i [class]="'pi ' + sub.icon" [style.font-size.px]="layoutService.menuIconSize() - 6"></i>
                     {{ sub.label }}
                   </a>
                 }
@@ -278,11 +276,11 @@ import { IconDisplayComponent } from '../../../shared/components/icon-display/ic
                 routerLinkActive="bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 font-semibold border-l-4 border-indigo-600"
                 [routerLinkActiveOptions]="{ exact: false }"
                 class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 dark:text-surface-400 hover:bg-gray-50 dark:hover:bg-surface-800 hover:text-gray-900 dark:hover:text-surface-100 transition duration-200"
-                [title]="!isExpanded() ? 'Quản trị hệ thống' : ''"
+                [title]="!isExpanded() ? t().admin : ''"
               >
-                <i class="pi pi-shield text-base"></i>
+                <i class="pi pi-shield" [style.font-size.px]="layoutService.menuIconSize()"></i>
                 @if (isExpanded()) {
-                  <span>Quản trị</span>
+                  <span>{{ t().admin }}</span>
                 }
               </a>
             </div>
@@ -376,7 +374,56 @@ export class SidebarComponent implements OnInit {
     this.isSprintsOpen.update(v => !v);
   }
 
-  isSettingsSubItemActive(sub: typeof this.settingsSubItems[number]): boolean {
+  readonly t = computed(() => {
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    return isEn ? {
+      projectsHeader: 'Projects',
+      selectProject: 'Select project',
+      searchProjectPlaceholder: 'Search project...',
+      noProjectFound: 'No project found',
+      switchProject: 'Switch project',
+      projectsLink: 'Projects',
+      workItems: 'Work Items',
+      modules: 'Modules',
+      customViews: 'Custom Views',
+      pages: 'Pages (Docs)',
+      intake: 'Intake (Requests)',
+      settings: 'Settings',
+      admin: 'System Admin',
+      // Sub-items
+      list: 'List',
+      dashboard: 'Dashboard',
+      velocity: 'Velocity',
+      generalConfig: 'General Config',
+      members: 'Members',
+      features: 'Features',
+      dangerZone: 'Danger Zone',
+    } : {
+      projectsHeader: 'Dự án',
+      selectProject: 'Chọn dự án',
+      searchProjectPlaceholder: 'Tìm dự án...',
+      noProjectFound: 'Không tìm thấy dự án',
+      switchProject: 'Chuyển dự án',
+      projectsLink: 'Dự án',
+      workItems: 'Work Items',
+      modules: 'Modules',
+      customViews: 'Custom Views',
+      pages: 'Pages (Tài liệu)',
+      intake: 'Intake (Yêu cầu)',
+      settings: 'Cài đặt',
+      admin: 'Quản trị',
+      // Sub-items
+      list: 'Danh sách',
+      dashboard: 'Dashboard',
+      velocity: 'Velocity',
+      generalConfig: 'Cấu hình chung',
+      members: 'Thành viên',
+      features: 'Tính năng',
+      dangerZone: 'Danger Zone',
+    };
+  });
+
+  isSettingsSubItemActive(sub: { route: string[]; danger?: boolean }): boolean {
     const url = this.currentUrl().split('?')[0];
     const key = this.currentKey();
     if (!key) return false;
@@ -401,18 +448,24 @@ export class SidebarComponent implements OnInit {
     return url === `${prefix}/${pathSegment}` || url.startsWith(`${prefix}/${pathSegment}/`);
   }
 
-  readonly sprintSubItems = [
-    { label: 'Danh sách', icon: 'pi-list',      route: 'list' },
-    { label: 'Dashboard', icon: 'pi-chart-line', route: 'dashboard' },
-    { label: 'Velocity',  icon: 'pi-chart-bar',  route: 'velocity' },
-  ];
+  readonly sprintSubItems = computed(() => {
+    const trans = this.t();
+    return [
+      { label: trans.list, icon: 'pi-list',      route: 'list' },
+      { label: trans.dashboard, icon: 'pi-chart-line', route: 'dashboard' },
+      { label: trans.velocity,  icon: 'pi-chart-bar',  route: 'velocity' },
+    ];
+  });
 
-  readonly settingsSubItems = [
-    { label: 'Cấu hình chung', icon: 'pi-sliders-h',            route: [] as string[], exact: true,  danger: false },
-    { label: 'Thành viên',     icon: 'pi-users',                 route: ['members'],   exact: false, danger: false },
-    { label: 'Tính năng',      icon: 'pi-toggle-on',             route: ['features'],  exact: false, danger: false },
-    { label: 'Danger Zone',    icon: 'pi-exclamation-triangle',  route: ['danger'],    exact: false, danger: true  },
-  ];
+  readonly settingsSubItems = computed(() => {
+    const trans = this.t();
+    return [
+      { label: trans.generalConfig, icon: 'pi-sliders-h',            route: [] as string[], exact: true,  danger: false },
+      { label: trans.members,       icon: 'pi-users',                 route: ['members'],   exact: false, danger: false },
+      { label: trans.features,      icon: 'pi-toggle-on',             route: ['features'],  exact: false, danger: false },
+      { label: trans.dangerZone,    icon: 'pi-exclamation-triangle',  route: ['danger'],    exact: false, danger: true  },
+    ];
+  });
 
   // In overlay mode the sidebar is always fully expanded; in static mode it respects isCollapsed
   readonly isExpanded = computed(

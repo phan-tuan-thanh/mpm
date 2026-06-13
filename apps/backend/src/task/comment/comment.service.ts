@@ -82,6 +82,14 @@ export class CommentService {
     return cleanWithValidImages;
   }
 
+  private async checkTaskNotCompleted(projectId: string, taskId: string): Promise<void> {
+    const task = await this.taskRepo.findOne({ where: { id: taskId, projectId }, relations: ['state'] });
+    if (!task) throw new NotFoundException('Task not found');
+    if (task.state?.group === 'completed') {
+      throw new BadRequestException('Cannot modify comments of a completed/closed task');
+    }
+  }
+
   /**
    * Extracts mentions from sanitized content and validates they are project members.
    */
@@ -234,9 +242,7 @@ export class CommentService {
     content: string,
     parentId?: string | null
   ): Promise<any> {
-    // Verify task exists
-    const task = await this.taskRepo.findOne({ where: { id: taskId, projectId } });
-    if (!task) throw new NotFoundException('Task not found');
+    await this.checkTaskNotCompleted(projectId, taskId);
 
     let parentComment: TaskComment | null = null;
     if (parentId) {
@@ -305,6 +311,8 @@ export class CommentService {
     authorId: string,
     content: string
   ): Promise<any> {
+    await this.checkTaskNotCompleted(projectId, taskId);
+
     const comment = await this.commentRepo.findOne({
       where: { id: commentId, taskId },
       relations: ['author', 'reactions'],
@@ -352,6 +360,8 @@ export class CommentService {
     userId: string,
     callerRole?: string
   ): Promise<void> {
+    await this.checkTaskNotCompleted(projectId, taskId);
+
     const comment = await this.commentRepo.findOne({
       where: { id: commentId, taskId },
     });
@@ -391,6 +401,8 @@ export class CommentService {
     userId: string,
     emoji: string
   ): Promise<void> {
+    await this.checkTaskNotCompleted(projectId, taskId);
+
     if (!ALLOWED_EMOJIS.includes(emoji)) {
       throw new BadRequestException('Invalid reaction emoji');
     }
@@ -418,6 +430,8 @@ export class CommentService {
     userId: string,
     emoji: string
   ): Promise<void> {
+    await this.checkTaskNotCompleted(projectId, taskId);
+
     const comment = await this.commentRepo.findOne({ where: { id: commentId, taskId } });
     if (!comment) throw new NotFoundException('Comment not found');
 

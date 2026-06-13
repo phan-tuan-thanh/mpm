@@ -15,7 +15,9 @@ import type { TaskListItem, ProjectState, DisplayProperties } from '@mpm/shared-
     }
   `],
   template: `
-    <div class="flex flex-col h-full min-w-[260px] max-w-[320px] w-72 flex-shrink-0 bg-gray-100 dark:bg-surface-800 rounded-xl p-3">
+    <div class="flex flex-col h-full flex-shrink-0 bg-gray-100 dark:bg-surface-800 rounded-xl p-3"
+         [style.width.px]="displayProps.kanbanColumnWidth || 288"
+         [style.min-width.px]="displayProps.kanbanColumnWidth || 288">
       <!-- Column header -->
       <div class="flex items-center gap-2 px-1 py-1 mb-3 flex-shrink-0">
         <app-state-dot [state]="state" [size]="12" />

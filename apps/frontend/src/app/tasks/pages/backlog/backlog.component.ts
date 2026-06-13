@@ -9,12 +9,14 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 import { DialogModule } from 'primeng/dialog';
 import { PopoverModule } from 'primeng/popover';
+import { CheckboxModule } from 'primeng/checkbox';
 
 import { TaskStore } from '../../state/task.store';
 import { ProjectStore } from '../../../projects/state/project.store';
 import { LayoutService } from '../../../layout/services/layout.service';
 import { AttachmentService } from '../../services/attachment.service';
 import { LinkService } from '../../services/link.service';
+import { TaskService } from '../../services/task.service';
 import { BacklogToolbarComponent, BacklogFilter } from './backlog-toolbar/backlog-toolbar.component';
 import { TaskListComponent } from './task-list/task-list.component';
 import { BoardComponent } from './board/board.component';
@@ -25,7 +27,7 @@ import { SprintService } from '../../../projects/sprints/services/sprint.service
 import type { Sprint } from '../../../projects/sprints/models/sprint.models';
 import type { TaskListItem, CreateTaskDto, ReorderTaskItem, DisplayProperties, Task } from '@mpm/shared-types';
 import { DEFAULT_DISPLAY_PROPS } from '@mpm/shared-types';
-import { Subject, takeUntil, filter, distinctUntilChanged } from 'rxjs';
+import { Subject, takeUntil, filter, distinctUntilChanged, firstValueFrom } from 'rxjs';
 import { toObservable } from '@angular/core/rxjs-interop';
 
 @Component({
@@ -33,7 +35,7 @@ import { toObservable } from '@angular/core/rxjs-interop';
   selector: 'app-backlog',
   imports: [
     CommonModule, FormsModule,
-    ButtonModule, ConfirmDialogModule, ToastModule, DialogModule, PopoverModule,
+    ButtonModule, ConfirmDialogModule, ToastModule, DialogModule, PopoverModule, CheckboxModule,
     BacklogToolbarComponent, TaskListComponent, BoardComponent, QuickCreateComponent,
     TaskDetailPanelComponent, LabelManagerComponent,
   ],
@@ -58,13 +60,15 @@ import { toObservable } from '@angular/core/rxjs-interop';
       @if (taskStore.hasSelection()) {
         <div class="flex items-center gap-3 px-4 py-2 bg-indigo-50 dark:bg-indigo-950/30 border-b border-indigo-100 dark:border-indigo-900 text-sm">
           <span class="font-medium text-indigo-700 dark:text-indigo-300">
-            {{ taskStore.selectionCount() }} task đã chọn
+            {{ taskStore.selectionCount() }} {{ t().selectedTasks }}
           </span>
-          <button pButton label="Thêm vào Sprint" icon="pi pi-flag" size="small" [fluid]="false"
+          <button pButton [label]="t().close" icon="pi pi-check-circle" severity="success" size="small" [fluid]="false"
+            (click)="onBulkClose()"></button>
+          <button pButton [label]="t().addToSprint" icon="pi pi-flag" size="small" [fluid]="false"
             [outlined]="true" (click)="openAddToSprint()"></button>
-          <button pButton label="Xóa" icon="pi pi-trash" severity="danger" size="small" [fluid]="false"
+          <button pButton [label]="t().delete" icon="pi pi-trash" severity="danger" size="small" [fluid]="false"
             (click)="onBulkDelete()"></button>
-          <button pButton label="Bỏ chọn" severity="secondary" size="small" text [fluid]="false"
+          <button pButton [label]="t().deselect" severity="secondary" size="small" text [fluid]="false"
             (click)="taskStore.clearSelection()"></button>
         </div>
       }
@@ -91,6 +95,7 @@ import { toObservable } from '@angular/core/rxjs-interop';
             [displayProps]="displayProps()"
             [projectId]="projectId"
             (taskClick)="openDetail($event)"
+            (cardMoveRequested)="onMoveTask($event)"
           />
         } @else if (!(currentTaskId() && displayProps().taskDetailViewMode === 'full-page')) {
           <div class="h-full overflow-y-auto">
@@ -139,20 +144,20 @@ import { toObservable } from '@angular/core/rxjs-interop';
     <!-- Add to Sprint Dialog -->
     <p-dialog
       [(visible)]="showSprintDialog"
-      header="Thêm vào Sprint"
+      [header]="t().addToSprint"
       [modal]="true"
       [style]="{ width: '420px' }"
       [closable]="true"
     >
       <div class="space-y-3 py-1">
         <p class="text-sm text-gray-700 dark:text-surface-200">
-          Thêm <strong class="text-gray-900 dark:text-surface-0">{{ taskStore.selectionCount() }} task</strong> đã chọn vào sprint:
+          {{ t().addSelectedTasksHeader }} <strong class="text-gray-900 dark:text-surface-0">{{ taskStore.selectionCount() }} {{ t().selectedTasks }}</strong>
         </p>
 
         @if (availableSprints().length === 0 && !sprintsLoading()) {
           <div class="flex items-center gap-2 p-3 rounded-lg bg-gray-50 dark:bg-surface-800 text-sm text-gray-500 dark:text-surface-400">
             <i class="pi pi-info-circle"></i>
-            Chưa có sprint nào ở trạng thái planning/active. Tạo sprint trước.
+            {{ t().noSprintPlanningOrActive }}
           </div>
         } @else {
           <button
@@ -175,7 +180,7 @@ import { toObservable } from '@angular/core/rxjs-interop';
                     [class]="sprint.status === 'active' ? 'bg-green-500' : 'bg-yellow-400'"></span>
                   <span class="text-sm font-semibold">{{ sprint.name }}</span>
                   <span class="text-xs text-gray-400 dark:text-surface-500">
-                    ({{ sprint.status === 'active' ? 'Đang chạy' : 'Lên kế hoạch' }})
+                    ({{ sprint.status === 'active' ? t().active : t().planned }})
                   </span>
                 </div>
               }
@@ -186,11 +191,51 @@ import { toObservable } from '@angular/core/rxjs-interop';
 
       <ng-template pTemplate="footer">
         <div class="flex justify-end gap-2">
-          <button pButton type="button" label="Hủy" severity="secondary" size="small"
+          <button pButton type="button" [label]="t().cancel" severity="secondary" size="small"
             [fluid]="false" [outlined]="true" (click)="showSprintDialog.set(false)"></button>
-          <button pButton type="button" label="Thêm vào Sprint" icon="pi pi-flag" size="small"
+          <button pButton type="button" [label]="t().addToSprint" icon="pi pi-flag" size="small"
             [fluid]="false" [disabled]="!targetSprintId || addingToSprint()"
             [loading]="addingToSprint()" (click)="doAddToSprint()"></button>
+        </div>
+      </ng-template>
+    </p-dialog>
+
+    <!-- Close warning confirmation dialog -->
+    <p-dialog
+      [visible]="showCloseConfirm()"
+      (visibleChange)="onCloseConfirmVisibleChange($event)"
+      [modal]="true"
+      [header]="projectStore.projectLanguage() === 'en' ? 'Close Task Warning' : 'Cảnh báo đóng task'"
+      [style]="{ width: '450px' }"
+      [closable]="true"
+    >
+      <div class="flex flex-col gap-4">
+        <div class="text-sm text-gray-600 dark:text-surface-300">
+          {{ projectStore.projectLanguage() === 'en' ? 'Selected task(s) have incomplete sub-tasks. Closing will leave them incomplete unless auto-closed.' : 'Task được chọn có các sub-task chưa hoàn thành. Việc đóng các task này sẽ để lại các sub-task ở trạng thái chưa hoàn thành trừ khi bạn tự động đóng.' }}
+        </div>
+        
+        <div class="max-h-48 overflow-y-auto border border-gray-200 dark:border-surface-700 rounded p-2 bg-gray-50 dark:bg-surface-800 flex flex-col gap-1">
+          @for (child of incompleteSubTasks(); track child.id) {
+            <div class="text-xs flex items-center gap-1.5 py-0.5 text-gray-700 dark:text-surface-200" [style.padding-left.px]="child.depth * 16">
+              <i class="pi pi-sitemap text-gray-400"></i>
+              <span class="font-semibold text-gray-500">{{ child.taskId }}:</span>
+              <span class="truncate">{{ child.title }}</span>
+            </div>
+          }
+        </div>
+
+        <div class="flex items-center gap-2 mt-2">
+          <p-checkbox [binary]="true" [ngModel]="autoCloseChildren()" (ngModelChange)="autoCloseChildren.set($event)" id="autoCloseChildrenBacklog" />
+          <label for="autoCloseChildrenBacklog" class="text-sm font-medium text-gray-700 dark:text-surface-300 cursor-pointer">
+            {{ projectStore.projectLanguage() === 'en' ? 'Auto-close incomplete sub-tasks' : 'Tự động đóng các task con chưa hoàn thành' }}
+          </label>
+        </div>
+      </div>
+
+      <ng-template #footer>
+        <div class="flex justify-end gap-2 mt-4">
+          <button pButton [label]="projectStore.projectLanguage() === 'en' ? 'Cancel' : 'Hủy'" severity="secondary" (click)="cancelMove()"></button>
+          <button pButton [label]="projectStore.projectLanguage() === 'en' ? 'Confirm' : 'Đồng ý'" severity="primary" (click)="confirmBulkClose()"></button>
         </div>
       </ng-template>
     </p-dialog>
@@ -200,16 +245,22 @@ export class BacklogComponent implements OnInit, OnDestroy {
   @ViewChild('labelManager') private readonly labelManager!: LabelManagerComponent;
 
   readonly taskStore = inject(TaskStore);
-  private readonly projectStore = inject(ProjectStore);
+  protected readonly projectStore = inject(ProjectStore);
   private readonly sprintService = inject(SprintService);
   private readonly layoutService = inject(LayoutService);
   private readonly attachmentService = inject(AttachmentService);
   private readonly linkService = inject(LinkService);
+  private readonly taskService = inject(TaskService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly confirmService = inject(ConfirmationService);
   private readonly messageService = inject(MessageService);
   private readonly destroy$ = new Subject<void>();
+
+  protected readonly showCloseConfirm = signal(false);
+  protected readonly autoCloseChildren = signal(false);
+  protected readonly bulkTargetStateId = signal<string | null>(null);
+  protected readonly incompleteSubTasks = signal<Array<{ id: string; taskId: string; title: string; depth: number }>>([]);
 
   protected selectedGroupBy = 'state';
   protected selectedOrderBy = 'rank';
@@ -230,9 +281,52 @@ export class BacklogComponent implements OnInit, OnDestroy {
   protected availableSprints = signal<Sprint[]>([]);
   protected targetSprintId: string | null = null;
 
+  readonly t = computed(() => {
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    return isEn ? {
+      selectedTasks: 'tasks selected',
+      deselect: 'Deselect',
+      addToSprint: 'Add to Sprint',
+      delete: 'Delete',
+      cancel: 'Cancel',
+      addSelectedTasksHeader: 'Add selected tasks to sprint:',
+      noSprintPlanningOrActive: 'No sprint in planning/active status. Create one first.',
+      planned: 'Planned',
+      active: 'Active',
+      selectSprintPlaceholder: 'Select sprint...',
+      confirmDeleteHeader: 'Confirm Delete',
+      confirmDeleteMessage: (count: number) => `Delete ${count} selected tasks?`,
+      success: 'Success',
+      error: 'Error',
+      taskCreated: 'Created new task',
+      draftError: 'Could not initialize draft task',
+      addedToSprintSuccess: (count: number, sprintName: string) => `Added ${count} tasks to sprint "${sprintName}"`,
+      addedToSprintError: 'Could not add tasks to sprint'
+    } : {
+      selectedTasks: 'task đã chọn',
+      deselect: 'Bỏ chọn',
+      addToSprint: 'Thêm vào Sprint',
+      delete: 'Xóa',
+      cancel: 'Hủy',
+      addSelectedTasksHeader: 'Thêm các task đã chọn vào sprint:',
+      noSprintPlanningOrActive: 'Chưa có sprint nào ở trạng thái planning/active. Tạo sprint trước.',
+      planned: 'Lên kế hoạch',
+      active: 'Đang chạy',
+      selectSprintPlaceholder: 'Chọn sprint...',
+      confirmDeleteHeader: 'Xác nhận xóa',
+      confirmDeleteMessage: (count: number) => `Xóa ${count} task đã chọn?`,
+      success: 'Thành công',
+      error: 'Lỗi',
+      taskCreated: 'Đã tạo task mới',
+      draftError: 'Không thể khởi tạo task nháp',
+      addedToSprintSuccess: (count: number, sprintName: string) => `Đã thêm ${count} task vào sprint "${sprintName}"`,
+      addedToSprintError: 'Không thể thêm task vào sprint'
+    };
+  });
+
   getTargetSprintLabel(): string {
     const found = this.availableSprints().find((s) => s.id === this.targetSprintId);
-    return found ? found.name : 'Chọn sprint...';
+    return found ? found.name : this.t().selectSprintPlaceholder;
   }
 
   // Phải khai báo ở class field để toObservable() chạy trong injection context
@@ -325,8 +419,9 @@ export class BacklogComponent implements OnInit, OnDestroy {
   protected async openQuickCreate(stateId?: string): Promise<void> {
     this.quickCreateStateId.set(stateId);
     // Tạo task nháp trước trên server để có ID quản lý attachments và sub-items
+    const isEn = this.projectStore.projectLanguage() === 'en';
     const draft = await this.taskStore.createTask(this.projectId, {
-      title: 'Task nháp',
+      title: isEn ? 'Draft task' : 'Task nháp',
       isDraft: true,
       stateId,
     });
@@ -334,7 +429,7 @@ export class BacklogComponent implements OnInit, OnDestroy {
       this.currentDraftTask.set(draft);
       this.showQuickCreate.set(true);
     } else {
-      this.messageService.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể khởi tạo task nháp' });
+      this.messageService.add({ severity: 'error', summary: this.t().error, detail: this.t().draftError });
     }
   }
 
@@ -385,8 +480,160 @@ export class BacklogComponent implements OnInit, OnDestroy {
     this.taskStore.reorder(this.projectId, items);
   }
 
-  protected onMoveTask(event: { taskId: string; stateId: string; backlogOrder: number }): void {
+  protected pendingMoveEvent: { taskId: string; stateId: string; backlogOrder: number } | null = null;
+
+  protected async onMoveTask(event: { taskId: string; stateId: string; backlogOrder: number }): Promise<void> {
+    const state = this.flatStates().find((s) => s.id === event.stateId);
+    const isClosing = state?.group === 'completed';
+
+    if (isClosing) {
+      try {
+        const res = await firstValueFrom(this.taskService.getSubItemsTree(this.projectId, event.taskId));
+        const incomplete = res ? this.getIncompleteDescendants(res.items) : [];
+        if (incomplete.length > 0) {
+          this.pendingMoveEvent = event;
+          this.incompleteSubTasks.set(incomplete);
+          this.autoCloseChildren.set(false); // Default unchecked
+          this.showCloseConfirm.set(true);
+          return;
+        }
+      } catch {
+        // Revert to direct move
+      }
+    }
+
     this.taskStore.moveToState(this.projectId, event.taskId, event.stateId, event.backlogOrder);
+  }
+
+  protected async onBulkClose(): Promise<void> {
+    const selectedIds = Array.from(this.taskStore.selectedTaskIds());
+    if (selectedIds.length === 0) return;
+
+    // Find the first completed state in project
+    const completedState = this.flatStates().find((s) => s.group === 'completed');
+    if (!completedState) {
+      this.messageService.add({ severity: 'error', summary: this.t().error, detail: 'Không tìm thấy trạng thái Completed trong dự án' });
+      return;
+    }
+
+    const stateId = completedState.id;
+    this.bulkTargetStateId.set(stateId);
+    this.autoCloseChildren.set(false); // Unchecked by default
+
+    // Fetch incomplete sub-tasks for all selected tasks
+    const incompleteList: Array<{ id: string; taskId: string; title: string; depth: number }> = [];
+
+    const fetchPromises = selectedIds.map(async (taskId) => {
+      try {
+        const res = await firstValueFrom(this.taskService.getSubItemsTree(this.projectId, taskId));
+        if (res && res.items.length > 0) {
+          incompleteList.push(...this.getIncompleteDescendants(res.items));
+        }
+      } catch (err) {
+        // Ignore errors for individual tree loads
+      }
+    });
+
+    await Promise.all(fetchPromises);
+
+    if (incompleteList.length > 0) {
+      this.incompleteSubTasks.set(incompleteList);
+      this.showCloseConfirm.set(true);
+    } else {
+      // Direct close
+      this.executeBulkCloseDirectly(stateId);
+    }
+  }
+
+  private getIncompleteDescendants(nodes: any[], depth = 1): Array<{ id: string; taskId: string; title: string; depth: number }> {
+    const result: Array<{ id: string; taskId: string; title: string; depth: number }> = [];
+    for (const node of nodes) {
+      const isCompleted = node.state?.group === 'completed';
+      if (!isCompleted) {
+        result.push({
+          id: node.id,
+          taskId: node.taskId,
+          title: node.title,
+          depth
+        });
+      }
+      if (node.children && node.children.length > 0) {
+        result.push(...this.getIncompleteDescendants(node.children, depth + 1));
+      }
+    }
+    return result;
+  }
+
+  protected async confirmBulkClose(): Promise<void> {
+    const bulkStateId = this.bulkTargetStateId();
+    if (bulkStateId) {
+      // Bulk close flow
+      const selectedIds = Array.from(this.taskStore.selectedTaskIds());
+      const updatePromises = selectedIds.map(id =>
+        firstValueFrom(this.taskService.updateTask(this.projectId, id, { stateId: bulkStateId }))
+      );
+
+      if (this.autoCloseChildren()) {
+        const completedState = this.flatStates().find((s) => s.group === 'completed');
+        const completedStateId = completedState ? completedState.id : bulkStateId;
+        const incompleteChildren = this.incompleteSubTasks();
+        for (const child of incompleteChildren) {
+          updatePromises.push(
+            firstValueFrom(this.taskService.updateTask(this.projectId, child.id, { stateId: completedStateId }))
+          );
+        }
+      }
+
+      await Promise.allSettled(updatePromises);
+      this.taskStore.clearSelection();
+      this.reloadBacklog();
+      this.bulkTargetStateId.set(null);
+    } else if (this.pendingMoveEvent) {
+      // Single move/close flow
+      const event = this.pendingMoveEvent;
+      this.taskStore.moveToState(this.projectId, event.taskId, event.stateId, event.backlogOrder);
+
+      if (this.autoCloseChildren()) {
+        const completedState = this.flatStates().find((s) => s.group === 'completed');
+        const completedStateId = completedState ? completedState.id : event.stateId;
+        const incompleteChildren = this.incompleteSubTasks();
+        const updatePromises = incompleteChildren.map(child =>
+          firstValueFrom(this.taskService.updateTask(this.projectId, child.id, { stateId: completedStateId }))
+        );
+        await Promise.allSettled(updatePromises);
+      }
+
+      this.pendingMoveEvent = null;
+      this.reloadBacklog();
+    }
+
+    this.showCloseConfirm.set(false);
+    this.incompleteSubTasks.set([]);
+  }
+
+  protected cancelMove(): void {
+    this.showCloseConfirm.set(false);
+    this.bulkTargetStateId.set(null);
+    this.pendingMoveEvent = null;
+    this.incompleteSubTasks.set([]);
+    // Force a visual reset to discard any optimistic transfer mutations on the board
+    this.taskStore.tasks.set([...this.taskStore.tasks()]);
+  }
+
+  protected onCloseConfirmVisibleChange(visible: boolean): void {
+    if (!visible) {
+      this.cancelMove();
+    }
+  }
+
+  private async executeBulkCloseDirectly(stateId: string): Promise<void> {
+    const selectedIds = Array.from(this.taskStore.selectedTaskIds());
+    const updatePromises = selectedIds.map(id =>
+      firstValueFrom(this.taskService.updateTask(this.projectId, id, { stateId }))
+    );
+    await Promise.allSettled(updatePromises);
+    this.taskStore.clearSelection();
+    this.reloadBacklog();
   }
 
   protected onToggleExpand(taskId: string): void {
@@ -409,12 +656,13 @@ export class BacklogComponent implements OnInit, OnDestroy {
       isDraft: false,
     });
 
-    this.messageService.add({ severity: 'success', summary: 'Thành công', detail: 'Đã tạo task mới' });
+    this.messageService.add({ severity: 'success', summary: this.t().success, detail: this.t().taskCreated });
 
     if (event.createMore) {
       // Nếu chọn "Tạo tiếp", ta tự động khởi tạo ngay một task nháp mới tiếp theo
+      const isEn = this.projectStore.projectLanguage() === 'en';
       const nextDraft = await this.taskStore.createTask(this.projectId, {
-        title: 'Task nháp',
+        title: isEn ? 'Draft task' : 'Task nháp',
         isDraft: true,
         stateId: this.quickCreateStateId(),
       });
@@ -430,11 +678,11 @@ export class BacklogComponent implements OnInit, OnDestroy {
 
   protected onBulkDelete(): void {
     this.confirmService.confirm({
-      message: `Xóa ${this.taskStore.selectionCount()} task đã chọn?`,
-      header: 'Xác nhận xóa',
+      message: this.t().confirmDeleteMessage(this.taskStore.selectionCount()),
+      header: this.t().confirmDeleteHeader,
       icon: 'pi pi-exclamation-triangle',
-      acceptLabel: 'Xóa',
-      rejectLabel: 'Hủy',
+      acceptLabel: this.t().delete,
+      rejectLabel: this.t().cancel,
       acceptButtonStyleClass: 'p-button-danger',
       accept: () => {
         this.taskStore.bulkDelete(this.projectId);
@@ -480,8 +728,8 @@ export class BacklogComponent implements OnInit, OnDestroy {
           this.taskStore.clearSelection();
           this.messageService.add({
             severity: 'success',
-            summary: 'Thành công',
-            detail: `Đã thêm ${taskIds.length} task vào sprint "${sprintName}"`,
+            summary: this.t().success,
+            detail: this.t().addedToSprintSuccess(taskIds.length, sprintName),
             life: 3000,
           });
         },
@@ -489,8 +737,8 @@ export class BacklogComponent implements OnInit, OnDestroy {
           this.addingToSprint.set(false);
           this.messageService.add({
             severity: 'error',
-            summary: 'Lỗi',
-            detail: err?.error?.message ?? 'Không thể thêm task vào sprint',
+            summary: this.t().error,
+            detail: err?.error?.message ?? this.t().addedToSprintError,
             life: 5000,
           });
         },

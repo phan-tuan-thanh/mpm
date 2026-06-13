@@ -21,7 +21,7 @@ import { FormsModule } from '@angular/forms';
       @if (isReadOnly()) {
         <div class="rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 p-3 flex gap-2 text-xs text-amber-700 dark:text-amber-400 font-medium">
           <i class="pi pi-lock text-sm mt-0.5"></i>
-          <span>Chế độ xem. Chỉ Scrum Master hoặc Admin mới có quyền thực hiện các thao tác này.</span>
+          <span>{{ t().readOnlyBanner }}</span>
         </div>
       }
 
@@ -30,25 +30,25 @@ import { FormsModule } from '@angular/forms';
         <!-- Archive -->
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 px-5 py-4">
           <div>
-            <h3 class="text-sm font-semibold text-gray-800 dark:text-surface-100">Lưu trữ dự án</h3>
-            <p class="text-xs text-gray-400 dark:text-surface-500 mt-0.5 max-w-sm">Dự án sẽ chuyển sang chế độ chỉ đọc nhưng không bị xóa khỏi hệ thống.</p>
+            <h3 class="text-sm font-semibold text-gray-800 dark:text-surface-100">{{ t().archiveTitle }}</h3>
+            <p class="text-xs text-gray-400 dark:text-surface-500 mt-0.5 max-w-sm">{{ t().archiveDesc }}</p>
           </div>
-          <button pButton (click)="onArchive()" [disabled]="isReadOnly() || isArchived() || isSubmitting()" label="Lưu trữ" severity="warning" [outlined]="true" class="flex-shrink-0"></button>
+          <button pButton (click)="onArchive()" [disabled]="isReadOnly() || isArchived() || isSubmitting()" [label]="t().archiveBtn" severity="warning" [outlined]="true" class="flex-shrink-0"></button>
         </div>
 
         <!-- Delete -->
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 px-5 py-4">
           <div>
-            <h3 class="text-sm font-semibold text-red-600 dark:text-red-400">Xóa vĩnh viễn dự án</h3>
-            <p class="text-xs text-gray-400 dark:text-surface-500 mt-0.5 max-w-sm">Xóa sạch toàn bộ dữ liệu: thành viên, tasks, sprints. Không thể khôi phục.</p>
+            <h3 class="text-sm font-semibold text-red-600 dark:text-red-400">{{ t().deleteTitle }}</h3>
+            <p class="text-xs text-gray-400 dark:text-surface-500 mt-0.5 max-w-sm">{{ t().deleteDesc }}</p>
           </div>
-          <button pButton (click)="showDeleteDialog()" [disabled]="isReadOnly() || isSubmitting()" label="Xóa dự án" severity="danger" class="flex-shrink-0"></button>
+          <button pButton (click)="showDeleteDialog()" [disabled]="isReadOnly() || isSubmitting()" [label]="t().deleteBtn" severity="danger" class="flex-shrink-0"></button>
         </div>
       </div>
 
       <!-- Delete Confirmation Dialog -->
       <p-dialog
-        header="Xác nhận xóa vĩnh viễn dự án"
+        [header]="t().dialogHeader"
         [(visible)]="displayDeleteDialog"
         [modal]="true"
         [style]="{ width: '450px' }"
@@ -60,13 +60,13 @@ import { FormsModule } from '@angular/forms';
           <div class="rounded-lg bg-red-50 border border-red-100 p-3 text-red-700 flex gap-2">
             <i class="pi pi-exclamation-triangle text-base mt-0.5"></i>
             <div>
-              <p class="font-bold">Cảnh báo quan trọng!</p>
-              <p class="mt-0.5">Hành động này sẽ xóa sạch toàn bộ cấu hình và dữ liệu của dự án. Không thể khôi phục lại.</p>
+              <p class="font-bold">{{ t().dialogWarningTitle }}</p>
+              <p class="mt-0.5">{{ t().dialogWarningText }}</p>
             </div>
           </div>
 
           <p class="font-medium">
-            Vui lòng nhập mã định danh <strong class="text-indigo-600 font-bold">{{ projectKey() }}</strong> để xác nhận xóa:
+            {{ t().dialogInstruction }} <strong class="text-indigo-600 font-bold">{{ projectKey() }}</strong> {{ t().dialogConfirmSuffix }}
           </p>
 
           <p-fluid>
@@ -74,7 +74,7 @@ import { FormsModule } from '@angular/forms';
               type="text"
               pInputText
               [(ngModel)]="confirmKeyInput"
-              placeholder="Nhập mã dự án..."
+              [placeholder]="t().dialogInputPlaceholder"
               class="uppercase text-center font-bold text-sm tracking-widest"
             />
           </p-fluid>
@@ -85,7 +85,7 @@ import { FormsModule } from '@angular/forms';
             <button
               pButton
               (click)="displayDeleteDialog = false"
-              label="Hủy"
+              [label]="t().cancelBtn"
               severity="secondary"
               [text]="true"
               [fluid]="false"
@@ -94,7 +94,7 @@ import { FormsModule } from '@angular/forms';
               pButton
               (click)="onConfirmDelete()"
               [disabled]="confirmKeyInput !== projectKey() || isSubmitting()"
-              label="Tôi hiểu, hãy xóa dự án này"
+              [label]="t().dialogConfirmBtn"
               severity="danger"
               [fluid]="false"
             ></button>
@@ -111,6 +111,63 @@ export class DangerZoneTabComponent {
   private readonly confirmService = inject(ConfirmationService);
   private readonly messageService = inject(MessageService);
   private readonly router = inject(Router);
+
+  readonly t = computed(() => {
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    return isEn ? {
+      readOnlyBanner: 'Read-only view. Only Scrum Master or Admin can perform these actions.',
+      archiveTitle: 'Archive Project',
+      archiveDesc: 'The project will switch to read-only mode but will not be deleted from the system.',
+      archiveBtn: 'Archive',
+      deleteTitle: 'Permanently Delete Project',
+      deleteDesc: 'Wipe all data: members, tasks, sprints. This action cannot be undone.',
+      deleteBtn: 'Delete Project',
+      dialogHeader: 'Confirm Permanent Project Deletion',
+      dialogWarningTitle: 'Important Warning!',
+      dialogWarningText: 'This action will completely delete all configuration and data of the project. It cannot be recovered.',
+      dialogInstruction: 'Please enter the key',
+      dialogConfirmSuffix: 'to confirm deletion:',
+      dialogInputPlaceholder: 'Enter project key...',
+      cancelBtn: 'Cancel',
+      dialogConfirmBtn: 'I understand, delete this project',
+      confirmArchiveHeader: 'Confirm Project Archive',
+      confirmArchiveMsg: (name: string) => `Are you sure you want to archive project "${name}"? After archiving, you will no longer be able to edit its configuration.`,
+      archiveSuccessSummary: 'Success',
+      archiveSuccessDetail: 'The project has been moved to archived state.',
+      archiveErrorSummary: 'Error',
+      archiveErrorDetail: (msg: string) => msg || 'Could not archive project.',
+      deleteSuccessSummary: 'Success',
+      deleteSuccessDetail: (name: string) => `Project "${name}" has been permanently deleted.`,
+      deleteErrorSummary: 'Error',
+      deleteErrorDetail: (msg: string) => msg || 'Could not delete project.',
+    } : {
+      readOnlyBanner: 'Chế độ xem. Chỉ Scrum Master hoặc Admin mới có quyền thực hiện các thao tác này.',
+      archiveTitle: 'Lưu trữ dự án',
+      archiveDesc: 'Dự án sẽ chuyển sang chế độ chỉ đọc nhưng không bị xóa khỏi hệ thống.',
+      archiveBtn: 'Lưu trữ',
+      deleteTitle: 'Xóa vĩnh viễn dự án',
+      deleteDesc: 'Xóa sạch toàn bộ dữ liệu: thành viên, tasks, sprints. Không thể khôi phục.',
+      deleteBtn: 'Xóa dự án',
+      dialogHeader: 'Xác nhận xóa vĩnh viễn dự án',
+      dialogWarningTitle: 'Cảnh báo quan trọng!',
+      dialogWarningText: 'Hành động này sẽ xóa sạch toàn bộ cấu hình và dữ liệu của dự án. Không thể khôi phục lại.',
+      dialogInstruction: 'Vui lòng nhập mã định danh',
+      dialogConfirmSuffix: 'để xác nhận xóa:',
+      dialogInputPlaceholder: 'Nhập mã dự án...',
+      cancelBtn: 'Hủy',
+      dialogConfirmBtn: 'Tôi hiểu, hãy xóa dự án này',
+      confirmArchiveHeader: 'Xác nhận lưu trữ dự án',
+      confirmArchiveMsg: (name: string) => `Bạn có chắc chắn muốn lưu trữ dự án "${name}"? Sau khi lưu trữ, dự án sẽ không cho phép chỉnh sửa cấu hình nữa.`,
+      archiveSuccessSummary: 'Thành công',
+      archiveSuccessDetail: 'Dự án đã được chuyển sang trạng thái lưu trữ.',
+      archiveErrorSummary: 'Lỗi',
+      archiveErrorDetail: (msg: string) => msg || 'Không thể lưu trữ dự án.',
+      deleteSuccessSummary: 'Thành công',
+      deleteSuccessDetail: (name: string) => `Dự án "${name}" đã bị xóa vĩnh viễn.`,
+      deleteErrorSummary: 'Lỗi',
+      deleteErrorDetail: (msg: string) => msg || 'Không thể xóa dự án.',
+    };
+  });
 
   // States
   displayDeleteDialog = false;
@@ -143,12 +200,13 @@ export class DangerZoneTabComponent {
     const project = this.projectStore.currentProject();
     if (!project || this.isReadOnly()) return;
 
+    const trans = this.t();
     this.confirmService.confirm({
-      message: `Bạn có chắc chắn muốn lưu trữ dự án "${project.name}"? Sau khi lưu trữ, dự án sẽ không cho phép chỉnh sửa cấu hình nữa.`,
-      header: 'Xác nhận lưu trữ dự án',
+      message: trans.confirmArchiveMsg(project.name),
+      header: trans.confirmArchiveHeader,
       icon: 'pi pi-folder',
-      acceptLabel: 'Lưu trữ',
-      rejectLabel: 'Hủy',
+      acceptLabel: trans.archiveBtn,
+      rejectLabel: trans.cancelBtn,
       acceptButtonStyleClass: 'p-button-warning',
       rejectButtonStyleClass: 'p-button-secondary p-button-text',
       accept: () => {
@@ -158,8 +216,8 @@ export class DangerZoneTabComponent {
             this.isSubmitting.set(false);
             this.messageService.add({
               severity: 'success',
-              summary: 'Thành công',
-              detail: 'Dự án đã được chuyển sang trạng thái lưu trữ.',
+              summary: trans.archiveSuccessSummary,
+              detail: trans.archiveSuccessDetail,
             });
             this.projectStore.setCurrentProject(updatedProj);
           },
@@ -167,8 +225,8 @@ export class DangerZoneTabComponent {
             this.isSubmitting.set(false);
             this.messageService.add({
               severity: 'error',
-              summary: 'Lỗi',
-              detail: err.error?.message || 'Không thể lưu trữ dự án.',
+              summary: trans.archiveErrorSummary,
+              detail: trans.archiveErrorDetail(err.error?.message),
             });
           },
         });
@@ -186,14 +244,15 @@ export class DangerZoneTabComponent {
     if (!project || this.confirmKeyInput !== project.key || this.isReadOnly()) return;
 
     this.isSubmitting.set(true);
+    const trans = this.t();
     this.projectService.deleteProject(project.id).subscribe({
       next: () => {
         this.isSubmitting.set(false);
         this.displayDeleteDialog = false;
         this.messageService.add({
           severity: 'success',
-          summary: 'Thành công',
-          detail: `Dự án "${project.name}" đã bị xóa vĩnh viễn.`,
+          summary: trans.deleteSuccessSummary,
+          detail: trans.deleteSuccessDetail(project.name),
         });
         this.projectStore.loadProjects(); // Reload projects list
         void this.router.navigate(['/projects']);
@@ -202,8 +261,8 @@ export class DangerZoneTabComponent {
         this.isSubmitting.set(false);
         this.messageService.add({
           severity: 'error',
-          summary: 'Lỗi',
-          detail: err.error?.message || 'Không thể xóa dự án.',
+          summary: trans.deleteErrorSummary,
+          detail: trans.deleteErrorDetail(err.error?.message),
         });
       },
     });

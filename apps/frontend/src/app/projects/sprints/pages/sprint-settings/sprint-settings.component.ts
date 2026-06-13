@@ -4,6 +4,7 @@ import {
   OnDestroy,
   inject,
   signal,
+  computed,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -62,8 +63,8 @@ import {
               <!-- ── Khung Cấu hình Sprint ── -->
               <div class="bg-surface-0 dark:bg-surface-900 rounded-xl border border-surface-100 dark:border-surface-800 shadow-sm overflow-hidden">
                 <div class="px-5 py-3.5 border-b border-surface-100 dark:border-surface-800">
-                  <h2 class="text-sm font-bold text-gray-900 dark:text-surface-0">Cấu hình Sprint</h2>
-                  <p class="text-xs text-gray-400 dark:text-surface-500 mt-0.5">Tên gọi, biểu tượng hiển thị, giới hạn vận hành và thời lượng mặc định.</p>
+                  <h2 class="text-sm font-bold text-gray-900 dark:text-surface-0">{{ t().title }}</h2>
+                  <p class="text-xs text-gray-400 dark:text-surface-500 mt-0.5">{{ t().description }}</p>
                 </div>
                 <div class="p-5 space-y-5">
 
@@ -82,7 +83,7 @@ import {
                         type="button"
                         class="w-12 h-8 rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 text-primary flex items-center justify-center transition hover:border-primary cursor-pointer"
                         (click)="iconPop.toggle($event)"
-                        pTooltip="Chọn biểu tượng hiển thị"
+                        [pTooltip]="t().iconTooltip"
                         tooltipPosition="top"
                       >
                         <app-icon-display [icon]="form.icon" class="text-sm"></app-icon-display>
@@ -90,9 +91,9 @@ import {
                     </div>
                     <!-- Terminology Select -->
                     <div class="flex-1 min-w-[140px] flex flex-col gap-1.5">
-                      <label class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wider select-none">Gọi Sprint là</label>
+                      <label class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wider select-none">{{ t().terminologyLabel }}</label>
                       <p-selectbutton
-                        [options]="terminologyOptions"
+                        [options]="terminologyOptions()"
                         [(ngModel)]="form.terminology"
                         [allowEmpty]="false"
                         optionLabel="label"
@@ -108,7 +109,7 @@ import {
                   <!-- Max active sprints -->
                   <div class="flex flex-col gap-1.5">
                     <label class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wider">
-                      Số sprint active tối đa
+                      {{ t().maxActiveSprintsLabel }}
                     </label>
                     <div class="flex items-center gap-4 max-w-sm mt-1">
                       <p-slider
@@ -121,7 +122,7 @@ import {
                         {{ form.maxActiveSprints }}
                       </span>
                     </div>
-                    <p class="text-xs text-gray-400 dark:text-surface-500 mt-1">Giới hạn bao nhiêu sprint có thể đồng thời ở trạng thái "active" (từ 1 đến 10).</p>
+                    <p class="text-xs text-gray-400 dark:text-surface-500 mt-1">{{ t().maxActiveSprintsDesc }}</p>
                   </div>
 
                   <!-- Divider line -->
@@ -130,12 +131,12 @@ import {
                   <!-- Default duration -->
                   <div class="flex flex-col gap-1.5">
                     <label class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wider">
-                      Thời lượng mặc định
-                      <span class="text-xs font-normal text-gray-400 dark:text-surface-500 ml-1">(1–12 tuần)</span>
+                      {{ t().defaultDurationLabel }}
+                      <span class="text-xs font-normal text-gray-400 dark:text-surface-500 ml-1">{{ t().weeksHint }}</span>
                     </label>
                     <div class="flex items-center gap-2 flex-wrap">
                       <!-- Preset nhanh -->
-                      @for (opt of durationOptions; track opt.value) {
+                      @for (opt of durationOptions(); track opt.value) {
                         <button
                           type="button"
                           class="px-3 py-1.5 text-xs font-medium rounded-lg border transition-all duration-150 cursor-pointer"
@@ -168,7 +169,7 @@ import {
                             : 'bg-gray-50 dark:bg-surface-800 border-surface-200 dark:border-surface-700 text-gray-900 dark:text-surface-0'"
                           [style.background]="isCustomDuration() ? 'var(--p-primary-color)' : null"
                         >
-                          {{ form.defaultDurationWeeks }} tuần
+                          {{ form.defaultDurationWeeks }} {{ t().weeksLabel }}
                         </span>
                         <button
                           type="button"
@@ -180,7 +181,7 @@ import {
                         </button>
                       </div>
                     </div>
-                    <p class="text-xs text-gray-400 dark:text-surface-500 mt-1">Dùng để tự gợi ý ngày kết thúc khi tạo sprint mới.</p>
+                    <p class="text-xs text-gray-400 dark:text-surface-500 mt-1">{{ t().defaultDurationDesc }}</p>
                   </div>
                 </div>
               </div>
@@ -194,15 +195,15 @@ import {
                 <!-- ── Capacity ── -->
                 <div class="bg-surface-0 dark:bg-surface-900 rounded-xl border border-surface-100 dark:border-surface-800 shadow-sm overflow-hidden">
                   <div class="px-5 py-3.5 border-b border-surface-100 dark:border-surface-800">
-                    <h2 class="text-sm font-bold text-gray-900 dark:text-surface-0">Capacity</h2>
-                    <p class="text-xs text-gray-400 dark:text-surface-500 mt-0.5">Cách tính năng lực sprint khi lập kế hoạch.</p>
+                    <h2 class="text-sm font-bold text-gray-900 dark:text-surface-0">{{ t().capacityTitle }}</h2>
+                    <p class="text-xs text-gray-400 dark:text-surface-500 mt-0.5">{{ t().capacityDesc }}</p>
                   </div>
                   <div class="p-5">
                     <div class="flex flex-col gap-1.5">
-                      <label class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wider">Tính capacity theo</label>
+                      <label class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wider">{{ t().capacityModeLabel }}</label>
                       <div class="mt-1.5">
                         <p-selectbutton
-                          [options]="capacityOptions"
+                          [options]="capacityOptions()"
                           [(ngModel)]="form.capacityMode"
                           [allowEmpty]="false"
                           optionLabel="label"
@@ -210,9 +211,7 @@ import {
                           size="small"
                         />
                       </div>
-                      <p class="text-xs text-gray-400 dark:text-surface-500 mt-2 leading-relaxed">
-                        <strong class="text-gray-600 dark:text-surface-400">Tổng sprint:</strong> dùng targetCapacity của sprint.<br/>
-                        <strong class="text-gray-600 dark:text-surface-400">Theo thành viên:</strong> tổng capacity từng member.
+                      <p class="text-xs text-gray-400 dark:text-surface-500 mt-2 leading-relaxed" [innerHTML]="t().capacityModesHelp">
                       </p>
                     </div>
                   </div>
@@ -223,7 +222,7 @@ import {
                   <button
                     pButton
                     type="button"
-                    label="Lưu thay đổi"
+                    [label]="t().saveButton"
                     icon="pi pi-save"
                     [fluid]="false"
                     [loading]="saving()"
@@ -260,31 +259,89 @@ export class SprintSettingsComponent implements OnInit, OnDestroy {
     icon: 'pi-sync',
   };
 
-  readonly terminologyOptions: { label: string; value: Terminology }[] = [
-    { label: 'Sprint', value: 'sprint' },
-    { label: 'Cycle', value: 'cycle' },
-  ];
+  readonly t = computed(() => {
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    return isEn ? {
+      title: 'Sprint Settings',
+      description: 'Terminology, display icon, operation limits, and default duration.',
+      iconTooltip: 'Select display icon',
+      terminologyLabel: 'Call Sprint as',
+      maxActiveSprintsLabel: 'Max active sprints',
+      maxActiveSprintsDesc: 'Limit how many sprints can be active at the same time (from 1 to 10).',
+      defaultDurationLabel: 'Default duration',
+      weeksHint: '(1–12 weeks)',
+      weeksLabel: 'weeks',
+      defaultDurationDesc: 'Used to automatically suggest the end date when creating a new sprint.',
+      capacityTitle: 'Capacity',
+      capacityDesc: 'How to calculate sprint capacity during planning.',
+      capacityModeLabel: 'Calculate capacity by',
+      totalSprintLabel: 'Total sprint',
+      memberBasedLabel: 'By member',
+      capacityModesHelp: '<strong>Total sprint:</strong> uses the sprint targetCapacity.<br/><strong>By member:</strong> sum of each member capacity.',
+      saveButton: 'Save changes',
+      toastSuccessHeader: 'Saved',
+      toastSuccessDetail: 'Sprint settings have been updated',
+      toastErrorHeader: 'Error',
+      toastErrorLoad: 'Could not load sprint settings'
+    } : {
+      title: 'Cấu hình Sprint',
+      description: 'Tên gọi, biểu tượng hiển thị, giới hạn vận hành và thời lượng mặc định.',
+      iconTooltip: 'Chọn biểu tượng hiển thị',
+      terminologyLabel: 'Gọi Sprint là',
+      maxActiveSprintsLabel: 'Số sprint active tối đa',
+      maxActiveSprintsDesc: 'Giới hạn bao nhiêu sprint có thể đồng thời ở trạng thái "active" (từ 1 đến 10).',
+      defaultDurationLabel: 'Thời lượng mặc định',
+      weeksHint: '(1–12 tuần)',
+      weeksLabel: 'tuần',
+      defaultDurationDesc: 'Dùng để tự gợi ý ngày kết thúc khi tạo sprint mới.',
+      capacityTitle: 'Capacity',
+      capacityDesc: 'Cách tính năng lực sprint khi lập kế hoạch.',
+      capacityModeLabel: 'Tính capacity theo',
+      totalSprintLabel: 'Tổng sprint',
+      memberBasedLabel: 'Theo thành viên',
+      capacityModesHelp: '<strong class="text-gray-600 dark:text-surface-400">Tổng sprint:</strong> dùng targetCapacity của sprint.<br/><strong class="text-gray-600 dark:text-surface-400">Theo thành viên:</strong> tổng capacity từng member.',
+      saveButton: 'Lưu thay đổi',
+      toastSuccessHeader: 'Đã lưu',
+      toastSuccessDetail: 'Cấu hình sprint đã được cập nhật',
+      toastErrorHeader: 'Lỗi',
+      toastErrorLoad: 'Không thể tải cấu hình sprint'
+    };
+  });
 
-  readonly durationOptions: { label: string; value: number }[] = [
-    { label: '1 tuần', value: 1 },
-    { label: '2 tuần', value: 2 },
-    { label: '4 tuần', value: 4 },
-  ];
+  readonly terminologyOptions = computed(() => {
+    return [
+      { label: 'Sprint', value: 'sprint' as Terminology },
+      { label: 'Cycle', value: 'cycle' as Terminology },
+    ];
+  });
+
+  readonly durationOptions = computed(() => {
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    const unit = isEn ? 'week' : 'tuần';
+    return [
+      { label: `1 ${unit}`, value: 1 },
+      { label: `2 ${unit}${isEn ? 's' : ''}`, value: 2 },
+      { label: `4 ${unit}${isEn ? 's' : ''}`, value: 4 },
+    ];
+  });
+
+  readonly capacityOptions = computed(() => {
+    const trans = this.t();
+    return [
+      { label: trans.totalSprintLabel, value: 'total' as CapacityMode },
+      { label: trans.memberBasedLabel, value: 'member-based' as CapacityMode },
+    ];
+  });
 
   /** Giá trị hiện tại không trùng preset nào → đang dùng thời lượng tùy chỉnh */
   isCustomDuration(): boolean {
-    return !this.durationOptions.some((o) => o.value === this.form.defaultDurationWeeks);
+    return !this.durationOptions().some((o: { label: string; value: number }) => o.value === this.form.defaultDurationWeeks);
   }
 
   /** Picker trả 'pi pi-x' hoặc emoji → lưu trữ dạng raw */
   onIconPicked(full: string): void {
     this.form.icon = full;
   }
-
-  readonly capacityOptions: { label: string; value: CapacityMode }[] = [
-    { label: 'Tổng sprint', value: 'total' },
-    { label: 'Theo thành viên', value: 'member-based' },
-  ];
 
   ngOnInit(): void {
     this.currentProject$.pipe(takeUntil(this.destroy$)).subscribe((project) => {
@@ -306,19 +363,19 @@ export class SprintSettingsComponent implements OnInit, OnDestroy {
       .getSettings(this.projectId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (s) => {
+        next: (s: SprintSettings) => {
           this.settings.set(s);
           this.form = { ...s };
           this.loading.set(false);
         },
-        error: (err) => {
+        error: (err: any) => {
           this.loading.set(false);
           // 404 = bảng/column chưa migrate → dùng defaults, không show lỗi
           if (err?.status !== 404) {
             this.messageService.add({
               severity: 'error',
-              summary: 'Lỗi',
-              detail: 'Không thể tải cấu hình sprint',
+              summary: this.t().toastErrorHeader,
+              detail: this.t().toastErrorLoad,
               life: 5000,
             });
           }
@@ -347,7 +404,7 @@ export class SprintSettingsComponent implements OnInit, OnDestroy {
       })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (s) => {
+        next: (s: SprintSettings) => {
           this.settings.set(s);
           this.form = { ...s };
           this.saving.set(false);
@@ -355,17 +412,18 @@ export class SprintSettingsComponent implements OnInit, OnDestroy {
           this.sprintService.projectSettings.set(s);
           this.messageService.add({
             severity: 'success',
-            summary: 'Đã lưu',
-            detail: 'Cấu hình sprint đã được cập nhật',
+            summary: this.t().toastSuccessHeader,
+            detail: this.t().toastSuccessDetail,
             life: 3000,
           });
         },
-        error: (err) => {
+        error: (err: any) => {
           this.saving.set(false);
-          const detail = err?.error?.message ?? 'Không thể lưu cấu hình';
+          const isEn = this.projectStore.projectLanguage() === 'en';
+          const detail = err?.error?.message ?? (isEn ? 'Could not save configuration' : 'Không thể lưu cấu hình');
           this.messageService.add({
             severity: 'error',
-            summary: 'Lỗi',
+            summary: this.t().toastErrorHeader,
             detail,
             life: 5000,
           });
