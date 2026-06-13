@@ -3,12 +3,12 @@
   <nav class="flex text-xs text-gray-500 font-semibold uppercase tracking-wider" aria-label="Breadcrumb">
     <ol class="inline-flex items-center space-x-1 md:space-x-2">
       <li class="inline-flex items-center">
-        <a routerLink="/projects" class="hover:text-indigo-600 transition">Dự án</a>
+        <a routerLink="/projects" class="hover:text-indigo-600 transition">{{ t().breadcrumbProjects }}</a>
       </li>
       <li>
         <div class="flex items-center gap-1">
           <i class="pi pi-chevron-right text-[10px] text-gray-400"></i>
-          <span class="text-gray-400">Tạo dự án mới</span>
+          <span class="text-gray-400">{{ t().breadcrumbCreate }}</span>
         </div>
       </li>
     </ol>
@@ -17,10 +17,10 @@
   <!-- Title Header -->
   <div>
     <h1 class="text-2xl font-extrabold tracking-tight text-gray-900">
-      Tạo dự án mới
+      {{ t().title }}
     </h1>
     <p class="mt-1 text-sm text-gray-500 font-medium">
-      Thiết lập không gian cộng tác mới cho nhóm của bạn.
+      {{ t().subtitle }}
     </p>
   </div>
 
@@ -31,7 +31,7 @@
       <div class="flex gap-4">
         <!-- Emoji Select -->
         <div class="flex-shrink-0 flex flex-col gap-2 relative">
-          <label class="text-sm font-semibold text-gray-700">Icon</label>
+          <label class="text-sm font-semibold text-gray-700">{{ t().iconLabel }}</label>
           <button
             pButton
             type="button"
@@ -47,7 +47,7 @@
 
         <!-- Project Name -->
         <div class="flex-1 flex flex-col gap-2">
-          <label for="name" class="text-sm font-semibold text-gray-700">Tên dự án <span class="text-red-500">*</span></label>
+          <label for="name" class="text-sm font-semibold text-gray-700">{{ t().nameLabel }} <span class="text-red-500">*</span></label>
           <input
             id="name"
             name="name"
@@ -57,20 +57,20 @@
             (ngModelChange)="onNameChange($event)"
             required
             maxlength="100"
-            placeholder="Ví dụ: Project Management System"
+            [placeholder]="t().namePlaceholder"
             #nameInput="ngModel"
           />
         </div>
       </div>
 
       @if (nameInput.invalid && (nameInput.dirty || nameInput.touched)) {
-        <span class="text-xs text-red-500 font-medium px-1 block mt-1">Tên dự án là bắt buộc (tối đa 100 ký tự).</span>
+        <span class="text-xs text-red-500 font-medium px-1 block mt-1">{{ t().nameRequired }}</span>
       }
 
       <!-- Project Key -->
       <div class="flex flex-col gap-2">
         <label for="key" class="text-sm font-semibold text-gray-700">
-          Mã dự án (Key) <span class="text-red-500">*</span>
+          {{ t().keyLabel }} <span class="text-red-500">*</span>
         </label>
         <input
           id="key"
@@ -82,30 +82,30 @@
           required
           pattern="^[A-Z]{2,5}$"
           class="uppercase"
-          placeholder="Ví dụ: PMS"
+          [placeholder]="t().keyPlaceholder"
           #keyInput="ngModel"
         />
         <span class="text-[11px] text-gray-400 font-medium px-1">
-          Được dùng làm tiền tố mã công việc (ví dụ: PMS-1). Độ dài 2-5 chữ cái in hoa.
+          {{ t().keyHint }}
         </span>
         @if (keyInput.invalid && (keyInput.dirty || keyInput.touched)) {
-          <span class="text-xs text-red-500 font-medium px-1">Mã dự án không khớp định dạng (2-5 chữ cái in hoa).</span>
+          <span class="text-xs text-red-500 font-medium px-1">{{ t().keyRequired }}</span>
         }
-        @if (keyError) {
-          <span class="text-xs text-red-500 font-medium px-1">{{ keyError }}</span>
+        @if (keyAlreadyExists()) {
+          <span class="text-xs text-red-500 font-medium px-1">{{ t().keyExists }}</span>
         }
       </div>
 
       <!-- Description -->
       <div class="flex flex-col gap-2">
-        <label class="text-sm font-semibold text-gray-700">Mô tả (Không bắt buộc)</label>
-        <app-rich-text-editor [(ngModel)]="description" placeholder="Mô tả tóm tắt mục tiêu dự án..."></app-rich-text-editor>
+        <label class="text-sm font-semibold text-gray-700">{{ t().descriptionLabel }}</label>
+        <app-rich-text-editor [(ngModel)]="description" [placeholder]="t().descriptionPlaceholder"></app-rich-text-editor>
       </div>
 
       <!-- State Template Selection (chỉ hiện nếu workspace có templates) -->
       @if (hasWorkspaceTemplates()) {
         <div class="flex flex-col gap-2">
-          <label class="text-sm font-semibold text-gray-700">Trạng thái khởi tạo</label>
+          <label class="text-sm font-semibold text-gray-700">{{ t().initStates }}</label>
           <div class="flex flex-col gap-3">
             <div class="flex items-start gap-2">
               <p-radiobutton
@@ -115,8 +115,8 @@
                 inputId="stateTemplate-blank"
               ></p-radiobutton>
               <label for="stateTemplate-blank" class="cursor-pointer">
-                <span class="text-sm font-medium text-gray-700">Mặc định (Blank)</span>
-                <p class="text-[11px] text-gray-400 mt-0.5">Khởi tạo 3 trạng thái cơ bản: Backlog, In Progress, Done.</p>
+                <span class="text-sm font-medium text-gray-700">{{ t().defaultStateLabel }}</span>
+                <p class="text-[11px] text-gray-400 mt-0.5">{{ t().defaultStateDesc }}</p>
               </label>
             </div>
             <div class="flex items-start gap-2">
@@ -127,9 +127,9 @@
                 inputId="stateTemplate-workspace"
               ></p-radiobutton>
               <label for="stateTemplate-workspace" class="cursor-pointer">
-                <span class="text-sm font-medium text-gray-700">Từ Workspace Template</span>
+                <span class="text-sm font-medium text-gray-700">{{ t().workspaceStateLabel }}</span>
                 <p class="text-[11px] text-gray-400 mt-0.5">
-                  Sử dụng {{ workspaceTemplates().length }} trạng thái đã được định nghĩa sẵn cho workspace.
+                  {{ t().workspaceStateDesc(workspaceTemplates().length) }}
                 </p>
               </label>
             </div>
@@ -139,12 +139,12 @@
 
       <!-- Network (Quyền riêng tư) -->
       <div class="flex flex-col gap-2">
-        <label class="text-sm font-semibold text-gray-700">Quyền riêng tư</label>
+        <label class="text-sm font-semibold text-gray-700">{{ t().privacyLabel }}</label>
         <div class="flex gap-2">
           <button
             type="button"
             pButton
-            [label]="'Bảo mật (Secret)'"
+            [label]="t().privacySecretBtn"
             [severity]="network === ProjectNetwork.SECRET ? 'primary' : 'secondary'"
             [outlined]="network !== ProjectNetwork.SECRET"
             class="flex-1 text-xs py-2"
@@ -153,7 +153,7 @@
           <button
             type="button"
             pButton
-            [label]="'Công khai (Public)'"
+            [label]="t().privacyPublicBtn"
             [severity]="network === ProjectNetwork.PUBLIC ? 'primary' : 'secondary'"
             [outlined]="network !== ProjectNetwork.PUBLIC"
             class="flex-1 text-xs py-2"
@@ -161,11 +161,7 @@
           ></button>
         </div>
         <span class="text-[11px] text-gray-400 font-medium px-1">
-          @if (network === 'secret') {
-            Chỉ thành viên được mời mới có thể truy cập dự án này.
-          } @else {
-            Tất cả mọi người trong workspace đều có thể tìm thấy và tự tham gia dự án này.
-          }
+          {{ network === 'secret' ? t().privacySecretDesc : t().privacyPublicDesc }}
         </span>
       </div>
 
@@ -173,7 +169,7 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <!-- Lead -->
         <div class="flex flex-col gap-2">
-          <label class="text-sm font-semibold text-gray-700">Người phụ trách (Lead)</label>
+          <label class="text-sm font-semibold text-gray-700">{{ t().leadLabel }}</label>
           <button
             type="button"
             (click)="leadPop.toggle($event)"
@@ -199,7 +195,7 @@
 
         <!-- Timezone -->
         <div class="flex flex-col gap-2">
-          <label class="text-sm font-semibold text-gray-700">Múi giờ</label>
+          <label class="text-sm font-semibold text-gray-700">{{ t().timezoneLabel }}</label>
           <button
             type="button"
             (click)="timezonePop.toggle($event); timezoneSearch.set('')"
@@ -213,7 +209,7 @@
               <input
                 type="text"
                 pInputText
-                placeholder="Tìm kiếm múi giờ..."
+                [placeholder]="t().searchTimezonePlaceholder"
                 class="w-full text-xs p-1"
                 [ngModel]="timezoneSearch()"
                 (ngModelChange)="timezoneSearch.set($event)"
@@ -230,7 +226,7 @@
                   {{ opt.label }}
                 </div>
               } @empty {
-                <div class="p-3 text-xs text-gray-400 text-center">Không tìm thấy múi giờ</div>
+                <div class="p-3 text-xs text-gray-400 text-center">{{ t().noTimezoneFound }}</div>
               }
             </div>
           </p-popover>
@@ -243,7 +239,7 @@
           pButton
           type="button"
           routerLink="/projects"
-          label="Hủy bỏ"
+          [label]="t().cancelBtn"
           severity="secondary"
           [text]="true"
           [fluid]="false"
@@ -251,8 +247,8 @@
         <button
           pButton
           type="submit"
-          label="Tạo dự án"
-          [disabled]="isSubmitting() || !name || !key || !!keyError || keyInput.invalid"
+          [label]="t().createBtn"
+          [disabled]="isSubmitting() || !name || !key || keyAlreadyExists() || keyInput.invalid"
           [fluid]="false"
         ></button>
       </div>

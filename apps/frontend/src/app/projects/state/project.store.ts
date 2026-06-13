@@ -26,6 +26,7 @@ export class ProjectStore {
   readonly currentEstimateConfig = signal<any | null>(null);
   readonly isLoading = signal<boolean>(false);
   readonly error = signal<string | null>(null);
+  readonly projectLanguage = signal<'vi' | 'en'>('vi');
 
   /**
    * Load danh sách dự án
@@ -73,6 +74,8 @@ export class ProjectStore {
       .subscribe((data) => {
         this.currentProject.set(data);
         if (data) {
+          const savedLang = localStorage.getItem(`project-lang-${data.id}`);
+          this.projectLanguage.set(savedLang === 'en' ? 'en' : 'vi');
           // Auto load states and estimate config when project is loaded
           this.loadStates(data.id);
           this.loadEstimateConfig(data.id);
@@ -91,12 +94,26 @@ export class ProjectStore {
     this.currentProject.set(project);
     this.error.set(null);
     if (project) {
+      const savedLang = localStorage.getItem(`project-lang-${project.id}`);
+      this.projectLanguage.set(savedLang === 'en' ? 'en' : 'vi');
       this.loadStates(project.id);
       this.loadEstimateConfig(project.id);
       this.priorityConfigService.loadPriorities(project.id);
     } else {
+      this.projectLanguage.set('vi');
       this.currentProjectStates.set(null);
       this.currentEstimateConfig.set(null);
+    }
+  }
+
+  /**
+   * Cập nhật ngôn ngữ hiển thị của dự án
+   */
+  setProjectLanguage(lang: 'vi' | 'en'): void {
+    const project = this.currentProject();
+    if (project) {
+      localStorage.setItem(`project-lang-${project.id}`, lang);
+      this.projectLanguage.set(lang);
     }
   }
 

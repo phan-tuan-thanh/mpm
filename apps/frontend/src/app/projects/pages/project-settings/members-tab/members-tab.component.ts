@@ -40,12 +40,12 @@ import { MemberResponse, ProjectRole } from '@mpm/shared-types';
               pInputText
               [(ngModel)]="searchTerm"
               (ngModelChange)="onSearchChange($event)"
-              placeholder="Tìm tên hoặc email..."
+              [placeholder]="t().searchPlaceholder"
               class="text-sm w-56 !pl-9"
             />
           </div>
           @if (!isReadOnly()) {
-            <button pButton (click)="showAddDialog()" label="Thêm thành viên" icon="pi pi-plus" size="small"></button>
+            <button pButton (click)="showAddDialog()" [label]="t().addMemberBtn" icon="pi pi-plus" size="small"></button>
           }
       </div>
 
@@ -59,13 +59,13 @@ import { MemberResponse, ProjectRole } from '@mpm/shared-types';
         >
           <ng-template pTemplate="header">
             <tr class="bg-gray-50 dark:bg-surface-800 border-b border-gray-100 dark:border-surface-700">
-              <th class="py-3 px-4 text-left font-semibold text-gray-500 dark:text-surface-400">Avatar</th>
-              <th class="py-3 px-4 text-left font-semibold text-gray-500 dark:text-surface-400">Họ tên</th>
-              <th class="py-3 px-4 text-left font-semibold text-gray-500 dark:text-surface-400">Email</th>
-              <th class="py-3 px-4 text-left font-semibold text-gray-500 dark:text-surface-400">Vai trò</th>
-              <th class="py-3 px-4 text-left font-semibold text-gray-500 dark:text-surface-400">Ngày tham gia</th>
+              <th class="py-3 px-4 text-left font-semibold text-gray-500 dark:text-surface-400">{{ t().colAvatar }}</th>
+              <th class="py-3 px-4 text-left font-semibold text-gray-500 dark:text-surface-400">{{ t().colName }}</th>
+              <th class="py-3 px-4 text-left font-semibold text-gray-500 dark:text-surface-400">{{ t().colEmail }}</th>
+              <th class="py-3 px-4 text-left font-semibold text-gray-500 dark:text-surface-400">{{ t().colRole }}</th>
+              <th class="py-3 px-4 text-left font-semibold text-gray-500 dark:text-surface-400">{{ t().colJoinedDate }}</th>
               @if (!isReadOnly()) {
-                <th class="py-3 px-4 text-center font-semibold text-gray-500 dark:text-surface-400 w-24">Hành động</th>
+                <th class="py-3 px-4 text-center font-semibold text-gray-500 dark:text-surface-400 w-24">{{ t().colAction }}</th>
               }
             </tr>
           </ng-template>
@@ -92,7 +92,7 @@ import { MemberResponse, ProjectRole } from '@mpm/shared-types';
                   </button>
                   <p-popover #rolePop appendTo="body" styleClass="!p-0">
                     <div class="pop-list w-36">
-                      @for (opt of roleOptions; track opt.value) {
+                      @for (opt of roleOptions(); track opt.value) {
                         <div
                           (click)="onRoleChange(member, opt.value); rolePop.hide()"
                           class="pop-item"
@@ -118,7 +118,7 @@ import { MemberResponse, ProjectRole } from '@mpm/shared-types';
                     <button
                       (click)="onRemoveMember(member)"
                       class="flex h-7 w-7 items-center justify-center rounded hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 text-gray-400 dark:text-surface-500 mx-auto transition"
-                      title="Xóa thành viên"
+                      [title]="t().removeTooltip"
                     >
                       <i class="pi pi-trash"></i>
                     </button>
@@ -132,7 +132,7 @@ import { MemberResponse, ProjectRole } from '@mpm/shared-types';
 
       <!-- Add Member Dialog -->
       <p-dialog
-        header="Thêm thành viên mới"
+        [header]="t().addDialogHeader"
         [(visible)]="displayAddDialog"
         [modal]="true"
         [style]="{ width: '400px' }"
@@ -142,18 +142,18 @@ import { MemberResponse, ProjectRole } from '@mpm/shared-types';
         <p-fluid class="block space-y-4 py-2 text-xs">
           <!-- Email Field -->
           <div class="flex flex-col gap-1.5">
-            <label class="font-semibold text-gray-700 dark:text-surface-200">Email thành viên</label>
+            <label class="font-semibold text-gray-700 dark:text-surface-200">{{ t().emailLabel }}</label>
             <input
               type="email"
               pInputText
               [(ngModel)]="newMemberEmail"
-              placeholder="Nhập email..."
+              [placeholder]="t().emailPlaceholder"
             />
           </div>
 
           <!-- Role Field -->
           <div class="flex flex-col gap-1.5">
-            <label class="font-semibold text-gray-700 dark:text-surface-200">Vai trò</label>
+            <label class="font-semibold text-gray-700 dark:text-surface-200">{{ t().roleLabel }}</label>
             <button
               type="button"
               (click)="addRolePop.toggle($event)"
@@ -164,7 +164,7 @@ import { MemberResponse, ProjectRole } from '@mpm/shared-types';
             </button>
             <p-popover #addRolePop appendTo="body" styleClass="!p-0">
               <div class="pop-list w-48">
-                @for (opt of roleOptions; track opt.value) {
+                @for (opt of roleOptions(); track opt.value) {
                   <div
                     (click)="newMemberRole = opt.value; addRolePop.hide()"
                     class="pop-item"
@@ -183,7 +183,7 @@ import { MemberResponse, ProjectRole } from '@mpm/shared-types';
             <button
               pButton
               (click)="displayAddDialog = false"
-              label="Hủy"
+              [label]="t().cancelBtn"
               severity="secondary"
               [text]="true"
               [fluid]="false"
@@ -191,7 +191,7 @@ import { MemberResponse, ProjectRole } from '@mpm/shared-types';
             <button
               pButton
               (click)="onConfirmAdd()"
-              label="Thêm"
+              [label]="t().addBtn"
               [disabled]="!newMemberEmail"
               [fluid]="false"
             ></button>
@@ -208,19 +208,106 @@ export class MembersTabComponent implements OnInit {
   private readonly confirmService = inject(ConfirmationService);
   private readonly messageService = inject(MessageService);
 
+  readonly t = computed(() => {
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    return isEn ? {
+      searchPlaceholder: 'Search name or email...',
+      addMemberBtn: 'Add Member',
+      colAvatar: 'Avatar',
+      colName: 'Name',
+      colEmail: 'Email',
+      colRole: 'Role',
+      colJoinedDate: 'Joined Date',
+      colAction: 'Action',
+      removeTooltip: 'Remove member',
+      addDialogHeader: 'Add New Member',
+      emailLabel: 'Member Email',
+      emailPlaceholder: 'Enter email...',
+      roleLabel: 'Role',
+      cancelBtn: 'Cancel',
+      addBtn: 'Add',
+      roleScrumMaster: 'Scrum Master',
+      roleProductOwner: 'Product Owner',
+      roleDeveloper: 'Developer',
+      roleQA: 'QA Engineer',
+      roleStakeholder: 'Stakeholder',
+      addSuccessSummary: 'Success',
+      addSuccessDetail: 'Member has been added to the project.',
+      addErrorSummary: 'Add Member Error',
+      addErrorDetail: (msg: string) => msg || 'An error occurred.',
+      confirmRoleChangeHeader: 'Role Change Warning',
+      confirmRoleChangeMsg: (name: string) => `Are you sure you want to change the role of Scrum Master "${name}"? This action will revoke their project administration permissions.`,
+      confirmRoleChangeBtn: 'Confirm Change',
+      roleUpdateSuccessSummary: 'Success',
+      roleUpdateSuccessDetail: 'Member role updated successfully.',
+      roleUpdateErrorSummary: 'Update Failed',
+      roleUpdateErrorDetail: (msg: string) => msg || 'Could not change role.',
+      confirmRemoveHeader: 'Confirm Member Removal',
+      confirmRemoveMsg: (name: string, role: string) => `Are you sure you want to remove member "${name}" (${role}) from this project?`,
+      confirmRemoveBtn: 'Remove Member',
+      removeSuccessSummary: 'Success',
+      removeSuccessDetail: 'Member removed from project.',
+      removeErrorSummary: 'Removal Failed',
+      removeErrorDetail: (msg: string) => msg || 'Could not remove member.',
+    } : {
+      searchPlaceholder: 'Tìm tên hoặc email...',
+      addMemberBtn: 'Thêm thành viên',
+      colAvatar: 'Avatar',
+      colName: 'Họ tên',
+      colEmail: 'Email',
+      colRole: 'Vai trò',
+      colJoinedDate: 'Ngày tham gia',
+      colAction: 'Hành động',
+      removeTooltip: 'Xóa thành viên',
+      addDialogHeader: 'Thêm thành viên mới',
+      emailLabel: 'Email thành viên',
+      emailPlaceholder: 'Nhập email...',
+      roleLabel: 'Vai trò',
+      cancelBtn: 'Hủy',
+      addBtn: 'Thêm',
+      roleScrumMaster: 'Scrum Master',
+      roleProductOwner: 'Product Owner',
+      roleDeveloper: 'Developer',
+      roleQA: 'QA Engineer',
+      roleStakeholder: 'Stakeholder',
+      addSuccessSummary: 'Thành công',
+      addSuccessDetail: 'Thành viên đã được thêm vào dự án.',
+      addErrorSummary: 'Lỗi thêm thành viên',
+      addErrorDetail: (msg: string) => msg || 'Có lỗi xảy ra.',
+      confirmRoleChangeHeader: 'Cảnh báo thay đổi quyền hạn',
+      confirmRoleChangeMsg: (name: string) => `Bạn có chắc chắn muốn thay đổi vai trò của Scrum Master "${name}"? Hành động này sẽ loại bỏ các quyền quản trị dự án của họ.`,
+      confirmRoleChangeBtn: 'Xác nhận thay đổi',
+      roleUpdateSuccessSummary: 'Thành công',
+      roleUpdateSuccessDetail: 'Vai trò thành viên đã được cập nhật.',
+      roleUpdateErrorSummary: 'Lỗi cập nhật',
+      roleUpdateErrorDetail: (msg: string) => msg || 'Không thể thay đổi vai trò.',
+      confirmRemoveHeader: 'Xác nhận xóa thành viên',
+      confirmRemoveMsg: (name: string, role: string) => `Bạn có chắc chắn muốn xóa thành viên "${name}" (${role}) khỏi dự án này?`,
+      confirmRemoveBtn: 'Xóa thành viên',
+      roleUpdateErrorSummary2: 'Thất bại', // Keep naming clean
+      removeSuccessSummary: 'Thành công',
+      removeSuccessDetail: 'Thành viên đã được xóa khỏi dự án.',
+      removeErrorSummary: 'Thất bại',
+      removeErrorDetail: (msg: string) => msg || 'Không thể xóa thành viên.',
+    };
+  });
+
   // States
   searchTerm = '';
   displayAddDialog = false;
   newMemberEmail = '';
   newMemberRole: ProjectRole = 'Developer';
 
-  readonly roleOptions = [
-    { label: 'Scrum Master', value: 'Scrum_Master' as ProjectRole },
-    { label: 'Product Owner', value: 'Product_Owner' as ProjectRole },
-    { label: 'Developer', value: 'Developer' as ProjectRole },
-    { label: 'QA Engineer', value: 'QA' as ProjectRole },
-    { label: 'Stakeholder', value: 'Stakeholder' as ProjectRole },
-  ];
+  readonly roleOptions = computed(() => {
+    const trans = this.t();
+    return [
+      { label: trans.roleScrumMaster, value: 'Scrum_Master' as ProjectRole },
+      { label: trans.roleProductOwner, value: 'Product_Owner' as ProjectRole },
+      { label: trans.roleDeveloper, value: 'Developer' as ProjectRole },
+      { label: trans.roleQA, value: 'QA' as ProjectRole },
+      { label: trans.roleStakeholder, value: 'Stakeholder' as ProjectRole },
+    ];
+  });
 
   readonly currentUserId = computed(() => {
     return this.authService.currentUser()?.id || '';
@@ -273,6 +360,7 @@ export class MembersTabComponent implements OnInit {
     const project = this.projectStore.currentProject();
     if (!project || !this.newMemberEmail) return;
 
+    const trans = this.t();
     this.projectService
       .addMember(project.id, {
         email: this.newMemberEmail.trim(),
@@ -282,8 +370,8 @@ export class MembersTabComponent implements OnInit {
         next: () => {
           this.messageService.add({
             severity: 'success',
-            summary: 'Thành công',
-            detail: 'Thành viên đã được thêm vào dự án.',
+            summary: trans.addSuccessSummary,
+            detail: trans.addSuccessDetail,
           });
           this.displayAddDialog = false;
           this.projectStore.loadMembers(project.id); // Reload list
@@ -291,8 +379,8 @@ export class MembersTabComponent implements OnInit {
         error: (err) => {
           this.messageService.add({
             severity: 'error',
-            summary: 'Lỗi thêm thành viên',
-            detail: err.error?.message || 'Có lỗi xảy ra.',
+            summary: trans.addErrorSummary,
+            detail: trans.addErrorDetail(err.error?.message),
           });
         },
       });
@@ -302,14 +390,15 @@ export class MembersTabComponent implements OnInit {
     const project = this.projectStore.currentProject();
     if (!project) return;
 
+    const trans = this.t();
     // Show warning if downgrading a Scrum Master
     if (member.projectRole === 'Scrum_Master' && newRole !== 'Scrum_Master') {
       this.confirmService.confirm({
-        message: `Bạn có chắc chắn muốn thay đổi vai trò của Scrum Master "${member.displayName}"? Hành động này sẽ loại bỏ các quyền quản trị dự án của họ.`,
-        header: 'Cảnh báo thay đổi quyền hạn',
+        message: trans.confirmRoleChangeMsg(member.displayName),
+        header: trans.confirmRoleChangeHeader,
         icon: 'pi pi-exclamation-triangle',
-        acceptLabel: 'Xác nhận thay đổi',
-        rejectLabel: 'Hủy',
+        acceptLabel: trans.confirmRoleChangeBtn,
+        rejectLabel: trans.cancelBtn,
         acceptButtonStyleClass: 'p-button-warning',
         rejectButtonStyleClass: 'p-button-secondary p-button-text',
         accept: () => {
@@ -330,22 +419,23 @@ export class MembersTabComponent implements OnInit {
     userId: string,
     newRole: ProjectRole,
   ): void {
+    const trans = this.t();
     this.projectService
       .changeMemberRole(projectId, userId, { projectRole: newRole })
       .subscribe({
         next: () => {
           this.messageService.add({
             severity: 'success',
-            summary: 'Thành công',
-            detail: 'Vai trò thành viên đã được cập nhật.',
+            summary: trans.roleUpdateSuccessSummary,
+            detail: trans.roleUpdateSuccessDetail,
           });
           this.projectStore.loadMembers(projectId);
         },
         error: (err) => {
           this.messageService.add({
             severity: 'error',
-            summary: 'Lỗi cập nhật',
-            detail: err.error?.message || 'Không thể thay đổi vai trò.',
+            summary: trans.roleUpdateErrorSummary,
+            detail: trans.roleUpdateErrorDetail(err.error?.message),
           });
           // Restore UI state
           this.projectStore.loadMembers(projectId);
@@ -357,12 +447,13 @@ export class MembersTabComponent implements OnInit {
     const project = this.projectStore.currentProject();
     if (!project) return;
 
+    const trans = this.t();
     this.confirmService.confirm({
-      message: `Bạn có chắc chắn muốn xóa thành viên "${member.displayName}" (${this.formatRole(member.projectRole)}) khỏi dự án này?`,
-      header: 'Xác nhận xóa thành viên',
+      message: trans.confirmRemoveMsg(member.displayName, this.formatRole(member.projectRole)),
+      header: trans.confirmRemoveHeader,
       icon: 'pi pi-user-minus',
-      acceptLabel: 'Xóa thành viên',
-      rejectLabel: 'Hủy',
+      acceptLabel: trans.confirmRemoveBtn,
+      rejectLabel: trans.cancelBtn,
       acceptButtonStyleClass: 'p-button-danger',
       rejectButtonStyleClass: 'p-button-secondary p-button-text',
       accept: () => {
@@ -370,16 +461,16 @@ export class MembersTabComponent implements OnInit {
           next: () => {
             this.messageService.add({
               severity: 'success',
-              summary: 'Thành công',
-              detail: 'Thành viên đã được xóa khỏi dự án.',
+              summary: trans.removeSuccessSummary,
+              detail: trans.removeSuccessDetail,
             });
             this.projectStore.loadMembers(project.id);
           },
           error: (err) => {
             this.messageService.add({
               severity: 'error',
-              summary: 'Thất bại',
-              detail: err.error?.message || 'Không thể xóa thành viên.',
+              summary: trans.removeErrorSummary,
+              detail: trans.removeErrorDetail(err.error?.message),
             });
           },
         });
@@ -388,17 +479,18 @@ export class MembersTabComponent implements OnInit {
   }
 
   formatRole(role: ProjectRole): string {
+    const trans = this.t();
     switch (role) {
       case 'Scrum_Master':
-        return 'Scrum Master';
+        return trans.roleScrumMaster;
       case 'Product_Owner':
-        return 'Product Owner';
+        return trans.roleProductOwner;
       case 'Developer':
-        return 'Developer';
+        return trans.roleDeveloper;
       case 'QA':
-        return 'QA Engineer';
+        return trans.roleQA;
       case 'Stakeholder':
-        return 'Stakeholder';
+        return trans.roleStakeholder;
       default:
         return role || '';
     }

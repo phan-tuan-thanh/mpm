@@ -36,6 +36,7 @@ describe('LabelsTabComponent — cloneLabel', () => {
 
     mockProjectStore = {
       currentProject: signal({ id: 'proj-123', key: 'TM' }),
+      projectLanguage: signal('vi'),
     };
 
     TestBed.configureTestingModule({

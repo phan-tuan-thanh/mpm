@@ -38,6 +38,7 @@ export class BoardComponent {
   @Input() projectId = '';
 
   @Output() taskClick = new EventEmitter<TaskListItem>();
+  @Output() cardMoveRequested = new EventEmitter<{ taskId: string; stateId: string; backlogOrder: number }>();
 
   protected readonly columns = computed(() => {
     const tasks = this._tasks();
@@ -76,8 +77,6 @@ export class BoardComponent {
 
     if (event.previousContainer === event.container) {
       moveItemInArray(event.container.data, event.previousIndex, dropIdx);
-    } else {
-      transferArrayItem(event.previousContainer.data, event.container.data, event.previousIndex, dropIdx);
 
       const prevTask = destTasks[dropIdx - 1];
       const nextTask = destTasks[dropIdx];
@@ -85,7 +84,23 @@ export class BoardComponent {
       const nextOrder = nextTask ? nextTask.backlogOrder : (prevTask ? prevTask.backlogOrder + 2000 : 2000);
       const newOrder = (prevOrder + nextOrder) / 2;
 
-      this.taskStore.moveToState(this.projectId, task.id, stateId, newOrder);
+      this.cardMoveRequested.emit({ taskId: task.id, stateId, backlogOrder: newOrder });
+    } else {
+      // Transfer visual container items (CDK expects list to look updated before transition completes)
+      transferArrayItem(
+        event.previousContainer.data,
+        event.container.data,
+        event.previousIndex,
+        dropIdx
+      );
+
+      const prevTask = destTasks[dropIdx - 1];
+      const nextTask = destTasks[dropIdx];
+      const prevOrder = prevTask ? prevTask.backlogOrder : (nextTask ? nextTask.backlogOrder - 2000 : 0);
+      const nextOrder = nextTask ? nextTask.backlogOrder : (prevTask ? prevTask.backlogOrder + 2000 : 2000);
+      const newOrder = (prevOrder + nextOrder) / 2;
+
+      this.cardMoveRequested.emit({ taskId: task.id, stateId, backlogOrder: newOrder });
     }
   }
 }

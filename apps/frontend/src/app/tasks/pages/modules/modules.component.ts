@@ -44,7 +44,7 @@ import { ModuleStatusBadgeComponent } from './module-status-badge.component';
 
       <!-- Toolbar -->
       <div class="flex items-center gap-3 px-6 py-3 border-b border-gray-200 dark:border-surface-700 flex-shrink-0 flex-wrap">
-        <h1 class="text-base font-semibold text-gray-800 dark:text-surface-100 mr-2">Modules</h1>
+        <h1 class="text-base font-semibold text-gray-800 dark:text-surface-100 mr-2">{{ t().title }}</h1>
         
         <!-- Status Filters (Mockup style) -->
         <div class="flex items-center gap-1.5 flex-wrap">
@@ -57,7 +57,7 @@ import { ModuleStatusBadgeComponent } from './module-status-badge.component';
               ? 'bg-gray-800 text-white border-gray-700 dark:bg-surface-800 dark:border-surface-750'
               : 'bg-transparent text-gray-500 border-gray-200 dark:border-surface-700 hover:bg-surface-50 dark:hover:bg-surface-800'"
           >
-            All
+            {{ t().all }}
           </button>
           
           <!-- Planning Pill -->
@@ -70,7 +70,7 @@ import { ModuleStatusBadgeComponent } from './module-status-badge.component';
               : 'bg-transparent text-gray-500 border-gray-200 dark:border-surface-700 hover:bg-surface-50 dark:hover:bg-surface-800'"
           >
             <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
-            Planning
+            {{ t().planning }}
           </button>
 
           <!-- Active Pill -->
@@ -83,7 +83,7 @@ import { ModuleStatusBadgeComponent } from './module-status-badge.component';
               : 'bg-transparent text-gray-500 border-gray-200 dark:border-surface-700 hover:bg-surface-50 dark:hover:bg-surface-800'"
           >
             <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-            In Progress
+            {{ t().active }}
           </button>
 
           <!-- Maintenance Pill -->
@@ -96,7 +96,7 @@ import { ModuleStatusBadgeComponent } from './module-status-badge.component';
               : 'bg-transparent text-gray-500 border-gray-200 dark:border-surface-700 hover:bg-surface-50 dark:hover:bg-surface-800'"
           >
             <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-            Review
+            {{ t().maintenance }}
           </button>
 
           <!-- Suspended Pill -->
@@ -109,7 +109,7 @@ import { ModuleStatusBadgeComponent } from './module-status-badge.component';
               : 'bg-transparent text-gray-500 border-gray-200 dark:border-surface-700 hover:bg-surface-50 dark:hover:bg-surface-800'"
           >
             <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-            Blocked
+            {{ t().suspended }}
           </button>
         </div>
 
@@ -121,7 +121,7 @@ import { ModuleStatusBadgeComponent } from './module-status-badge.component';
           <input
             pInputText
             class="pl-7 pr-2 py-1.5 w-full text-xs"
-            placeholder="Tìm module..."
+            [placeholder]="t().searchPlaceholder"
             [ngModel]="searchText()"
             (ngModelChange)="searchText.set($event)"
           />
@@ -139,7 +139,7 @@ import { ModuleStatusBadgeComponent } from './module-status-badge.component';
         </button>
         <p-popover #sortPop appendTo="body" styleClass="!p-0">
           <div class="pop-list w-52">
-            @for (opt of sortOptions; track opt.value) {
+            @for (opt of sortOptions(); track opt.value) {
               <div
                 (click)="sortBy.set(opt.value); sortPop.hide()"
                 class="pop-item justify-between"
@@ -156,7 +156,7 @@ import { ModuleStatusBadgeComponent } from './module-status-badge.component';
 
         <!-- View Switcher (Grid vs List vs Timeline) -->
         <p-selectbutton
-          [options]="viewOptions"
+          [options]="viewOptions()"
           [ngModel]="viewMode()"
           (ngModelChange)="viewMode.set($event)"
           [allowEmpty]="false"
@@ -166,7 +166,7 @@ import { ModuleStatusBadgeComponent } from './module-status-badge.component';
         <!-- Add Button -->
         <button
           pButton
-          label="Tạo Module"
+          [label]="t().createModule"
           icon="pi pi-plus"
           size="small"
           class="!bg-teal-500 !border-teal-500 hover:!bg-teal-600 hover:!border-teal-600 !text-white font-semibold cursor-pointer"
@@ -199,7 +199,7 @@ import { ModuleStatusBadgeComponent } from './module-status-badge.component';
               <section class="mb-6">
                 <h2 class="flex items-center gap-2 text-xs font-semibold text-gray-400 dark:text-surface-500 uppercase tracking-wider mb-3">
                   <i class="pi pi-globe text-primary-500 text-xs"></i>
-                  Workspace Modules
+                  {{ t().workspaceModules }}
                   <span class="font-normal normal-case tracking-normal">({{ sortedWorkspaceModules().length }})</span>
                 </h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -218,7 +218,7 @@ import { ModuleStatusBadgeComponent } from './module-status-badge.component';
             <section>
               <h2 class="flex items-center gap-2 text-xs font-semibold text-gray-400 dark:text-surface-500 uppercase tracking-wider mb-3">
                 <i class="pi pi-folder text-teal-500 text-xs"></i>
-                Project Modules
+                {{ t().projectModules }}
                 <span class="font-normal normal-case tracking-normal">({{ sortedProjectModules().length }})</span>
               </h2>
               @if (sortedProjectModules().length > 0) {
@@ -235,7 +235,7 @@ import { ModuleStatusBadgeComponent } from './module-status-badge.component';
                 <!-- Empty state -->
                 <div class="flex flex-col items-center justify-center py-16 text-center">
                   <i class="pi pi-inbox text-4xl text-gray-300 dark:text-surface-600 mb-3"></i>
-                  <p class="text-sm text-gray-500 dark:text-surface-400 mb-3">Không có module nào khớp với điều kiện lọc</p>
+                  <p class="text-sm text-gray-500 dark:text-surface-400 mb-3">{{ t().noModulesFilter }}</p>
                 </div>
               }
             </section>
@@ -248,16 +248,16 @@ import { ModuleStatusBadgeComponent } from './module-status-badge.component';
                 <thead>
                   <tr class="bg-surface-50 dark:bg-surface-800/50 border-b border-surface-200 dark:border-surface-700 text-gray-500 dark:text-surface-400 font-semibold uppercase tracking-wider select-none">
                     <th class="py-3 px-4 w-[30%] cursor-pointer hover:bg-surface-100 dark:hover:bg-surface-700/50 transition-colors" (click)="toggleSort('name')">
-                      Tên module
+                      {{ t().colName }}
                     </th>
-                    <th class="py-3 px-4 w-[15%]">Phạm vi</th>
-                    <th class="py-3 px-4 w-[15%]">Trạng thái</th>
+                    <th class="py-3 px-4 w-[15%]">{{ t().colScope }}</th>
+                    <th class="py-3 px-4 w-[15%]">{{ t().colStatus }}</th>
                     <th class="py-3 px-4 w-[20%] cursor-pointer hover:bg-surface-100 dark:hover:bg-surface-700/50 transition-colors" (click)="toggleSort('progress')">
-                      Tiến độ
+                      {{ t().colProgress }}
                     </th>
-                    <th class="py-3 px-4 w-[10%]">Tasks</th>
+                    <th class="py-3 px-4 w-[10%]">{{ t().colTasks }}</th>
                     <th class="py-3 px-4 w-[15%] cursor-pointer hover:bg-surface-100 dark:hover:bg-surface-700/50 transition-colors" (click)="toggleSort('date')">
-                      Thời hạn
+                      {{ t().colDueDate }}
                     </th>
                     <th class="py-3 px-4 w-[5%] text-right"></th>
                   </tr>
@@ -266,7 +266,7 @@ import { ModuleStatusBadgeComponent } from './module-status-badge.component';
                   @let allList = getCombinedModules();
                   @if (allList.length === 0) {
                     <tr>
-                      <td colspan="7" class="py-10 text-center text-gray-400">Không tìm thấy module nào</td>
+                      <td colspan="7" class="py-10 text-center text-gray-400">{{ t().noModulesFound }}</td>
                     </tr>
                   }
                   @for (m of allList; track m.id) {
@@ -300,7 +300,7 @@ import { ModuleStatusBadgeComponent } from './module-status-badge.component';
                             {{ m.startDate ? (m.startDate | date:'dd/MM') : '?' }} → {{ m.endDate ? (m.endDate | date:'dd/MM/yyyy') : '?' }}
                           </span>
                         } @else {
-                          <span class="opacity-30">—</span>
+                          <span class="text-gray-400 font-normal">-</span>
                         }
                       </td>
                       <td class="py-3.5 px-4 text-right" (click)="$event.stopPropagation()">
@@ -330,8 +330,8 @@ import { ModuleStatusBadgeComponent } from './module-status-badge.component';
                 <div class="w-[200px] flex-shrink-0 border-r border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800/40 flex flex-col">
                   <!-- Sidebar Header -->
                   <div class="h-[60px] border-b border-surface-200 dark:border-surface-700 px-4 flex flex-col justify-center bg-surface-50 dark:bg-surface-800/50 flex-shrink-0 select-none">
-                    <span class="text-xs font-semibold text-gray-400 dark:text-surface-500 uppercase tracking-wider">Projects</span>
-                    <span class="text-[10px] text-gray-500 dark:text-surface-400">Current</span>
+                    <span class="text-xs font-semibold text-gray-400 dark:text-surface-500 uppercase tracking-wider">{{ t().projects }}</span>
+                    <span class="text-[10px] text-gray-500 dark:text-surface-400">{{ t().current }}</span>
                   </div>
                   <!-- Sidebar Rows -->
                   <div class="flex flex-col divide-y divide-surface-100 dark:divide-surface-700/50">
@@ -440,13 +440,38 @@ import { ModuleStatusBadgeComponent } from './module-status-badge.component';
                                   [style.width]="style.width"
                                   [style.min-width]="'210px'"
                                   [style.background]="getCardGradient(m)"
-                                  [pTooltip]="m.name + ': ' + (m.startDate | date:'dd/MM/yyyy') + ' → ' + (m.endDate | date:'dd/MM/yyyy') + ' (' + m.progress + '%)'"
                                   (click)="openEditForm(m)"
                                 >
                                   <!-- Card Content -->
-                                  <div class="px-3.5 py-2 h-full flex flex-col justify-between min-w-0 text-white">
-                                    <!-- Top Row: Name + Duration subtitle + Avatars -->
-                                    <div class="flex items-start justify-between gap-2 min-w-0">
+                                  <div class="px-3.5 py-2 h-full flex flex-col justify-between min-w-0 text-white relative">
+                                    
+                                    <!-- Overlapping Member Avatars (absolute layout to avoid trigger collision) -->
+                                    <div class="absolute top-2 right-3.5 flex -space-x-1.5 overflow-hidden shrink-0 z-20">
+                                      @for (member of getModuleMembers(m).slice(0, 3); track member.userId) {
+                                        @if (member.avatarUrl) {
+                                          <img
+                                            [src]="member.avatarUrl"
+                                            [alt]="member.displayName"
+                                            class="inline-block h-5 w-5 rounded-full ring-2 ring-white/50 object-cover"
+                                            [pTooltip]="member.displayName"
+                                          />
+                                        } @else {
+                                          <span
+                                            class="inline-flex h-5 w-5 rounded-full bg-white/30 backdrop-blur-sm text-white text-[8px] font-bold items-center justify-center ring-2 ring-white/50"
+                                            [pTooltip]="member.displayName"
+                                          >
+                                            {{ member.displayName.charAt(0).toUpperCase() }}
+                                          </span>
+                                        }
+                                      }
+                                    </div>
+
+                                    <!-- Main details hoverable zone (triggers card timeline tooltip) -->
+                                    <div 
+                                      class="h-full flex flex-col justify-between min-w-0 pr-16"
+                                      [pTooltip]="m.name + ': ' + (m.startDate | date:'dd/MM/yyyy') + ' → ' + (m.endDate | date:'dd/MM/yyyy') + ' (' + m.progress + '%)'"
+                                    >
+                                      <!-- Top Row: Name + Duration subtitle -->
                                       <div class="min-w-0">
                                         <div class="font-bold text-xs leading-4 truncate drop-shadow-sm">
                                           {{ m.name }}
@@ -456,52 +481,32 @@ import { ModuleStatusBadgeComponent } from './module-status-badge.component';
                                         </div>
                                       </div>
 
-                                      <!-- Overlapping Member Avatars -->
-                                      <div class="flex -space-x-1.5 overflow-hidden shrink-0 pt-0.5">
-                                        @for (member of getModuleMembers(m).slice(0, 3); track member.userId) {
-                                          @if (member.avatarUrl) {
-                                            <img
-                                              [src]="member.avatarUrl"
-                                              [alt]="member.displayName"
-                                              class="inline-block h-5 w-5 rounded-full ring-2 ring-white/50 object-cover"
-                                              [pTooltip]="member.displayName"
-                                            />
-                                          } @else {
-                                            <span
-                                              class="inline-flex h-5 w-5 rounded-full bg-white/30 backdrop-blur-sm text-white text-[8px] font-bold items-center justify-center ring-2 ring-white/50"
-                                              [pTooltip]="member.displayName"
-                                            >
-                                              {{ member.displayName.charAt(0).toUpperCase() }}
-                                            </span>
-                                          }
-                                        }
+                                      <!-- Middle Row: Progress Bar -->
+                                      <div class="flex items-center gap-2">
+                                        <div class="flex-1 h-1.5 bg-black/25 rounded-full overflow-hidden">
+                                          <div
+                                            class="h-full rounded-full bg-white/95 transition-all duration-300"
+                                            [style.width.%]="m.progress"
+                                          ></div>
+                                        </div>
+                                        <span class="text-[10px] font-bold shrink-0">
+                                          {{ m.progress }}%
+                                        </span>
+                                      </div>
+
+                                      <!-- Bottom Row: bullet meta (tasks + status) -->
+                                      <div class="flex items-center gap-3 text-[9px] text-white/80 min-w-0">
+                                        <span class="flex items-center gap-1 shrink-0">
+                                          <span class="w-1 h-1 rounded-full bg-white/70"></span>
+                                          {{ t().colTasks }}: {{ m.completedCount }}/{{ m.taskCount }}
+                                        </span>
+                                        <span class="flex items-center gap-1 truncate font-semibold">
+                                          <span class="w-1 h-1 rounded-full bg-white/70 shrink-0"></span>
+                                          {{ getStatusLabel(m.status) }}
+                                        </span>
                                       </div>
                                     </div>
 
-                                    <!-- Middle Row: Progress Bar -->
-                                    <div class="flex items-center gap-2">
-                                      <div class="flex-1 h-1.5 bg-black/25 rounded-full overflow-hidden">
-                                        <div
-                                          class="h-full rounded-full bg-white/95 transition-all duration-300"
-                                          [style.width.%]="m.progress"
-                                        ></div>
-                                      </div>
-                                      <span class="text-[10px] font-bold shrink-0">
-                                        {{ m.progress }}%
-                                      </span>
-                                    </div>
-
-                                    <!-- Bottom Row: bullet meta (tasks + status) -->
-                                    <div class="flex items-center gap-3 text-[9px] text-white/80 min-w-0">
-                                      <span class="flex items-center gap-1 shrink-0">
-                                        <span class="w-1 h-1 rounded-full bg-white/70"></span>
-                                        Tasks: {{ m.completedCount }}/{{ m.taskCount }}
-                                      </span>
-                                      <span class="flex items-center gap-1 truncate">
-                                        <span class="w-1 h-1 rounded-full bg-white/70 shrink-0"></span>
-                                        {{ getStatusLabel(m.status) }}
-                                      </span>
-                                    </div>
                                   </div>
                                 </div>
                               }
@@ -530,15 +535,15 @@ import { ModuleStatusBadgeComponent } from './module-status-badge.component';
               <!-- Empty state timeline -->
               <div class="flex flex-col items-center justify-center py-20 border border-dashed border-surface-200 dark:border-surface-700 rounded-lg">
                 <i class="pi pi-calendar-times text-4xl text-gray-300 dark:text-surface-600 mb-3"></i>
-                <p class="text-sm text-gray-500 dark:text-surface-400">Không có module nào được lên lịch thời hạn.</p>
-                <p class="text-xs text-gray-400 mt-1 mb-4">Hãy thiết lập ngày bắt đầu và kết thúc cho các module để chúng hiển thị tại đây.</p>
+                <p class="text-sm text-gray-500 dark:text-surface-400">{{ t().noScheduled }}</p>
+                <p class="text-xs text-gray-400 mt-1 mb-4">{{ t().ganttHelp }}</p>
               </div>
             }
 
             <!-- Unscheduled list below Gantt timeline -->
             @if (unscheduledModules().length > 0) {
               <div class="mt-8">
-                <h3 class="text-xs font-bold text-gray-400 dark:text-surface-500 uppercase tracking-wider mb-3">Chưa lập lịch ({{ unscheduledModules().length }})</h3>
+                <h3 class="text-xs font-bold text-gray-400 dark:text-surface-500 uppercase tracking-wider mb-3">{{ t().unscheduled }} ({{ unscheduledModules().length }})</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                   @for (m of unscheduledModules(); track m.id) {
                     <div
@@ -550,7 +555,7 @@ import { ModuleStatusBadgeComponent } from './module-status-badge.component';
                         <span class="font-semibold text-xs text-gray-700 dark:text-surface-300 truncate">{{ m.name }}</span>
                       </div>
                       <div class="flex items-center gap-2">
-                        <span class="text-[10px] text-gray-400 group-hover:text-primary-500 transition-colors">Thiết lập ngày</span>
+                        <span class="text-[10px] text-gray-400 group-hover:text-primary-500 transition-colors">{{ t().setDate }}</span>
                         <button
                           pButton
                           icon="pi pi-ellipsis-v"
@@ -578,15 +583,15 @@ import { ModuleStatusBadgeComponent } from './module-status-badge.component';
         <div class="pop-list w-40">
           <div (click)="viewTasks(mod); actionMenu.hide()" class="pop-item flex items-center gap-2">
             <i class="pi pi-eye text-xs"></i>
-            <span>Xem Tasks</span>
+            <span>{{ t().viewTasksLabel }}</span>
           </div>
           <div (click)="openEditForm(mod); actionMenu.hide()" class="pop-item flex items-center gap-2">
             <i class="pi pi-pencil text-xs"></i>
-            <span>Chỉnh sửa</span>
+            <span>{{ t().edit }}</span>
           </div>
           <div (click)="confirmDelete(mod); actionMenu.hide()" class="pop-item flex items-center gap-2 text-red-600 hover:text-red-700 dark:text-red-400">
             <i class="pi pi-trash text-xs text-red-500"></i>
-            <span>Xóa Module</span>
+            <span>{{ t().deleteBtn }}</span>
           </div>
         </div>
       }
@@ -630,20 +635,130 @@ export class ModulesComponent implements OnInit {
   private projectId = '';
   private workspaceId = '';
 
-  readonly viewOptions = [
-    { label: 'Grid', value: 'grid' },
-    { label: 'List', value: 'list' },
-    { label: 'Timeline', value: 'timeline' },
-  ];
+  readonly t = computed(() => {
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    return isEn ? {
+      title: 'Modules',
+      all: 'All',
+      planning: 'Planning',
+      active: 'In Progress',
+      maintenance: 'Review',
+      suspended: 'Blocked',
+      searchPlaceholder: 'Search module...',
+      sortByLabel: 'Sort by',
+      createModule: 'Create Module',
+      noModulesFilter: 'No modules matching current filters.',
+      colName: 'Module Name',
+      colScope: 'Scope',
+      colStatus: 'Status',
+      colProgress: 'Progress',
+      colTasks: 'Tasks',
+      colDueDate: 'Due Date',
+      noModulesFound: 'No modules found',
+      workspaceModules: 'Workspace Modules',
+      projectModules: 'Project Modules',
+      edit: 'Edit',
+      deleteBtn: 'Delete Module',
+      noScheduled: 'No scheduled modules.',
+      ganttHelp: 'Set start and end dates for modules to display them here.',
+      unscheduled: 'Unscheduled',
+      setDate: 'Set Date',
+      viewTasksLabel: 'View Tasks',
+      toastWarnNoPermission: 'No Permission',
+      toastWarnEditWorkspaceAdmin: 'Only Workspace Admins can edit workspace modules.',
+      toastWarnDeleteWorkspaceAdmin: 'Only Workspace Admins can delete workspace modules.',
+      confirmDeleteHeader: 'Confirm Delete',
+      confirmDeleteMessage: (name: string) => `Are you sure you want to delete module "${name}"? All task associations will be removed.`,
+      toastSuccessDeletedHeader: 'Deleted',
+      toastSuccessDeletedDetail: (name: string) => `Module "${name}" has been deleted.`,
+      toastErrorHeader: 'Error',
+      toastErrorInvalidTransition: 'Invalid transition',
+      toastErrorCurrentStatus: (status: string, allowed: string) => `Current status: ${status}. Allowed: ${allowed}`,
+      toastWarnConflict: 'Update conflict',
+      toastSuccessUpdated: 'Updated',
+      toastSuccessUpdatedDetail: (name: string) => `Module "${name}" has been updated.`,
+      toastSuccessCreated: 'Created',
+      toastSuccessCreatedDetail: (name: string) => `Module "${name}" has been created.`,
+      cancel: 'Cancel',
+      projects: 'Projects',
+      current: 'Current',
+      deleteLabel: 'Delete',
+    } : {
+      title: 'Modules',
+      all: 'Tất cả',
+      planning: 'Lập kế hoạch',
+      active: 'Đang chạy',
+      maintenance: 'Review',
+      suspended: 'Blocked',
+      searchPlaceholder: 'Tìm module...',
+      sortByLabel: 'Sắp xếp',
+      createModule: 'Tạo Module',
+      noModulesFilter: 'Không có module nào khớp với điều kiện lọc',
+      colName: 'Tên module',
+      colScope: 'Phạm vi',
+      colStatus: 'Trạng thái',
+      colProgress: 'Tiến độ',
+      colTasks: 'Tasks',
+      colDueDate: 'Thời hạn',
+      noModulesFound: 'Không tìm thấy module nào',
+      workspaceModules: 'Workspace Modules',
+      projectModules: 'Project Modules',
+      edit: 'Chỉnh sửa',
+      deleteBtn: 'Xóa Module',
+      noScheduled: 'Không có module nào được lên lịch thời hạn.',
+      ganttHelp: 'Hãy thiết lập ngày bắt đầu và kết thúc cho các module để chúng hiển thị tại đây.',
+      unscheduled: 'Chưa lập lịch',
+      setDate: 'Thiết lập ngày',
+      viewTasksLabel: 'Xem Tasks',
+      toastWarnNoPermission: 'Không có quyền',
+      toastWarnEditWorkspaceAdmin: 'Chỉ Workspace Admin mới có thể sửa workspace module.',
+      toastWarnDeleteWorkspaceAdmin: 'Chỉ Workspace Admin mới có thể xóa workspace module.',
+      confirmDeleteHeader: 'Xác nhận xóa',
+      confirmDeleteMessage: (name: string) => `Bạn có chắc muốn xóa module "${name}"? Tất cả liên kết task sẽ bị gỡ.`,
+      toastSuccessDeletedHeader: 'Đã xóa',
+      toastSuccessDeletedDetail: (name: string) => `Module "${name}" đã được xóa`,
+      toastErrorHeader: 'Lỗi',
+      toastErrorInvalidTransition: 'Transition không hợp lệ',
+      toastErrorCurrentStatus: (status: string, allowed: string) => `Trạng thái hiện tại: ${status}. Cho phép: ${allowed}`,
+      toastWarnConflict: 'Xung đột cập nhật',
+      toastSuccessUpdated: 'Đã cập nhật',
+      toastSuccessUpdatedDetail: (name: string) => `Module "${name}" đã được cập nhật`,
+      toastSuccessCreated: 'Đã tạo',
+      toastSuccessCreatedDetail: (name: string) => `Module "${name}" đã được tạo`,
+      cancel: 'Hủy',
+      projects: 'Dự án',
+      current: 'Hiện tại',
+      deleteLabel: 'Xóa',
+    };
+  });
 
-  readonly sortOptions = [
-    { label: 'Tên (A-Z)', value: 'name_asc' },
-    { label: 'Tên (Z-A)', value: 'name_desc' },
-    { label: 'Tiến độ (Cao → Thấp)', value: 'progress_desc' },
-    { label: 'Tiến độ (Thấp → Cao)', value: 'progress_asc' },
-    { label: 'Hạn chót (Sớm nhất)', value: 'date_asc' },
-    { label: 'Hạn chót (Muộn nhất)', value: 'date_desc' },
-  ];
+  readonly viewOptions = computed(() => {
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    return [
+      { label: isEn ? 'Grid' : 'Lưới', value: 'grid' },
+      { label: isEn ? 'List' : 'Danh sách', value: 'list' },
+      { label: isEn ? 'Timeline' : 'Timeline', value: 'timeline' },
+    ];
+  });
+
+  readonly sortOptions = computed(() => {
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    return isEn ? [
+      { label: 'Name (A-Z)', value: 'name_asc' },
+      { label: 'Name (Z-A)', value: 'name_desc' },
+      { label: 'Progress (High → Low)', value: 'progress_desc' },
+      { label: 'Progress (Low → High)', value: 'progress_asc' },
+      { label: 'Due Date (Earliest)', value: 'date_asc' },
+      { label: 'Due Date (Latest)', value: 'date_desc' },
+    ] : [
+      { label: 'Tên (A-Z)', value: 'name_asc' },
+      { label: 'Tên (Z-A)', value: 'name_desc' },
+      { label: 'Tiến độ (Cao → Thấp)', value: 'progress_desc' },
+      { label: 'Tiến độ (Thấp → Cao)', value: 'progress_asc' },
+      { label: 'Hạn chót (Sớm nhất)', value: 'date_asc' },
+      { label: 'Hạn chót (Muộn nhất)', value: 'date_desc' },
+    ];
+  });
 
   readonly workspaceModules = computed(() =>
     this.moduleStore.modules().filter((m) => m.scope === 'workspace'),
@@ -698,6 +813,7 @@ export class ModulesComponent implements OnInit {
     const range = this.timelineRange();
     if (!range) return [];
 
+    const isEn = this.projectStore.projectLanguage() === 'en';
     const segs: { key: number; label: string; left: number; width: number }[] = [];
     const cursor = new Date(range.min);
     cursor.setDate(1);
@@ -710,7 +826,7 @@ export class ModulesComponent implements OnInit {
       const endMs = Math.min(next.getTime(), range.max);
       segs.push({
         key: cursor.getTime(),
-        label: `Tháng ${cursor.getMonth() + 1}, ${cursor.getFullYear()}`,
+        label: isEn ? `Month ${cursor.getMonth() + 1}, ${cursor.getFullYear()}` : `Tháng ${cursor.getMonth() + 1}, ${cursor.getFullYear()}`,
         left: ((startMs - range.min) / range.span) * 100,
         width: ((endMs - startMs) / range.span) * 100,
       });
@@ -832,8 +948,8 @@ export class ModulesComponent implements OnInit {
   }
 
   getSortLabel(): string {
-    const found = this.sortOptions.find((o) => o.value === this.sortBy());
-    return found ? found.label : 'Sắp xếp';
+    const found = this.sortOptions().find((o) => o.value === this.sortBy());
+    return found ? found.label : this.t().sortByLabel;
   }
 
   toggleSort(field: 'name' | 'progress' | 'date'): void {
@@ -854,10 +970,11 @@ export class ModulesComponent implements OnInit {
 
   openEditForm(module: ProjectModule): void {
     if (module.scope === 'workspace' && !this.authStore.isAdmin()) {
+      const t = this.t();
       this.messageService.add({
         severity: 'warn',
-        summary: 'Không có quyền',
-        detail: 'Chỉ Workspace Admin mới có thể sửa workspace module',
+        summary: t.toastWarnNoPermission,
+        detail: t.toastWarnEditWorkspaceAdmin,
         life: 3000,
       });
       return;
@@ -873,28 +990,30 @@ export class ModulesComponent implements OnInit {
 
   confirmDelete(module: ProjectModule): void {
     if (module.scope === 'workspace' && !this.authStore.isAdmin()) {
+      const t = this.t();
       this.messageService.add({
         severity: 'warn',
-        summary: 'Không có quyền',
-        detail: 'Chỉ Workspace Admin mới có thể xóa workspace module',
+        summary: t.toastWarnNoPermission,
+        detail: t.toastWarnDeleteWorkspaceAdmin,
         life: 3000,
       });
       return;
     }
 
+    const t = this.t();
     this.confirmService.confirm({
-      message: `Bạn có chắc muốn xóa module "${module.name}"? Tất cả liên kết task sẽ bị gỡ.`,
-      header: 'Xác nhận xóa',
+      message: t.confirmDeleteMessage(module.name),
+      header: t.confirmDeleteHeader,
       icon: 'pi pi-exclamation-triangle',
-      acceptLabel: 'Xóa',
-      rejectLabel: 'Hủy',
+      acceptLabel: t.deleteLabel,
+      rejectLabel: t.cancel,
       acceptButtonStyleClass: 'p-button-danger',
       accept: () => {
         this.moduleStore.deleteModule(this.projectId, module.id);
         this.messageService.add({
           severity: 'success',
-          summary: 'Đã xóa',
-          detail: `Module "${module.name}" đã được xóa`,
+          summary: t.toastSuccessDeletedHeader,
+          detail: t.toastSuccessDeletedDetail(module.name),
           life: 3000,
         });
       },
@@ -912,6 +1031,7 @@ export class ModulesComponent implements OnInit {
 
   async onFormSave(data: ModuleFormData): Promise<void> {
     const editing = this.editingModule();
+    const t = this.t();
     if (editing) {
       const dto: { name?: string; description?: any; status?: any; startDate?: string | null; endDate?: string | null } = {
         name: data.name,
@@ -928,15 +1048,15 @@ export class ModulesComponent implements OnInit {
           const allowed = result.error.allowedTransitions?.join(', ') ?? '';
           this.messageService.add({
             severity: 'error',
-            summary: 'Transition không hợp lệ',
-            detail: `Trạng thái hiện tại: ${result.error.currentStatus}. Cho phép: ${allowed}`,
+            summary: t.toastErrorInvalidTransition,
+            detail: t.toastErrorCurrentStatus(result.error.currentStatus ?? '', allowed),
             life: 5000,
           });
           this.moduleStore.loadModules(this.projectId);
         } else if (result.error.type === '409') {
           this.messageService.add({
             severity: 'warn',
-            summary: 'Xung đột cập nhật',
+            summary: t.toastWarnConflict,
             detail: result.error.message,
             life: 4000,
           });
@@ -944,7 +1064,7 @@ export class ModulesComponent implements OnInit {
         } else {
           this.messageService.add({
             severity: 'error',
-            summary: 'Lỗi',
+            summary: t.toastErrorHeader,
             detail: result.error.message,
             life: 3000,
           });
@@ -954,8 +1074,8 @@ export class ModulesComponent implements OnInit {
 
       this.messageService.add({
         severity: 'success',
-        summary: 'Đã cập nhật',
-        detail: `Module "${data.name}" đã được cập nhật`,
+        summary: t.toastSuccessUpdated,
+        detail: t.toastSuccessUpdatedDetail(data.name),
         life: 3000,
       });
     } else {
@@ -969,8 +1089,8 @@ export class ModulesComponent implements OnInit {
       if (module) {
         this.messageService.add({
           severity: 'success',
-          summary: 'Đã tạo',
-          detail: `Module "${data.name}" đã được tạo`,
+          summary: t.toastSuccessCreated,
+          detail: t.toastSuccessCreatedDetail(data.name),
           life: 3000,
         });
       }
@@ -1034,26 +1154,43 @@ export class ModulesComponent implements OnInit {
     const d2 = Date.UTC(end.getFullYear(), end.getMonth(), end.getDate());
     const diffDays = Math.round((d2 - d1) / (24 * 60 * 60 * 1000)) + 1;
 
-    if (diffDays < 7) {
-      return `${diffDays} ${diffDays === 1 ? 'day' : 'days'}`;
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    if (isEn) {
+      if (diffDays < 7) {
+        return `${diffDays} ${diffDays === 1 ? 'day' : 'days'}`;
+      }
+
+      const weeks = Math.floor(diffDays / 7);
+      const remainingDays = diffDays % 7;
+
+      if (remainingDays === 0) {
+        return `${weeks} ${weeks === 1 ? 'week' : 'weeks'}`;
+      }
+
+      return `${weeks} ${weeks === 1 ? 'week' : 'weeks'}, ${remainingDays} ${remainingDays === 1 ? 'day' : 'days'}`;
+    } else {
+      if (diffDays < 7) {
+        return `${diffDays} ngày`;
+      }
+
+      const weeks = Math.floor(diffDays / 7);
+      const remainingDays = diffDays % 7;
+
+      if (remainingDays === 0) {
+        return `${weeks} tuần`;
+      }
+
+      return `${weeks} tuần, ${remainingDays} ngày`;
     }
-
-    const weeks = Math.floor(diffDays / 7);
-    const remainingDays = diffDays % 7;
-
-    if (remainingDays === 0) {
-      return `${weeks} ${weeks === 1 ? 'week' : 'weeks'}`;
-    }
-
-    return `${weeks} ${weeks === 1 ? 'week' : 'weeks'}, ${remainingDays} ${remainingDays === 1 ? 'day' : 'days'}`;
   }
 
   getStatusLabel(status: string): string {
+    const t = this.t();
     const map: Record<string, string> = {
-      planning: 'Planning',
-      active: 'Active',
-      maintenance: 'Maintenance',
-      suspended: 'Suspended',
+      planning: t.planning,
+      active: t.active,
+      maintenance: t.maintenance,
+      suspended: t.suspended,
       deprecated: 'Deprecated',
       retired: 'Retired',
       cancelled: 'Cancelled',

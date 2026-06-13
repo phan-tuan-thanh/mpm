@@ -32,8 +32,8 @@ import { EstimateType } from '@mpm/shared-types';
       <!-- ── Loại ước lượng ── -->
       <div class="bg-surface-0 dark:bg-surface-900 rounded-xl border border-surface-100 dark:border-surface-800 shadow-sm overflow-hidden">
         <div class="px-5 py-3.5 border-b border-surface-100 dark:border-surface-800">
-          <h2 class="text-sm font-bold text-gray-900 dark:text-surface-0">Loại ước lượng</h2>
-          <p class="text-xs text-gray-400 dark:text-surface-500 mt-0.5">Chọn cách đo độ phức tạp công việc của dự án.</p>
+          <h2 class="text-sm font-bold text-gray-900 dark:text-surface-0">{{ t().estimateTypeTitle }}</h2>
+          <p class="text-xs text-gray-400 dark:text-surface-500 mt-0.5">{{ t().estimateTypeDesc }}</p>
         </div>
         <div class="p-5">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -49,7 +49,7 @@ import { EstimateType } from '@mpm/shared-types';
           >
             <i class="pi pi-percentage text-2xl mb-2" [ngClass]="tempType === EstimateType.POINTS ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-400 dark:text-surface-500'"></i>
             <span class="text-sm font-bold text-gray-800 dark:text-surface-100">Story Points</span>
-            <span class="text-xs text-gray-400 dark:text-surface-500 mt-1">Sử dụng điểm số (Fibonacci, Linear, etc.) để tính toán độ phức tạp.</span>
+            <span class="text-xs text-gray-400 dark:text-surface-500 mt-1">{{ t().pointsDesc }}</span>
           </div>
 
           <!-- Categories Card -->
@@ -64,7 +64,7 @@ import { EstimateType } from '@mpm/shared-types';
           >
             <i class="pi pi-tags text-2xl mb-2" [ngClass]="tempType === EstimateType.CATEGORIES ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-400 dark:text-surface-500'"></i>
             <span class="text-sm font-bold text-gray-800 dark:text-surface-100">T-Shirt Sizes</span>
-            <span class="text-xs text-gray-400 dark:text-surface-500 mt-1">Sử dụng kích cỡ (XS, S, M, L, XL) hoặc phân loại Easy, Medium, Hard.</span>
+            <span class="text-xs text-gray-400 dark:text-surface-500 mt-1">{{ t().categoriesDesc }}</span>
           </div>
 
           <!-- Time Card -->
@@ -78,8 +78,8 @@ import { EstimateType } from '@mpm/shared-types';
             class="border rounded-xl p-4 flex flex-col items-center justify-center text-center cursor-pointer transition select-none"
           >
             <i class="pi pi-clock text-2xl mb-2" [ngClass]="tempType === EstimateType.TIME ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-400 dark:text-surface-500'"></i>
-            <span class="text-sm font-bold text-gray-800 dark:text-surface-100">Thời gian (Hours)</span>
-            <span class="text-xs text-gray-400 dark:text-surface-500 mt-1">Ước lượng trực tiếp theo số giờ làm việc (0.5h, 1h, 2h, 4h, etc.).</span>
+            <span class="text-sm font-bold text-gray-800 dark:text-surface-100">{{ t().timeLabel }}</span>
+            <span class="text-xs text-gray-400 dark:text-surface-500 mt-1">{{ t().timeDesc }}</span>
           </div>
         </div>
         </div>
@@ -89,17 +89,17 @@ import { EstimateType } from '@mpm/shared-types';
       <div class="bg-surface-0 dark:bg-surface-900 rounded-xl border border-surface-100 dark:border-surface-800 shadow-sm overflow-hidden">
         <div class="px-5 py-3.5 border-b border-surface-100 dark:border-surface-800 flex items-start justify-between gap-3">
           <div>
-            <h2 class="text-sm font-bold text-gray-900 dark:text-surface-0">Giá trị ước lượng</h2>
-            <p class="text-xs text-gray-400 dark:text-surface-500 mt-0.5">Bộ giá trị có thể gán cho task khi ước lượng.</p>
+            <h2 class="text-sm font-bold text-gray-900 dark:text-surface-0">{{ t().estimateValuesTitle }}</h2>
+            <p class="text-xs text-gray-400 dark:text-surface-500 mt-0.5">{{ t().estimateValuesDesc }}</p>
           </div>
-          <span class="text-xs text-gray-400 dark:text-surface-500 font-medium whitespace-nowrap">Từ 2 đến 12 phần tử</span>
+          <span class="text-xs text-gray-400 dark:text-surface-500 font-medium whitespace-nowrap">{{ t().valuesCountHint }}</span>
         </div>
         <div class="p-5 space-y-4">
 
       <!-- Template Selection -->
       @if (hasTemplates(tempType) && !isReadOnly()) {
         <div class="flex flex-col gap-1.5">
-          <label for="template" class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wider">Mẫu giá trị gợi ý</label>
+          <label for="template" class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wider">{{ t().templateLabel }}</label>
           <div class="flex gap-3">
             <button
               type="button"
@@ -125,7 +125,7 @@ import { EstimateType } from '@mpm/shared-types';
             <button
               pButton
               type="button"
-              label="Áp dụng mẫu"
+              [label]="t().applyTemplateBtn"
               severity="secondary"
               (click)="applyTemplate()"
               [disabled]="!selectedTemplate"
@@ -156,7 +156,7 @@ import { EstimateType } from '@mpm/shared-types';
               type="text"
               [(ngModel)]="newValueInput"
               (keydown.enter)="addValue($event)"
-              placeholder="Thêm giá trị..."
+              [placeholder]="t().addValuePlaceholder"
               class="border-none focus:outline-none text-sm px-2 py-1 text-gray-800 dark:text-surface-100 bg-transparent flex-1 min-w-[120px]"
             />
           }
@@ -173,8 +173,8 @@ import { EstimateType } from '@mpm/shared-types';
       <!-- ── Xem trước ── -->
       <div class="bg-surface-0 dark:bg-surface-900 rounded-xl border border-surface-100 dark:border-surface-800 shadow-sm overflow-hidden">
         <div class="px-5 py-3.5 border-b border-surface-100 dark:border-surface-800">
-          <h2 class="text-sm font-bold text-gray-900 dark:text-surface-0">Xem trước</h2>
-          <p class="text-xs text-gray-400 dark:text-surface-500 mt-0.5">Giao diện ước lượng khi gán cho task.</p>
+          <h2 class="text-sm font-bold text-gray-900 dark:text-surface-0">{{ t().previewTitle }}</h2>
+          <p class="text-xs text-gray-400 dark:text-surface-500 mt-0.5">{{ t().previewDesc }}</p>
         </div>
         <div class="p-5">
         <div class="border border-gray-100 dark:border-surface-700 rounded-xl p-4 bg-gray-50/50 dark:bg-surface-800 space-y-3">
@@ -200,7 +200,7 @@ import { EstimateType } from '@mpm/shared-types';
                 <span>{{ tempValues[tempValues.length - 1] }}{{ tempType === EstimateType.TIME ? 'h' : '' }}</span>
               </div>
             } @else {
-              <p class="text-xs text-gray-400 italic">Thêm giá trị để xem trước thanh trượt.</p>
+              <p class="text-xs text-gray-400 italic">{{ t().previewEmpty }}</p>
             }
           </div>
         </div>
@@ -213,7 +213,7 @@ import { EstimateType } from '@mpm/shared-types';
           <button
             pButton
             type="button"
-            label="Hủy thay đổi"
+            [label]="t().cancelBtn"
             severity="secondary"
             [text]="true"
             (click)="resetTemp()"
@@ -222,7 +222,7 @@ import { EstimateType } from '@mpm/shared-types';
           <button
             pButton
             type="button"
-            label="Lưu cấu hình"
+            [label]="t().saveBtn"
             [disabled]="isSubmitting() || tempValues.length < 2 || tempValues.length > 12"
             (click)="onSubmit()"
           ></button>
@@ -242,6 +242,96 @@ export class EstimatesTabComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly messageService = inject(MessageService);
   private readonly confirmService = inject(ConfirmationService);
+
+  // Localization
+  readonly t = computed(() => {
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    return isEn ? {
+      estimateTypeTitle: 'Estimate Type',
+      estimateTypeDesc: 'Choose how to measure task complexity for this project.',
+      pointsDesc: 'Use numeric points (Fibonacci, Linear, etc.) to assess complexity.',
+      categoriesDesc: 'Use sizes (XS, S, M, L, XL) or difficulty levels Easy, Medium, Hard.',
+      timeLabel: 'Time (Hours)',
+      timeDesc: 'Estimate directly in hours (0.5h, 1h, 2h, 4h, etc.).',
+      estimateValuesTitle: 'Estimate Values',
+      estimateValuesDesc: 'The set of values assignable to tasks when estimating.',
+      valuesCountHint: 'Between 2 and 12 elements',
+      templateLabel: 'Suggested value templates',
+      applyTemplateBtn: 'Apply template',
+      addValuePlaceholder: 'Add value...',
+      previewTitle: 'Preview',
+      previewDesc: 'Estimate UI when assigned to a task.',
+      previewEmpty: 'Add values to see the slider preview.',
+      cancelBtn: 'Discard changes',
+      saveBtn: 'Save configuration',
+      templatePlaceholder: 'Choose template',
+      fibonacciLabel: 'Fibonacci (0, 0.5, 1, 2, 3, 5, 8, 13, 21)',
+      linearLabel: 'Linear (1-10)',
+      squaresLabel: 'Squares (1, 4, 9, 16, 25)',
+      tshirtLabel: 'T-Shirt Sizes (XS, S, M, L, XL, XXL)',
+      difficultyLabel: 'Difficulty (Easy, Medium, Hard)',
+      warnSummary: 'Warning',
+      warnMax12: 'Maximum 12 elements.',
+      errorValueSummary: 'Invalid value',
+      errorPositiveNum: 'Please enter a positive number.',
+      errorDuplicate: 'Duplicate',
+      errorDuplicateDetail: 'This value already exists.',
+      errorLengthSummary: 'Length error',
+      errorMaxChars: 'Maximum 20 characters.',
+      errorConfigSummary: 'Config error',
+      errorMin2Values: 'Please enter at least 2 values.',
+      confirmChangeTypeHeader: 'Confirm estimate type change',
+      confirmChangeTypeMsg: (count: number) => `Changing the estimate type will clear all estimate values of ${count} current tasks in this project. Continue?`,
+      confirmChangeTypeAccept: 'Confirm change',
+      confirmChangeTypeReject: 'Cancel',
+      saveSuccessSummary: 'Success',
+      saveSuccessDetail: 'Estimate configuration updated successfully.',
+      saveErrorSummary: 'Update failed',
+      saveErrorDetail: 'An error occurred while saving the configuration.',
+    } : {
+      estimateTypeTitle: 'Loại ước lượng',
+      estimateTypeDesc: 'Chọn cách đo độ phức tạp công việc của dự án.',
+      pointsDesc: 'Sử dụng điểm số (Fibonacci, Linear, etc.) để tính toán độ phức tạp.',
+      categoriesDesc: 'Sử dụng kích cỡ (XS, S, M, L, XL) hoặc phân loại Easy, Medium, Hard.',
+      timeLabel: 'Thời gian (Hours)',
+      timeDesc: 'Ước lượng trực tiếp theo số giờ làm việc (0.5h, 1h, 2h, 4h, etc.).',
+      estimateValuesTitle: 'Giá trị ước lượng',
+      estimateValuesDesc: 'Bộ giá trị có thể gán cho task khi ước lượng.',
+      valuesCountHint: 'Từ 2 đến 12 phần tử',
+      templateLabel: 'Mẫu giá trị gợi ý',
+      applyTemplateBtn: 'Áp dụng mẫu',
+      addValuePlaceholder: 'Thêm giá trị...',
+      previewTitle: 'Xem trước',
+      previewDesc: 'Giao diện ước lượng khi gán cho task.',
+      previewEmpty: 'Thêm giá trị để xem trước thanh trượt.',
+      cancelBtn: 'Hủy thay đổi',
+      saveBtn: 'Lưu cấu hình',
+      templatePlaceholder: 'Chọn mẫu có sẵn',
+      fibonacciLabel: 'Fibonacci (0, 0.5, 1, 2, 3, 5, 8, 13, 21)',
+      linearLabel: 'Tuyến tính (1-10)',
+      squaresLabel: 'Bình phương (1, 4, 9, 16, 25)',
+      tshirtLabel: 'T-Shirt Sizes (XS, S, M, L, XL, XXL)',
+      difficultyLabel: 'Độ khó (Easy, Medium, Hard)',
+      warnSummary: 'Cảnh báo',
+      warnMax12: 'Tối đa 12 phần tử.',
+      errorValueSummary: 'Lỗi giá trị',
+      errorPositiveNum: 'Vui lòng nhập số dương.',
+      errorDuplicate: 'Trùng lặp',
+      errorDuplicateDetail: 'Giá trị này đã tồn tại.',
+      errorLengthSummary: 'Lỗi độ dài',
+      errorMaxChars: 'Tối đa 20 ký tự.',
+      errorConfigSummary: 'Lỗi cấu hình',
+      errorMin2Values: 'Vui lòng nhập tối thiểu 2 giá trị.',
+      confirmChangeTypeHeader: 'Xác nhận thay đổi loại ước lượng',
+      confirmChangeTypeMsg: (count: number) => `Thay đổi loại ước lượng sẽ xóa toàn bộ giá trị ước lượng của ${count} công việc hiện tại của dự án này. Bạn có chắc chẫn muốn tiếp tục?`,
+      confirmChangeTypeAccept: 'Đồng ý thay đổi',
+      confirmChangeTypeReject: 'Hủy',
+      saveSuccessSummary: 'Thành công',
+      saveSuccessDetail: 'Cấu hình ước lượng đã được cập nhật thành công.',
+      saveErrorSummary: 'Cập nhật thất bại',
+      saveErrorDetail: 'Có lỗi xảy ra khi lưu cấu hình.',
+    };
+  });
 
   // States
   tempType: EstimateType = EstimateType.POINTS;
@@ -324,7 +414,7 @@ export class EstimatesTabComponent implements OnInit {
 
   getTemplateLabel(): string {
     const found = this.getTemplates(this.tempType).find((t) => t.value === this.selectedTemplate);
-    return found ? found.label : 'Chọn mẫu có sẵn';
+    return found ? found.label : this.t().templatePlaceholder;
   }
 
   selectType(type: EstimateType): void {
@@ -348,17 +438,18 @@ export class EstimatesTabComponent implements OnInit {
   }
 
   getTemplates(type: EstimateType): { label: string; value: string }[] {
+    const tr = this.t();
     if (type === EstimateType.POINTS) {
       return [
-        { label: 'Fibonacci (0, 0.5, 1, 2, 3, 5, 8, 13, 21)', value: 'fibonacci' },
-        { label: 'Tuyến tính (1-10)', value: 'linear' },
-        { label: 'Bình phương (1, 4, 9, 16, 25)', value: 'squares' },
+        { label: tr.fibonacciLabel, value: 'fibonacci' },
+        { label: tr.linearLabel, value: 'linear' },
+        { label: tr.squaresLabel, value: 'squares' },
       ];
     }
     if (type === EstimateType.CATEGORIES) {
       return [
-        { label: 'T-Shirt Sizes (XS, S, M, L, XL, XXL)', value: 'tshirt' },
-        { label: 'Độ khó (Easy, Medium, Hard)', value: 'difficulty' },
+        { label: tr.tshirtLabel, value: 'tshirt' },
+        { label: tr.difficultyLabel, value: 'difficulty' },
       ];
     }
     return [];
@@ -385,30 +476,31 @@ export class EstimatesTabComponent implements OnInit {
     event.preventDefault();
     const valStr = this.newValueInput.trim();
     if (!valStr) return;
+    const tr = this.t();
 
     if (this.tempValues.length >= 12) {
-      this.messageService.add({ severity: 'warn', summary: 'Cảnh báo', detail: 'Tối đa 12 phần tử.' });
+      this.messageService.add({ severity: 'warn', summary: tr.warnSummary, detail: tr.warnMax12 });
       return;
     }
 
     if (this.tempType === EstimateType.POINTS || this.tempType === EstimateType.TIME) {
       const num = parseFloat(valStr);
       if (isNaN(num) || num < 0) {
-        this.messageService.add({ severity: 'error', summary: 'Lỗi giá trị', detail: 'Vui lòng nhập số dương.' });
+        this.messageService.add({ severity: 'error', summary: tr.errorValueSummary, detail: tr.errorPositiveNum });
         return;
       }
       if (this.tempValues.includes(num)) {
-        this.messageService.add({ severity: 'warn', summary: 'Trùng lặp', detail: 'Giá trị này đã tồn tại.' });
+        this.messageService.add({ severity: 'warn', summary: tr.errorDuplicate, detail: tr.errorDuplicateDetail });
         return;
       }
       this.tempValues.push(num);
     } else {
       if (valStr.length > 20) {
-        this.messageService.add({ severity: 'error', summary: 'Lỗi độ dài', detail: 'Tối đa 20 ký tự.' });
+        this.messageService.add({ severity: 'error', summary: tr.errorLengthSummary, detail: tr.errorMaxChars });
         return;
       }
       if (this.tempValues.includes(valStr)) {
-        this.messageService.add({ severity: 'warn', summary: 'Trùng lặp', detail: 'Giá trị này đã tồn tại.' });
+        this.messageService.add({ severity: 'warn', summary: tr.errorDuplicate, detail: tr.errorDuplicateDetail });
         return;
       }
       this.tempValues.push(valStr);
@@ -427,9 +519,10 @@ export class EstimatesTabComponent implements OnInit {
   onSubmit(): void {
     const project = this.projectStore.currentProject();
     if (!project || this.isReadOnly()) return;
+    const tr = this.t();
 
     if (this.tempValues.length < 2) {
-      this.messageService.add({ severity: 'error', summary: 'Lỗi cấu hình', detail: 'Vui lòng nhập tối thiểu 2 giá trị.' });
+      this.messageService.add({ severity: 'error', summary: tr.errorConfigSummary, detail: tr.errorMin2Values });
       return;
     }
 
@@ -439,11 +532,11 @@ export class EstimatesTabComponent implements OnInit {
     if (isTypeChanged) {
       const itemsCount = this.taskCount();
       this.confirmService.confirm({
-        message: `Thay đổi loại ước lượng sẽ xóa toàn bộ giá trị ước lượng của ${itemsCount} công việc hiện tại của dự án này. Bạn có chắc chắn muốn tiếp tục?`,
-        header: 'Xác nhận thay đổi loại ước lượng',
+        message: tr.confirmChangeTypeMsg(itemsCount),
+        header: tr.confirmChangeTypeHeader,
         icon: 'pi pi-exclamation-triangle',
-        acceptLabel: 'Đồng ý thay đổi',
-        rejectLabel: 'Hủy',
+        acceptLabel: tr.confirmChangeTypeAccept,
+        rejectLabel: tr.confirmChangeTypeReject,
         acceptButtonStyleClass: 'p-button-danger',
         rejectButtonStyleClass: 'p-button-secondary p-button-text',
         accept: () => {
@@ -457,6 +550,7 @@ export class EstimatesTabComponent implements OnInit {
 
   private saveConfig(projectId: string): void {
     this.isSubmitting.set(true);
+    const tr = this.t();
 
     this.projectService
       .updateEstimateConfig(projectId, {
@@ -469,16 +563,16 @@ export class EstimatesTabComponent implements OnInit {
           this.projectStore.loadEstimateConfig(projectId);
           this.messageService.add({
             severity: 'success',
-            summary: 'Thành công',
-            detail: 'Cấu hình ước lượng đã được cập nhật thành công.',
+            summary: tr.saveSuccessSummary,
+            detail: tr.saveSuccessDetail,
           });
         },
         error: (err) => {
           this.isSubmitting.set(false);
           this.messageService.add({
             severity: 'error',
-            summary: 'Cập nhật thất bại',
-            detail: err.error?.message || 'Có lỗi xảy ra khi lưu cấu hình.',
+            summary: tr.saveErrorSummary,
+            detail: err.error?.message || tr.saveErrorDetail,
           });
         },
       });

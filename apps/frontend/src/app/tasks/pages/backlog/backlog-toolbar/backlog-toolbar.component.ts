@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, inject, ViewChild, effect } from '@angular/core';
+import { Component, Input, Output, EventEmitter, inject, ViewChild, effect, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -14,6 +14,10 @@ import { LabelStore } from '../../../state/label.store';
 import { DisplayPropertiesPanelComponent } from './display-properties-panel.component';
 import type { TaskQueryDto, TaskType, TaskPriority, DisplayProperties } from '@mpm/shared-types';
 import { DEFAULT_DISPLAY_PROPS } from '@mpm/shared-types';
+import { StateDotComponent } from '../../../../shared/components/state-dot/state-dot.component';
+import { IconDisplayComponent } from '../../../../shared/components/icon-display/icon-display.component';
+import { PriorityConfigService } from '../../../services/priority-config.service';
+import { LayoutService } from '../../../../layout/services/layout.service';
 
 export interface BacklogFilter {
   search?: string;
@@ -28,7 +32,22 @@ export interface BacklogFilter {
 @Component({
   standalone: true,
   selector: 'app-backlog-toolbar',
-  imports: [CommonModule, FormsModule, ButtonModule, InputTextModule, PopoverModule, TooltipModule, DisplayPropertiesPanelComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    ButtonModule,
+    InputTextModule,
+    PopoverModule,
+    TooltipModule,
+    DisplayPropertiesPanelComponent,
+    StateDotComponent,
+    IconDisplayComponent,
+  ],
+  styles: [`
+    :host ::ng-deep .p-popover-content {
+      padding: 0 !important;
+    }
+  `],
   template: `
     <!-- Row 1: Title + Search + View toggle + Add task -->
     <div class="flex items-center gap-3 px-4 pt-3 pb-2 bg-white dark:bg-surface-900 flex-shrink-0">
@@ -40,7 +59,7 @@ export interface BacklogFilter {
         <input
           pInputText
           class="pl-8 w-full text-sm"
-          placeholder="Tìm kiếm... (/)"
+          [placeholder]="t().searchPlaceholder"
           [ngModel]="searchText"
           (ngModelChange)="onSearchChange($event)"
         />
@@ -55,7 +74,7 @@ export interface BacklogFilter {
           [class.bg-indigo-600]="viewMode === 'list'"
           [class.text-white]="viewMode === 'list'"
           [class.text-gray-500]="viewMode !== 'list'"
-          pTooltip="List view"
+          [pTooltip]="t().listView"
           (click)="viewModeChange.emit('list')">
           <i class="pi pi-list text-xs"></i>
         </button>
@@ -64,14 +83,14 @@ export interface BacklogFilter {
           [class.bg-indigo-600]="viewMode === 'board'"
           [class.text-white]="viewMode === 'board'"
           [class.text-gray-500]="viewMode !== 'board'"
-          pTooltip="Board view"
+          [pTooltip]="t().boardView"
           (click)="viewModeChange.emit('board')">
           <i class="pi pi-th-large text-xs"></i>
         </button>
       </div>
 
       <!-- New task -->
-      <button pButton label="Thêm task" icon="pi pi-plus" size="small" class="shrink-0"
+      <button pButton [label]="t().newTask" icon="pi pi-plus" size="small" class="shrink-0"
         (click)="newTaskClick.emit()"></button>
     </div>
 
@@ -131,15 +150,15 @@ export interface BacklogFilter {
       </button>
       <p-popover #priorityPop appendTo="body" styleClass="!p-0">
         <div class="pop-list w-44">
-          @for (opt of priorityOptions; track opt.value) {
+          @for (opt of priorityOptions(); track opt.value) {
             <div
               (click)="togglePriority(opt.value)"
               class="pop-item justify-between"
               [class.selected]="selectedPriorities.includes(opt.value)"
             >
               <span class="flex items-center gap-2">
-                <i class="pi pi-flag text-xs" [style.color]="opt.color"></i>
-                {{ opt.label }}
+                <app-icon-display [icon]="opt.icon" [style.color]="layoutService.isDarkMode() ? opt.colorDark : opt.colorLight" class="text-xs"></app-icon-display>
+                {{ opt.name }}
               </span>
               @if (selectedPriorities.includes(opt.value)) {
                 <i class="pi pi-check text-xs"></i>
@@ -174,7 +193,10 @@ export interface BacklogFilter {
               class="pop-item justify-between"
               [class.selected]="selectedStateIds.includes(state.id)"
             >
-              <span class="truncate">{{ state.name }}</span>
+              <span class="flex items-center gap-2 truncate">
+                <app-state-dot [state]="state" [size]="10" />
+                <span class="truncate">{{ state.name }}</span>
+              </span>
               @if (selectedStateIds.includes(state.id)) {
                 <i class="pi pi-check text-xs"></i>
               }
@@ -203,7 +225,7 @@ export interface BacklogFilter {
       <p-popover #sprintPop appendTo="body" styleClass="!p-0" (onHide)="sprintSearch = ''; showAllCompletedSprints = false">
         <div class="w-64">
           <div class="p-2 border-b border-surface-100 dark:border-surface-700">
-            <input pInputText type="text" placeholder="Tìm sprint..."
+            <input pInputText type="text" [placeholder]="t().searchSprintPlaceholder"
               class="w-full !text-xs !py-1"
               [(ngModel)]="sprintSearch" />
           </div>
@@ -213,34 +235,49 @@ export interface BacklogFilter {
               class="pop-item"
               [class.selected]="selectedSprintId === 'none'"
             >
-              Chưa có sprint
+              {{ t().noSprint }}
             </div>
             @if (sprintSections().open.length) {
-              <div class="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-surface-500">Đang mở</div>
+              <div class="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-surface-500">{{ t().sprintOpen }}</div>
               @for (opt of sprintSections().open; track opt.value) {
+                @let sprint = getSprintById(opt.value);
                 <div
                   (click)="selectedSprintId = opt.value; emitFilter(); sprintPop.hide()"
-                  class="pop-item"
+                  class="pop-item justify-between"
                   [class.selected]="selectedSprintId === opt.value"
                 >
-                  {{ opt.label }}
+                  <span class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full flex-shrink-0"
+                      [style.background]="sprint?.status === 'active' ? '#22c55e' : '#facc15'"></span>
+                    <span>{{ opt.label }}</span>
+                  </span>
+                  @if (selectedSprintId === opt.value) {
+                    <i class="pi pi-check text-xs"></i>
+                  }
                 </div>
               }
             }
             @if (sprintSections().completed.length) {
-              <div class="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-surface-500">Đã hoàn thành</div>
+              <div class="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-surface-500">{{ t().sprintCompleted }}</div>
               @for (opt of sprintSections().completed; track opt.value) {
+                @let sprint = getSprintById(opt.value);
                 <div
                   (click)="selectedSprintId = opt.value; emitFilter(); sprintPop.hide()"
-                  class="pop-item"
+                  class="pop-item justify-between"
                   [class.selected]="selectedSprintId === opt.value"
                 >
-                  {{ opt.label }}
+                  <span class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full flex-shrink-0 bg-gray-400"></span>
+                    <span>{{ opt.label }}</span>
+                  </span>
+                  @if (selectedSprintId === opt.value) {
+                    <i class="pi pi-check text-xs"></i>
+                  }
                 </div>
               }
               @if (sprintSections().hiddenCompletedCount > 0) {
                 <div class="pop-item text-primary font-semibold" (click)="showAllCompletedSprints = true; $event.stopPropagation()">
-                  Xem thêm ({{ sprintSections().hiddenCompletedCount }})
+                  {{ t().showMore }} ({{ sprintSections().hiddenCompletedCount }})
                 </div>
               }
             }
@@ -266,14 +303,14 @@ export interface BacklogFilter {
         }
       </button>
       <p-popover #labelPop appendTo="body" styleClass="!p-0">
-        <div class="w-52">
+        <div class="w-60">
           <!-- Search inside popover -->
           <div class="px-2 pt-2 pb-1">
             <div class="relative">
               <i class="pi pi-search absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-[10px]"></i>
               <input
                 class="w-full pl-6 pr-2 py-1 text-xs border border-surface-200 dark:border-surface-700 rounded bg-surface-50 dark:bg-surface-800 text-gray-700 dark:text-surface-200 outline-none focus:border-indigo-400"
-                placeholder="Tìm label..."
+                [placeholder]="t().searchLabelPlaceholder"
                 [ngModel]="labelSearch"
                 (ngModelChange)="labelSearch = $event"
               />
@@ -281,7 +318,7 @@ export interface BacklogFilter {
           </div>
           <div class="pop-list max-h-52 overflow-y-auto">
             @if (filteredLabelOptions().length === 0) {
-              <div class="px-3 py-4 text-xs text-center text-gray-400 dark:text-surface-500">Không tìm thấy label</div>
+              <div class="px-3 py-4 text-xs text-center text-gray-400 dark:text-surface-500">{{ t().noLabelFound }}</div>
             }
             @for (label of filteredLabelOptions(); track label.id) {
               <div
@@ -289,11 +326,24 @@ export interface BacklogFilter {
                 class="pop-item justify-between"
                 [class.selected]="selectedLabelIds.includes(label.id)"
               >
-                <span class="flex items-center gap-2 min-w-0">
-                  <span class="w-2.5 h-2.5 rounded-full shrink-0 ring-1 ring-black/10"
-                    [style.background]="label.color"></span>
-                  <span class="truncate">{{ label.name }}</span>
-                </span>
+                <div class="flex items-center gap-2 min-w-0">
+                  @if (isScoped(label.name)) {
+                    <span class="inline-flex items-center text-[10px] rounded-full overflow-hidden border border-gray-200 dark:border-surface-700 font-medium bg-white dark:bg-surface-800">
+                      <span class="px-1.5 py-px text-white" 
+                            [style.background]="getScopeColor(label.name, layoutService.isDarkMode(), (layoutService.isDarkMode() ? label.colorDark : label.colorLight))" 
+                            [style.color]="layoutService.getTextColor(getScopeColor(label.name, layoutService.isDarkMode(), (layoutService.isDarkMode() ? label.colorDark : label.colorLight)))">{{ getScope(label.name) }}</span>
+                      <span class="px-1.5 py-px" 
+                            [style.background]="(layoutService.isDarkMode() ? label.colorDark : label.colorLight) + '18'" 
+                            [style.color]="layoutService.isDarkMode() ? label.colorDark : label.colorLight">{{ getValue(label.name) }}</span>
+                    </span>
+                  } @else {
+                    <span class="text-[10px] px-1.5 py-px rounded-full font-medium" 
+                          [style.background]="(layoutService.isDarkMode() ? label.colorDark : label.colorLight) + '22'" 
+                          [style.color]="layoutService.isDarkMode() ? label.colorDark : label.colorLight">
+                      {{ label.name }}
+                    </span>
+                  }
+                </div>
                 @if (selectedLabelIds.includes(label.id)) {
                   <i class="pi pi-check text-xs shrink-0"></i>
                 }
@@ -309,13 +359,13 @@ export interface BacklogFilter {
       <!-- Clear filters -->
       @if (hasActiveFilters()) {
         <button pButton icon="pi pi-filter-slash" severity="secondary" size="small" text
-          pTooltip="Xóa bộ lọc" (click)="clearFilters()"></button>
+          [pTooltip]="t().clearFilters" (click)="clearFilters()"></button>
       }
 
       <!-- Display Properties -->
-      <button pButton label="Hiển thị" icon="pi pi-sliders-h" severity="secondary" size="small" text
+      <button pButton [label]="projectStore.projectLanguage() === 'en' ? 'Display' : 'Hiển thị'" icon="pi pi-sliders-h" severity="secondary" size="small" text
         (click)="displayPopover.toggle($event)" aria-label="Display Properties"></button>
-      <p-popover #displayPopover styleClass="!p-0">
+      <p-popover #displayPopover styleClass="w-[600px] max-w-full" contentStyleClass="!p-0">
         <app-display-properties-panel
           [displayProps]="displayProps"
           [selectedGroupBy]="selectedGroupBy"
@@ -329,15 +379,20 @@ export interface BacklogFilter {
   `,
 })
 export class BacklogToolbarComponent {
-  private readonly projectStore = inject(ProjectStore);
+  protected readonly projectStore = inject(ProjectStore);
   private readonly sprintService = inject(SprintService);
   protected readonly labelStore = inject(LabelStore);
+  private readonly priorityConfigService = inject(PriorityConfigService);
+  protected readonly layoutService = inject(LayoutService);
 
   constructor() {
-    // Load sprints khi project sẵn sàng / thay đổi (cache chung trong SprintService)
+    // Load sprints và priorities khi project sẵn sàng / thay đổi
     effect(() => {
       const project = this.projectStore.currentProject();
-      if (project) this.sprintService.loadProjectSprints(project.id);
+      if (project) {
+        this.sprintService.loadProjectSprints(project.id);
+        this.priorityConfigService.loadPriorities(project.id);
+      }
     });
   }
 
@@ -382,28 +437,86 @@ export class BacklogToolbarComponent {
     );
   };
 
+  readonly t = computed(() => {
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    return isEn ? {
+      searchPlaceholder: 'Search... (/)',
+      listView: 'List view',
+      boardView: 'Board view',
+      newTask: 'Add task',
+      searchSprintPlaceholder: 'Search sprint...',
+      noSprint: 'No sprint',
+      sprintOpen: 'Active',
+      sprintCompleted: 'Completed',
+      showMore: 'Show more',
+      searchLabelPlaceholder: 'Search labels...',
+      noLabelFound: 'No labels found',
+      clearFilters: 'Clear filters'
+    } : {
+      searchPlaceholder: 'Tìm kiếm... (/)',
+      listView: 'Giao diện danh sách',
+      boardView: 'Giao diện bảng',
+      newTask: 'Thêm task',
+      searchSprintPlaceholder: 'Tìm sprint...',
+      noSprint: 'Chưa có sprint',
+      sprintOpen: 'Đang mở',
+      sprintCompleted: 'Đã hoàn thành',
+      showMore: 'Xem thêm',
+      searchLabelPlaceholder: 'Tìm label...',
+      noLabelFound: 'Không tìm thấy label',
+      clearFilters: 'Xóa bộ lọc'
+    };
+  });
+
   getTypeLabel(): string {
-    if (!this.selectedTypes.length) return 'Type';
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    const defaultLabel = isEn ? 'Type' : 'Loại';
+    if (!this.selectedTypes.length) return defaultLabel;
     if (this.selectedTypes.length === 1) {
-      return this.typeOptions.find((o) => o.value === this.selectedTypes[0])?.label ?? 'Type';
+      return this.typeOptions.find((o) => o.value === this.selectedTypes[0])?.label ?? defaultLabel;
     }
-    return `Type (${this.selectedTypes.length})`;
+    return `${defaultLabel} (${this.selectedTypes.length})`;
   }
 
+  protected readonly projectId = computed(() => this.projectStore.currentProject()?.id ?? '');
+
+  protected readonly priorityOptions = computed(() =>
+    this.priorityConfigService.getOptions(this.projectId())
+  );
+
   getPriorityLabel(): string {
-    if (!this.selectedPriorities.length) return 'Priority';
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    const defaultLabel = isEn ? 'Priority' : 'Độ ưu tiên';
+    if (!this.selectedPriorities.length) return defaultLabel;
     if (this.selectedPriorities.length === 1) {
-      return this.priorityOptions.find((o) => o.value === this.selectedPriorities[0])?.label ?? 'Priority';
+      return this.priorityOptions().find((o) => o.value === this.selectedPriorities[0])?.name ?? defaultLabel;
     }
-    return `Priority (${this.selectedPriorities.length})`;
+    return `${defaultLabel} (${this.selectedPriorities.length})`;
   }
 
   getStateLabel(): string {
-    if (!this.selectedStateIds.length) return 'State';
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    const defaultLabel = isEn ? 'State' : 'Trạng thái';
+    if (!this.selectedStateIds.length) return defaultLabel;
     if (this.selectedStateIds.length === 1) {
-      return this.stateOptions().find((s) => s.id === this.selectedStateIds[0])?.name ?? 'State';
+      return this.stateOptions().find((s) => s.id === this.selectedStateIds[0])?.name ?? defaultLabel;
     }
-    return `State (${this.selectedStateIds.length})`;
+    return `${defaultLabel} (${this.selectedStateIds.length})`;
+  }
+
+  protected getSprintById(id: string) {
+    return this.sprintService.projectSprints().find((s) => s.id === id);
+  }
+
+  protected isScoped(name: string): boolean { return name.includes('::'); }
+  protected getScope(name: string): string { return name.split('::')[0].trim(); }
+  protected getValue(name: string): string { return name.split('::').slice(1).join('::').trim(); }
+
+  protected getScopeColor(name: string, isDark: boolean, fallbackColor: string): string {
+    if (!this.isScoped(name)) return fallbackColor;
+    const scope = this.getScope(name).toLowerCase();
+    const match = this.labelStore.labels().find(l => l.name.includes('::') && l.name.split('::')[0].trim().toLowerCase() === scope);
+    return match ? (isDark ? match.colorDark : match.colorLight) : fallbackColor;
   }
 
   protected toggleLabel(id: string): void {
@@ -435,16 +548,19 @@ export class BacklogToolbarComponent {
   }
 
   getLabelFilterLabel(): string {
-    if (!this.selectedLabelIds.length) return 'Label';
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    const defaultLabel = isEn ? 'Label' : 'Nhãn';
+    if (!this.selectedLabelIds.length) return defaultLabel;
     if (this.selectedLabelIds.length === 1) {
-      return this.labelStore.labels().find(l => l.id === this.selectedLabelIds[0])?.name ?? 'Label';
+      return this.labelStore.labels().find(l => l.id === this.selectedLabelIds[0])?.name ?? defaultLabel;
     }
-    return `Label (${this.selectedLabelIds.length})`;
+    return `${defaultLabel} (${this.selectedLabelIds.length})`;
   }
 
   getSprintLabel(): string {
+    const isEn = this.projectStore.projectLanguage() === 'en';
     if (!this.selectedSprintId) return 'Sprint';
-    if (this.selectedSprintId === 'none') return 'Chưa có sprint';
+    if (this.selectedSprintId === 'none') return isEn ? 'No sprint' : 'Chưa có sprint';
     const sprint = this.sprintService
       .projectSprints()
       .find((s) => s.id === this.selectedSprintId);
@@ -472,14 +588,6 @@ export class BacklogToolbarComponent {
     { label: '📖 Story', value: 'story' },
     { label: '✅ Task', value: 'task' },
     { label: '↳ Subtask', value: 'subtask' },
-  ];
-
-  readonly priorityOptions: { label: string; value: TaskPriority; color: string }[] = [
-    { label: 'Urgent', value: 'urgent', color: '#EF4444' },
-    { label: 'High',   value: 'high',   color: '#F97316' },
-    { label: 'Medium', value: 'medium', color: '#EAB308' },
-    { label: 'Low',    value: 'low',    color: '#3B82F6' },
-    { label: 'None',   value: 'none',   color: '#9CA3AF' },
   ];
 
   readonly groupByOptions = [

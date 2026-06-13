@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DialogModule } from 'primeng/dialog';
@@ -9,7 +9,8 @@ import { DatePickerModule } from 'primeng/datepicker';
 import { MODULE_LIFECYCLE_STATUSES, type ProjectModule, type ModuleLifecycleStatus, type TiptapDoc } from '@mpm/shared-types';
 import { RichTextEditorComponent } from '../../../shared/components/rich-text-editor/rich-text-editor.component';
 import { ModuleTransitionSelectorComponent } from './module-transition-selector.component';
-import { STATUS_CONFIG } from './module-status-badge.component';
+import { STATUS_CONFIG, STATUS_CONFIG_EN } from './module-status-badge.component';
+import { ProjectStore } from '../../../projects/state/project.store';
 
 export interface ModuleFormData {
   name: string;
@@ -35,7 +36,7 @@ export interface ModuleFormData {
   ],
   template: `
     <p-dialog
-      [header]="editModule ? 'Sửa Module' : 'Tạo Module mới'"
+      [header]="editModule ? t().editHeader : t().createHeader"
       [(visible)]="visible"
       [modal]="true"
       [closable]="true"
@@ -47,30 +48,30 @@ export interface ModuleFormData {
         <!-- Name -->
         <div class="flex flex-col gap-1">
           <label for="module-name" class="text-sm font-medium text-gray-700 dark:text-surface-300">
-            Tên module <span class="text-red-500">*</span>
+            {{ t().nameLabel }} <span class="text-red-500">*</span>
           </label>
           <input
             id="module-name"
             pInputText
             [(ngModel)]="formData.name"
-            placeholder="Ví dụ: Sprint 3, Release v2.0..."
+            [placeholder]="t().namePlaceholder"
             [maxlength]="100"
             [class.ng-invalid]="submitted && !formData.name.trim()"
           />
           @if (submitted && !formData.name.trim()) {
-            <small class="text-red-500 text-xs">Tên module là bắt buộc</small>
+            <small class="text-red-500 text-xs">{{ t().nameRequired }}</small>
           }
         </div>
 
         <!-- Description -->
         <div class="flex flex-col gap-1">
-          <label class="text-sm font-medium text-gray-700 dark:text-surface-300">Mô tả</label>
-          <app-rich-text-editor [(ngModel)]="formData.description" placeholder="Mô tả ngắn gọn cho module..."></app-rich-text-editor>
+          <label class="text-sm font-medium text-gray-700 dark:text-surface-300">{{ t().descriptionLabel }}</label>
+          <app-rich-text-editor [(ngModel)]="formData.description" [placeholder]="t().descriptionPlaceholder"></app-rich-text-editor>
         </div>
 
         <!-- Status: dropdown khi tạo mới, transition selector khi edit -->
         <div class="flex flex-col gap-1">
-          <label class="text-sm font-medium text-gray-700 dark:text-surface-300">Trạng thái</label>
+          <label class="text-sm font-medium text-gray-700 dark:text-surface-300">{{ t().statusLabel }}</label>
 
           @if (editModule) {
             <!-- Edit: chỉ cho phép transition hợp lệ -->
@@ -91,14 +92,14 @@ export interface ModuleFormData {
                   <i [class]="opt.icon + ' text-xs'" [style.color]="opt.color"></i>
                   <span class="truncate">{{ opt.label }}</span>
                 } @else {
-                  <span class="text-gray-400">Chọn trạng thái</span>
+                  <span class="text-gray-400">{{ t().selectStatusPlaceholder }}</span>
                 }
               </div>
               <i class="pi pi-chevron-down text-xs opacity-60 flex-shrink-0"></i>
             </button>
             <p-popover #statusPop appendTo="body" styleClass="!p-0">
               <div class="pop-list w-64 max-h-56 overflow-y-auto">
-                @for (opt of allStatusOptions; track opt.value) {
+                @for (opt of allStatusOptions(); track opt.value) {
                   <div
                     (click)="formData.status = opt.value; statusPop.hide()"
                     class="pop-item flex items-center gap-2"
@@ -117,7 +118,7 @@ export interface ModuleFormData {
         <div class="grid grid-cols-2 gap-3">
           <div class="flex flex-col gap-1">
             <label for="module-start" class="text-sm font-medium text-gray-700 dark:text-surface-300">
-              Ngày bắt đầu
+              {{ t().startDateLabel }}
             </label>
             <p-datepicker
               id="module-start"
@@ -131,7 +132,7 @@ export interface ModuleFormData {
           </div>
           <div class="flex flex-col gap-1">
             <label for="module-end" class="text-sm font-medium text-gray-700 dark:text-surface-300">
-              Ngày kết thúc
+              {{ t().endDateLabel }}
             </label>
             <p-datepicker
               id="module-end"
@@ -149,8 +150,8 @@ export interface ModuleFormData {
 
       <ng-template #footer>
         <div class="flex justify-end gap-2">
-          <button pButton label="Hủy" severity="secondary" (click)="onCancel()"></button>
-          <button pButton [label]="editModule ? 'Cập nhật' : 'Tạo'" (click)="onSubmit()"></button>
+          <button pButton [label]="t().cancelBtn" severity="secondary" (click)="onCancel()"></button>
+          <button pButton [label]="editModule ? t().updateBtn : t().createBtn" (click)="onSubmit()"></button>
         </div>
       </ng-template>
     </p-dialog>
@@ -162,6 +163,43 @@ export class ModuleFormComponent implements OnChanges {
   @Output() visibleChange = new EventEmitter<boolean>();
   @Output() save = new EventEmitter<ModuleFormData>();
   @Output() cancel = new EventEmitter<void>();
+
+  private readonly projectStore = inject(ProjectStore);
+
+  readonly t = computed(() => {
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    return isEn ? {
+      editHeader: 'Edit Module',
+      createHeader: 'Create New Module',
+      nameLabel: 'Module Name',
+      namePlaceholder: 'e.g. Sprint 3, Release v2.0...',
+      nameRequired: 'Module name is required',
+      descriptionLabel: 'Description',
+      descriptionPlaceholder: 'Brief description of the module...',
+      statusLabel: 'Status',
+      selectStatusPlaceholder: 'Select status',
+      startDateLabel: 'Start Date',
+      endDateLabel: 'End Date',
+      cancelBtn: 'Cancel',
+      updateBtn: 'Update',
+      createBtn: 'Create',
+    } : {
+      editHeader: 'Sửa Module',
+      createHeader: 'Tạo Module mới',
+      nameLabel: 'Tên module',
+      namePlaceholder: 'Ví dụ: Sprint 3, Release v2.0...',
+      nameRequired: 'Tên module là bắt buộc',
+      descriptionLabel: 'Mô tả',
+      descriptionPlaceholder: 'Mô tả ngắn gọn cho module...',
+      statusLabel: 'Trạng thái',
+      selectStatusPlaceholder: 'Chọn trạng thái',
+      startDateLabel: 'Ngày bắt đầu',
+      endDateLabel: 'Ngày kết thúc',
+      cancelBtn: 'Hủy',
+      updateBtn: 'Cập nhật',
+      createBtn: 'Tạo',
+    };
+  });
 
   formData: ModuleFormData = {
     name: '',
@@ -176,16 +214,19 @@ export class ModuleFormComponent implements OnChanges {
   submitted = false;
   private pendingStatusTransition: ModuleLifecycleStatus | undefined = undefined;
 
-  readonly allStatusOptions = MODULE_LIFECYCLE_STATUSES.map((s) => ({
-    value: s,
-    label: STATUS_CONFIG[s].label,
-    icon: STATUS_CONFIG[s].icon,
-    color: STATUS_CONFIG[s].color,
-  }));
+  readonly allStatusOptions = computed(() => {
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    return MODULE_LIFECYCLE_STATUSES.map((s) => ({
+      value: s,
+      label: isEn ? STATUS_CONFIG_EN[s] : STATUS_CONFIG[s].label,
+      icon: STATUS_CONFIG[s].icon,
+      color: STATUS_CONFIG[s].color,
+    }));
+  });
 
   getSelectedStatusOption(): any {
     const status = this.formData.status;
-    return this.allStatusOptions.find((o) => o.value === status);
+    return this.allStatusOptions().find((o) => o.value === status);
   }
 
   ngOnChanges(changes: SimpleChanges): void {

@@ -137,7 +137,7 @@ export class StatesTabComponent implements OnInit {
 
   getMigrationTargetLabel(): string {
     const found = this.migrationTargets.find((t) => t.id === this.selectedMigrationTargetId);
-    return found ? found.name : 'Chọn trạng thái đích';
+    return found ? found.name : this.t().selectTargetState;
   }
 
   // Compute all states in a single list
@@ -173,6 +173,149 @@ export class StatesTabComponent implements OnInit {
   readonly isAdmin = computed(() => {
     const user = this.authService.currentUser();
     return user?.systemRole === 'Admin';
+  });
+
+  readonly t = computed(() => {
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    return isEn ? {
+      readOnlyBanner: 'Read-only view. Only Scrum Master or Admin can edit states.',
+      reapplyTemplateBtn: 'Reapply template',
+      templateSectionTitle: 'Workspace Template',
+      templateReferenceDesc: 'Reference template list (read-only). States created from template will display icon',
+      defaultIndicator: 'Default',
+      expandAll: 'Expand All',
+      collapseAll: 'Collapse All',
+      addBtn: 'Add',
+      cancelBtn: 'Cancel',
+      addStatePlaceholder: 'State name...',
+      quickColorTitle: 'Quick Colors (Light / Dark)',
+      customColorBtn: 'Customize Light & Dark colors',
+      lightModeLabel: 'Light mode color:',
+      darkModeLabel: 'Dark mode color:',
+      colorTooltip: 'Choose color pair',
+      iconTooltip: 'State icon',
+      fromTemplateTooltip: 'From workspace template',
+      deleteBtn: 'Delete',
+      migrationDialogHeader: 'Migrate Work & Delete State',
+      migrationWarningTitle: 'This state is currently in use!',
+      migrationWarningDesc: 'There are tasks in this state. You must choose another state to migrate these tasks to before deleting.',
+      migrationTargetLabel: 'Select replacement state:',
+      selectTargetState: 'Select target state',
+      migrateAndDeleteBtn: 'Migrate & Delete',
+      applyTemplateSuccessSummary: 'Reapply Success',
+      applyTemplateSuccessDetail: (added: number, skipped: number) => `Added ${added} new state(s) from template (skipped ${skipped} already existing).`,
+      applyTemplateInfoSummary: 'No Changes',
+      applyTemplateInfoDetail: (skipped: number) => `All ${skipped} state(s) from template already exist in the project.`,
+      applyTemplateErrorSummary: 'Reapply Failed',
+      applyTemplateErrorDetail: (msg: string) => msg || 'An error occurred while reapplying template.',
+      reorderErrorSummary: 'Reorder Failed',
+      reorderErrorDetail: (msg: string) => msg || 'An error occurred while reordering.',
+      groupMoveErrorSummary: 'Group Move Failed',
+      groupMoveErrorDetail: (msg: string) => msg || 'Could not move state to another group.',
+      setDefaultSuccessSummary: 'Success',
+      setDefaultSuccessDetail: (name: string) => `Set "${name}" as default state.`,
+      setDefaultErrorSummary: 'Failed',
+      setDefaultErrorDetail: (msg: string) => msg || 'Could not set default.',
+      updateNameSuccessSummary: 'Update Success',
+      updateNameSuccessDetail: (name: string) => `State renamed to "${name}".`,
+      updateNameErrorSummary: 'Failed',
+      updateNameErrorDetail: (msg: string) => msg || 'Could not rename state.',
+      updateColorSuccessSummary: 'Update Success',
+      updateColorSuccessDetail: 'State color saved.',
+      updateColorErrorSummary: 'Failed',
+      updateColorErrorDetail: (msg: string) => msg || 'Could not change color.',
+      updateIconSuccessSummary: 'Update Success',
+      updateIconSuccessDetail: 'State icon saved.',
+      updateIconErrorSummary: 'Failed',
+      updateIconErrorDetail: (msg: string) => msg || 'Could not change icon.',
+      limitErrorSummary: 'State Limit',
+      limitErrorDetail: 'Each project can have a maximum of 20 states.',
+      createSuccessSummary: 'Success',
+      createSuccessDetail: (name: string) => `Added state "${name}".`,
+      createErrorSummary: 'Failed to Add State',
+      createErrorDetail: (msg: string) => msg || 'An error occurred.',
+      defaultDeleteWarningSummary: 'Warning',
+      defaultDeleteWarningDetail: 'Cannot delete default state.',
+      minLimitWarningSummary: 'Warning',
+      minLimitWarningDetail: 'Project must have at least 2 states.',
+      deleteSuccessSummary: 'Success',
+      deleteSuccessDetail: 'State deleted successfully.',
+      deleteErrorSummary: 'Error',
+      deleteErrorDetail: (msg: string) => msg || 'Could not delete state.',
+      migrateSuccessSummary: 'Success',
+      migrateSuccessDetail: 'Tasks migrated and state deleted successfully.',
+      migrateErrorSummary: 'Migration Failed',
+      migrateErrorDetail: (msg: string) => msg || 'An error occurred during migration.',
+    } : {
+      readOnlyBanner: 'Chế độ xem. Chỉ Scrum Master hoặc Admin mới có quyền thực hiện các thao tác này.',
+      reapplyTemplateBtn: 'Áp dụng lại template',
+      templateSectionTitle: 'Workspace Template',
+      templateReferenceDesc: 'Danh sách template tham khảo (read-only). States được tạo từ template sẽ hiển thị icon',
+      defaultIndicator: 'Mặc định',
+      expandAll: 'Mở rộng tất cả',
+      collapseAll: 'Thu gọn tất cả',
+      addBtn: 'Thêm',
+      cancelBtn: 'Hủy',
+      addStatePlaceholder: 'Tên trạng thái...',
+      quickColorTitle: 'Màu chọn nhanh (Light / Dark)',
+      customColorBtn: 'Tự tùy chỉnh màu sắc Light & Dark',
+      lightModeLabel: 'Màu Light mode:',
+      darkModeLabel: 'Màu Dark mode:',
+      colorTooltip: 'Chọn cặp màu sắc',
+      iconTooltip: 'Icon trạng thái',
+      fromTemplateTooltip: 'Từ workspace template',
+      deleteBtn: 'Xóa',
+      migrationDialogHeader: 'Di chuyển công việc & Xóa trạng thái',
+      migrationWarningTitle: 'Trạng thái này đang được sử dụng!',
+      migrationWarningDesc: 'Có một số công việc đang ở trạng thái này. Bạn cần chọn trạng thái khác để di chuyển những công việc đó sang trước khi xóa.',
+      migrationTargetLabel: 'Chọn trạng thái thay thế:',
+      selectTargetState: 'Chọn trạng thái đích',
+      migrateAndDeleteBtn: 'Di chuyển & Xóa',
+      applyTemplateSuccessSummary: 'Áp dụng template thành công',
+      applyTemplateSuccessDetail: (added: number, skipped: number) => `Đã thêm ${added} trạng thái mới từ template (bỏ qua ${skipped} đã tồn tại).`,
+      applyTemplateInfoSummary: 'Không có thay đổi',
+      applyTemplateInfoDetail: (skipped: number) => `Tất cả ${skipped} trạng thái từ template đã tồn tại trong project.`,
+      applyTemplateErrorSummary: 'Áp dụng template thất bại',
+      applyTemplateErrorDetail: (msg: string) => msg || 'Có lỗi xảy ra khi áp dụng template.',
+      reorderErrorSummary: 'Lỗi sắp xếp',
+      reorderErrorDetail: (msg: string) => msg || 'Có lỗi xảy ra khi sắp xếp lại.',
+      groupMoveErrorSummary: 'Lỗi di chuyển nhóm',
+      groupMoveErrorDetail: (msg: string) => msg || 'Không thể di chuyển trạng thái sang nhóm khác.',
+      setDefaultSuccessSummary: 'Thành công',
+      setDefaultSuccessDetail: (name: string) => `Đã đặt "${name}" làm mặc định.`,
+      setDefaultErrorSummary: 'Thất bại',
+      setDefaultErrorDetail: (msg: string) => msg || 'Không thể thiết lập mặc định.',
+      updateNameSuccessSummary: 'Cập nhật thành công',
+      updateNameSuccessDetail: (name: string) => `Tên trạng thái đã được đổi thành "${name}".`,
+      updateNameErrorSummary: 'Thất bại',
+      updateNameErrorDetail: (msg: string) => msg || 'Không thể đổi tên trạng thái.',
+      updateColorSuccessSummary: 'Cập nhật thành công',
+      updateColorSuccessDetail: 'Màu trạng thái đã được lưu.',
+      updateColorErrorSummary: 'Thất bại',
+      updateColorErrorDetail: (msg: string) => msg || 'Không thể đổi màu trạng thái.',
+      updateIconSuccessSummary: 'Cập nhật thành công',
+      updateIconSuccessDetail: 'Icon trạng thái đã được lưu.',
+      updateIconErrorSummary: 'Thất bại',
+      updateIconErrorDetail: (msg: string) => msg || 'Không thể đổi icon trạng thái.',
+      limitErrorSummary: 'Giới hạn trạng thái',
+      limitErrorDetail: 'Mỗi dự án chỉ có tối đa 20 trạng thái.',
+      createSuccessSummary: 'Thành công',
+      createSuccessDetail: (name: string) => `Đã thêm trạng thái "${name}".`,
+      createErrorSummary: 'Thêm trạng thái thất bại',
+      createErrorDetail: (msg: string) => msg || 'Có lỗi xảy ra.',
+      defaultDeleteWarningSummary: 'Cảnh báo',
+      defaultDeleteWarningDetail: 'Không thể xóa trạng thái mặc định.',
+      minLimitWarningSummary: 'Cảnh báo',
+      minLimitWarningDetail: 'Dự án phải có ít nhất 2 trạng thái.',
+      deleteSuccessSummary: 'Thành công',
+      deleteSuccessDetail: 'Trạng thái đã được xóa.',
+      deleteErrorSummary: 'Lỗi',
+      deleteErrorDetail: (msg: string) => msg || 'Không thể xóa trạng thái.',
+      migrateSuccessSummary: 'Thành công',
+      migrateSuccessDetail: 'Đã di chuyển công việc và xóa trạng thái thành công.',
+      migrateErrorSummary: 'Di chuyển thất bại',
+      migrateErrorDetail: (msg: string) => msg || 'Có lỗi xảy ra khi di chuyển.',
+    };
   });
 
   ngOnInit(): void {
@@ -219,22 +362,24 @@ export class StatesTabComponent implements OnInit {
 
     this.isApplyingTemplate.set(true);
 
+    const trans = this.t();
     this.stateTemplateService.applyToProject(project.workspaceId, project.id).subscribe({
       next: (result) => {
+        this.isApplyingTemplate.set(true); // set in sub? wait it was false
         this.isApplyingTemplate.set(false);
         this.projectStore.loadStates(project.id);
 
         if (result.addedCount > 0) {
           this.messageService.add({
             severity: 'success',
-            summary: 'Áp dụng template thành công',
-            detail: `Đã thêm ${result.addedCount} trạng thái mới từ template (bỏ qua ${result.skippedCount} đã tồn tại).`,
+            summary: trans.applyTemplateSuccessSummary,
+            detail: trans.applyTemplateSuccessDetail(result.addedCount, result.skippedCount),
           });
         } else {
           this.messageService.add({
             severity: 'info',
-            summary: 'Không có thay đổi',
-            detail: `Tất cả ${result.skippedCount} trạng thái từ template đã tồn tại trong project.`,
+            summary: trans.applyTemplateInfoSummary,
+            detail: trans.applyTemplateInfoDetail(result.skippedCount),
           });
         }
       },
@@ -242,8 +387,8 @@ export class StatesTabComponent implements OnInit {
         this.isApplyingTemplate.set(false);
         this.messageService.add({
           severity: 'error',
-          summary: 'Áp dụng template thất bại',
-          detail: err.error?.message || 'Có lỗi xảy ra khi áp dụng template.',
+          summary: trans.applyTemplateErrorSummary,
+          detail: trans.applyTemplateErrorDetail(err.error?.message),
         });
       },
     });
@@ -259,7 +404,24 @@ export class StatesTabComponent implements OnInit {
     return this.statesForGroup(group).length;
   }
 
-  getGroupName = getGroupName;
+  getGroupLabel(group: StateGroup): string {
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    switch (group) {
+      case StateGroup.BACKLOG:
+        return 'Backlog';
+      case StateGroup.UNSTARTED:
+        return isEn ? 'Unstarted' : 'Chưa bắt đầu';
+      case StateGroup.STARTED:
+        return isEn ? 'Started' : 'Đang thực hiện';
+      case StateGroup.COMPLETED:
+        return isEn ? 'Completed' : 'Đã hoàn thành';
+      case StateGroup.CANCELLED:
+        return isEn ? 'Cancelled' : 'Đã hủy';
+      default:
+        return group;
+    }
+  }
+
   getGroupColor = getGroupColor;
   getDefaultColor = getDefaultColor;
   getDefaultDarkColor = getDefaultDarkColor;
@@ -296,6 +458,7 @@ export class StatesTabComponent implements OnInit {
     const sourceGroup = draggedState.group;
     const targetGroup = group;
 
+    const trans = this.t();
     if (sourceGroup === targetGroup) {
       const currentList = [...this.statesForGroup(targetGroup)];
       const draggedIdx = currentList.findIndex(s => s.id === draggedId);
@@ -322,8 +485,8 @@ export class StatesTabComponent implements OnInit {
         error: (err) => {
           this.messageService.add({
             severity: 'error',
-            summary: 'Lỗi sắp xếp',
-            detail: err.error?.message || 'Có lỗi xảy ra khi sắp xếp lại.',
+            summary: trans.reorderErrorSummary,
+            detail: trans.reorderErrorDetail(err.error?.message),
           });
         },
       });
@@ -352,8 +515,8 @@ export class StatesTabComponent implements OnInit {
               this.projectStore.loadStates(project.id);
               this.messageService.add({
                 severity: 'error',
-                summary: 'Lỗi sắp xếp',
-                detail: err.error?.message || 'Có lỗi xảy ra khi sắp xếp lại.',
+                summary: trans.reorderErrorSummary,
+                detail: trans.reorderErrorDetail(err.error?.message),
               });
             }
           });
@@ -361,8 +524,8 @@ export class StatesTabComponent implements OnInit {
         error: (err) => {
           this.messageService.add({
             severity: 'error',
-            summary: 'Lỗi di chuyển nhóm',
-            detail: err.error?.message || 'Không thể di chuyển trạng thái sang nhóm khác.',
+            summary: trans.groupMoveErrorSummary,
+            detail: trans.groupMoveErrorDetail(err.error?.message),
           });
         },
       });
@@ -374,20 +537,21 @@ export class StatesTabComponent implements OnInit {
     const project = this.projectStore.currentProject();
     if (!project) return;
 
+    const trans = this.t();
     this.projectService.updateState(project.id, state.id, { isDefault: true }).subscribe({
       next: () => {
         this.projectStore.loadStates(project.id);
         this.messageService.add({
           severity: 'success',
-          summary: 'Thành công',
-          detail: `Đã đặt "${state.name}" làm mặc định.`,
+          summary: trans.setDefaultSuccessSummary,
+          detail: trans.setDefaultSuccessDetail(state.name),
         });
       },
       error: (err) => {
         this.messageService.add({
           severity: 'error',
-          summary: 'Thất bại',
-          detail: err.error?.message || 'Không thể thiết lập mặc định.',
+          summary: trans.setDefaultErrorSummary,
+          detail: trans.setDefaultErrorDetail(err.error?.message),
         });
       },
     });
@@ -410,21 +574,22 @@ export class StatesTabComponent implements OnInit {
     const project = this.projectStore.currentProject();
     if (!project) return;
 
+    const trans = this.t();
     this.projectService.updateState(project.id, state.id, { name: formattedName }).subscribe({
       next: () => {
         this.projectStore.loadStates(project.id);
         this.messageService.add({
           severity: 'success',
-          summary: 'Cập nhật thành công',
-          detail: `Tên trạng thái đã được đổi thành "${formattedName}".`,
+          summary: trans.updateNameSuccessSummary,
+          detail: trans.updateNameSuccessDetail(formattedName),
         });
       },
       error: (err) => {
         state.name = this.originalNameTemp;
         this.messageService.add({
           severity: 'error',
-          summary: 'Thất bại',
-          detail: err.error?.message || 'Không thể đổi tên trạng thái.',
+          summary: trans.updateNameErrorSummary,
+          detail: trans.updateNameErrorDetail(err.error?.message),
         });
       },
     });
@@ -436,20 +601,21 @@ export class StatesTabComponent implements OnInit {
     const project = this.projectStore.currentProject();
     if (!project) return;
 
+    const trans = this.t();
     this.projectService.updateState(project.id, state.id, { colorLight, colorDark }).subscribe({
       next: () => {
         this.projectStore.loadStates(project.id);
         this.messageService.add({
           severity: 'success',
-          summary: 'Cập nhật thành công',
-          detail: 'Màu trạng thái đã được lưu.',
+          summary: trans.updateColorSuccessSummary,
+          detail: trans.updateColorSuccessDetail,
         });
       },
       error: (err) => {
         this.messageService.add({
           severity: 'error',
-          summary: 'Thất bại',
-          detail: err.error?.message || 'Không thể đổi màu trạng thái.',
+          summary: trans.updateColorErrorSummary,
+          detail: trans.updateColorErrorDetail(err.error?.message),
         });
       },
     });
@@ -461,20 +627,21 @@ export class StatesTabComponent implements OnInit {
     const project = this.projectStore.currentProject();
     if (!project) return;
 
+    const trans = this.t();
     this.projectService.updateState(project.id, state.id, { icon }).subscribe({
       next: () => {
         this.projectStore.loadStates(project.id);
         this.messageService.add({
           severity: 'success',
-          summary: 'Cập nhật thành công',
-          detail: 'Icon trạng thái đã được lưu.',
+          summary: trans.updateIconSuccessSummary,
+          detail: trans.updateIconSuccessDetail,
         });
       },
       error: (err) => {
         this.messageService.add({
           severity: 'error',
-          summary: 'Thất bại',
-          detail: err.error?.message || 'Không thể đổi icon trạng thái.',
+          summary: trans.updateIconErrorSummary,
+          detail: trans.updateIconErrorDetail(err.error?.message),
         });
       },
     });
@@ -490,11 +657,12 @@ export class StatesTabComponent implements OnInit {
     const project = this.projectStore.currentProject();
     if (!project) return;
 
+    const trans = this.t();
     if (this.totalStatesCount() >= 20) {
       this.messageService.add({
         severity: 'error',
-        summary: 'Giới hạn trạng thái',
-        detail: 'Mỗi dự án chỉ có tối đa 20 trạng thái.',
+        summary: trans.limitErrorSummary,
+        detail: trans.limitErrorDetail,
       });
       return;
     }
@@ -511,15 +679,15 @@ export class StatesTabComponent implements OnInit {
         this.showAddForm[group] = false;
         this.messageService.add({
           severity: 'success',
-          summary: 'Thành công',
-          detail: `Đã thêm trạng thái "${name}".`,
+          summary: trans.createSuccessSummary,
+          detail: trans.createSuccessDetail(name),
         });
       },
       error: (err) => {
         this.messageService.add({
           severity: 'error',
-          summary: 'Thêm trạng thái thất bại',
-          detail: err.error?.message || 'Có lỗi xảy ra.',
+          summary: trans.createErrorSummary,
+          detail: trans.createErrorDetail(err.error?.message),
         });
       },
     });
@@ -529,11 +697,12 @@ export class StatesTabComponent implements OnInit {
     const project = this.projectStore.currentProject();
     if (!project || this.isReadOnly()) return;
 
+    const trans = this.t();
     if (state.isDefault) {
       this.messageService.add({
         severity: 'warn',
-        summary: 'Cảnh báo',
-        detail: 'Không thể xóa trạng thái mặc định.',
+        summary: trans.defaultDeleteWarningSummary,
+        detail: trans.defaultDeleteWarningDetail,
       });
       return;
     }
@@ -541,8 +710,8 @@ export class StatesTabComponent implements OnInit {
     if (this.totalStatesCount() <= 2) {
       this.messageService.add({
         severity: 'warn',
-        summary: 'Cảnh báo',
-        detail: 'Dự án phải có ít nhất 2 trạng thái.',
+        summary: trans.minLimitWarningSummary,
+        detail: trans.minLimitWarningDetail,
       });
       return;
     }
@@ -552,8 +721,8 @@ export class StatesTabComponent implements OnInit {
         this.projectStore.loadStates(project.id);
         this.messageService.add({
           severity: 'success',
-          summary: 'Thành công',
-          detail: 'Trạng thái đã được xóa.',
+          summary: trans.deleteSuccessSummary,
+          detail: trans.deleteSuccessDetail,
         });
       },
       error: (err) => {
@@ -567,8 +736,8 @@ export class StatesTabComponent implements OnInit {
         } else {
           this.messageService.add({
             severity: 'error',
-            summary: 'Lỗi',
-            detail: err.error?.message || 'Không thể xóa trạng thái.',
+            summary: trans.deleteErrorSummary,
+            detail: trans.deleteErrorDetail(err.error?.message),
           });
         }
       },
@@ -581,6 +750,7 @@ export class StatesTabComponent implements OnInit {
 
     this.isMigrating.set(true);
 
+    const trans = this.t();
     this.projectService
       .migrateState(project.id, {
         fromStateId: this.stateToDelete.id,
@@ -594,16 +764,16 @@ export class StatesTabComponent implements OnInit {
           this.projectStore.loadStates(project.id);
           this.messageService.add({
             severity: 'success',
-            summary: 'Thành công',
-            detail: 'Đã di chuyển công việc và xóa trạng thái thành công.',
+            summary: trans.migrateSuccessSummary,
+            detail: trans.migrateSuccessDetail,
           });
         },
         error: (err) => {
           this.isMigrating.set(false);
           this.messageService.add({
             severity: 'error',
-            summary: 'Di chuyển thất bại',
-            detail: err.error?.message || 'Có lỗi xảy ra khi di chuyển.',
+            summary: trans.migrateErrorSummary,
+            detail: trans.migrateErrorDetail(err.error?.message),
           });
         },
       });

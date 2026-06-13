@@ -5,57 +5,47 @@ import {
   EMPTY_STATE_MAP,
   ActivityTab,
 } from './activity-panel.helpers';
-import type { ActivityFilterType } from '@mpm/shared-types';
 
 /**
  * Unit tests for ActivityPanelComponent logic (helpers)
  *
  * Tests the component's business logic without TestBed since PrimeNG modules
  * require the Angular JIT compiler which is not configured in jest-preset-angular CJS mode.
- *
- * Validates: Requirements 5.1, 5.2, 5.3, 5.4, 5.5, 5.8, 5.9, 8.2, 8.3
  */
 describe('ActivityPanelComponent (helpers)', () => {
   describe('buildActivityTabs', () => {
-    it('should return 4 base tabs when showPropertiesTab is false (Req 5.1)', () => {
+    it('should return 3 base tabs when showPropertiesTab is false (all, activity, history)', () => {
       const tabs = buildActivityTabs(false);
-      expect(tabs.length).toBe(4);
+      expect(tabs.length).toBe(3);
     });
 
-    it('should have "Tất cả" as first tab with value "all" (Req 5.1 — default tab)', () => {
+    it('should have "Tất cả" as first tab with value "all"', () => {
       const tabs = buildActivityTabs(false);
       expect(tabs[0].label).toBe('Tất cả');
       expect(tabs[0].value).toBe('all');
       expect(tabs[0].icon).toBe('pi pi-list');
     });
 
-    it('should have "Hoạt động" as second tab with value "activity" (Req 5.3)', () => {
+    it('should have "Hoạt động" as second tab with value "activity"', () => {
       const tabs = buildActivityTabs(false);
       expect(tabs[1].label).toBe('Hoạt động');
       expect(tabs[1].value).toBe('activity');
       expect(tabs[1].icon).toBe('pi pi-bolt');
     });
 
-    it('should have "Bình luận" as third tab with value "comments" (Req 5.4)', () => {
+    it('should have "Lịch sử" as third tab with value "history"', () => {
       const tabs = buildActivityTabs(false);
-      expect(tabs[2].label).toBe('Bình luận');
-      expect(tabs[2].value).toBe('comments');
-      expect(tabs[2].icon).toBe('pi pi-comments');
+      expect(tabs[2].label).toBe('Lịch sử');
+      expect(tabs[2].value).toBe('history');
+      expect(tabs[2].icon).toBe('pi pi-history');
     });
 
-    it('should have "Lịch sử" as fourth tab with value "history" (Req 5.5)', () => {
-      const tabs = buildActivityTabs(false);
-      expect(tabs[3].label).toBe('Lịch sử');
-      expect(tabs[3].value).toBe('history');
-      expect(tabs[3].icon).toBe('pi pi-history');
-    });
-
-    it('should include "Thuộc tính" tab when showPropertiesTab is true (Req 8.2, 8.3)', () => {
+    it('should include "Thuộc tính" tab when showPropertiesTab is true', () => {
       const tabs = buildActivityTabs(true);
-      expect(tabs.length).toBe(5);
-      expect(tabs[4].label).toBe('Thuộc tính');
-      expect(tabs[4].value).toBe('properties');
-      expect(tabs[4].icon).toBe('pi pi-cog');
+      expect(tabs.length).toBe(4);
+      expect(tabs[3].label).toBe('Thuộc tính');
+      expect(tabs[3].value).toBe('properties');
+      expect(tabs[3].icon).toBe('pi pi-cog');
     });
 
     it('should not include Properties tab when showPropertiesTab is false', () => {
@@ -72,7 +62,7 @@ describe('ActivityPanelComponent (helpers)', () => {
     });
   });
 
-  describe('getEmptyStateConfig (Req 5.9)', () => {
+  describe('getEmptyStateConfig', () => {
     it('should return correct config for "all" tab', () => {
       const config = getEmptyStateConfig('all');
       expect(config.icon).toBe('pi pi-clock');
@@ -116,10 +106,6 @@ describe('ActivityPanelComponent (helpers)', () => {
       expect(getActiveTabLabel(baseTabs, 'activity')).toBe('Hoạt động');
     });
 
-    it('should return "Bình luận" for "comments" filter', () => {
-      expect(getActiveTabLabel(baseTabs, 'comments')).toBe('Bình luận');
-    });
-
     it('should return "Lịch sử" for "history" filter', () => {
       expect(getActiveTabLabel(baseTabs, 'history')).toBe('Lịch sử');
     });
@@ -160,31 +146,21 @@ describe('ActivityPanelComponent (helpers)', () => {
   });
 
   describe('tab configuration for different view modes', () => {
-    it('full-page mode: should have 4 tabs (no Properties)', () => {
-      // In full-page mode, showPropertiesTab is false
+    it('full-page mode: should have 3 tabs (no Properties)', () => {
       const tabs = buildActivityTabs(false);
-      expect(tabs.length).toBe(4);
-      expect(tabs.map((t) => t.value)).toEqual(['all', 'activity', 'comments', 'history']);
+      expect(tabs.length).toBe(3);
+      expect(tabs.map((t) => t.value)).toEqual(['all', 'activity', 'history']);
     });
 
-    it('drawer mode: should have 5 tabs including Properties (Req 8.2)', () => {
-      // In drawer mode, showPropertiesTab is true
+    it('drawer/popup mode: should have 4 tabs including Properties', () => {
       const tabs = buildActivityTabs(true);
-      expect(tabs.length).toBe(5);
+      expect(tabs.length).toBe(4);
       expect(tabs.map((t) => t.value)).toEqual([
         'all',
         'activity',
-        'comments',
         'history',
         'properties',
       ]);
-    });
-
-    it('popup mode: should have 5 tabs including Properties (Req 8.3)', () => {
-      // In popup mode, same as drawer — showPropertiesTab is true
-      const tabs = buildActivityTabs(true);
-      expect(tabs.length).toBe(5);
-      expect(tabs[4].value).toBe('properties');
     });
   });
 

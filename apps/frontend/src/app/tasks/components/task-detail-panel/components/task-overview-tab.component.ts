@@ -287,7 +287,19 @@ export class TaskOverviewTabComponent {
   protected readonly priorityOptions = PRIORITY_OPTIONS;
 
   protected isOverdue(): boolean {
-    return !!this.taskVal?.dueDate && new Date(this.taskVal.dueDate) < new Date();
+    const t = this.taskVal;
+    if (!t || !t.dueDate) return false;
+    const dueDateObj = new Date(t.dueDate);
+    dueDateObj.setHours(0, 0, 0, 0);
+    if (t.state?.group === 'completed') {
+      if (!t.completedAt) return false;
+      const completedDateObj = new Date(t.completedAt);
+      completedDateObj.setHours(0, 0, 0, 0);
+      return completedDateObj.getTime() > dueDateObj.getTime();
+    }
+    const todayObj = new Date();
+    todayObj.setHours(0, 0, 0, 0);
+    return todayObj.getTime() > dueDateObj.getTime();
   }
 
   protected formatDateToISO(date: Date | null): string | null {

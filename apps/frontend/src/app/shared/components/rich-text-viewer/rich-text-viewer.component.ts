@@ -43,6 +43,8 @@ export class RichTextViewerComponent {
   @Input() set doc(v: TiptapDoc | null | undefined) { this._doc.set(v ?? null); }
   @Input() set html(v: string | null | undefined) { this._html.set(v ?? null); }
 
+  @Input() disabled = false;
+
   @Output() editRequested = new EventEmitter<void>();
   @Output() checkboxToggled = new EventEmitter<TiptapDoc>();
 
@@ -63,6 +65,20 @@ export class RichTextViewerComponent {
 
   protected onClick(event: MouseEvent): void {
     const target = event.target as HTMLElement;
+    if (this.disabled) {
+      if (target.closest('a')) {
+        event.stopPropagation();
+        return;
+      }
+      if (target.tagName === 'IMG') {
+        const src = target.getAttribute('src');
+        if (src) window.open(src, '_blank', 'noopener');
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
     if (target.closest('a')) {
       // Link đã có target=_blank từ sanitize hook — để browser xử lý, không bật edit
       event.stopPropagation();

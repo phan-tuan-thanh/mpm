@@ -43,8 +43,16 @@ export class TaskUpdateService {
     let capturedChanges: Array<{ field: string; oldValue: string; newValue: string }> = [];
 
     const result = await this.dataSource.transaction(async (em) => {
-      const task = await em.findOne(Task, { where: { id: taskId, projectId } });
+      const task = await em.findOne(Task, { where: { id: taskId, projectId }, relations: ['state'] });
       if (!task) throw new NotFoundException('Task not found');
+
+      if (task.state?.group === 'completed') {
+        const keys = Object.keys(dto).filter((k) => dto[k as keyof typeof dto] !== undefined);
+        const isChangingStateOnly = keys.length === 1 && keys[0] === 'stateId';
+        if (!isChangingStateOnly && keys.length > 0) {
+          throw new UnprocessableEntityException('Cannot update a completed/closed task');
+        }
+      }
 
       validateDates(dto.startDate !== undefined ? dto.startDate : task.startDate, dto.dueDate !== undefined ? dto.dueDate : task.dueDate);
 
@@ -87,6 +95,9 @@ export class TaskUpdateService {
         changes.push({ field: 'state', oldValue: task.stateId, newValue: dto.stateId });
         task.stateId = dto.stateId;
         const state = await em.findOne(ProjectState, { where: { id: dto.stateId } });
+        if (state) {
+          task.state = state;
+        }
         task.completedAt = state?.group === 'completed' ? (task.completedAt ?? new Date()) : null;
       }
 

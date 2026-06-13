@@ -22,13 +22,13 @@ export interface StateLike {
         [icon]="state.icon"
         class="leading-none flex-shrink-0"
         [style.color]="iconColor"
-        [style.font-size.px]="size - 2"
+        [style.font-size.px]="renderedSize - 2"
         [pTooltip]="state.name" />
     } @else {
       <span
         class="inline-block rounded-full border-2 flex-shrink-0"
-        [style.width.px]="size"
-        [style.height.px]="size"
+        [style.width.px]="renderedSize"
+        [style.height.px]="renderedSize"
         [style.border-color]="color"
         [style.background]="isFilled ? color : 'transparent'"
         [pTooltip]="state.name"></span>
@@ -40,6 +40,10 @@ export class StateDotComponent {
 
   @Input({ required: true }) state!: StateLike;
   @Input() size = 14;
+
+  get renderedSize(): number {
+    return this.layoutService.appIconSize() + (this.size - 14);
+  }
 
   get color(): string {
     return this.layoutService.isDarkMode() ? this.state.colorDark : this.state.colorLight;

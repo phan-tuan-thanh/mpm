@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, computed } from '@angular/core';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { ProjectStore } from '../../state/project.store';
 import { ProjectService } from '../../services/project.service';
@@ -103,17 +103,104 @@ export class ProjectListComponent implements OnInit, OnDestroy {
   dateRange: Date[] | null = null;
   filterName: string = '';
 
-  readonly statusOptions = [
-    { label: 'Tất cả trạng thái', value: 'all' },
-    { label: 'Đang hoạt động', value: 'active' },
-    { label: 'Đã lưu trữ', value: 'archived' },
-  ];
+  readonly t = computed(() => {
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    return isEn ? {
+      title: 'Your Projects',
+      subtitle: 'Manage and quickly switch between workspaces.',
+      createProject: 'Create new project',
+      searchLabel: 'Search',
+      searchPlaceholder: 'Enter project name...',
+      statusLabel: 'Status',
+      networkLabel: 'Privacy',
+      createdDateLabel: 'Created date',
+      datepickerPlaceholder: 'Select creation date range',
+      selectedBar: (count: number) => `Selected ${count} project${count > 1 ? 's' : ''}`,
+      bulkDeleteBtn: 'Delete selected projects',
+      colProjectName: 'Project Name',
+      colProjectKey: 'Project Key',
+      colLead: 'Lead',
+      colNetwork: 'Network',
+      colStatus: 'Status',
+      colMyRole: 'My Role',
+      colCreatedDate: 'Created Date',
+      allStatus: 'All Statuses',
+      activeStatus: 'Active',
+      archivedStatus: 'Archived',
+      allNetwork: 'All Privacies',
+      publicNetwork: 'Public',
+      secretNetwork: 'Secret',
+      noProjectsFound: 'No projects match current filters',
+      clearFiltersBtn: 'Clear filters',
+      noProjectsJoined: 'You haven\'t joined any projects yet',
+      confirmBulkDeleteHeader: 'Confirm Bulk Delete',
+      confirmBulkDeleteMessage: (count: number) => `Are you sure you want to permanently delete ${count} selected project${count > 1 ? 's' : ''} along with all associated data? This action cannot be undone.`,
+      confirmDeleteBtn: 'Delete permanently',
+      cancelBtn: 'Cancel',
+      deleteSuccessSummary: 'Success',
+      deleteSuccessDetail: (count: number) => `Successfully deleted ${count} project${count > 1 ? 's' : ''}.`,
+      deleteErrorSummary: 'Bulk delete error',
+      deleteErrorDetail: (reason: string) => `Rolled back due to error. Details: ${reason}`,
+      systemErrorSummary: 'System Error',
+      systemErrorDetail: 'Bulk delete failed.',
+    } : {
+      title: 'Dự án của bạn',
+      subtitle: 'Quản lý và chuyển đổi nhanh giữa các không gian làm việc.',
+      createProject: 'Tạo dự án mới',
+      searchLabel: 'Tìm kiếm',
+      searchPlaceholder: 'Nhập tên dự án...',
+      statusLabel: 'Trạng thái',
+      networkLabel: 'Quyền riêng tư',
+      createdDateLabel: 'Ngày tạo',
+      datepickerPlaceholder: 'Chọn khoảng ngày tạo',
+      selectedBar: (count: number) => `Đã chọn ${count} dự án`,
+      bulkDeleteBtn: 'Xóa các dự án đã chọn',
+      colProjectName: 'Tên dự án',
+      colProjectKey: 'Project Key',
+      colLead: 'Lead',
+      colNetwork: 'Network',
+      colStatus: 'Trạng thái',
+      colMyRole: 'Vai trò của tôi',
+      colCreatedDate: 'Ngày tạo',
+      allStatus: 'Tất cả trạng thái',
+      activeStatus: 'Đang hoạt động',
+      archivedStatus: 'Đã lưu trữ',
+      allNetwork: 'Tất cả quyền riêng tư',
+      publicNetwork: 'Công khai (Public)',
+      secretNetwork: 'Bảo mật (Secret)',
+      noProjectsFound: 'Không tìm thấy dự án nào khớp với bộ lọc',
+      clearFiltersBtn: 'Xóa bộ lọc',
+      noProjectsJoined: 'Bạn chưa tham gia dự án nào',
+      confirmBulkDeleteHeader: 'Xác nhận xóa hàng loạt',
+      confirmBulkDeleteMessage: (count: number) => `Bạn có chắc chắn muốn xóa vĩnh viễn ${count} dự án đã chọn cùng toàn bộ dữ liệu liên quan? Hành động này không thể hoàn tác.`,
+      confirmDeleteBtn: 'Xóa vĩnh viễn',
+      cancelBtn: 'Hủy',
+      deleteSuccessSummary: 'Thành công',
+      deleteSuccessDetail: (count: number) => `Đã xóa thành công ${count} dự án.`,
+      deleteErrorSummary: 'Lỗi xóa một số dự án',
+      deleteErrorDetail: (reason: string) => `Đã rollback do có lỗi xảy ra. Chi tiết: ${reason}`,
+      systemErrorSummary: 'Lỗi hệ thống',
+      systemErrorDetail: 'Xóa hàng loạt thất bại.',
+    };
+  });
 
-  readonly networkOptions = [
-    { label: 'Tất cả quyền riêng tư', value: 'all' },
-    { label: 'Công khai (Public)', value: 'public' },
-    { label: 'Bảo mật (Secret)', value: 'secret' },
-  ];
+  readonly statusOptions = computed(() => {
+    const trans = this.t();
+    return [
+      { label: trans.allStatus, value: 'all' },
+      { label: trans.activeStatus, value: 'active' },
+      { label: trans.archivedStatus, value: 'archived' },
+    ];
+  });
+
+  readonly networkOptions = computed(() => {
+    const trans = this.t();
+    return [
+      { label: trans.allNetwork, value: 'all' },
+      { label: trans.publicNetwork, value: 'public' },
+      { label: trans.secretNetwork, value: 'secret' },
+    ];
+  });
 
   readonly dummyProjects = Array(5).fill({});
 
@@ -212,12 +299,13 @@ export class ProjectListComponent implements OnInit, OnDestroy {
   onBulkDelete(): void {
     if (this.selectedProjects.length === 0) return;
 
+    const trans = this.t();
     this.confirmService.confirm({
-      message: `Bạn có chắc chắn muốn xóa vĩnh viễn ${this.selectedProjects.length} dự án đã chọn cùng toàn bộ dữ liệu liên quan? Hành động này không thể hoàn tác.`,
-      header: 'Xác nhận xóa hàng loạt',
+      message: trans.confirmBulkDeleteMessage(this.selectedProjects.length),
+      header: trans.confirmBulkDeleteHeader,
       icon: 'pi pi-exclamation-triangle',
-      acceptLabel: 'Xóa vĩnh viễn',
-      rejectLabel: 'Hủy',
+      acceptLabel: trans.confirmDeleteBtn,
+      rejectLabel: trans.cancelBtn,
       acceptButtonStyleClass: 'p-button-danger',
       rejectButtonStyleClass: 'p-button-secondary p-button-text',
       accept: () => {
@@ -227,24 +315,24 @@ export class ProjectListComponent implements OnInit, OnDestroy {
             if (res.failed.length === 0) {
               this.messageService.add({
                 severity: 'success',
-                summary: 'Thành công',
-                detail: `Đã xóa thành công ${res.deleted.length} dự án.`,
+                summary: trans.deleteSuccessSummary,
+                detail: trans.deleteSuccessDetail(res.deleted.length),
               });
               this.selectedProjects = [];
               this.fetchProjects();
             } else {
               this.messageService.add({
                 severity: 'error',
-                summary: 'Lỗi xóa một số dự án',
-                detail: `Đã rollback do có lỗi xảy ra. Chi tiết: ${res.failed[0]?.reason}`,
+                summary: trans.deleteErrorSummary,
+                detail: trans.deleteErrorDetail(res.failed[0]?.reason),
               });
             }
           },
           error: (err) => {
             this.messageService.add({
               severity: 'error',
-              summary: 'Lỗi hệ thống',
-              detail: err.error?.message || 'Xóa hàng loạt thất bại.',
+              summary: trans.systemErrorSummary,
+              detail: err.error?.message || trans.systemErrorDetail,
             });
           },
         });

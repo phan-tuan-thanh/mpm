@@ -67,6 +67,7 @@ describe('CommentService', () => {
     reactionRepo = module.get(getRepositoryToken(TaskCommentReaction));
     memberRepo = module.get(getRepositoryToken(ProjectMember));
     taskRepo = module.get(getRepositoryToken(Task));
+    taskRepo.findOne.mockResolvedValue({ id: 't1', state: { group: 'active' } });
     activityService = module.get(ActivityService);
   });
 

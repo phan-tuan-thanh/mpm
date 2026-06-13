@@ -3,16 +3,16 @@
   <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 px-6 py-5 bg-white dark:bg-surface-900 border-b border-gray-100 dark:border-surface-700">
     <div>
       <h1 class="text-2xl font-bold text-gray-900 dark:text-surface-0">
-        Dự án của bạn
+        {{ t().title }}
       </h1>
       <p class="mt-0.5 text-sm text-gray-500 dark:text-surface-400">
-        Quản lý và chuyển đổi nhanh giữa các không gian làm việc.
+        {{ t().subtitle }}
       </p>
     </div>
     <button
       pButton
       routerLink="new"
-      label="Tạo dự án mới"
+      [label]="t().createProject"
       icon="pi pi-plus"
     ></button>
   </div>
@@ -24,7 +24,7 @@
       <div class="flex flex-col md:flex-row gap-4 items-end w-full">
         <!-- Search Input -->
         <div class="w-full md:w-80 flex flex-col gap-1.5">
-          <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider px-1">Tìm kiếm</label>
+          <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider px-1">{{ t().searchLabel }}</label>
           <div class="relative w-full">
             <i class="pi pi-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-surface-500 text-sm"></i>
             <input
@@ -32,7 +32,7 @@
               pInputText
               class="w-full !pl-9 h-[38px]"
               [ngModel]="filterName"
-              placeholder="Nhập tên dự án..."
+              [placeholder]="t().searchPlaceholder"
               (input)="onSearchInput($any($event.target).value)"
             />
           </div>
@@ -40,18 +40,18 @@
 
         <!-- Status Filter -->
         <div class="w-full md:w-48 flex flex-col gap-1.5">
-          <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider px-1">Trạng thái</label>
+          <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider px-1">{{ t().statusLabel }}</label>
           <button
             type="button"
             (click)="statusPop.toggle($event)"
             class="pop-select-trigger w-full flex items-center justify-between gap-2 cursor-pointer select-none"
           >
-            <span class="truncate">{{ selectedStatus === 'all' ? 'Tất cả trạng thái' : (selectedStatus === 'active' ? 'Đang hoạt động' : 'Đã lưu trữ') }}</span>
+            <span class="truncate">{{ selectedStatus === 'all' ? t().allStatus : (selectedStatus === 'active' ? t().activeStatus : t().archivedStatus) }}</span>
             <i class="pi pi-chevron-down text-xs opacity-60 flex-shrink-0"></i>
           </button>
           <p-popover #statusPop appendTo="body" styleClass="!p-0">
             <div class="pop-list w-48">
-              @for (opt of statusOptions; track opt.value) {
+              @for (opt of statusOptions(); track opt.value) {
                 <div
                   (click)="selectedStatus = opt.value; onFilterChange(); statusPop.hide()"
                   class="pop-item"
@@ -66,18 +66,18 @@
 
         <!-- Network Filter -->
         <div class="w-full md:w-48 flex flex-col gap-1.5">
-          <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider px-1">Quyền riêng tư</label>
+          <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider px-1">{{ t().networkLabel }}</label>
           <button
             type="button"
             (click)="networkPop.toggle($event)"
             class="pop-select-trigger w-full flex items-center justify-between gap-2 cursor-pointer select-none"
           >
-            <span class="truncate">{{ selectedNetwork === 'all' ? 'Tất cả quyền riêng tư' : (selectedNetwork === 'public' ? 'Công khai (Public)' : 'Bảo mật (Secret)') }}</span>
+            <span class="truncate">{{ selectedNetwork === 'all' ? t().allNetwork : (selectedNetwork === 'public' ? t().publicNetwork : t().secretNetwork) }}</span>
             <i class="pi pi-chevron-down text-xs opacity-60 flex-shrink-0"></i>
           </button>
           <p-popover #networkPop appendTo="body" styleClass="!p-0">
             <div class="pop-list w-48">
-              @for (opt of networkOptions; track opt.value) {
+              @for (opt of networkOptions(); track opt.value) {
                 <div
                   (click)="selectedNetwork = opt.value; onFilterChange(); networkPop.hide()"
                   class="pop-item"
@@ -92,12 +92,12 @@
 
         <!-- Date Range Filter -->
         <div class="w-full md:w-72 flex flex-col gap-1.5">
-          <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider px-1">Ngày tạo</label>
+          <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider px-1">{{ t().createdDateLabel }}</label>
           <p-datepicker
             [(ngModel)]="dateRange"
             selectionMode="range"
             [readonlyInput]="true"
-            placeholder="Chọn khoảng ngày tạo"
+            [placeholder]="t().datepickerPlaceholder"
             (onSelect)="onFilterChange()"
             (onClearClick)="onClearDate()"
             [showClear]="true"
@@ -113,12 +113,12 @@
   @if (selectedProjects.length > 0 && !projectStore.isLoading()) {
     <div class="flex items-center justify-between bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900 p-4 rounded-xl shadow-sm transition animate-fade-in">
       <span class="text-sm font-semibold text-indigo-900">
-        Đã chọn {{ selectedProjects.length }} dự án
+        {{ t().selectedBar(selectedProjects.length) }}
       </span>
       <button
         pButton
         (click)="onBulkDelete()"
-        label="Xóa các dự án đã chọn"
+        [label]="t().bulkDeleteBtn"
         icon="pi pi-trash"
         severity="danger"
         size="small"
@@ -141,13 +141,13 @@
           <th style="width: 4rem" class="py-3.5 px-4 text-left font-semibold text-gray-500 dark:text-surface-400 text-xs uppercase tracking-wider">
             <p-tableHeaderCheckbox [disabled]="projectStore.isLoading()" />
           </th>
-          <th class="py-3.5 px-4 text-left font-semibold text-gray-500 dark:text-surface-400 text-xs uppercase tracking-wider">Tên dự án</th>
-          <th class="py-3.5 px-4 text-left font-semibold text-gray-500 dark:text-surface-400 text-xs uppercase tracking-wider">Project Key</th>
-          <th class="py-3.5 px-4 text-left font-semibold text-gray-500 dark:text-surface-400 text-xs uppercase tracking-wider">Lead</th>
-          <th class="py-3.5 px-4 text-left font-semibold text-gray-500 dark:text-surface-400 text-xs uppercase tracking-wider">Network</th>
-          <th class="py-3.5 px-4 text-left font-semibold text-gray-500 dark:text-surface-400 text-xs uppercase tracking-wider">Trạng thái</th>
-          <th class="py-3.5 px-4 text-left font-semibold text-gray-500 dark:text-surface-400 text-xs uppercase tracking-wider">Vai trò của tôi</th>
-          <th class="py-3.5 px-4 text-left font-semibold text-gray-500 dark:text-surface-400 text-xs uppercase tracking-wider">Ngày tạo</th>
+          <th class="py-3.5 px-4 text-left font-semibold text-gray-500 dark:text-surface-400 text-xs uppercase tracking-wider">{{ t().colProjectName }}</th>
+          <th class="py-3.5 px-4 text-left font-semibold text-gray-500 dark:text-surface-400 text-xs uppercase tracking-wider">{{ t().colProjectKey }}</th>
+          <th class="py-3.5 px-4 text-left font-semibold text-gray-500 dark:text-surface-400 text-xs uppercase tracking-wider">{{ t().colLead }}</th>
+          <th class="py-3.5 px-4 text-left font-semibold text-gray-500 dark:text-surface-400 text-xs uppercase tracking-wider">{{ t().colNetwork }}</th>
+          <th class="py-3.5 px-4 text-left font-semibold text-gray-500 dark:text-surface-400 text-xs uppercase tracking-wider">{{ t().colStatus }}</th>
+          <th class="py-3.5 px-4 text-left font-semibold text-gray-500 dark:text-surface-400 text-xs uppercase tracking-wider">{{ t().colMyRole }}</th>
+          <th class="py-3.5 px-4 text-left font-semibold text-gray-500 dark:text-surface-400 text-xs uppercase tracking-wider">{{ t().colCreatedDate }}</th>
         </tr>
       </ng-template>
       <ng-template pTemplate="body" let-project>
@@ -202,14 +202,14 @@
             </td>
             <td class="py-3.5 px-4">
               <p-tag
-                [value]="project.network === 'public' ? 'Public' : 'Secret'"
+                [value]="project.network === 'public' ? t().publicNetwork : t().secretNetwork"
                 [severity]="project.network === 'public' ? 'info' : 'warn'"
                 class="text-xs font-semibold"
               ></p-tag>
             </td>
             <td class="py-3.5 px-4">
               <p-tag
-                [value]="project.status === 'active' ? 'Active' : 'Archived'"
+                [value]="project.status === 'active' ? t().activeStatus : t().archivedStatus"
                 [severity]="project.status === 'active' ? 'success' : 'secondary'"
                 class="text-xs font-semibold"
               ></p-tag>
@@ -230,19 +230,19 @@
             <div class="flex flex-col items-center justify-center space-y-3">
               <i class="pi pi-folder-open text-4xl text-gray-300"></i>
               @if (hasActiveFilters()) {
-                <span class="font-medium text-base text-gray-500">Không tìm thấy dự án nào khớp với bộ lọc</span>
+                <span class="font-medium text-base text-gray-500">{{ t().noProjectsFound }}</span>
                 <button
                   pButton
                   (click)="clearFilters()"
-                  label="Xóa bộ lọc"
+                  [label]="t().clearFiltersBtn"
                   class="p-button-text p-button-sm font-semibold text-indigo-600 hover:text-indigo-800"
                 ></button>
               } @else {
-                <span class="font-medium text-base text-gray-500">Bạn chưa tham gia dự án nào</span>
+                <span class="font-medium text-base text-gray-500">{{ t().noProjectsJoined }}</span>
                 <button
                   pButton
                   routerLink="new"
-                  label="Tạo dự án mới"
+                  [label]="t().createProject"
                   icon="pi pi-plus"
                   class="bg-indigo-600 border-none font-semibold text-white px-3 py-1.5 rounded-lg text-xs"
                 ></button>

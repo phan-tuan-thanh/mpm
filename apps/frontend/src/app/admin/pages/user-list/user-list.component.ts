@@ -10,6 +10,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { AdminService, AdminUserResponse } from '../../services/admin.service';
 import { AuthService } from '../../../auth/services/auth.service';
+import { ProjectStore } from '../../../projects/state/project.store';
 
 @Component({
   standalone: true,
@@ -31,10 +32,10 @@ import { AuthService } from '../../../auth/services/auth.service';
         <div>
           <h1 class="text-2xl font-bold text-gray-900 dark:text-surface-0 flex items-center gap-2">
             <i class="pi pi-shield text-indigo-600 dark:text-indigo-400"></i>
-            Quản trị hệ thống
+            {{ t().pageTitle }}
           </h1>
           <p class="text-sm text-gray-500 dark:text-surface-400 mt-1">
-            Quản lý tài khoản người dùng, phân quyền System Role và kích hoạt/vô hiệu hóa tài khoản.
+            {{ t().pageDesc }}
           </p>
         </div>
       </div>
@@ -50,7 +51,7 @@ import { AuthService } from '../../../auth/services/auth.service';
                 type="text"
                 pInputText
                 [(ngModel)]="searchTerm"
-                placeholder="Tìm theo tên hoặc email..."
+                [placeholder]="t().searchPlaceholder"
                 class="w-full text-sm !pl-9"
               />
             </div>
@@ -60,15 +61,15 @@ import { AuthService } from '../../../auth/services/auth.service';
           <div class="flex gap-4 text-xs font-semibold text-gray-500 dark:text-surface-400">
             <span class="flex items-center gap-1.5">
               <span class="h-2.5 w-2.5 rounded-full bg-indigo-600"></span>
-              Tổng: {{ users().length }}
+              {{ t().totalLabel }}: {{ users().length }}
             </span>
             <span class="flex items-center gap-1.5">
               <span class="h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
-              Hoạt động: {{ activeUsersCount() }}
+              {{ t().activeLabel }}: {{ activeUsersCount() }}
             </span>
             <span class="flex items-center gap-1.5">
               <span class="h-2.5 w-2.5 rounded-full bg-red-500"></span>
-              Bị khóa: {{ disabledUsersCount() }}
+              {{ t().disabledLabel }}: {{ disabledUsersCount() }}
             </span>
           </div>
         </div>
@@ -84,12 +85,12 @@ import { AuthService } from '../../../auth/services/auth.service';
             <ng-template pTemplate="header">
               <tr class="bg-gray-50 dark:bg-surface-950 border-b border-gray-100 dark:border-surface-800">
                 <th class="py-3 px-4 text-left font-semibold text-gray-500 dark:text-surface-400 w-16">Avatar</th>
-                <th class="py-3 px-4 text-left font-semibold text-gray-500 dark:text-surface-400">Họ tên</th>
+                <th class="py-3 px-4 text-left font-semibold text-gray-500 dark:text-surface-400">{{ t().colName }}</th>
                 <th class="py-3 px-4 text-left font-semibold text-gray-500 dark:text-surface-400">Email</th>
                 <th class="py-3 px-4 text-left font-semibold text-gray-500 dark:text-surface-400 w-44">System Role</th>
-                <th class="py-3 px-4 text-left font-semibold text-gray-500 dark:text-surface-400 w-32">Trạng thái</th>
-                <th class="py-3 px-4 text-left font-semibold text-gray-500 dark:text-surface-400 w-36">Ngày tạo</th>
-                <th class="py-3 px-4 text-center font-semibold text-gray-500 dark:text-surface-400 w-48">Hành động</th>
+                <th class="py-3 px-4 text-left font-semibold text-gray-500 dark:text-surface-400 w-32">{{ t().colStatus }}</th>
+                <th class="py-3 px-4 text-left font-semibold text-gray-500 dark:text-surface-400 w-36">{{ t().colCreatedAt }}</th>
+                <th class="py-3 px-4 text-center font-semibold text-gray-500 dark:text-surface-400 w-48">{{ t().colActions }}</th>
               </tr>
             </ng-template>
 
@@ -108,7 +109,7 @@ import { AuthService } from '../../../auth/services/auth.service';
                 <td class="py-2.5 px-4 font-semibold text-gray-800 dark:text-surface-100">
                   {{ user.displayName }}
                   @if (user.id === currentUserId()) {
-                    <span class="ml-1 text-[10px] bg-slate-100 dark:bg-surface-800 text-slate-600 dark:text-surface-300 px-1.5 py-0.5 rounded font-normal">Bạn</span>
+                    <span class="ml-1 text-[10px] bg-slate-100 dark:bg-surface-800 text-slate-600 dark:text-surface-300 px-1.5 py-0.5 rounded font-normal">{{ t().youBadge }}</span>
                   }
                 </td>
 
@@ -150,11 +151,11 @@ import { AuthService } from '../../../auth/services/auth.service';
                 <td class="py-2.5 px-4">
                   @if (user.isActive) {
                     <span class="inline-flex items-center rounded-md bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
-                      Active
+                      {{ t().activeStatus }}
                     </span>
                   } @else {
                     <span class="inline-flex items-center rounded-md bg-rose-50 dark:bg-rose-950/40 px-2.5 py-0.5 text-xs font-semibold text-rose-700 dark:text-rose-400">
-                      Disabled
+                      {{ t().disabledStatus }}
                     </span>
                   }
                 </td>
@@ -172,7 +173,7 @@ import { AuthService } from '../../../auth/services/auth.service';
                         <button
                           pButton
                           (click)="onToggleStatus(user)"
-                          label="Khóa"
+                          [label]="t().lockBtn"
                           icon="pi pi-lock"
                           severity="danger"
                           [outlined]="true"
@@ -182,7 +183,7 @@ import { AuthService } from '../../../auth/services/auth.service';
                         <button
                           pButton
                           (click)="onToggleStatus(user)"
-                          label="Kích hoạt"
+                          [label]="t().activateBtn"
                           icon="pi pi-lock-open"
                           severity="success"
                           [outlined]="true"
@@ -191,7 +192,7 @@ import { AuthService } from '../../../auth/services/auth.service';
                       }
                     </div>
                   } @else {
-                    <span class="text-xs text-gray-400 italic">Không thể tự thao tác</span>
+                    <span class="text-xs text-gray-400 italic">{{ t().selfActionDisabled }}</span>
                   }
                 </td>
               </tr>
@@ -200,7 +201,7 @@ import { AuthService } from '../../../auth/services/auth.service';
             <ng-template pTemplate="emptymessage">
               <tr>
                 <td colspan="7" class="py-8 text-center text-gray-500 dark:text-surface-400">
-                  Không tìm thấy người dùng phù hợp.
+                  {{ t().emptyMsg }}
                 </td>
               </tr>
             </ng-template>
@@ -215,6 +216,110 @@ export class UserListComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly confirmService = inject(ConfirmationService);
   private readonly messageService = inject(MessageService);
+  private readonly projectStore = inject(ProjectStore);
+
+  // Localization
+  readonly t = computed(() => {
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    return isEn ? {
+      pageTitle: 'System Administration',
+      pageDesc: 'Manage user accounts, assign System Roles, and activate/deactivate accounts.',
+      searchPlaceholder: 'Search by name or email...',
+      totalLabel: 'Total',
+      activeLabel: 'Active',
+      disabledLabel: 'Locked',
+      colName: 'Full Name',
+      colStatus: 'Status',
+      colCreatedAt: 'Created At',
+      colActions: 'Actions',
+      youBadge: 'You',
+      activeStatus: 'Active',
+      disabledStatus: 'Disabled',
+      lockBtn: 'Lock',
+      activateBtn: 'Activate',
+      selfActionDisabled: 'Cannot act on yourself',
+      emptyMsg: 'No matching users found.',
+      loadErrorSummary: 'Load error',
+      loadErrorDetail: 'Could not retrieve user information.',
+      lastAdminBlockHeader: 'Cannot perform action',
+      lastAdminBlockDemote: (name: string) => `Action blocked: "${name}" is the only active Admin in the system. You cannot demote them to prevent losing admin access.`,
+      lastAdminBlockDisable: (name: string) => `Action blocked: "${name}" is the only active Admin account in the system. You cannot disable this account.`,
+      demoteConfirmHeader: 'Confirm demotion',
+      demoteConfirmMsg: (name: string) => `Are you sure you want to demote [${name}]? They will lose access to the Admin panel and system configurations.`,
+      demoteConfirmAccept: 'Demote',
+      demoteConfirmReject: 'Cancel',
+      disableConfirmHeader: 'Disable account',
+      disableConfirmMsg: (name: string) => `Are you sure you want to disable [${name}]'s account? They will be immediately logged out from all devices and cannot log in.`,
+      disableConfirmAccept: 'Disable',
+      disableConfirmReject: 'Cancel',
+      enableConfirmHeader: 'Re-enable account',
+      enableConfirmMsg: (name: string) => `Are you sure you want to re-enable [${name}]'s account? They will be able to log in again.`,
+      enableConfirmAccept: 'Enable',
+      enableConfirmReject: 'Cancel',
+      understoodBtn: 'Got it',
+      roleChangeSuccessDetail: 'System role has been updated.',
+      roleChangeSuccessSummary: 'Success',
+      roleChangeErrorSummary: 'Update error',
+      roleChangeErrorDetail: 'An error occurred.',
+      disableSuccessSummary: 'Success',
+      disableSuccessDetail: 'Account has been disabled.',
+      disableFailSummary: 'Failed',
+      disableFailDetail: 'An error occurred.',
+      enableSuccessSummary: 'Success',
+      enableSuccessDetail: 'Account has been re-enabled.',
+      enableFailSummary: 'Failed',
+      enableFailDetail: 'An error occurred.',
+    } : {
+      pageTitle: 'Quản trị hệ thống',
+      pageDesc: 'Quản lý tài khoản người dùng, phân quyền System Role và kích hoạt/vô hiệu hóa tài khoản.',
+      searchPlaceholder: 'Tìm theo tên hoặc email...',
+      totalLabel: 'Tổng',
+      activeLabel: 'Hoạt động',
+      disabledLabel: 'Bị khóa',
+      colName: 'Họ tên',
+      colStatus: 'Trạng thái',
+      colCreatedAt: 'Ngày tạo',
+      colActions: 'Hành động',
+      youBadge: 'Bạn',
+      activeStatus: 'Hoạt động',
+      disabledStatus: 'Bị khóa',
+      lockBtn: 'Khóa',
+      activateBtn: 'Kích hoạt',
+      selfActionDisabled: 'Không thể tự thao tác',
+      emptyMsg: 'Không tìm thấy người dùng phù hợp.',
+      loadErrorSummary: 'Lỗi tải danh sách',
+      loadErrorDetail: 'Không thể lấy thông tin người dùng.',
+      lastAdminBlockHeader: 'Không thể thực hiện',
+      lastAdminBlockDemote: (name: string) => `Hành động bị chặn: "${name}" là tài khoản Admin duy nhất đang hoạt động của hệ thống. Bạn không thể hạ quyền của họ để tránh việc mất quyền quản trị hệ thống.`,
+      lastAdminBlockDisable: (name: string) => `Hành động bị chặn: "${name}" là tài khoản Admin duy nhất đang hoạt động của hệ thống. Bạn không thể vô hiệu hóa tài khoản này.`,
+      demoteConfirmHeader: 'Xác nhận hạ quyền',
+      demoteConfirmMsg: (name: string) => `Bạn có chắc muốn hạ quyền [${name}]? Họ sẽ mất quyền truy cập Trang quản trị và các cấu hình hệ thống.`,
+      demoteConfirmAccept: 'Hạ quyền',
+      demoteConfirmReject: 'Hủy',
+      disableConfirmHeader: 'Vô hiệu hóa tài khoản',
+      disableConfirmMsg: (name: string) => `Bạn có chắc muốn vô hiệu hóa tài khoản [${name}]? Họ sẽ bị đăng xuất ngay lập tức khỏi mọi thiết bị và không thể tiếp tục đăng nhập.`,
+      disableConfirmAccept: 'Vô hiệu hóa',
+      disableConfirmReject: 'Hủy',
+      enableConfirmHeader: 'Kích hoạt lại tài khoản',
+      enableConfirmMsg: (name: string) => `Bạn có chắc muốn kích hoạt lại tài khoản [${name}]? Họ sẽ có thể đăng nhập lại vào hệ thống.`,
+      enableConfirmAccept: 'Kích hoạt',
+      enableConfirmReject: 'Hủy',
+      understoodBtn: 'Đã hiểu',
+      roleChangeSuccessDetail: 'Vai trò hệ thống đã được cập nhật.',
+      roleChangeSuccessSummary: 'Thành công',
+      roleChangeErrorSummary: 'Lỗi cập nhật',
+      roleChangeErrorDetail: 'Có lỗi xảy ra.',
+      disableSuccessSummary: 'Thành công',
+      disableSuccessDetail: 'Tài khoản đã được vô hiệu hóa.',
+      disableFailSummary: 'Thất bại',
+      disableFailDetail: 'Có lỗi xảy ra.',
+      enableSuccessSummary: 'Thành công',
+      enableSuccessDetail: 'Tài khoản đã được kích hoạt lại.',
+      enableFailSummary: 'Thất bại',
+      enableFailDetail: 'Có lỗi xảy ra.',
+    };
+  });
+
 
   // States
   users = signal<AdminUserResponse[]>([]);
@@ -273,10 +378,11 @@ export class UserListComponent implements OnInit {
         this.isLoading.set(false);
       },
       error: (err) => {
+        const tr = this.t();
         this.messageService.add({
           severity: 'error',
-          summary: 'Lỗi tải danh sách',
-          detail: err.error?.message || 'Không thể lấy thông tin người dùng.',
+          summary: tr.loadErrorSummary,
+          detail: err.error?.message || tr.loadErrorDetail,
         });
         this.isLoading.set(false);
       },
@@ -284,16 +390,17 @@ export class UserListComponent implements OnInit {
   }
 
   onRoleChange(user: AdminUserResponse, newRole: 'Admin' | 'User'): void {
+    const tr = this.t();
     // Check last admin protection
     const isActiveAdmin = user.systemRole === 'Admin' && user.isActive;
     const isDemotingAdmin = isActiveAdmin && newRole !== 'Admin';
 
     if (isDemotingAdmin && this.activeAdminCount() <= 1) {
       this.confirmService.confirm({
-        message: `Hành động bị chặn: "${user.displayName}" là tài khoản Admin duy nhất đang hoạt động của hệ thống. Bạn không thể hạ quyền của họ để tránh việc mất quyền quản trị hệ thống.`,
-        header: 'Không thể thực hiện',
+        message: tr.lastAdminBlockDemote(user.displayName),
+        header: tr.lastAdminBlockHeader,
         icon: 'pi pi-ban',
-        acceptLabel: 'Đã hiểu',
+        acceptLabel: tr.understoodBtn,
         rejectVisible: false,
         acceptButtonStyleClass: 'p-button-secondary',
         accept: () => {
@@ -306,11 +413,11 @@ export class UserListComponent implements OnInit {
     // Confirm demoting an Admin -> User
     if (newRole === 'User') {
       this.confirmService.confirm({
-        message: `Bạn có chắc muốn hạ quyền [${user.displayName}]? Họ sẽ mất quyền truy cập Trang quản trị và các cấu hình hệ thống.`,
-        header: 'Xác nhận hạ quyền',
+        message: tr.demoteConfirmMsg(user.displayName),
+        header: tr.demoteConfirmHeader,
         icon: 'pi pi-exclamation-triangle',
-        acceptLabel: 'Hạ quyền',
-        rejectLabel: 'Hủy',
+        acceptLabel: tr.demoteConfirmAccept,
+        rejectLabel: tr.demoteConfirmReject,
         acceptButtonStyleClass: 'p-button-warning',
         rejectButtonStyleClass: 'p-button-secondary p-button-text',
         accept: () => {
@@ -326,20 +433,21 @@ export class UserListComponent implements OnInit {
   }
 
   private executeRoleChange(userId: string, role: 'Admin' | 'User'): void {
+    const tr = this.t();
     this.adminService.changeRole(userId, role).subscribe({
       next: () => {
         this.messageService.add({
           severity: 'success',
-          summary: 'Thành công',
-          detail: 'Vai trò hệ thống đã được cập nhật.',
+          summary: tr.roleChangeSuccessSummary,
+          detail: tr.roleChangeSuccessDetail,
         });
         this.loadUsers();
       },
       error: (err) => {
         this.messageService.add({
           severity: 'error',
-          summary: 'Lỗi cập nhật',
-          detail: err.error?.message || 'Có lỗi xảy ra.',
+          summary: tr.roleChangeErrorSummary,
+          detail: err.error?.message || tr.roleChangeErrorDetail,
         });
         this.loadUsers();
       },
@@ -347,14 +455,15 @@ export class UserListComponent implements OnInit {
   }
 
   onToggleStatus(user: AdminUserResponse): void {
+    const tr = this.t();
     if (user.isActive) {
       // Check last admin protection
       if (user.systemRole === 'Admin' && this.activeAdminCount() <= 1) {
         this.confirmService.confirm({
-          message: `Hành động bị chặn: "${user.displayName}" là tài khoản Admin duy nhất đang hoạt động của hệ thống. Bạn không thể vô hiệu hóa tài khoản này.`,
-          header: 'Không thể thực hiện',
+          message: tr.lastAdminBlockDisable(user.displayName),
+          header: tr.lastAdminBlockHeader,
           icon: 'pi pi-ban',
-          acceptLabel: 'Đã hiểu',
+          acceptLabel: tr.understoodBtn,
           rejectVisible: false,
           acceptButtonStyleClass: 'p-button-secondary',
           accept: () => {},
@@ -364,11 +473,11 @@ export class UserListComponent implements OnInit {
 
       // Confirm disable
       this.confirmService.confirm({
-        message: `Bạn có chắc muốn vô hiệu hóa tài khoản [${user.displayName}]? Họ sẽ bị đăng xuất ngay lập tức khỏi mọi thiết bị và không thể tiếp tục đăng nhập.`,
-        header: 'Vô hiệu hóa tài khoản',
+        message: tr.disableConfirmMsg(user.displayName),
+        header: tr.disableConfirmHeader,
         icon: 'pi pi-exclamation-triangle',
-        acceptLabel: 'Vô hiệu hóa',
-        rejectLabel: 'Hủy',
+        acceptLabel: tr.disableConfirmAccept,
+        rejectLabel: tr.disableConfirmReject,
         acceptButtonStyleClass: 'p-button-danger',
         rejectButtonStyleClass: 'p-button-secondary p-button-text',
         accept: () => {
@@ -376,16 +485,16 @@ export class UserListComponent implements OnInit {
             next: () => {
               this.messageService.add({
                 severity: 'success',
-                summary: 'Thành công',
-                detail: 'Tài khoản đã được vô hiệu hóa.',
+                summary: tr.disableSuccessSummary,
+                detail: tr.disableSuccessDetail,
               });
               this.loadUsers();
             },
             error: (err) => {
               this.messageService.add({
                 severity: 'error',
-                summary: 'Thất bại',
-                detail: err.error?.message || 'Có lỗi xảy ra.',
+                summary: tr.disableFailSummary,
+                detail: err.error?.message || tr.disableFailDetail,
               });
             },
           });
@@ -394,11 +503,11 @@ export class UserListComponent implements OnInit {
     } else {
       // Confirm enable
       this.confirmService.confirm({
-        message: `Bạn có chắc muốn kích hoạt lại tài khoản [${user.displayName}]? Họ sẽ có thể đăng nhập lại vào hệ thống.`,
-        header: 'Kích hoạt lại tài khoản',
+        message: tr.enableConfirmMsg(user.displayName),
+        header: tr.enableConfirmHeader,
         icon: 'pi pi-lock-open',
-        acceptLabel: 'Kích hoạt',
-        rejectLabel: 'Hủy',
+        acceptLabel: tr.enableConfirmAccept,
+        rejectLabel: tr.enableConfirmReject,
         acceptButtonStyleClass: 'p-button-success',
         rejectButtonStyleClass: 'p-button-secondary p-button-text',
         accept: () => {
@@ -406,16 +515,16 @@ export class UserListComponent implements OnInit {
             next: () => {
               this.messageService.add({
                 severity: 'success',
-                summary: 'Thành công',
-                detail: 'Tài khoản đã được kích hoạt lại.',
+                summary: tr.enableSuccessSummary,
+                detail: tr.enableSuccessDetail,
               });
               this.loadUsers();
             },
             error: (err) => {
               this.messageService.add({
                 severity: 'error',
-                summary: 'Thất bại',
-                detail: err.error?.message || 'Có lỗi xảy ra.',
+                summary: tr.enableFailSummary,
+                detail: err.error?.message || tr.enableFailDetail,
               });
             },
           });

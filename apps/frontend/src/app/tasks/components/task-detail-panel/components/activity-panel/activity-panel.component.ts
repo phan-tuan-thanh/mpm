@@ -3,9 +3,6 @@ import {
   Input,
   Output,
   EventEmitter,
-  ElementRef,
-  ViewChild,
-  AfterViewInit,
   OnDestroy,
   OnChanges,
   SimpleChanges,
@@ -15,7 +12,6 @@ import { SkeletonModule } from 'primeng/skeleton';
 
 import type { TaskActivity, ActivityFilterType } from '@mpm/shared-types';
 import { ActivityEntryComponent } from '../activity-entry';
-import { TaskCommentsComponent } from '../task-comments/task-comments.component';
 import {
   ActivityTab,
   buildActivityTabs,
@@ -24,21 +20,19 @@ import {
 } from './activity-panel.helpers';
 
 /**
- * ActivityPanelComponent — Tabbed activity panel with infinite scroll.
+ * ActivityPanelComponent — Tabbed activity panel with manual pagination buttons.
  *
  * Container component that provides:
- * - Tab bar: "Tất cả", "Hoạt động", "Bình luận", "Lịch sử" (+ "Thuộc tính" in drawer/popup)
- * - Infinite scroll loading (30 entries/batch) via IntersectionObserver
+ * - Tab bar: "Tất cả", "Hoạt động", "Lịch sử" (+ "Thuộc tính" in drawer/popup)
+ * - Manual pagination buttons ("Xem thêm" & "Xem hết") instead of infinite scroll
  * - Skeleton placeholders while loading
  * - Empty state with icon + message per tab
  * - "Properties" tab support in drawer/popup mode (content projected via ng-content)
- *
- * Validates: Requirements 5.1, 5.2, 5.3, 5.4, 5.5, 5.8, 5.9, 8.2, 8.3
  */
 @Component({
   standalone: true,
   selector: 'app-activity-panel',
-  imports: [ActivityEntryComponent, SkeletonModule, TaskCommentsComponent],
+  imports: [ActivityEntryComponent, SkeletonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <!-- Tab Bar -->
@@ -86,12 +80,6 @@ import {
       <!-- Properties Tab (projected content) -->
       @if (activeFilter === 'properties') {
         <ng-content select="[activityPanelProperties]"></ng-content>
-      } @else if (activeFilter === 'comments') {
-        <app-task-comments
-          [projectId]="projectId"
-          [taskId]="taskId"
-          [membersList]="membersList"
-        ></app-task-comments>
       } @else {
         <!-- Loading Skeleton -->
         @if (loading && entries.length === 0) {
@@ -132,9 +120,24 @@ import {
               </div>
             }
 
-            <!-- Infinite Scroll Sentinel -->
+            <!-- Manual Load More / View All Buttons -->
             @if (hasMore && !loading) {
-              <div #scrollSentinel class="h-1" aria-hidden="true"></div>
+              <div class="flex items-center justify-center gap-2 py-3">
+                <button
+                  type="button"
+                  class="px-3 py-1.5 text-xs font-semibold rounded-md border border-gray-200 dark:border-surface-700 text-gray-700 dark:text-surface-200 hover:bg-gray-50 dark:hover:bg-surface-800 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  (click)="onShowMoreClick()"
+                >
+                  Xem thêm
+                </button>
+                <button
+                  type="button"
+                  class="px-3 py-1.5 text-xs font-semibold rounded-md bg-gray-50 dark:bg-surface-800 text-gray-700 dark:text-surface-200 hover:bg-gray-100 dark:hover:bg-surface-700 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  (click)="onShowAllClick()"
+                >
+                  Xem hết
+                </button>
+              </div>
             }
           }
         }
@@ -147,7 +150,7 @@ import {
     }
   `,
 })
-export class ActivityPanelComponent implements AfterViewInit, OnDestroy, OnChanges {
+export class ActivityPanelComponent implements OnDestroy, OnChanges {
   /** List of activity entries to display (already filtered by parent) */
   @Input() entries: TaskActivity[] = [];
 
@@ -176,11 +179,11 @@ export class ActivityPanelComponent implements AfterViewInit, OnDestroy, OnChang
   /** Emitted when the user changes the active tab filter */
   @Output() filterChanged = new EventEmitter<ActivityFilterType | 'properties'>();
 
-  /** Emitted when user scrolls to the bottom and more entries should be loaded */
+  /** Emitted when user clicks "Xem thêm" to load more entries */
   @Output() loadMore = new EventEmitter<void>();
 
-  /** Reference to the infinite scroll sentinel element */
-  @ViewChild('scrollSentinel') scrollSentinel?: ElementRef<HTMLElement>;
+  /** Emitted when user clicks "Xem hết" to load all entries */
+  @Output() loadAll = new EventEmitter<void>();
 
   /** Skeleton placeholder row count */
   readonly skeletonRows = [1, 2, 3, 4, 5];
@@ -192,12 +195,6 @@ export class ActivityPanelComponent implements AfterViewInit, OnDestroy, OnChang
 
   /** Computed tabs list */
   tabs: ActivityTab[] = [];
-
-  /** IntersectionObserver instance for infinite scroll */
-  private observer: IntersectionObserver | null = null;
-
-  /** Track whether observer is connected */
-  private observerConnected = false;
 
   /** Computed empty state icon for the current tab */
   get emptyStateIcon(): string {
@@ -219,21 +216,9 @@ export class ActivityPanelComponent implements AfterViewInit, OnDestroy, OnChang
     if (changes['showPropertiesTab'] || changes['viewMode']) {
       this.tabs = buildActivityTabs(this.showPropertiesTab);
     }
-
-    // Reconnect observer when hasMore or loading changes
-    if (changes['hasMore'] || changes['loading'] || changes['entries'] || changes['activeFilter']) {
-      this.reconnectObserver();
-    }
   }
 
-  ngAfterViewInit(): void {
-    this.tabs = buildActivityTabs(this.showPropertiesTab);
-    this.setupIntersectionObserver();
-  }
-
-  ngOnDestroy(): void {
-    this.disconnectObserver();
-  }
+  ngOnDestroy(): void {}
 
   /** Handle tab click */
   onTabClick(tabValue: ActivityFilterType | 'properties'): void {
@@ -241,49 +226,11 @@ export class ActivityPanelComponent implements AfterViewInit, OnDestroy, OnChang
     this.filterChanged.emit(tabValue);
   }
 
-  // ─── Private methods ───────────────────────────────────────────────────
-
-  /** Set up IntersectionObserver for infinite scroll */
-  private setupIntersectionObserver(): void {
-    if (typeof IntersectionObserver === 'undefined') return;
-
-    this.observer = new IntersectionObserver(
-      (entries) => {
-        const [entry] = entries;
-        if (entry?.isIntersecting && this.hasMore && !this.loading) {
-          this.loadMore.emit();
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    this.connectObserver();
+  onShowMoreClick(): void {
+    this.loadMore.emit();
   }
 
-  /** Connect observer to the sentinel element */
-  private connectObserver(): void {
-    if (!this.observer || !this.scrollSentinel?.nativeElement) return;
-
-    this.observer.observe(this.scrollSentinel.nativeElement);
-    this.observerConnected = true;
-  }
-
-  /** Disconnect observer from the sentinel element */
-  private disconnectObserver(): void {
-    if (this.observer) {
-      this.observer.disconnect();
-      this.observerConnected = false;
-    }
-  }
-
-  /** Reconnect observer after state changes (e.g., new entries loaded) */
-  private reconnectObserver(): void {
-    // Use setTimeout to allow Angular to render the sentinel element first
-    setTimeout(() => {
-      this.disconnectObserver();
-      if (this.hasMore && !this.loading && this.activeFilter !== 'properties') {
-        this.connectObserver();
-      }
-    });
+  onShowAllClick(): void {
+    this.loadAll.emit();
   }
 }

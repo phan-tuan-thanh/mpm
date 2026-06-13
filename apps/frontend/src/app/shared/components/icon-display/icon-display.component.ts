@@ -7,9 +7,9 @@ import { CommonModule } from '@angular/common';
   imports: [CommonModule],
   template: `
     @if (isPrimeIcon()) {
-      <i [class]="normalizedClass()"></i>
+      <i [class]="normalizedClass()" [style.font-size.px]="size"></i>
     } @else if (icon) {
-      <span class="select-none">{{ icon }}</span>
+      <span class="select-none" [style.font-size.px]="size">{{ icon }}</span>
     }
   `
 })
@@ -21,6 +21,8 @@ export class IconDisplayComponent {
     return this._icon();
   }
   private readonly _icon = signal<string>('');
+
+  @Input() size?: number;
 
   readonly isPrimeIcon = computed(() => {
     const val = this._icon();

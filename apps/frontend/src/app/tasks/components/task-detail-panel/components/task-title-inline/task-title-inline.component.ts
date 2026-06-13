@@ -29,15 +29,17 @@ import {
     @if (!isEditing()) {
       <!-- Display mode -->
       <h1
-        class="cursor-text rounded-lg px-1 -mx-1 transition-colors duration-150
-               hover:bg-gray-50 dark:hover:bg-surface-800"
+        class="rounded-lg px-1 -mx-1 transition-colors duration-150"
+        [class.cursor-text]="!disabled"
+        [class.hover:bg-gray-50]="!disabled"
+        [class.dark:hover:bg-surface-800]="!disabled"
         [class.text-2xl]="viewMode === 'full-page'"
         [class.font-bold]="viewMode === 'full-page'"
         [class.text-lg]="viewMode !== 'full-page'"
         [class.font-semibold]="viewMode !== 'full-page'"
-        [attr.aria-label]="'Nhấn để chỉnh sửa tiêu đề: ' + title"
-        role="button"
-        tabindex="0"
+        [attr.aria-label]="disabled ? 'Tiêu đề: ' + title : 'Nhấn để chỉnh sửa tiêu đề: ' + title"
+        [attr.role]="disabled ? null : 'button'"
+        [attr.tabindex]="disabled ? null : '0'"
         (click)="enterEditMode()"
         (keydown.enter)="enterEditMode(); $event.preventDefault()"
         (keydown.space)="enterEditMode(); $event.preventDefault()"
@@ -74,6 +76,8 @@ export class TaskTitleInlineComponent implements OnChanges {
   /** Chế độ hiển thị — quyết định font size */
   @Input() viewMode: 'full-page' | 'drawer' | 'popup' = 'full-page';
 
+  @Input() disabled = false;
+
   /** Emit khi user lưu title mới (trimmed, non-empty, khác original) */
   @Output() titleSaved = new EventEmitter<string>();
 
@@ -97,6 +101,7 @@ export class TaskTitleInlineComponent implements OnChanges {
 
   /** Chuyển sang edit mode */
   enterEditMode(): void {
+    if (this.disabled) return;
     this.editValue = this.title;
     this.isEditing.set(true);
     this.needsFocus = true;
