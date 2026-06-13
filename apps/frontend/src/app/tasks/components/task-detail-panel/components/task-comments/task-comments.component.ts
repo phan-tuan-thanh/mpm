@@ -14,6 +14,8 @@ import { renderDocToHtml } from '../../../../../shared/components/rich-text-view
 import { RteFeatures } from '../../../../../shared/components/rich-text-editor/rte-features';
 import { type MentionItem } from '../../../../../shared/components/rich-text-editor/rte-mention';
 import type { TaskComment, TaskCommentReaction } from '@mpm/shared-types';
+import { ProjectStore } from '../../../../../projects/state/project.store';
+import { CustomTranslationService } from '../../../../../shared/services/custom-translation.service';
 import { map } from 'rxjs/operators';
 
 @Component({
@@ -37,6 +39,32 @@ export class TaskCommentsComponent {
   protected readonly taskStore = inject(TaskStore);
   private readonly authStore = inject(AuthStore);
   private readonly attachmentService = inject(AttachmentService);
+  private readonly projectStore = inject(ProjectStore);
+  private readonly customTrans = inject(CustomTranslationService);
+
+  readonly t = computed(() => {
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    const ct = this.customTrans;
+    return {
+      confirmDelete:      ct.t('comments.confirmDelete',      isEn ? 'Are you sure you want to delete this comment?' : 'Bạn có chắc chắn muốn xóa bình luận này không?'),
+      authorDeleted:      ct.t('comments.authorDeleted',      isEn ? 'Comment deleted'          : 'Bình luận đã bị xóa'),
+      edited:             ct.t('comments.edited',             isEn ? '(edited)'                 : '(đã chỉnh sửa)'),
+      editPlaceholder:    ct.t('comments.editPlaceholder',    isEn ? 'Edit comment...'          : 'Chỉnh sửa bình luận...'),
+      cancelBtn:          ct.t('comments.cancelBtn',          isEn ? 'Cancel'                   : 'Hủy'),
+      saveBtn:            ct.t('comments.saveBtn',            isEn ? 'Save'                     : 'Lưu'),
+      deletedCommentText: ct.t('comments.deletedText',        isEn ? 'Comment has been deleted' : 'Bình luận đã bị xóa'),
+      reactTooltip:       ct.t('comments.reactTooltip',       isEn ? 'Express reaction'         : 'Bày tỏ cảm xúc'),
+      replyBtn:           ct.t('comments.replyBtn',           isEn ? 'Reply'                    : 'Trả lời'),
+      replyPlaceholder:   ct.t('comments.replyPlaceholder',   isEn ? 'Write a reply...'         : 'Viết phản hồi...'),
+      sendBtn:            ct.t('comments.sendBtn',            isEn ? 'Send'                     : 'Gửi'),
+      noComments:         ct.t('comments.noComments',         isEn ? 'No comments yet.'         : 'Chưa có bình luận nào.'),
+      newCommentLabel:    ct.t('comments.newCommentLabel',    isEn ? 'New comment'              : 'Bình luận mới'),
+      newCommentPlaceholder: ct.t('comments.newCommentPlaceholder', isEn ? 'Write a comment... type @ to mention someone' : 'Viết bình luận… gõ @ để nhắc ai đó'),
+      submitCommentBtn:   ct.t('comments.submitBtn',          isEn ? 'Send comment'             : 'Gửi bình luận'),
+      editAction:         ct.t('comments.editAction',         isEn ? 'Edit'                     : 'Sửa'),
+      deleteAction:       ct.t('comments.deleteAction',       isEn ? 'Delete'                   : 'Xóa'),
+    };
+  });
 
   // Inputs
   @Input({ required: true }) projectId = '';
@@ -182,7 +210,7 @@ export class TaskCommentsComponent {
 
   protected confirmDeleteComment(comment: TaskComment): void {
     this.actionPopover?.hide();
-    if (confirm('Bạn có chắc chắn muốn xóa bình luận này không?')) {
+    if (confirm(this.t().confirmDelete)) {
       this.taskStore.deleteComment(this.projectId, this.taskId, comment.id);
     }
   }

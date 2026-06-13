@@ -2,6 +2,7 @@ import type { PropertyFieldConfig } from '../inline-property-editor/inline-prope
 import type { Label, ProjectModule } from '@mpm/shared-types';
 import type { MemberResponse, ProjectState } from '@mpm/shared-types';
 import type { Task } from '@mpm/shared-types';
+import { CustomTranslationService } from '../../../../../shared/services/custom-translation.service';
 
 /**
  * Builds PropertyFieldConfig[] for the "Chi tiết" (Details) section.
@@ -12,57 +13,60 @@ export function buildDetailFields(
   states: ProjectState[],
   members: MemberResponse[],
   isDarkMode = false,
+  isEn = false,
+  customTrans?: CustomTranslationService,
 ): PropertyFieldConfig[] {
+  const tTrans = (key: string, defaultValue: string) => customTrans ? customTrans.t(key, defaultValue) : defaultValue;
   return [
     {
       field: 'stateId',
-      label: 'Trạng thái',
+      label: tTrans('properties.state', isEn ? 'State' : 'Trạng thái'),
       type: 'dropdown',
       options: states.map((s) => ({
         label: s.name,
         value: s.id,
         color: isDarkMode ? s.colorDark : s.colorLight,
       })),
-      placeholder: 'Chọn trạng thái...',
+      placeholder: isEn ? 'Select state...' : 'Chọn trạng thái...',
     },
     {
       field: 'priority',
-      label: 'Độ ưu tiên',
+      label: tTrans('properties.priority', isEn ? 'Priority' : 'Độ ưu tiên'),
       type: 'dropdown',
       options: [
-        { label: 'Khẩn cấp', value: 'urgent', color: '#EF4444' },
-        { label: 'Cao', value: 'high', color: '#F97316' },
-        { label: 'Trung bình', value: 'medium', color: '#EAB308' },
-        { label: 'Thấp', value: 'low', color: '#3B82F6' },
-        { label: 'Không', value: 'none', color: '#6B7280' },
+        { label: isEn ? 'Urgent' : 'Khẩn cấp', value: 'urgent', color: '#EF4444' },
+        { label: isEn ? 'High' : 'Cao', value: 'high', color: '#F97316' },
+        { label: isEn ? 'Medium' : 'Trung bình', value: 'medium', color: '#EAB308' },
+        { label: isEn ? 'Low' : 'Thấp', value: 'low', color: '#3B82F6' },
+        { label: isEn ? 'None' : 'Không', value: 'none', color: '#6B7280' },
       ],
-      placeholder: 'Chọn độ ưu tiên...',
+      placeholder: isEn ? 'Select priority...' : 'Chọn độ ưu tiên...',
     },
     {
       field: 'assigneeIds',
-      label: 'Phân công',
+      label: tTrans('properties.assignees', isEn ? 'Assignees' : 'Phân công'),
       type: 'multi-select',
       options: members.map((m) => ({
         label: m.displayName,
         value: m.userId,
       })),
-      placeholder: 'Chọn thành viên...',
+      placeholder: isEn ? 'Select assignees...' : 'Chọn thành viên...',
     },
     {
       field: 'startDate',
-      label: 'Ngày bắt đầu',
+      label: tTrans('properties.startDate', isEn ? 'Start date' : 'Ngày bắt đầu'),
       type: 'date',
-      placeholder: 'Chọn ngày...',
+      placeholder: isEn ? 'Select date...' : 'Chọn ngày...',
     },
     {
       field: 'dueDate',
-      label: 'Hạn chót',
+      label: tTrans('properties.dueDate', isEn ? 'Due date' : 'Hạn chót'),
       type: 'date',
-      placeholder: 'Chọn ngày...',
+      placeholder: isEn ? 'Select date...' : 'Chọn ngày...',
     },
     {
       field: 'estimateValue',
-      label: 'Ước lượng',
+      label: tTrans('properties.estimate', isEn ? 'Estimate' : 'Ước lượng'),
       type: 'number',
       min: 0.5,
       max: 100,
@@ -90,38 +94,41 @@ export function buildStructureFields(
   modules: ProjectModule[],
   sprints: SprintRef[] = [],
   isDarkMode = false,
+  isEn = false,
+  customTrans?: CustomTranslationService,
 ): PropertyFieldConfig[] {
+  const tTrans = (key: string, defaultValue: string) => customTrans ? customTrans.t(key, defaultValue) : defaultValue;
   return [
     {
       field: 'labelIds',
-      label: 'Nhãn',
+      label: tTrans('properties.labels', isEn ? 'Labels' : 'Nhãn'),
       type: 'multi-select',
       options: labels.map((l) => ({
         label: l.name,
         value: l.id,
         color: isDarkMode ? l.colorDark : l.colorLight,
       })),
-      placeholder: 'Chọn nhãn...',
+      placeholder: isEn ? 'Select labels...' : 'Chọn nhãn...',
     },
     {
       field: 'moduleIds',
-      label: 'Module',
+      label: tTrans('properties.modules', isEn ? 'Modules' : 'Module'),
       type: 'multi-select',
       options: modules.map((m) => ({
         label: m.name,
         value: m.id,
       })),
-      placeholder: 'Chọn module...',
+      placeholder: isEn ? 'Select modules...' : 'Chọn module...',
     },
     {
       field: 'sprintId',
-      label: 'Sprint',
+      label: tTrans('properties.sprint', isEn ? 'Sprint' : 'Sprint'),
       type: 'dropdown',
       options: sprints.map((s) => ({
-        label: s.status === 'active' ? `${s.name} (đang chạy)` : s.name,
+        label: s.status === 'active' ? (isEn ? `${s.name} (active)` : `${s.name} (đang chạy)`) : s.name,
         value: s.id,
       })),
-      placeholder: 'Chọn sprint...',
+      placeholder: isEn ? 'Select sprint...' : 'Chọn sprint...',
       showClear: true,
     },
   ];

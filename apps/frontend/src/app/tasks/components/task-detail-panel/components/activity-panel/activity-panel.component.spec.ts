@@ -60,6 +60,14 @@ describe('ActivityPanelComponent (helpers)', () => {
       expect(tabs1).not.toBe(tabs2);
       expect(tabs1).toEqual(tabs2);
     });
+
+    it('should return English labels when isEn is true', () => {
+      const tabs = buildActivityTabs(true, true);
+      expect(tabs[0].label).toBe('All');
+      expect(tabs[1].label).toBe('Activities');
+      expect(tabs[2].label).toBe('History');
+      expect(tabs[3].label).toBe('Properties');
+    });
   });
 
   describe('getEmptyStateConfig', () => {
@@ -92,11 +100,26 @@ describe('ActivityPanelComponent (helpers)', () => {
       expect(config.icon).toBe('pi pi-clock');
       expect(config.message).toBe('Chưa có hoạt động nào.');
     });
+
+    it('should return English messages when isEn is true', () => {
+      const configAll = getEmptyStateConfig('all', true);
+      expect(configAll.message).toBe('No activities yet.');
+
+      const configActivity = getEmptyStateConfig('activity', true);
+      expect(configActivity.message).toBe('No system activities yet.');
+
+      const configComments = getEmptyStateConfig('comments', true);
+      expect(configComments.message).toBe('No comments yet.');
+
+      const configHistory = getEmptyStateConfig('history', true);
+      expect(configHistory.message).toBe('No status history yet.');
+    });
   });
 
   describe('getActiveTabLabel', () => {
     const baseTabs = buildActivityTabs(false);
     const fullTabs = buildActivityTabs(true);
+    const baseTabsEn = buildActivityTabs(false, true);
 
     it('should return "Tất cả" for "all" filter', () => {
       expect(getActiveTabLabel(baseTabs, 'all')).toBe('Tất cả');
@@ -120,6 +143,11 @@ describe('ActivityPanelComponent (helpers)', () => {
 
     it('should fallback to "Tất cả" for empty tabs array', () => {
       expect(getActiveTabLabel([], 'all')).toBe('Tất cả');
+    });
+
+    it('should return English labels when isEn is true', () => {
+      expect(getActiveTabLabel(baseTabsEn, 'all', true)).toBe('All');
+      expect(getActiveTabLabel([], 'all', true)).toBe('All');
     });
   });
 

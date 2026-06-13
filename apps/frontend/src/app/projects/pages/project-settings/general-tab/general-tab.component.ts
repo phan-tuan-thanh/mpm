@@ -1,6 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { ProjectStore } from '../../../state/project.store';
+import { CustomTranslationService } from '../../../../shared/services/custom-translation.service';
 
 @Component({
   standalone: true,
@@ -15,16 +17,16 @@ import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
     <div class="space-y-6">
       <div>
         <h1 class="text-2xl font-bold text-gray-900 dark:text-surface-0">
-          Cài đặt dự án
+          {{ t().title }}
         </h1>
         <p class="text-sm text-gray-500 dark:text-surface-400 mt-1">
-          Quản lý thông tin chung, cấu hình sprint, trạng thái công việc, labels và các mức ưu tiên.
+          {{ t().subtitle }}
         </p>
       </div>
 
       <!-- Tab Navigation -->
       <div class="border-b border-surface-200 dark:border-surface-800 flex gap-6 text-sm font-semibold select-none">
-        @for (tab of tabs; track tab.label) {
+        @for (tab of tabs(); track tab.label) {
           <a
             [routerLink]="tab.route"
             [routerLinkActiveOptions]="{ exact: tab.exact }"
@@ -44,12 +46,38 @@ import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
   `,
 })
 export class GeneralTabComponent {
-  readonly tabs = [
-    { label: 'Cấu hình chung', route: ['info'], exact: true },
-    { label: 'Cấu hình Sprint', route: ['sprints'], exact: true },
-    { label: 'Trạng thái', route: ['states'], exact: true },
-    { label: 'Mức ưu tiên', route: ['priorities'], exact: true },
-    { label: 'Labels', route: ['labels'], exact: true },
-    { label: 'Ước lượng', route: ['estimates'], exact: true },
-  ];
+  private readonly projectStore = inject(ProjectStore);
+  private readonly customTrans = inject(CustomTranslationService);
+
+  readonly t = computed(() => {
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    return isEn ? {
+      title: this.customTrans.t('general-tab.title', 'Project Settings'),
+      subtitle: this.customTrans.t('general-tab.subtitle', 'Manage general info, sprint configurations, workflow states, labels, and priorities.'),
+    } : {
+      title: this.customTrans.t('general-tab.title', 'Cài đặt dự án'),
+      subtitle: this.customTrans.t('general-tab.subtitle', 'Quản lý thông tin chung, cấu hình sprint, trạng thái công việc, nhãn và các mức ưu tiên.'),
+    };
+  });
+
+  readonly tabs = computed(() => {
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    return isEn ? [
+      { label: this.customTrans.t('general-tab.tab.info', 'General Config'), route: ['info'], exact: true },
+      { label: this.customTrans.t('general-tab.tab.sprints', 'Sprint Config'), route: ['sprints'], exact: true },
+      { label: this.customTrans.t('general-tab.tab.states', 'States'), route: ['states'], exact: true },
+      { label: this.customTrans.t('general-tab.tab.priorities', 'Priorities'), route: ['priorities'], exact: true },
+      { label: this.customTrans.t('general-tab.tab.labels', 'Labels'), route: ['labels'], exact: true },
+      { label: this.customTrans.t('general-tab.tab.estimates', 'Estimates'), route: ['estimates'], exact: true },
+      { label: this.customTrans.t('general-tab.tab.language', 'Language'), route: ['language'], exact: true },
+    ] : [
+      { label: this.customTrans.t('general-tab.tab.info', 'Cấu hình chung'), route: ['info'], exact: true },
+      { label: this.customTrans.t('general-tab.tab.sprints', 'Cấu hình Sprint'), route: ['sprints'], exact: true },
+      { label: this.customTrans.t('general-tab.tab.states', 'Trạng thái'), route: ['states'], exact: true },
+      { label: this.customTrans.t('general-tab.tab.priorities', 'Mức ưu tiên'), route: ['priorities'], exact: true },
+      { label: this.customTrans.t('general-tab.tab.labels', 'Nhãn'), route: ['labels'], exact: true },
+      { label: this.customTrans.t('general-tab.tab.estimates', 'Ước lượng'), route: ['estimates'], exact: true },
+      { label: this.customTrans.t('general-tab.tab.language', 'Ngôn ngữ'), route: ['language'], exact: true },
+    ];
+  });
 }

@@ -12,6 +12,7 @@ import { DisplayProperties, DEFAULT_DISPLAY_PROPS } from '@mpm/shared-types';
 import { SprintService } from '../../../../projects/sprints/services/sprint.service';
 import { IconDisplayComponent } from '../../../../shared/components/icon-display/icon-display.component';
 import { ProjectStore } from '../../../../projects/state/project.store';
+import { CustomTranslationService } from '../../../../shared/services/custom-translation.service';
 
 @Component({
   standalone: true,
@@ -197,7 +198,7 @@ import { ProjectStore } from '../../../../projects/state/project.store';
             <div [style.opacity]="displayProps.showModules?'1':'0.4'"
                  [class.pointer-events-none]="!displayProps.showModules"
                  style="display:grid; grid-template-columns:1fr auto 18px; align-items:center; gap:6px; padding:0 10px; height:32px; box-sizing:border-box; background:rgba(245,158,11,0.03);">
-              <span style="font-size:11px; color:var(--text-color-secondary); white-space:nowrap;">{{ t().maxShown }}</span>
+              <span style="font-size:11px; color:var(--text-color-secondary); white-space:nowrap;">{{ t().modulesMaxShown }}</span>
               <p-slider [ngModel]="displayProps.maxModules" (ngModelChange)="onToggle('maxModules',$event)" [min]="1" [max]="3" [disabled]="!displayProps.showModules" style="width:80px; display:block;"></p-slider>
               <span style="font-size:11px; font-weight:600; color:var(--text-color-secondary); text-align:right;">{{ displayProps.maxModules }}</span>
             </div>
@@ -311,6 +312,7 @@ import { ProjectStore } from '../../../../projects/state/project.store';
 export class DisplayPropertiesPanelComponent {
   private readonly sprintService = inject(SprintService);
   private readonly projectStore = inject(ProjectStore);
+  private readonly customTrans = inject(CustomTranslationService);
 
   @Input() displayProps: DisplayProperties = DEFAULT_DISPLAY_PROPS;
   @Input() selectedGroupBy = 'none';
@@ -322,78 +324,45 @@ export class DisplayPropertiesPanelComponent {
 
   readonly t = computed(() => {
     const isEn = this.projectStore.projectLanguage() === 'en';
-    return isEn ? {
-      title: 'Display Properties',
-      fields: 'Fields',
-      showAssignee: 'Assignee',
-      showPriority: 'Priority',
-      showDueDate: 'Due date',
-      showStartDate: 'Start date',
-      showEstimate: 'Estimate',
-      showState: 'State',
-      showSprint: 'Sprint',
-      labels: 'Labels',
-      mode: 'Mode',
-      badge: 'Badge',
-      dot: 'Dot',
-      maxShown: 'Max shown',
-      alwaysShow: 'Always show',
-      subItems: 'Sub-items',
-      depth: 'Depth (0=hide)',
-      modules: 'Modules',
-      view: 'View',
-      group: 'Group',
-      order: 'Order',
-      kanbanColumnWidth: 'Kanban Column',
-      openTaskAs: 'Open task as',
-      create: 'Create',
-      detail: 'Detail',
-      none: 'None',
-      state: 'State',
-      priority: 'Priority',
-      assignee: 'Assignee',
-      manualRank: 'Manual Rank',
-      createdDate: 'Created date',
-      dueDate: 'Due date',
-      popup: 'Popup',
-      rightPane: 'Right Pane',
-      fullPage: 'Full Page'
-    } : {
-      title: 'Thuộc tính hiển thị',
-      fields: 'Trường thông tin',
-      showAssignee: 'Người phụ trách',
-      showPriority: 'Độ ưu tiên',
-      showDueDate: 'Hạn chót',
-      showStartDate: 'Ngày bắt đầu',
-      showEstimate: 'Thời gian dự tính',
-      showState: 'Trạng thái',
-      showSprint: 'Sprint',
-      labels: 'Nhãn',
-      mode: 'Chế độ',
-      badge: 'Huy hiệu',
-      dot: 'Chấm màu',
-      maxShown: 'Hiển thị tối đa',
-      alwaysShow: 'Luôn hiển thị',
-      subItems: 'Việc con',
-      depth: 'Độ sâu (0=ẩn)',
-      modules: 'Module',
-      view: 'Giao diện',
-      group: 'Gom nhóm',
-      order: 'Sắp xếp',
-      kanbanColumnWidth: 'Cột Kanban',
-      openTaskAs: 'Mở công việc bằng',
-      create: 'Tạo mới',
-      detail: 'Chi tiết',
-      none: 'Không gom nhóm',
-      state: 'Trạng thái',
-      priority: 'Độ ưu tiên',
-      assignee: 'Người phụ trách',
-      manualRank: 'Thứ tự thủ công',
-      createdDate: 'Ngày tạo',
-      dueDate: 'Hạn chót',
-      popup: 'Hộp thoại',
-      rightPane: 'Bảng bên phải',
-      fullPage: 'Toàn trang'
+    const ct = this.customTrans;
+    return {
+      title:            ct.t('display.title',             isEn ? 'Display Properties'  : 'Thuộc tính hiển thị'),
+      fields:           ct.t('display.fields',            isEn ? 'Fields'               : 'Trường thông tin'),
+      showAssignee:     ct.t('display.field.assignee',    isEn ? 'Assignee'             : 'Người phụ trách'),
+      showPriority:     ct.t('display.field.priority',    isEn ? 'Priority'             : 'Độ ưu tiên'),
+      showDueDate:      ct.t('display.field.dueDate',     isEn ? 'Due date'             : 'Hạn chót'),
+      showStartDate:    ct.t('display.field.startDate',   isEn ? 'Start date'           : 'Ngày bắt đầu'),
+      showEstimate:     ct.t('display.field.estimate',    isEn ? 'Estimate'             : 'Thời gian dự tính'),
+      showState:        ct.t('display.field.state',       isEn ? 'State'                : 'Trạng thái'),
+      showSprint:       ct.t('display.field.sprint',      isEn ? 'Sprint'               : 'Sprint'),
+      labels:           ct.t('display.labels',            isEn ? 'Labels'               : 'Nhãn'),
+      mode:             ct.t('display.labels.mode',       isEn ? 'Mode'                 : 'Chế độ'),
+      badge:            ct.t('display.labels.badge',      isEn ? 'Badge'                : 'Huy hiệu'),
+      dot:              ct.t('display.labels.dot',        isEn ? 'Dot'                  : 'Chấm màu'),
+      maxShown:         ct.t('display.labels.maxShown',   isEn ? 'Max shown'            : 'Hiển thị tối đa'),
+      alwaysShow:       ct.t('display.labels.alwaysShow', isEn ? 'Always show'          : 'Luôn hiển thị'),
+      subItems:         ct.t('display.subItems',          isEn ? 'Sub-items'            : 'Việc con'),
+      depth:            ct.t('display.subItems.depth',    isEn ? 'Depth (0=hide)'       : 'Độ sâu (0=ẩn)'),
+      modules:          ct.t('display.modules',           isEn ? 'Modules'              : 'Module'),
+      modulesMaxShown:  ct.t('display.modules.maxShown',  isEn ? 'Max shown'            : 'Hiển thị tối đa'),
+      view:             ct.t('display.view',              isEn ? 'View'                 : 'Giao diện'),
+      group:            ct.t('display.view.group',        isEn ? 'Group'                : 'Gom nhóm'),
+      order:            ct.t('display.view.order',        isEn ? 'Order'                : 'Sắp xếp'),
+      kanbanColumnWidth:ct.t('display.view.kanbanColumn', isEn ? 'Kanban Column'        : 'Cột Kanban'),
+      openTaskAs:       ct.t('display.openTaskAs',        isEn ? 'Open task as'         : 'Mở công việc bằng'),
+      create:           ct.t('display.openTaskAs.create', isEn ? 'Create'               : 'Tạo mới'),
+      detail:           ct.t('display.openTaskAs.detail', isEn ? 'Detail'               : 'Chi tiết'),
+      groupByNone:      ct.t('display.groupBy.none',      isEn ? 'None'                 : 'Không gom nhóm'),
+      groupByState:     ct.t('display.groupBy.state',     isEn ? 'State'                : 'Trạng thái'),
+      groupByPriority:  ct.t('display.groupBy.priority',  isEn ? 'Priority'             : 'Độ ưu tiên'),
+      groupByAssignee:  ct.t('display.groupBy.assignee',  isEn ? 'Assignee'             : 'Người phụ trách'),
+      orderByManualRank:ct.t('display.orderBy.manualRank',isEn ? 'Manual Rank'          : 'Thứ tự thủ công'),
+      orderByCreatedDate:ct.t('display.orderBy.createdDate',isEn ? 'Created date'       : 'Ngày tạo'),
+      orderByDueDate:   ct.t('display.orderBy.dueDate',   isEn ? 'Due date'             : 'Hạn chót'),
+      orderByPriority:  ct.t('display.orderBy.priority',  isEn ? 'Priority'             : 'Độ ưu tiên'),
+      viewModePopup:    ct.t('display.viewMode.popup',    isEn ? 'Popup'                : 'Hộp thoại'),
+      viewModeRightPane:ct.t('display.viewMode.rightPane',isEn ? 'Right Pane'           : 'Bảng bên phải'),
+      viewModeFullPage: ct.t('display.viewMode.fullPage', isEn ? 'Full Page'            : 'Toàn trang'),
     };
   });
 
@@ -437,38 +406,38 @@ export class DisplayPropertiesPanelComponent {
   readonly groupByOptions = computed(() => {
     const trans = this.t();
     return [
-      { label: trans.none, value: 'none' },
-      { label: trans.state, value: 'state' },
-      { label: trans.priority, value: 'priority' },
-      { label: trans.assignee, value: 'assignee' },
+      { label: trans.groupByNone,     value: 'none' },
+      { label: trans.groupByState,    value: 'state' },
+      { label: trans.groupByPriority, value: 'priority' },
+      { label: trans.groupByAssignee, value: 'assignee' },
     ];
   });
 
   readonly orderByOptions = computed(() => {
     const trans = this.t();
     return [
-      { label: trans.manualRank, value: 'rank' },
-      { label: trans.createdDate, value: 'created_at' },
-      { label: trans.dueDate, value: 'due_date' },
-      { label: trans.priority, value: 'priority' },
+      { label: trans.orderByManualRank,  value: 'rank' },
+      { label: trans.orderByCreatedDate, value: 'created_at' },
+      { label: trans.orderByDueDate,     value: 'due_date' },
+      { label: trans.orderByPriority,    value: 'priority' },
     ];
   });
 
   readonly creationModeOptions = computed(() => {
     const trans = this.t();
     return [
-      { label: trans.popup, value: 'popup' },
-      { label: trans.rightPane, value: 'right-pane' },
-      { label: trans.fullPage, value: 'full-page' },
+      { label: trans.viewModePopup,     value: 'popup' },
+      { label: trans.viewModeRightPane, value: 'right-pane' },
+      { label: trans.viewModeFullPage,  value: 'full-page' },
     ];
   });
 
   readonly detailModeOptions = computed(() => {
     const trans = this.t();
     return [
-      { label: trans.popup, value: 'popup' },
-      { label: trans.rightPane, value: 'right-pane' },
-      { label: trans.fullPage, value: 'full-page' },
+      { label: trans.viewModePopup,     value: 'popup' },
+      { label: trans.viewModeRightPane, value: 'right-pane' },
+      { label: trans.viewModeFullPage,  value: 'full-page' },
     ];
   });
 

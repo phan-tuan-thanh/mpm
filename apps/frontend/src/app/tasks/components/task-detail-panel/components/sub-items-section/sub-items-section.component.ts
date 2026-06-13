@@ -6,6 +6,8 @@ import {
   ViewChild,
   signal,
   ElementRef,
+  inject,
+  computed,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
@@ -14,6 +16,8 @@ import { TooltipModule } from 'primeng/tooltip';
 import type { SubItemTreeNode, CreateSubItemDto, MemberResponse, TaskPriority } from '@mpm/shared-types';
 import { SubItemTreeComponent } from '../sub-item-tree/sub-item-tree.component';
 import { SubItemQuickToolbarComponent } from '../sub-item-quick-toolbar/sub-item-quick-toolbar.component';
+import { ProjectStore } from '../../../../../projects/state/project.store';
+import { CustomTranslationService } from '../../../../../shared/services/custom-translation.service';
 
 /**
  * SubItemsSectionComponent — Container component for Sub-Items section
@@ -42,7 +46,7 @@ import { SubItemQuickToolbarComponent } from '../sub-item-quick-toolbar/sub-item
         type="button"
         class="w-5 h-5 flex items-center justify-center rounded hover:bg-gray-100 dark:hover:bg-surface-800 cursor-pointer text-gray-500 dark:text-surface-400"
         (click)="expanded.set(!expanded())"
-        [attr.aria-label]="expanded() ? 'Thu gọn sub-items' : 'Mở rộng sub-items'"
+        [attr.aria-label]="expanded() ? t().collapseAria : t().expandAria"
       >
         <i class="pi pi-chevron-down text-xs transition-transform duration-200" [class.-rotate-90]="!expanded()"></i>
       </button>
@@ -63,7 +67,7 @@ import { SubItemQuickToolbarComponent } from '../sub-item-quick-toolbar/sub-item
           [class.text-gray-500]="doneCount !== totalCount"
           [class.dark:bg-surface-700]="doneCount !== totalCount"
           [class.dark:text-surface-400]="doneCount !== totalCount"
-          [pTooltip]="doneCount + ' / ' + totalCount + ' sub-items hoàn thành'"
+          [pTooltip]="t().completionTooltip(doneCount, totalCount)"
           tooltipPosition="top"
         >{{ doneCount }}/{{ totalCount }}</span>
       }
@@ -77,11 +81,11 @@ import { SubItemQuickToolbarComponent } from '../sub-item-quick-toolbar/sub-item
           pButton
           class="p-button-text p-button-sm"
           icon="pi pi-plus"
-          label="Thêm sub-item"
-          pTooltip="Thêm sub-item mới"
+          [label]="t().addSubItemBtn"
+          [pTooltip]="t().addSubItemTooltip"
           tooltipPosition="top"
           (click)="enterAddMode()"
-          aria-label="Thêm sub-item"
+          [attr.aria-label]="t().addSubItemBtn"
         ></button>
       }
     </div>
@@ -103,16 +107,16 @@ import { SubItemQuickToolbarComponent } from '../sub-item-quick-toolbar/sub-item
         <div class="flex flex-col items-center justify-center py-8 text-center">
           <i class="pi pi-sitemap text-3xl text-gray-300 dark:text-surface-600 mb-3"></i>
           <p class="text-sm text-gray-500 dark:text-surface-400 mb-3">
-            Chưa có sub-item nào. Chia nhỏ công việc để dễ theo dõi tiến độ.
+            {{ t().emptyStateText }}
           </p>
           @if (!disabled) {
             <button
               pButton
               class="p-button-outlined p-button-sm"
               icon="pi pi-plus"
-              label="Thêm sub-item"
+              [label]="t().addSubItemBtn"
               (click)="enterAddMode()"
-              aria-label="Thêm sub-item"
+              [attr.aria-label]="t().addSubItemBtn"
             ></button>
           }
         </div>
@@ -128,12 +132,12 @@ import { SubItemQuickToolbarComponent } from '../sub-item-quick-toolbar/sub-item
             type="text"
             class="w-full text-sm"
             style="height: 32px; padding: 0 10px; border-radius: 6px"
-            placeholder="Nhập tiêu đề sub-item..."
+            [placeholder]="t().inputPlaceholder"
             [maxlength]="255"
             [(ngModel)]="newTitle"
             (keydown.enter)="onSubmit()"
             (keydown.escape)="onDismiss()"
-            aria-label="Tiêu đề sub-item mới"
+            [attr.aria-label]="t().inputAria"
           />
 
           <!-- Quick toolbar -->
@@ -151,17 +155,17 @@ import { SubItemQuickToolbarComponent } from '../sub-item-quick-toolbar/sub-item
               pButton
               class="p-button-sm"
               icon="pi pi-check"
-              label="Tạo"
+              [label]="t().createBtn"
               [disabled]="!newTitle.trim()"
               (click)="onSubmit()"
-              aria-label="Tạo sub-item"
+              [attr.aria-label]="t().createAria"
             ></button>
             <button
               pButton
               class="p-button-text p-button-sm p-button-secondary"
-              label="Hủy"
+              [label]="t().cancelBtn"
               (click)="onDismiss()"
-              aria-label="Hủy thêm sub-item"
+              [attr.aria-label]="t().cancelAria"
             ></button>
           </div>
         </div>
@@ -175,6 +179,28 @@ import { SubItemQuickToolbarComponent } from '../sub-item-quick-toolbar/sub-item
   `],
 })
 export class SubItemsSectionComponent {
+  private readonly projectStore = inject(ProjectStore);
+  private readonly customTrans = inject(CustomTranslationService);
+
+  readonly t = computed(() => {
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    const ct = this.customTrans;
+    return {
+      collapseAria:      isEn ? 'Collapse sub-items'    : 'Thu gọn sub-items',
+      expandAria:        isEn ? 'Expand sub-items'       : 'Mở rộng sub-items',
+      completionTooltip: (done: number, total: number) => isEn ? `${done} / ${total} sub-items completed` : `${done} / ${total} sub-items hoàn thành`,
+      addSubItemBtn:     ct.t('sub-items.addBtn',         isEn ? 'Add sub-item'    : 'Thêm sub-item'),
+      addSubItemTooltip: ct.t('sub-items.addTooltip',     isEn ? 'Add new sub-item': 'Thêm sub-item mới'),
+      emptyStateText:    ct.t('sub-items.empty',          isEn ? 'No sub-items yet. Break down the work to track progress.' : 'Chưa có sub-item nào. Chia nhỏ công việc để dễ theo dõi tiến độ.'),
+      inputPlaceholder:  ct.t('sub-items.inputPlaceholder',isEn ? 'Enter sub-item title...' : 'Nhập tiêu đề sub-item...'),
+      createBtn:         ct.t('sub-items.createBtn',      isEn ? 'Create'          : 'Tạo'),
+      cancelBtn:         ct.t('sub-items.cancelBtn',      isEn ? 'Cancel'          : 'Hủy'),
+      createAria:        isEn ? 'Create sub-item'       : 'Tạo sub-item',
+      cancelAria:        isEn ? 'Cancel adding sub-item': 'Hủy thêm sub-item',
+      inputAria:         isEn ? 'New sub-item title'    : 'Tiêu đề sub-item mới',
+    };
+  });
+
   /** Hierarchical tree data */
   @Input() items: SubItemTreeNode[] = [];
 

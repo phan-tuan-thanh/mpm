@@ -80,6 +80,72 @@ export class QuickCreateComponent implements OnChanges {
   private readonly messageService = inject(MessageService);
   private readonly priorityConfigService = inject(PriorityConfigService);
 
+  readonly t = computed(() => {
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    return isEn ? {
+      backToList: 'Back to list',
+      closeBtn: 'Close',
+      createMore: 'Create another',
+      expand: 'Expand',
+      cancel: 'Cancel',
+      save: 'Save',
+      estimate: 'Estimate',
+      delete: 'Delete',
+      startDate: 'Start date',
+      dueDate: 'Due date',
+      clearDate: 'Clear date',
+      noMembersFound: 'No members found',
+      noMembers: 'No members',
+      noLabelsFound: 'No labels found',
+      noLabels: 'No labels',
+      noParent: 'No parent',
+      noTaskFound: 'No task found',
+      noModule: 'No module',
+      searchMembers: 'Search members...',
+      searchLabels: 'Search or create labels...',
+      searchParent: 'Search parent task...',
+      createLabel: (name: string) => `Create label "${name}"`,
+      parentTooltip: 'Parent',
+      taskNamePlaceholder: 'Task name',
+      descPlaceholder: 'Description (optional)',
+      peopleCount: (count: number) => `${count} ${count === 1 ? 'person' : 'people'}`,
+      typeEpic: 'Epic',
+      typeStory: 'Story',
+      typeTask: 'Task',
+      typeSubtask: 'Subtask'
+    } : {
+      backToList: 'Quay lại danh sách',
+      closeBtn: 'Đóng',
+      createMore: 'Tạo tiếp',
+      expand: 'Mở rộng',
+      cancel: 'Hủy',
+      save: 'Lưu',
+      estimate: 'Ước lượng',
+      delete: 'Xóa',
+      startDate: 'Bắt đầu',
+      dueDate: 'Hết hạn',
+      clearDate: 'Xóa ngày',
+      noMembersFound: 'Không tìm thấy thành viên',
+      noMembers: 'Chưa có thành viên',
+      noLabelsFound: 'Không tìm thấy nhãn',
+      noLabels: 'Chưa có nhãn',
+      noParent: 'Không có parent',
+      noTaskFound: 'Không tìm thấy task',
+      noModule: 'Chưa có module',
+      searchMembers: 'Tìm kiếm thành viên...',
+      searchLabels: 'Tìm kiếm hoặc tạo nhãn...',
+      searchParent: 'Tìm kiếm parent task...',
+      createLabel: (name: string) => `Tạo nhãn "${name}"`,
+      parentTooltip: 'Parent',
+      taskNamePlaceholder: 'Tên task',
+      descPlaceholder: 'Mô tả (tùy chọn)',
+      peopleCount: (count: number) => `${count} người`,
+      typeEpic: 'Epic',
+      typeStory: 'Story',
+      typeTask: 'Task',
+      typeSubtask: 'Subtask'
+    };
+  });
   @Input() visible = false;
   @Input() parentId?: string;
   @Input() parentType?: TaskType;
@@ -131,15 +197,15 @@ export class QuickCreateComponent implements OnChanges {
   });
 
   protected readonly parentSelectOptions = computed(() => [
-    { id: null as string | null, label: 'Không có parent' },
+    { id: null as string | null, label: this.t().noParent },
     ...this.parentOptions().map(t => ({ id: t.id as string | null, label: `${t.taskId} — ${t.title}` })),
   ]);
 
   protected readonly selectedParentTitle = computed(() => {
     const id = this.selectedParentId();
-    if (!id) return 'Parent';
+    if (!id) return this.t().parentTooltip;
     const match = this.parentOptions().find(t => t.id === id);
-    return match ? `${match.taskId} ${match.title}` : 'Parent';
+    return match ? `${match.taskId} ${match.title}` : this.t().parentTooltip;
   });
 
   protected focusParentSearch(): void {
@@ -187,15 +253,24 @@ export class QuickCreateComponent implements OnChanges {
   );
 
   protected readonly availableTypes = computed(() => {
+    const tr = this.t();
     const activeParentId = this.selectedParentId();
     const parent = activeParentId
       ? this.parentOptions().find((t) => t.id === activeParentId)
       : null;
-    if (parent) {
-      const valid = VALID_CHILDREN[parent.type] ?? [];
-      return TYPE_OPTIONS.filter((t) => valid.includes(t.value));
-    }
-    return TYPE_OPTIONS.filter((t) => t.value !== 'subtask');
+    const typeLabelMap: Record<TaskType, string> = {
+      epic: tr.typeEpic,
+      story: tr.typeStory,
+      task: tr.typeTask,
+      subtask: tr.typeSubtask
+    };
+    const options = parent
+      ? TYPE_OPTIONS.filter((t) => (VALID_CHILDREN[parent.type] ?? []).includes(t.value))
+      : TYPE_OPTIONS.filter((t) => t.value !== 'subtask');
+    return options.map(opt => ({
+      ...opt,
+      label: typeLabelMap[opt.value] || opt.label
+    }));
   });
 
   // ─── Data sources ────────────────────────────────────────────────────────
@@ -228,9 +303,20 @@ export class QuickCreateComponent implements OnChanges {
     return opts.find((p) => p.value === this.selectedPriority()) ?? opts[opts.length - 1];
   });
 
-  protected readonly selectedTypeConfig = computed(() =>
-    TYPE_OPTIONS.find((t) => t.value === this.selectedType()) ?? TYPE_OPTIONS[2],
-  );
+  protected readonly selectedTypeConfig = computed(() => {
+    const match = TYPE_OPTIONS.find((t) => t.value === this.selectedType()) ?? TYPE_OPTIONS[2];
+    const tr = this.t();
+    const typeLabelMap: Record<TaskType, string> = {
+      epic: tr.typeEpic,
+      story: tr.typeStory,
+      task: tr.typeTask,
+      subtask: tr.typeSubtask
+    };
+    return {
+      ...match,
+      label: typeLabelMap[match.value] || match.label
+    };
+  });
 
   // ─── Helpers ─────────────────────────────────────────────────────────────
   protected readonly labelSearch = signal('');

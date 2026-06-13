@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, inject } from '@angular/core';
+import { Component, Input, Output, EventEmitter, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DragDropModule } from '@angular/cdk/drag-drop';
@@ -11,6 +11,7 @@ import { TaskStore } from '../../../state/task.store';
 import { ProjectStore } from '../../../../projects/state/project.store';
 import { PriorityConfigService } from '../../../services/priority-config.service';
 import { SprintService } from '../../../../projects/sprints/services/sprint.service';
+import { CustomTranslationService } from '../../../../shared/services/custom-translation.service';
 
 const TYPE_CONFIG = {
   epic: { icon: 'pi pi-bolt', color: '#8B5CF6' },
@@ -65,7 +66,7 @@ import { StateDotComponent } from '../../../../shared/components/state-dot/state
       </span>
     }
     @if (displayProps.showSubItemCount && task.subItemCount > 0) {
-      <span class="flex items-center gap-0.5 text-xs text-gray-400 dark:text-surface-500 flex-shrink-0 mr-2" [pTooltip]="task.subItemCount + ' sub-items'">
+      <span class="flex items-center gap-0.5 text-xs text-gray-400 dark:text-surface-500 flex-shrink-0 mr-2" [pTooltip]="task.subItemCount + ' ' + t().subItems">
         <i class="pi pi-sitemap text-[10px]"></i>{{ task.subItemCount }}
       </span>
     }
@@ -130,7 +131,7 @@ import { StateDotComponent } from '../../../../shared/components/state-dot/state
       <div class="flex items-center gap-1 flex-shrink-0 mr-2">
         @for (mod of task.modules.slice(0, displayProps.maxModules); track mod.id) {
           <span class="inline-flex items-center gap-1 text-xs px-1.5 py-px rounded bg-gray-50 dark:bg-surface-800 border border-gray-200 dark:border-surface-700 text-gray-600 dark:text-surface-300 max-w-[96px] cursor-default"
-                [pTooltip]="(mod.scope === 'workspace' ? 'Workspace module: ' : 'Project module: ') + mod.name">
+                [pTooltip]="(mod.scope === 'workspace' ? t().workspaceModule : t().projectModule) + ': ' + mod.name">
             <i [class]="mod.scope === 'workspace' ? 'pi pi-globe text-[10px]' : 'pi pi-folder text-[10px]'"></i>
             <span class="truncate" style="max-width:80px">{{ mod.name }}</span>
           </span>
@@ -145,22 +146,22 @@ import { StateDotComponent } from '../../../../shared/components/state-dot/state
     }
     @if (displayProps.showSprint !== false && task.sprintId && sprintName(task.sprintId)) {
       <span class="inline-flex items-center gap-1 text-xs px-1.5 py-px rounded bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-900 text-indigo-600 dark:text-indigo-400 max-w-[96px] flex-shrink-0 mr-2 cursor-default"
-            [pTooltip]="'Sprint: ' + sprintName(task.sprintId)">
+            [pTooltip]="t().sprint + ': ' + sprintName(task.sprintId)">
         <app-icon-display [icon]="sprintIcon()" [size]="layoutService.appIconSize() - 4" class="flex-shrink-0"></app-icon-display>
         <span class="truncate" style="max-width:80px">{{ sprintName(task.sprintId) }}</span>
       </span>
     }
     @if (displayProps.showEstimate && task.estimateValue != null) {
-      <span class="flex items-center gap-0.5 text-xs text-gray-400 dark:text-surface-500 flex-shrink-0 mr-2" pTooltip="Estimate"><i class="pi pi-hourglass text-[10px]"></i>{{ task.estimateValue }}</span>
+      <span class="flex items-center gap-0.5 text-xs text-gray-400 dark:text-surface-500 flex-shrink-0 mr-2" [pTooltip]="t().estimate"><i class="pi pi-hourglass text-[10px]"></i>{{ task.estimateValue }}</span>
     }
     @if (displayProps.showStartDate && task.startDate) {
-      <span class="flex items-center gap-0.5 text-xs text-gray-400 dark:text-surface-500 flex-shrink-0 mr-2" pTooltip="Start date"><i class="pi pi-calendar text-[10px]"></i>{{ formatDate(task.startDate) }}</span>
+      <span class="flex items-center gap-0.5 text-xs text-gray-400 dark:text-surface-500 flex-shrink-0 mr-2" [pTooltip]="t().startDate"><i class="pi pi-calendar text-[10px]"></i>{{ formatDate(task.startDate) }}</span>
     }
     @if (displayProps.showDueDate && task.dueDate) {
-      <span class="flex items-center gap-0.5 text-xs flex-shrink-0 mr-2" [class.text-red-500]="isOverdue(task)" [class.text-gray-400]="!isOverdue(task)" [class.dark:text-surface-500]="!isOverdue(task)" pTooltip="Due date"><i class="pi pi-calendar text-[10px]"></i>{{ formatDate(task.dueDate) }}</span>
+      <span class="flex items-center gap-0.5 text-xs flex-shrink-0 mr-2" [class.text-red-500]="isOverdue(task)" [class.text-gray-400]="!isOverdue(task)" [class.dark:text-surface-500]="!isOverdue(task)" [pTooltip]="t().dueDate"><i class="pi pi-calendar text-[10px]"></i>{{ formatDate(task.dueDate) }}</span>
     }
     @if (displayProps.showPriority && task.priority !== 'none') {
-      <app-icon-display [icon]="priorityIcon(task.priority)" [size]="layoutService.appIconSize() - 2" class="flex-shrink-0 mr-2 leading-none" [style.color]="priorityColor(task.priority)" [pTooltip]="'Priority: ' + task.priority" />
+      <app-icon-display [icon]="priorityIcon(task.priority)" [size]="layoutService.appIconSize() - 2" class="flex-shrink-0 mr-2 leading-none" [style.color]="priorityColor(task.priority)" [pTooltip]="t().priority + ': ' + task.priority" />
     }
     @if (displayProps.showState && task.state) {
       <app-state-dot [state]="task.state" [size]="12" class="flex-shrink-0 mr-2" />
@@ -184,6 +185,22 @@ export class TaskRowComponent {
   private readonly projectStore = inject(ProjectStore);
   private readonly priorityConfigService = inject(PriorityConfigService);
   private readonly sprintService = inject(SprintService);
+  private readonly customTrans = inject(CustomTranslationService);
+
+  readonly t = computed(() => {
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    const ct = this.customTrans;
+    return {
+      subItems:        ct.t('task-row.subItems',        isEn ? 'sub-items'        : 'sub-items'),
+      estimate:        ct.t('task-row.estimate',        isEn ? 'Estimate'         : 'Ước tính'),
+      startDate:       ct.t('task-row.startDate',       isEn ? 'Start date'       : 'Ngày bắt đầu'),
+      dueDate:         ct.t('task-row.dueDate',         isEn ? 'Due date'         : 'Ngày đến hạn'),
+      priority:        ct.t('task-row.priority',        isEn ? 'Priority'         : 'Ưu tiên'),
+      workspaceModule: ct.t('task-row.workspaceModule', isEn ? 'Workspace module' : 'Module workspace'),
+      projectModule:   ct.t('task-row.projectModule',   isEn ? 'Project module'   : 'Module dự án'),
+      sprint:          ct.t('task-row.sprint',          isEn ? 'Sprint'           : 'Sprint'),
+    };
+  });
 
   protected sprintName(sprintId: string): string | null {
     return this.sprintService.sprintById().get(sprintId)?.name ?? null;

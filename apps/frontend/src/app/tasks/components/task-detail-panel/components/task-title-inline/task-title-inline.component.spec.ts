@@ -1,11 +1,10 @@
 import { TaskTitleInlineComponent } from './task-title-inline.component';
-import { SimpleChange } from '@angular/core';
+import { SimpleChange, signal } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+import { ProjectStore } from '../../../../../projects/state/project.store';
 
 /**
  * Unit tests for TaskTitleInlineComponent
- *
- * Tests the component's logic directly without TestBed since this component
- * has no complex dependencies — it's a standalone component with simple I/O.
  *
  * Validates: Requirements 2.1, 2.2, 2.3, 2.4, 2.5, 2.6
  */
@@ -13,10 +12,21 @@ describe('TaskTitleInlineComponent', () => {
   let component: TaskTitleInlineComponent;
 
   beforeEach(() => {
-    component = new TaskTitleInlineComponent();
+    TestBed.configureTestingModule({
+      imports: [TaskTitleInlineComponent],
+      providers: [
+        { provide: ProjectStore, useValue: { projectLanguage: signal('vi') } },
+      ],
+    });
+    const fixture = TestBed.createComponent(TaskTitleInlineComponent);
+    component = fixture.componentInstance;
     component.title = 'Original Title';
     component.viewMode = 'full-page';
   });
+
+  function createFresh(): TaskTitleInlineComponent {
+    return TestBed.createComponent(TaskTitleInlineComponent).componentInstance;
+  }
 
   it('should create the component', () => {
     expect(component).toBeTruthy();
@@ -24,12 +34,12 @@ describe('TaskTitleInlineComponent', () => {
 
   describe('default values', () => {
     it('should default title to empty string', () => {
-      const fresh = new TaskTitleInlineComponent();
+      const fresh = createFresh();
       expect(fresh.title).toBe('');
     });
 
     it('should default viewMode to full-page', () => {
-      const fresh = new TaskTitleInlineComponent();
+      const fresh = createFresh();
       expect(fresh.viewMode).toBe('full-page');
     });
 

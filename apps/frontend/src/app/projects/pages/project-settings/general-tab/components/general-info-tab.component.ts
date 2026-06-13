@@ -235,25 +235,6 @@ import { IconDisplayComponent } from '../../../../../shared/components/icon-disp
                 </p-popover>
               </div>
 
-              <div class="border-t border-surface-100 dark:border-surface-800"></div>
-
-              <!-- Language Settings -->
-              <div class="flex flex-col gap-1.5">
-                <label class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wider">{{ t().langLabel }}</label>
-                <div class="mt-1">
-                  <p-selectbutton
-                    [options]="languageOptions()"
-                    [(ngModel)]="language"
-                    name="language"
-                    [allowEmpty]="false"
-                    optionLabel="label"
-                    optionValue="value"
-                    [disabled]="isReadOnly() || isSubmitting()"
-                    size="small"
-                  />
-                </div>
-              </div>
-
             </div>
           </div>
 
@@ -328,9 +309,6 @@ export class GeneralInfoTabComponent implements OnInit {
       noTimezoneFound: 'No timezone found',
       selectTimezone: 'Select timezone',
       selectLead: 'Select lead',
-      langLabel: 'Display Language',
-      langVi: 'Tiếng Việt',
-      langEn: 'English',
       saveBtn: 'Save Changes',
       fileLargeSummary: 'File Too Large',
       fileLargeDetail: 'Cover image size must not exceed 5MB.',
@@ -372,9 +350,6 @@ export class GeneralInfoTabComponent implements OnInit {
       noTimezoneFound: 'Không tìm thấy múi giờ',
       selectTimezone: 'Chọn múi giờ',
       selectLead: 'Chọn người phụ trách',
-      langLabel: 'Ngôn ngữ hiển thị',
-      langVi: 'Tiếng Việt',
-      langEn: 'English',
       saveBtn: 'Lưu thay đổi',
       fileLargeSummary: 'Kích thước file lớn',
       fileLargeDetail: 'Kích thước ảnh bìa không được vượt quá 5MB.',
@@ -401,14 +376,6 @@ export class GeneralInfoTabComponent implements OnInit {
     ];
   });
 
-  readonly languageOptions = computed(() => {
-    const trans = this.t();
-    return [
-      { label: trans.langVi, value: 'vi' },
-      { label: trans.langEn, value: 'en' },
-    ];
-  });
-
   // States
   name = '';
   description: TiptapDoc | null = null;
@@ -416,7 +383,6 @@ export class GeneralInfoTabComponent implements OnInit {
   network = ProjectNetwork.SECRET;
   leadId: string | null = null;
   timezone = 'Asia/Saigon';
-  language: 'vi' | 'en' = 'vi';
 
   readonly isSubmitting = signal<boolean>(false);
   readonly isUploadingCover = signal<boolean>(false);
@@ -510,8 +476,7 @@ export class GeneralInfoTabComponent implements OnInit {
       this.network = project.network || ProjectNetwork.SECRET;
       this.leadId = project.lead?.userId || null;
       this.timezone = project.timezone || 'Asia/Saigon';
-      this.language = this.projectStore.projectLanguage();
-      
+
       // Load members for dropdown selection
       this.projectStore.loadMembers(project.id);
     }
@@ -593,8 +558,6 @@ export class GeneralInfoTabComponent implements OnInit {
     if (!project || !this.name || this.isReadOnly()) return;
 
     this.isSubmitting.set(true);
-
-    this.projectStore.setProjectLanguage(this.language);
 
     const trans = this.t();
     this.projectService

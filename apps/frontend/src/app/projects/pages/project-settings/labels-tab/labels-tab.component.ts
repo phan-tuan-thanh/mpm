@@ -14,6 +14,7 @@ import { PopoverModule } from 'primeng/popover';
 import { LabelStore } from '../../../../tasks/state/label.store';
 import { LayoutService } from '../../../../layout/services/layout.service';
 import { ProjectStore } from '../../../state/project.store';
+import { CustomTranslationService } from '../../../../shared/services/custom-translation.service';
 import type { Label } from '@mpm/shared-types';
 import { computed, signal } from '@angular/core';
 
@@ -295,7 +296,7 @@ import { IconDisplayComponent } from '../../../../shared/components/icon-display
                 @if (isScoped(editName)) {
                   <label class="flex items-center gap-1 text-xs text-gray-500 dark:text-surface-400 cursor-pointer select-none">
                     <p-checkbox [(ngModel)]="editIsExclusive" [binary]="true" />
-                    Exclusive
+                    {{ t().exclusiveLabel }}
                   </label>
                 }
                 <button pButton icon="pi pi-check" size="small" severity="success" [fluid]="false" style="height:28px;padding:0 8px;" (click)="saveEdit(label)"></button>
@@ -342,7 +343,7 @@ import { IconDisplayComponent } from '../../../../shared/components/icon-display
               <!-- Choice type indicator -->
               @if (isScoped(label.name)) {
                 <span class="text-[10px] px-1.5 py-0.5 rounded border border-surface-200 dark:border-surface-700 text-gray-400 dark:text-surface-500 shrink-0 select-none mr-2">
-                  {{ label.isExclusive !== false ? 'Single' : 'Multi' }}
+                  {{ label.isExclusive !== false ? t().chipSingle : t().chipMulti }}
                 </span>
               }
 
@@ -401,6 +402,7 @@ export class LabelsTabComponent implements OnInit {
   private readonly messageService = inject(MessageService);
   protected readonly layoutService = inject(LayoutService);
   private readonly projectStore = inject(ProjectStore);
+  private readonly customTrans = inject(CustomTranslationService);
 
   protected get projectId(): string {
     return this.projectStore.currentProject()?.id ?? '';
@@ -423,34 +425,37 @@ export class LabelsTabComponent implements OnInit {
   // ── Localization ──────────────────────────────────────────────
   readonly t = computed(() => {
     const isEn = this.projectStore.projectLanguage() === 'en';
+    const tTrans = (key: string, defaultValue: string) => this.customTrans.t(key, defaultValue);
+    
     return isEn ? {
-      commonIconTitle: 'Common Label Icon',
-      commonIconDesc: 'This icon is displayed uniformly on every project label.',
-      commonIconTooltip: 'Change common icon',
-      addNewTitle: 'Add new label',
-      scopedLabelToggle: 'Scoped Label (group::value)',
-      scopedGroupPlaceholder: 'Group (e.g. type)',
-      scopedValuePlaceholder: 'Value (e.g. bug)',
-      labelNamePlaceholder: 'Label name',
-      descPlaceholder: 'Description (optional)',
-      quickColorTitle: 'Quick Colors (Light / Dark)',
-      customColorBtn: 'Customize Light & Dark colors',
-      lightModeLabel: 'Light mode color:',
-      darkModeLabel: 'Dark mode color:',
-      colorTooltip: 'Choose color pair',
-      singleChoiceToggle: 'Single Choice (Each task can select at most 1 label)',
-      addBtn: 'Add',
-      cancelBtn: 'Cancel',
-      previewLabelTitle: 'Label preview:',
+      commonIconTitle: tTrans('labels-tab.commonIconTitle', 'Common Label Icon'),
+      commonIconDesc: tTrans('labels-tab.commonIconDesc', 'This icon is displayed uniformly on every project label.'),
+      commonIconTooltip: tTrans('labels-tab.commonIconTooltip', 'Change common icon'),
+      addNewTitle: tTrans('labels-tab.addNewTitle', 'Add new label'),
+      scopedLabelToggle: tTrans('labels-tab.scopedLabelToggle', 'Scoped Label (group::value)'),
+      scopedGroupPlaceholder: tTrans('labels-tab.scopedGroupPlaceholder', 'Group (e.g. type)'),
+      scopedValuePlaceholder: tTrans('labels-tab.scopedValuePlaceholder', 'Value (e.g. bug)'),
+      labelNamePlaceholder: tTrans('labels-tab.labelNamePlaceholder', 'Label name'),
+      descPlaceholder: tTrans('labels-tab.descPlaceholder', 'Description (optional)'),
+      quickColorTitle: tTrans('labels-tab.quickColorTitle', 'Quick Colors (Light / Dark)'),
+      customColorBtn: tTrans('labels-tab.customColorBtn', 'Customize Light & Dark colors'),
+      lightModeLabel: tTrans('labels-tab.lightModeLabel', 'Light mode color:'),
+      darkModeLabel: tTrans('labels-tab.darkModeLabel', 'Dark mode color:'),
+      colorTooltip: tTrans('labels-tab.colorTooltip', 'Choose color pair'),
+      singleChoiceToggle: tTrans('labels-tab.singleChoiceToggle', 'Single Choice (Each task can select at most 1 label)'),
+      exclusiveLabel: tTrans('labels-tab.exclusiveLabel', 'Exclusive'),
+      addBtn: tTrans('labels-tab.addBtn', 'Add'),
+      cancelBtn: tTrans('labels-tab.cancelBtn', 'Cancel'),
+      previewLabelTitle: tTrans('labels-tab.previewLabelTitle', 'Label preview:'),
       bulkDeleteLabel: (count: number) => `Delete ${count}`,
       deselectAllTooltip: 'Deselect all',
-      searchPlaceholder: 'Search by name or description...',
+      searchPlaceholder: tTrans('labels-tab.searchPlaceholder', 'Search by name or description...'),
       selectAllOnPage: (count: number) => `Select all on this page (${count})`,
       copyTooltip: 'Clone',
       editTooltip: 'Edit',
       deleteTooltip: 'Delete',
-      noMatchingFound: 'No matching label found',
-      emptyStateDesc: 'No labels yet. Create the first label above.',
+      noMatchingFound: tTrans('labels-tab.noMatchingFound', 'No matching label found'),
+      emptyStateDesc: tTrans('labels-tab.emptyStateDesc', 'No labels yet. Create the first label above.'),
       chipAll: 'All',
       chipRegular: 'Regular',
       chipScoped: 'Scoped',
@@ -480,56 +485,57 @@ export class LabelsTabComponent implements OnInit {
       deleteBtn: 'Delete',
       successSummary: 'Success',
     } : {
-      commonIconTitle: 'Biểu tượng chung của Labels',
-      commonIconDesc: 'Biểu tượng này được hiển thị đồng bộ trên mọi nhãn của dự án.',
-      commonIconTooltip: 'Thay đổi biểu tượng chung',
-      addNewTitle: 'Thêm label mới',
-      scopedLabelToggle: 'Scoped Label (nhóm::giá trị)',
-      scopedGroupPlaceholder: 'Nhóm (ví dụ: type)',
-      scopedValuePlaceholder: 'Giá trị (ví dụ: bug)',
-      labelNamePlaceholder: 'Tên label',
-      descPlaceholder: 'Mô tả (tuỳ chọn)',
-      quickColorTitle: 'Màu chọn nhanh (Light / Dark)',
-      customColorBtn: 'Tự tùy chỉnh màu sắc Light & Dark',
-      lightModeLabel: 'Màu Light mode:',
-      darkModeLabel: 'Màu Dark mode:',
-      colorTooltip: 'Chọn cặp màu sắc',
-      singleChoiceToggle: 'Single Choice (Mỗi task chỉ chọn tối đa 1 nhãn)',
-      addBtn: 'Thêm',
-      cancelBtn: 'Hủy',
-      previewLabelTitle: 'Xem trước nhãn:',
+      commonIconTitle: tTrans('labels-tab.commonIconTitle', 'Biểu tượng chung của Nhãn'),
+      commonIconDesc: tTrans('labels-tab.commonIconDesc', 'Biểu tượng này được hiển thị đồng bộ trên mọi nhãn của dự án.'),
+      commonIconTooltip: tTrans('labels-tab.commonIconTooltip', 'Thay đổi biểu tượng chung'),
+      addNewTitle: tTrans('labels-tab.addNewTitle', 'Thêm nhãn mới'),
+      scopedLabelToggle: tTrans('labels-tab.scopedLabelToggle', 'Nhãn Scoped (nhóm::giá trị)'),
+      scopedGroupPlaceholder: tTrans('labels-tab.scopedGroupPlaceholder', 'Nhóm (ví dụ: type)'),
+      scopedValuePlaceholder: tTrans('labels-tab.scopedValuePlaceholder', 'Giá trị (ví dụ: bug)'),
+      labelNamePlaceholder: tTrans('labels-tab.labelNamePlaceholder', 'Tên nhãn'),
+      descPlaceholder: tTrans('labels-tab.descPlaceholder', 'Mô tả (tuỳ chọn)'),
+      quickColorTitle: tTrans('labels-tab.quickColorTitle', 'Màu chọn nhanh (Light / Dark)'),
+      customColorBtn: tTrans('labels-tab.customColorBtn', 'Tự tùy chỉnh màu sắc Light & Dark'),
+      lightModeLabel: tTrans('labels-tab.lightModeLabel', 'Màu Light mode:'),
+      darkModeLabel: tTrans('labels-tab.darkModeLabel', 'Màu Dark mode:'),
+      colorTooltip: tTrans('labels-tab.colorTooltip', 'Chọn cặp màu sắc'),
+      singleChoiceToggle: tTrans('labels-tab.singleChoiceToggle', 'Lựa chọn đơn (Mỗi task chỉ chọn tối đa 1 nhãn)'),
+      exclusiveLabel: tTrans('labels-tab.exclusiveLabel', 'Lựa chọn đơn'),
+      addBtn: tTrans('labels-tab.addBtn', 'Thêm'),
+      cancelBtn: tTrans('labels-tab.cancelBtn', 'Hủy'),
+      previewLabelTitle: tTrans('labels-tab.previewLabelTitle', 'Xem trước nhãn:'),
       bulkDeleteLabel: (count: number) => `Xóa ${count}`,
       deselectAllTooltip: 'Bỏ chọn tất cả',
-      searchPlaceholder: 'Tìm theo tên hoặc mô tả...',
+      searchPlaceholder: tTrans('labels-tab.searchPlaceholder', 'Tìm theo tên hoặc mô tả...'),
       selectAllOnPage: (count: number) => `Chọn tất cả trên trang này (${count})`,
       copyTooltip: 'Sao chép',
       editTooltip: 'Sửa',
       deleteTooltip: 'Xóa',
-      noMatchingFound: 'Không tìm thấy label khớp',
-      emptyStateDesc: 'Chưa có label nào. Tạo label đầu tiên bên trên.',
+      noMatchingFound: tTrans('labels-tab.noMatchingFound', 'Không tìm thấy nhãn khớp'),
+      emptyStateDesc: tTrans('labels-tab.emptyStateDesc', 'Chưa có nhãn nào. Tạo nhãn đầu tiên bên trên.'),
       chipAll: 'Tất cả',
       chipRegular: 'Thường',
       chipScoped: 'Scoped',
-      chipSingle: 'Single',
-      chipMulti: 'Multi',
-      scopedEmptyWarn: 'Vui lòng điền đầy đủ Nhóm và Giá trị cho Scoped Label.',
-      createSuccessDetail: 'Đã tạo label mới',
-      createErrorDetail: 'Không thể tạo label. Vui lòng thử lại.',
-      updateSuccessDetail: 'Đã cập nhật label',
-      updateErrorDetail: 'Không thể cập nhật label.',
+      chipSingle: 'Lựa chọn đơn',
+      chipMulti: 'Nhiều lựa chọn',
+      scopedEmptyWarn: 'Vui lòng điền đầy đủ Nhóm và Giá trị cho Nhãn Scoped.',
+      createSuccessDetail: 'Đã tạo nhãn mới',
+      createErrorDetail: 'Không thể tạo nhãn. Vui lòng thử lại.',
+      updateSuccessDetail: 'Đã cập nhật nhãn',
+      updateErrorDetail: 'Không thể cập nhật nhãn.',
       commonIconSuccessDetail: 'Đã cập nhật biểu tượng chung cho các nhãn.',
       cloneDetail: (name: string) => `Đã điền thông tin nhãn "${name}" vào form thêm mới ở trên.`,
       confirmDeleteHeader: 'Xác nhận xóa',
-      confirmDeleteMsg: (name: string) => `Xóa label "${name}"?`,
-      deleteSuccessDetail: 'Đã xóa label',
-      deleteErrorDetail: 'Không thể xóa label.',
-      bulkConfirmHeader: 'Xóa nhiều labels',
-      bulkConfirmMsg: (count: number) => `Xóa ${count} label đã chọn?`,
-      bulkConfirmBtn: (count: number) => `Xóa ${count} labels`,
-      bulkDeleteSuccessDetail: (ok: number, total: number) => `Đã xóa ${ok}/${total} labels`,
+      confirmDeleteMsg: (name: string) => `Xóa nhãn "${name}"?`,
+      deleteSuccessDetail: 'Đã xóa nhãn',
+      deleteErrorDetail: 'Không thể xóa nhãn.',
+      bulkConfirmHeader: 'Xóa nhiều nhãn',
+      bulkConfirmMsg: (count: number) => `Xóa ${count} nhãn đã chọn?`,
+      bulkConfirmBtn: (count: number) => `Xóa ${count} nhãn`,
+      bulkDeleteSuccessDetail: (ok: number, total: number) => `Đã xóa ${ok}/${total} nhãn`,
       previewGroupName: 'nhóm',
       previewValueName: 'giá trị',
-      previewLabelName: 'Tên label',
+      previewLabelName: 'Tên nhãn',
       applyTemplateSuccessSummary: 'Thành công',
       deleteErrorSummary: 'Lỗi',
       cloneLabelName: 'Sao chép nhãn',

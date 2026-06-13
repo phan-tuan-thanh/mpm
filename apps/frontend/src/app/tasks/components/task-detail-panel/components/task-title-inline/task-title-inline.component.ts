@@ -8,7 +8,10 @@ import {
   ViewChild,
   OnChanges,
   SimpleChanges,
+  inject,
+  computed,
 } from '@angular/core';
+import { ProjectStore } from '../../../../../projects/state/project.store';
 
 /**
  * TaskTitleInlineComponent — Inline editable title
@@ -37,7 +40,7 @@ import {
         [class.font-bold]="viewMode === 'full-page'"
         [class.text-lg]="viewMode !== 'full-page'"
         [class.font-semibold]="viewMode !== 'full-page'"
-        [attr.aria-label]="disabled ? 'Tiêu đề: ' + title : 'Nhấn để chỉnh sửa tiêu đề: ' + title"
+        [attr.aria-label]="disabled ? t().titleLabel(title) : t().clickToEdit(title)"
         [attr.role]="disabled ? null : 'button'"
         [attr.tabindex]="disabled ? null : '0'"
         (click)="enterEditMode()"
@@ -60,7 +63,7 @@ import {
         [class.font-semibold]="viewMode !== 'full-page'"
         [maxLength]="255"
         [value]="editValue"
-        [attr.aria-label]="'Chỉnh sửa tiêu đề task'"
+        [attr.aria-label]="t().editAria"
         (input)="editValue = $any($event.target).value"
         (blur)="onBlur()"
         (keydown.enter)="onEnter($event)"
@@ -70,6 +73,20 @@ import {
   `,
 })
 export class TaskTitleInlineComponent implements OnChanges {
+  private readonly projectStore = inject(ProjectStore);
+
+  readonly t = computed(() => {
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    return isEn ? {
+      titleLabel: (title: string) => `Title: ${title}`,
+      clickToEdit: (title: string) => `Press to edit title: ${title}`,
+      editAria: 'Edit task title'
+    } : {
+      titleLabel: (title: string) => `Tiêu đề: ${title}`,
+      clickToEdit: (title: string) => `Nhấn để chỉnh sửa tiêu đề: ${title}`,
+      editAria: 'Chỉnh sửa tiêu đề task'
+    };
+  });
   /** Title hiện tại từ parent */
   @Input() title = '';
 

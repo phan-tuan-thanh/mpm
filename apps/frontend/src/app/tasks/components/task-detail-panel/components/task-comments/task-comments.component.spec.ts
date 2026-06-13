@@ -8,6 +8,7 @@ import { AuthStore } from '../../../../../auth/state/auth.store';
 import { AttachmentService } from '../../../../services/attachment.service';
 import { RichTextEditorComponent } from '../../../../../shared/components/rich-text-editor/rich-text-editor.component';
 import type { TaskComment } from '@mpm/shared-types';
+import { ProjectStore } from '../../../../../projects/state/project.store';
 
 @Component({
   standalone: true,
@@ -32,8 +33,13 @@ describe('TaskCommentsComponent', () => {
   let mockTaskStore: any;
   let mockAuthStore: any;
   let mockAttachmentService: any;
+  let mockProjectStore: any;
 
   beforeEach(() => {
+    mockProjectStore = {
+      projectLanguage: signal('vi'),
+    };
+
     mockTaskStore = {
       comments: signal<TaskComment[]>([]),
       labels: signal<any[]>([]),
@@ -66,6 +72,7 @@ describe('TaskCommentsComponent', () => {
         { provide: TaskStore, useValue: mockTaskStore },
         { provide: AuthStore, useValue: mockAuthStore },
         { provide: AttachmentService, useValue: mockAttachmentService },
+        { provide: ProjectStore, useValue: mockProjectStore },
       ],
     });
     TestBed.overrideComponent(TaskCommentsComponent, {
@@ -89,6 +96,13 @@ describe('TaskCommentsComponent', () => {
     expect(fixture.componentInstance).toBeTruthy();
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.textContent).toContain('Chưa có bình luận nào.');
+  });
+
+  it('should switch to English when project language is en', async () => {
+    mockProjectStore.projectLanguage.set('en');
+    const fixture = await setup();
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.textContent).toContain('No comments yet.');
   });
 
   it('should render parent comments and indented replies', async () => {

@@ -4,9 +4,10 @@ import {
   Output,
   EventEmitter,
   OnDestroy,
-  OnChanges,
-  SimpleChanges,
   ChangeDetectionStrategy,
+  inject,
+  computed,
+  signal,
 } from '@angular/core';
 import { SkeletonModule } from 'primeng/skeleton';
 
@@ -18,6 +19,8 @@ import {
   getEmptyStateConfig,
   getActiveTabLabel,
 } from './activity-panel.helpers';
+import { ProjectStore } from '../../../../../projects/state/project.store';
+import { CustomTranslationService } from '../../../../../shared/services/custom-translation.service';
 
 /**
  * ActivityPanelComponent — Tabbed activity panel with manual pagination buttons.
@@ -38,7 +41,7 @@ import {
     <!-- Tab Bar -->
     <div class="border-b border-gray-200 dark:border-surface-700" [class.mb-2]="compact" [class.mb-3]="!compact" role="tablist" aria-label="Activity tabs">
       <div class="flex gap-0 overflow-x-auto -mb-px">
-        @for (tab of tabs; track tab.value) {
+        @for (tab of tabs(); track tab.value) {
           <button
             type="button"
             role="tab"
@@ -75,7 +78,7 @@ import {
     <div
       [id]="'activity-tabpanel-' + activeFilter"
       role="tabpanel"
-      [attr.aria-label]="currentTabLabel"
+      [attr.aria-label]="currentTabLabel()"
     >
       <!-- Properties Tab (projected content) -->
       @if (activeFilter === 'properties') {
@@ -83,7 +86,7 @@ import {
       } @else {
         <!-- Loading Skeleton -->
         @if (loading && entries.length === 0) {
-          <div class="space-y-2 px-1" aria-busy="true" aria-label="Đang tải hoạt động...">
+          <div class="space-y-2 px-1" aria-busy="true" [attr.aria-label]="t().loading">
             @for (i of effectiveSkeletonRows; track i) {
               <div class="flex items-start gap-2 py-1.5">
                 <p-skeleton shape="circle" [size]="compact ? '1.5rem' : '2rem'" />
@@ -101,8 +104,8 @@ import {
           @if (entries.length === 0) {
             <!-- Empty State -->
             <div class="flex flex-col items-center justify-center py-8 text-center" role="status">
-              <i [class]="emptyStateIcon + ' text-2xl text-gray-300 dark:text-surface-600 mb-2'" aria-hidden="true"></i>
-              <p class="text-xs text-gray-400 dark:text-surface-500">{{ emptyStateMessage }}</p>
+              <i [class]="emptyStateIcon() + ' text-2xl text-gray-300 dark:text-surface-600 mb-2'" aria-hidden="true"></i>
+              <p class="text-xs text-gray-400 dark:text-surface-500">{{ emptyStateMessage() }}</p>
             </div>
           } @else {
             <!-- Activity Entries -->
@@ -116,7 +119,7 @@ import {
             @if (loading && entries.length > 0) {
               <div class="flex items-center justify-center py-2" aria-busy="true">
                 <i class="pi pi-spin pi-spinner text-gray-400 text-xs mr-1.5" aria-hidden="true"></i>
-                <span class="text-xs text-gray-400 dark:text-surface-500">Đang tải thêm...</span>
+                <span class="text-xs text-gray-400 dark:text-surface-500">{{ t().loadingMore }}</span>
               </div>
             }
 
@@ -128,14 +131,14 @@ import {
                   class="px-3 py-1.5 text-xs font-semibold rounded-md border border-gray-200 dark:border-surface-700 text-gray-700 dark:text-surface-200 hover:bg-gray-50 dark:hover:bg-surface-800 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
                   (click)="onShowMoreClick()"
                 >
-                  Xem thêm
+                  {{ t().showMore }}
                 </button>
                 <button
                   type="button"
                   class="px-3 py-1.5 text-xs font-semibold rounded-md bg-gray-50 dark:bg-surface-800 text-gray-700 dark:text-surface-200 hover:bg-gray-100 dark:hover:bg-surface-700 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
                   (click)="onShowAllClick()"
                 >
-                  Xem hết
+                  {{ t().showAll }}
                 </button>
               </div>
             }
@@ -150,7 +153,21 @@ import {
     }
   `,
 })
-export class ActivityPanelComponent implements OnDestroy, OnChanges {
+export class ActivityPanelComponent implements OnDestroy {
+  private readonly projectStore = inject(ProjectStore);
+  private readonly customTrans = inject(CustomTranslationService);
+
+  readonly t = computed(() => {
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    const ct = this.customTrans;
+    return {
+      loading:     ct.t('activity.loading',     isEn ? 'Loading activities...' : 'Đang tải hoạt động...'),
+      loadingMore: ct.t('activity.loadingMore', isEn ? 'Loading more...'       : 'Đang tải thêm...'),
+      showMore:    ct.t('activity.showMore',    isEn ? 'Show more'             : 'Xem thêm'),
+      showAll:     ct.t('activity.showAll',     isEn ? 'Show all'              : 'Xem hết'),
+    };
+  });
+
   /** List of activity entries to display (already filtered by parent) */
   @Input() entries: TaskActivity[] = [];
 
@@ -165,13 +182,25 @@ export class ActivityPanelComponent implements OnDestroy, OnChanges {
   @Input() hasMore = true;
 
   /** The currently active filter tab */
-  @Input() activeFilter: ActivityFilterType | 'properties' = 'all';
+  private readonly _activeFilter = signal<ActivityFilterType | 'properties'>('all');
+  @Input() set activeFilter(val: ActivityFilterType | 'properties') {
+    this._activeFilter.set(val);
+  }
+  get activeFilter(): ActivityFilterType | 'properties' {
+    return this._activeFilter();
+  }
 
   /** View mode for the panel — determines whether "Properties" tab is shown */
   @Input() viewMode: 'full-page' | 'drawer' | 'popup' = 'full-page';
 
   /** Whether to show the Properties tab (true in drawer/popup mode) */
-  @Input() showPropertiesTab = false;
+  private readonly _showPropertiesTab = signal(false);
+  @Input() set showPropertiesTab(val: boolean) {
+    this._showPropertiesTab.set(val);
+  }
+  get showPropertiesTab(): boolean {
+    return this._showPropertiesTab();
+  }
 
   /** Compact layout — smaller tabs, denser entries; auto-enabled in drawer/popup */
   @Input() compact = false;
@@ -194,29 +223,28 @@ export class ActivityPanelComponent implements OnDestroy, OnChanges {
   }
 
   /** Computed tabs list */
-  tabs: ActivityTab[] = [];
+  readonly tabs = computed(() => {
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    return buildActivityTabs(this._showPropertiesTab(), isEn);
+  });
 
   /** Computed empty state icon for the current tab */
-  get emptyStateIcon(): string {
-    return getEmptyStateConfig(this.activeFilter).icon;
-  }
+  readonly emptyStateIcon = computed(() => {
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    return getEmptyStateConfig(this._activeFilter(), isEn).icon;
+  });
 
   /** Computed empty state message for the current tab */
-  get emptyStateMessage(): string {
-    return getEmptyStateConfig(this.activeFilter).message;
-  }
+  readonly emptyStateMessage = computed(() => {
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    return getEmptyStateConfig(this._activeFilter(), isEn).message;
+  });
 
   /** Get the label of the currently active tab */
-  get currentTabLabel(): string {
-    return getActiveTabLabel(this.tabs, this.activeFilter);
-  }
-
-  ngOnChanges(changes: SimpleChanges): void {
-    // Rebuild tabs when showPropertiesTab or viewMode changes
-    if (changes['showPropertiesTab'] || changes['viewMode']) {
-      this.tabs = buildActivityTabs(this.showPropertiesTab);
-    }
-  }
+  readonly currentTabLabel = computed(() => {
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    return getActiveTabLabel(this.tabs(), this._activeFilter(), isEn);
+  });
 
   ngOnDestroy(): void {}
 

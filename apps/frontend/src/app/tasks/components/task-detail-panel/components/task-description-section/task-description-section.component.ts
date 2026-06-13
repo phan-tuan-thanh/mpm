@@ -16,6 +16,8 @@ import type { TiptapDoc } from '@mpm/shared-types';
 import { RichTextViewerComponent } from '../../../../../shared/components/rich-text-viewer/rich-text-viewer.component';
 import { RichTextEditorComponent } from '../../../../../shared/components/rich-text-editor/rich-text-editor.component';
 import { isDocEmpty } from '../../../../../shared/components/rich-text-viewer/rte-render';
+import { ProjectStore } from '../../../../../projects/state/project.store';
+import { CustomTranslationService } from '../../../../../shared/services/custom-translation.service';
 
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
@@ -51,7 +53,7 @@ type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
             class="text-sm italic text-gray-400 dark:text-surface-500 min-h-[2.5rem] flex items-center"
             [class.cursor-text]="!disabled"
             (click)="!disabled && enterEdit()"
-          >Thêm mô tả…</p>
+          >{{ t().placeholder }}</p>
         } @else {
           <app-rich-text-viewer
             [doc]="docSignal()"
@@ -67,12 +69,12 @@ type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
           [ngModel]="draft()"
           (ngModelChange)="draft.set($event)"
           [autofocus]="true"
-          placeholder="Thêm mô tả..."
+          [placeholder]="t().placeholder"
         />
         <div class="flex justify-end gap-2 mt-2">
-          <button pButton type="button" label="Hủy" [text]="true" size="small" severity="secondary"
+          <button pButton type="button" [label]="t().cancel" [text]="true" size="small" severity="secondary"
                   data-testid="description-cancel" (click)="cancel()"></button>
-          <button pButton type="button" label="Lưu" size="small" [loading]="statusSignal() === 'saving'"
+          <button pButton type="button" [label]="t().save" size="small" [loading]="statusSignal() === 'saving'"
                   data-testid="description-save" (click)="save()"></button>
         </div>
       </div>
@@ -81,6 +83,22 @@ type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 })
 export class TaskDescriptionSectionComponent {
   private readonly confirmService = inject(ConfirmationService);
+  private readonly projectStore = inject(ProjectStore);
+  private readonly customTrans = inject(CustomTranslationService);
+
+  readonly t = computed(() => {
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    const ct = this.customTrans;
+    return {
+      placeholder:   ct.t('description.placeholder',    isEn ? 'Add description...'      : 'Thêm mô tả…'),
+      cancel:        ct.t('description.cancel',          isEn ? 'Cancel'                  : 'Hủy'),
+      save:          ct.t('description.save',            isEn ? 'Save'                    : 'Lưu'),
+      confirmMsg:    ct.t('description.discardTitle',    isEn ? 'Discard unsaved changes?' : 'Bỏ thay đổi chưa lưu?'),
+      confirmHeader: ct.t('description.confirmHeader',   isEn ? 'Confirm'                 : 'Xác nhận'),
+      confirmAccept: ct.t('description.discardBtn',      isEn ? 'Discard changes'         : 'Bỏ thay đổi'),
+      confirmReject: ct.t('description.continueBtn',     isEn ? 'Continue editing'        : 'Tiếp tục sửa'),
+    };
+  });
 
   protected readonly docSignal = signal<TiptapDoc | null>(null);
   protected readonly statusSignal = signal<SaveStatus>('idle');
@@ -138,11 +156,11 @@ export class TaskDescriptionSectionComponent {
       return;
     }
     this.confirmService.confirm({
-      message: 'Bỏ thay đổi chưa lưu?',
-      header: 'Xác nhận',
+      message: this.t().confirmMsg,
+      header: this.t().confirmHeader,
       icon: 'pi pi-exclamation-triangle',
-      acceptLabel: 'Bỏ thay đổi',
-      rejectLabel: 'Tiếp tục sửa',
+      acceptLabel: this.t().confirmAccept,
+      rejectLabel: this.t().confirmReject,
       accept: () => this.exitEdit(),
     });
   }
