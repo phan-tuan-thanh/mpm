@@ -16,6 +16,7 @@ import { PopoverModule } from 'primeng/popover';
 import { LabelStore } from '../../state/label.store';
 import { LabelService } from '../../services/label.service';
 import { AuthStore } from '../../../auth/state/auth.store';
+import { ProjectStore } from '../../../projects/state/project.store';
 import { LayoutService } from '../../../layout/services/layout.service';
 import { ColorPickerPanelComponent } from '../../../shared/components/color-picker-panel/color-picker-panel.component';
 import type { Label } from '@mpm/shared-types';
@@ -40,6 +41,150 @@ export class LabelManagerComponent implements OnInit {
   private readonly confirmService = inject(ConfirmationService);
   private readonly messageService = inject(MessageService);
   protected readonly layoutService = inject(LayoutService);
+  protected readonly projectStore = inject(ProjectStore);
+
+  readonly t = computed(() => {
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    return isEn ? {
+      header: 'Quản lý Labels', // dialog title uses t().header
+      manageLabels: 'Manage Labels',
+      searchPlaceholder: 'Search by name or description...',
+      wsTab: 'Workspace',
+      projTab: 'Project',
+      all: 'All',
+      regular: 'Regular',
+      scoped: 'Scoped',
+      single: 'Single',
+      multi: 'Multi',
+      noLabelsFound: 'No matching labels found',
+      noLabelsFoundSearch: (q: string) => `No labels matching "${q}"`,
+      noWsLabelsYet: 'No workspace labels yet',
+      noProjLabelsYet: 'No project labels yet',
+      createLabelBelow: 'Create a label below to start',
+      selectedXOfY: (x: number, y: number) => `Selected ${x} / ${y} labels`,
+      selectAllOnPage: 'Select all on page',
+      quickColorsHeader: 'Quick Colors (Light / Dark)',
+      customColorsToggle: 'Custom Light & Dark colors',
+      customColorLight: 'Light mode color:',
+      customColorDark: 'Dark mode color:',
+      labelNamePlaceholder: 'Label name...',
+      labelDescPlaceholder: 'Label description (optional)...',
+      saveBtn: 'Save',
+      cancelBtn: 'Cancel',
+      deleteBtn: 'Delete',
+      editTooltip: 'Edit',
+      deleteTooltip: 'Delete',
+      colorTooltip: 'Choose color pair',
+      wsLabelCount: (count: number) => `${count} tasks`,
+      scopeModeSingleTooltip: 'Single: only 1 label of this scope allowed per task',
+      scopeModeMultiTooltip: 'Multi: multiple labels of this scope allowed per task',
+      scopeLabel: 'Color',
+      scopeModeLabel: 'Mode',
+      nameLabel: 'Name',
+      descLabel: 'Description',
+      addWsLabelHeader: 'Add workspace label',
+      addProjLabelHeader: 'Create new label',
+      addLabelBtn: 'Add label',
+      toastSuccess: 'Success',
+      toastError: 'Error',
+      toastCreateSuccess: 'Created label successfully',
+      toastCreateWsSuccess: 'Created workspace label successfully',
+      toastCreateError: 'Failed to create label. Please try again.',
+      toastCreateWsError: 'Failed to create workspace label. Please try again.',
+      toastUpdateSuccess: 'Updated label successfully',
+      toastUpdateError: 'Failed to update label. Please try again.',
+      toastUpdateWsSuccess: 'Updated workspace label successfully',
+      toastUpdateWsError: 'Failed to update workspace label. Please try again.',
+      toastDeleteSuccess: 'Deleted label successfully',
+      toastDeleteError: 'Failed to delete label. Please try again.',
+      toastDeleteWsSuccess: 'Deleted workspace label successfully',
+      toastDeleteWsError: 'Failed to delete workspace label. Please try again.',
+      confirmDeleteMsg: (name: string, count: number) => `Deleting label "${name}" will remove it from ${count} tasks. Continue?`,
+      confirmDeleteHeader: 'Confirm Delete',
+      confirmBulkDeleteMsg: (count: number) => `Delete ${count} selected labels? Labels will be removed from all related tasks.`,
+      confirmBulkDeleteHeader: 'Delete Multiple Labels',
+      toastBulkDeleteSuccess: (ok: number, total: number) => `Deleted ${ok}/${total} labels`,
+      deleteCountLabels: (count: number) => `Delete ${count} labels`,
+      confirmBulkDeleteWsMsg: (count: number) => `Delete ${count} selected workspace labels? Labels will be removed from all related tasks.`,
+      confirmBulkDeleteWsHeader: 'Delete Multiple Workspace Labels',
+      toastBulkDeleteWsSuccess: (ok: number, total: number) => `Deleted ${ok}/${total} workspace labels`,
+      wsLabelDeleteConfirmMsg: (count: number) => `This label is used in ${count} tasks. Deleting it will remove it from all tasks.`,
+      wsLabelDeleteConfirmHeader: 'Confirm Delete Workspace Label',
+      clearSelection: 'Clear selection',
+      labelsLabel: 'labels',
+      singleModeDesc: 'Only 1 from group',
+      multiModeDesc: 'Select multiple from group'
+    } : {
+      header: 'Quản lý Labels',
+      manageLabels: 'Quản lý Labels',
+      searchPlaceholder: 'Tìm theo tên hoặc mô tả...',
+      wsTab: 'Workspace',
+      projTab: 'Project',
+      all: 'Tất cả',
+      regular: 'Thường',
+      scoped: 'Scoped',
+      single: 'Single',
+      multi: 'Multi',
+      noLabelsFound: 'Không tìm thấy label nào khớp',
+      noLabelsFoundSearch: (q: string) => `Không tìm thấy label nào khớp "${q}"`,
+      noWsLabelsYet: 'Chưa có workspace label nào',
+      noProjLabelsYet: 'Chưa có project label nào',
+      createLabelBelow: 'Tạo label bên dưới để bắt đầu',
+      selectedXOfY: (x: number, y: number) => `Đã chọn ${x} / ${y} labels`,
+      selectAllOnPage: 'Chọn tất cả trên trang',
+      quickColorsHeader: 'Màu chọn nhanh (Light / Dark)',
+      customColorsToggle: 'Tự tùy chỉnh màu sắc Light & Dark',
+      customColorLight: 'Màu Light mode:',
+      customColorDark: 'Màu Dark mode:',
+      labelNamePlaceholder: 'Tên label...',
+      labelDescPlaceholder: 'Mô tả nhãn (tùy chọn)...',
+      saveBtn: 'Lưu',
+      cancelBtn: 'Hủy',
+      deleteBtn: 'Xóa',
+      editTooltip: 'Sửa',
+      deleteTooltip: 'Xóa',
+      colorTooltip: 'Chọn cặp màu sắc',
+      wsLabelCount: (count: number) => `${count} tasks`,
+      scopeModeSingleTooltip: 'Single: chỉ 1 label trong nhóm mỗi task',
+      scopeModeMultiTooltip: 'Multi: chọn nhiều từ nhóm',
+      scopeLabel: 'Màu',
+      scopeModeLabel: 'Chế độ',
+      nameLabel: 'Tên',
+      descLabel: 'Mô tả',
+      addWsLabelHeader: 'Thêm workspace label',
+      addProjLabelHeader: 'Tạo label mới',
+      addLabelBtn: 'Thêm label',
+      toastSuccess: 'Thành công',
+      toastError: 'Lỗi',
+      toastCreateSuccess: 'Đã tạo label mới',
+      toastCreateWsSuccess: 'Đã tạo workspace label',
+      toastCreateError: 'Không thể tạo label. Vui lòng thử lại.',
+      toastCreateWsError: 'Không thể tạo workspace label. Vui lòng thử lại.',
+      toastUpdateSuccess: 'Đã cập nhật label',
+      toastUpdateError: 'Không thể cập nhật label. Vui lòng thử lại.',
+      toastUpdateWsSuccess: 'Đã cập nhật workspace label',
+      toastUpdateWsError: 'Không thể cập nhật workspace label. Vui lòng thử lại.',
+      toastDeleteSuccess: 'Đã xóa label',
+      toastDeleteError: 'Không thể xóa label. Vui lòng thử lại.',
+      toastDeleteWsSuccess: 'Đã xóa workspace label',
+      toastDeleteWsError: 'Không thể xóa workspace label. Vui lòng thử lại.',
+      confirmDeleteMsg: (name: string, count: number) => `Xóa label "${name}" sẽ bỏ label khỏi ${count} tasks. Tiếp tục?`,
+      confirmDeleteHeader: 'Xác nhận xóa',
+      confirmBulkDeleteMsg: (count: number) => `Xóa ${count} label đã chọn? Labels sẽ bị bỏ khỏi tất cả tasks liên quan.`,
+      confirmBulkDeleteHeader: 'Xóa nhiều labels',
+      toastBulkDeleteSuccess: (ok: number, total: number) => `Đã xóa ${ok}/${total} labels`,
+      deleteCountLabels: (count: number) => `Xóa ${count} labels`,
+      confirmBulkDeleteWsMsg: (count: number) => `Xóa ${count} workspace label đã chọn? Labels sẽ bị bỏ khỏi tất cả tasks liên quan.`,
+      confirmBulkDeleteWsHeader: 'Xóa nhiều workspace labels',
+      toastBulkDeleteWsSuccess: (ok: number, total: number) => `Đã xóa ${ok}/${total} workspace labels`,
+      wsLabelDeleteConfirmMsg: (count: number) => `Label này đang dùng trong ${count} tasks. Xóa sẽ bỏ label khỏi tất cả.`,
+      wsLabelDeleteConfirmHeader: 'Xác nhận xóa workspace label',
+      clearSelection: 'Bỏ chọn tất cả',
+      labelsLabel: 'nhãn',
+      singleModeDesc: 'Chỉ 1 từ nhóm',
+      multiModeDesc: 'Chọn nhiều từ nhóm'
+    };
+  });
 
   @Input() projectId = '';
   @Input() workspaceId = '';
@@ -115,13 +260,16 @@ export class LabelManagerComponent implements OnInit {
   protected projFilter = signal<'all'|'regular'|'scoped'|'single'|'multi'>('all');
   protected wsFilter   = signal<'all'|'regular'|'scoped'|'single'|'multi'>('all');
 
-  readonly filterChips: { label: string; value: 'all'|'regular'|'scoped'|'single'|'multi' }[] = [
-    { label: 'Tất cả', value: 'all' },
-    { label: 'Thường',  value: 'regular' },
-    { label: 'Scoped',  value: 'scoped' },
-    { label: 'Single',  value: 'single' },
-    { label: 'Multi',   value: 'multi' },
-  ];
+  readonly filterChips = computed(() => {
+    const tr = this.t();
+    return [
+      { label: tr.all, value: 'all' as const },
+      { label: tr.regular, value: 'regular' as const },
+      { label: tr.scoped, value: 'scoped' as const },
+      { label: tr.single, value: 'single' as const },
+      { label: tr.multi, value: 'multi' as const },
+    ];
+  });
 
   readonly filteredProjectLabels = computed(() => {
     const q = this.projSearch().toLowerCase();
@@ -298,6 +446,7 @@ export class LabelManagerComponent implements OnInit {
       isExclusive: this.isExclusive,
       description: this.newDescription.trim() || null,
     });
+    const tr = this.t();
     if (result) {
       this.newName = '';
       this.newDescription = '';
@@ -305,9 +454,9 @@ export class LabelManagerComponent implements OnInit {
       this.newColorLight.set(pair.light);
       this.newColorDark.set(pair.dark);
       this.isExclusive = true;
-      this.messageService.add({ severity: 'success', summary: 'Thành công', detail: 'Đã tạo label mới' });
+      this.messageService.add({ severity: 'success', summary: tr.toastSuccess, detail: tr.toastCreateSuccess });
     } else {
-      this.messageService.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tạo label. Vui lòng thử lại.' });
+      this.messageService.add({ severity: 'error', summary: tr.toastError, detail: tr.toastCreateError });
     }
   }
 
@@ -329,11 +478,12 @@ export class LabelManagerComponent implements OnInit {
       isExclusive: this.editIsExclusive,
       description: this.editDescription.trim() || null,
     });
+    const tr = this.t();
     if (success) {
       this.editingId.set(null);
-      this.messageService.add({ severity: 'success', summary: 'Thành công', detail: 'Đã cập nhật label' });
+      this.messageService.add({ severity: 'success', summary: tr.toastSuccess, detail: tr.toastUpdateSuccess });
     } else {
-      this.messageService.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể cập nhật label. Vui lòng thử lại.' });
+      this.messageService.add({ severity: 'error', summary: tr.toastError, detail: tr.toastUpdateError });
     }
   }
 
@@ -342,19 +492,20 @@ export class LabelManagerComponent implements OnInit {
   }
 
   protected confirmDelete(label: Label & { taskCount: number }): void {
+    const tr = this.t();
     this.confirmService.confirm({
-      message: `Xóa label "${label.name}" sẽ bỏ label khỏi ${label.taskCount} tasks. Tiếp tục?`,
-      header: 'Xác nhận xóa',
+      message: tr.confirmDeleteMsg(label.name, label.taskCount),
+      header: tr.confirmDeleteHeader,
       icon: 'pi pi-exclamation-triangle',
-      acceptLabel: 'Xóa',
-      rejectLabel: 'Hủy',
+      acceptLabel: tr.deleteBtn,
+      rejectLabel: tr.cancelBtn,
       acceptButtonStyleClass: 'p-button-danger',
       accept: async () => {
         const success = await this.labelStore.deleteLabel(this.projectId, label.id);
         if (success) {
-          this.messageService.add({ severity: 'success', summary: 'Thành công', detail: 'Đã xóa label' });
+          this.messageService.add({ severity: 'success', summary: tr.toastSuccess, detail: tr.toastDeleteSuccess });
         } else {
-          this.messageService.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể xóa label. Vui lòng thử lại.' });
+          this.messageService.add({ severity: 'error', summary: tr.toastError, detail: tr.toastDeleteError });
         }
       },
     });
@@ -363,12 +514,13 @@ export class LabelManagerComponent implements OnInit {
   protected confirmBulkDeleteProj(): void {
     const ids = Array.from(this.projSelected());
     if (!ids.length) return;
+    const tr = this.t();
     this.confirmService.confirm({
-      message: `Xóa ${ids.length} label đã chọn? Labels sẽ bị bỏ khỏi tất cả tasks liên quan.`,
-      header: 'Xóa nhiều labels',
+      message: tr.confirmBulkDeleteMsg(ids.length),
+      header: tr.confirmBulkDeleteHeader,
       icon: 'pi pi-exclamation-triangle',
-      acceptLabel: `Xóa ${ids.length} labels`,
-      rejectLabel: 'Hủy',
+      acceptLabel: tr.deleteCountLabels(ids.length),
+      rejectLabel: tr.cancelBtn,
       acceptButtonStyleClass: 'p-button-danger',
       accept: async () => {
         let ok = 0;
@@ -377,7 +529,7 @@ export class LabelManagerComponent implements OnInit {
           if (success) ok++;
         }
         this.projSelected.set(new Set());
-        this.messageService.add({ severity: 'success', summary: 'Thành công', detail: `Đã xóa ${ok}/${ids.length} labels` });
+        this.messageService.add({ severity: 'success', summary: tr.toastSuccess, detail: tr.toastBulkDeleteSuccess(ok, ids.length) });
       },
     });
   }
@@ -393,6 +545,7 @@ export class LabelManagerComponent implements OnInit {
       isExclusive: this.wsIsExclusive,
       description: this.wsNewDescription.trim() || null,
     });
+    const tr = this.t();
     if (label) {
       this.wsLabels.update(prev => [...prev, { ...label, taskCount: 0 }]);
       this.wsNewName = '';
@@ -401,9 +554,9 @@ export class LabelManagerComponent implements OnInit {
       this.wsNewColorLight.set(pair.light);
       this.wsNewColorDark.set(pair.dark);
       this.wsIsExclusive = true;
-      this.messageService.add({ severity: 'success', summary: 'Thành công', detail: 'Đã tạo workspace label' });
+      this.messageService.add({ severity: 'success', summary: tr.toastSuccess, detail: tr.toastCreateWsSuccess });
     } else {
-      this.messageService.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tạo workspace label. Vui lòng thử lại.' });
+      this.messageService.add({ severity: 'error', summary: tr.toastError, detail: tr.toastCreateWsError });
     }
   }
 
@@ -429,6 +582,7 @@ export class LabelManagerComponent implements OnInit {
       isExclusive: this.wsEditIsExclusive,
       description: this.wsEditDescription.trim() || null,
     });
+    const tr = this.t();
     if (success) {
       this.wsLabels.update(prev =>
         prev.map(l => {
@@ -443,9 +597,9 @@ export class LabelManagerComponent implements OnInit {
         })
       );
       this.wsEditingId.set(null);
-      this.messageService.add({ severity: 'success', summary: 'Thành công', detail: 'Đã cập nhật workspace label' });
+      this.messageService.add({ severity: 'success', summary: tr.toastSuccess, detail: tr.toastUpdateWsSuccess });
     } else {
-      this.messageService.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể cập nhật workspace label. Vui lòng thử lại.' });
+      this.messageService.add({ severity: 'error', summary: tr.toastError, detail: tr.toastUpdateWsError });
     }
   }
 
@@ -456,12 +610,13 @@ export class LabelManagerComponent implements OnInit {
   protected confirmBulkDeleteWs(): void {
     const ids = Array.from(this.wsSelected());
     if (!ids.length) return;
+    const tr = this.t();
     this.confirmService.confirm({
-      message: `Xóa ${ids.length} workspace label đã chọn? Labels sẽ bị bỏ khỏi tất cả tasks liên quan.`,
-      header: 'Xóa nhiều workspace labels',
+      message: tr.confirmBulkDeleteWsMsg(ids.length),
+      header: tr.confirmBulkDeleteWsHeader,
       icon: 'pi pi-exclamation-triangle',
-      acceptLabel: `Xóa ${ids.length} labels`,
-      rejectLabel: 'Hủy',
+      acceptLabel: tr.deleteCountLabels(ids.length),
+      rejectLabel: tr.cancelBtn,
       acceptButtonStyleClass: 'p-button-danger',
       accept: async () => {
         let ok = 0;
@@ -470,26 +625,27 @@ export class LabelManagerComponent implements OnInit {
           if (success) { this.wsLabels.update(prev => prev.filter(l => l.id !== id)); ok++; }
         }
         this.wsSelected.set(new Set());
-        this.messageService.add({ severity: 'success', summary: 'Thành công', detail: `Đã xóa ${ok}/${ids.length} workspace labels` });
+        this.messageService.add({ severity: 'success', summary: tr.toastSuccess, detail: tr.toastBulkDeleteWsSuccess(ok, ids.length) });
       },
     });
   }
 
   protected confirmDeleteWsLabel(label: Label & { taskCount: number }): void {
+    const tr = this.t();
     this.confirmService.confirm({
-      message: `Label này đang dùng trong ${label.taskCount} tasks. Xóa sẽ bỏ label khỏi tất cả.`,
-      header: 'Xác nhận xóa workspace label',
+      message: tr.wsLabelDeleteConfirmMsg(label.taskCount),
+      header: tr.wsLabelDeleteConfirmHeader,
       icon: 'pi pi-exclamation-triangle',
-      acceptLabel: 'Xóa',
-      rejectLabel: 'Hủy',
+      acceptLabel: tr.deleteBtn,
+      rejectLabel: tr.cancelBtn,
       acceptButtonStyleClass: 'p-button-danger',
       accept: async () => {
         const success = await this.labelStore.deleteWorkspaceLabel(this.workspaceId, label.id);
         if (success) {
           this.wsLabels.update(prev => prev.filter(l => l.id !== label.id));
-          this.messageService.add({ severity: 'success', summary: 'Thành công', detail: 'Đã xóa workspace label' });
+          this.messageService.add({ severity: 'success', summary: tr.toastSuccess, detail: tr.toastDeleteWsSuccess });
         } else {
-          this.messageService.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể xóa workspace label. Vui lòng thử lại.' });
+          this.messageService.add({ severity: 'error', summary: tr.toastError, detail: tr.toastDeleteWsError });
         }
       },
     });

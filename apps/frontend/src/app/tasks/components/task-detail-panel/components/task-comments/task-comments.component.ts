@@ -14,6 +14,7 @@ import { renderDocToHtml } from '../../../../../shared/components/rich-text-view
 import { RteFeatures } from '../../../../../shared/components/rich-text-editor/rte-features';
 import { type MentionItem } from '../../../../../shared/components/rich-text-editor/rte-mention';
 import type { TaskComment, TaskCommentReaction } from '@mpm/shared-types';
+import { ProjectStore } from '../../../../../projects/state/project.store';
 import { map } from 'rxjs/operators';
 
 @Component({
@@ -37,6 +38,48 @@ export class TaskCommentsComponent {
   protected readonly taskStore = inject(TaskStore);
   private readonly authStore = inject(AuthStore);
   private readonly attachmentService = inject(AttachmentService);
+  private readonly projectStore = inject(ProjectStore);
+
+  readonly t = computed(() => {
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    return isEn ? {
+      confirmDelete: 'Are you sure you want to delete this comment?',
+      authorDeleted: 'Comment deleted',
+      edited: '(edited)',
+      editPlaceholder: 'Edit comment...',
+      cancelBtn: 'Cancel',
+      saveBtn: 'Save',
+      deletedCommentText: 'Comment has been deleted',
+      reactTooltip: 'Express reaction',
+      replyBtn: 'Reply',
+      replyPlaceholder: 'Write a reply...',
+      sendBtn: 'Send',
+      noComments: 'No comments yet.',
+      newCommentLabel: 'New comment',
+      newCommentPlaceholder: 'Write a comment... type @ to mention someone',
+      submitCommentBtn: 'Send comment',
+      editAction: 'Edit',
+      deleteAction: 'Delete'
+    } : {
+      confirmDelete: 'Bạn có chắc chắn muốn xóa bình luận này không?',
+      authorDeleted: 'Bình luận đã bị xóa',
+      edited: '(đã chỉnh sửa)',
+      editPlaceholder: 'Chỉnh sửa bình luận...',
+      cancelBtn: 'Hủy',
+      saveBtn: 'Lưu',
+      deletedCommentText: 'Bình luận đã bị xóa',
+      reactTooltip: 'Bày tỏ cảm xúc',
+      replyBtn: 'Trả lời',
+      replyPlaceholder: 'Viết phản hồi...',
+      sendBtn: 'Gửi',
+      noComments: 'Chưa có bình luận nào.',
+      newCommentLabel: 'Bình luận mới',
+      newCommentPlaceholder: 'Viết bình luận… gõ @ để nhắc ai đó',
+      submitCommentBtn: 'Gửi bình luận',
+      editAction: 'Sửa',
+      deleteAction: 'Xóa'
+    };
+  });
 
   // Inputs
   @Input({ required: true }) projectId = '';
@@ -182,7 +225,7 @@ export class TaskCommentsComponent {
 
   protected confirmDeleteComment(comment: TaskComment): void {
     this.actionPopover?.hide();
-    if (confirm('Bạn có chắc chắn muốn xóa bình luận này không?')) {
+    if (confirm(this.t().confirmDelete)) {
       this.taskStore.deleteComment(this.projectId, this.taskId, comment.id);
     }
   }

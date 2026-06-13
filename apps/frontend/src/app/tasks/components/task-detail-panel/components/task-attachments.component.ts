@@ -7,6 +7,7 @@ import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 import { AttachmentService } from '../../../services/attachment.service';
 import type { TaskAttachment } from '@mpm/shared-types';
+import { ProjectStore } from '../../../../../projects/state/project.store';
 
 interface DisplayGroup {
   key: string;    // 'g:Title' for real, 'p:Title' for pending
@@ -48,7 +49,7 @@ interface AttachmentUpdate {
            [class.pi-chevron-down]="!collapsed()"></i>
         <span class="text-xs text-gray-500 dark:text-surface-400 uppercase tracking-wide font-semibold
                      group-hover:text-gray-700 dark:group-hover:text-surface-200 transition-colors">
-          Attachments ({{ attachments().length }})
+          {{ t().attachments }} ({{ attachments().length }})
         </span>
       </div>
 
@@ -91,10 +92,10 @@ interface AttachmentUpdate {
             </span>
             @if (!disabled()) {
               <button pButton icon="pi pi-plus" size="small" severity="secondary" text
-                      pTooltip="Thêm file vào nhóm" tooltipPosition="top"
+                      [pTooltip]="t().addFileToGroup" tooltipPosition="top"
                       (click)="onAddFilesToGroup(group)"></button>
               <button pButton icon="pi pi-trash" size="small" severity="danger" text
-                      pTooltip="Xóa nhóm" tooltipPosition="left"
+                      [pTooltip]="t().deleteGroup" tooltipPosition="left"
                       (click)="onDeleteGroup(group)"></button>
             }
           </div>
@@ -127,7 +128,7 @@ interface AttachmentUpdate {
                 </a>
                 @if (duplicateNames().has(att.originalName)) {
                   <i class="pi pi-exclamation-triangle text-[10px] text-yellow-500 dark:text-yellow-400 flex-shrink-0"
-                     pTooltip="Trùng tên với file khác" tooltipPosition="top"></i>
+                     [pTooltip]="t().duplicateWarningLabel" tooltipPosition="top"></i>
                 }
                 <span class="text-[10px] text-gray-400 dark:text-surface-500 shrink-0">{{ formatSize(att.sizeBytes) }}</span>
                 @if (!disabled()) {
@@ -144,7 +145,7 @@ interface AttachmentUpdate {
 
             @if (group.isPending && group.items.length === 0 && !disabled()) {
               <div class="py-1 px-1 text-[10px] text-gray-400 dark:text-surface-500 italic">
-                Nhấn <i class="pi pi-plus text-[9px]"></i> để thêm file
+                {{ t().addFileTip }}
               </div>
             }
           </div>
@@ -185,7 +186,7 @@ interface AttachmentUpdate {
               </a>
               @if (duplicateNames().has(att.originalName)) {
                 <i class="pi pi-exclamation-triangle text-xs text-yellow-500 dark:text-yellow-400 flex-shrink-0"
-                   pTooltip="Trùng tên với file khác" tooltipPosition="top"></i>
+                   [pTooltip]="t().duplicateWarningLabel" tooltipPosition="top"></i>
               }
               <span class="text-xs text-gray-400 dark:text-surface-500 shrink-0">{{ formatSize(att.sizeBytes) }}</span>
               @if (!disabled()) {
@@ -220,7 +221,7 @@ interface AttachmentUpdate {
           (drop)="onDrop($event)"
         >
           <i class="pi pi-times-circle text-xs"></i>
-          <span>Bỏ khỏi nhóm</span>
+          <span>{{ t().ungroup }}</span>
         </div>
       }
 
@@ -232,7 +233,7 @@ interface AttachmentUpdate {
             #newGroupNameInput
             type="text"
             [(ngModel)]="newGroupTitle"
-            placeholder="Tên nhóm..."
+            [placeholder]="t().groupNamePlaceholder"
             class="flex-1 rounded border border-indigo-300 dark:border-indigo-600
                    bg-white dark:bg-surface-800 px-2 py-[4px] text-xs
                    text-gray-700 dark:text-surface-100
@@ -254,7 +255,7 @@ interface AttachmentUpdate {
                     border border-yellow-200 dark:border-yellow-800 text-xs">
           <i class="pi pi-exclamation-triangle text-yellow-500 dark:text-yellow-400 mt-px flex-shrink-0"></i>
           <span class="text-yellow-700 dark:text-yellow-300 flex-1">
-            File đã tồn tại: <strong>{{ uploadWarnings().join(', ') }}</strong>
+            {{ t().fileAlreadyExists }}: <strong>{{ uploadWarnings().join(', ') }}</strong>
           </span>
           <button class="text-yellow-500 dark:text-yellow-400 hover:text-yellow-700 leading-none flex-shrink-0"
                   (click)="uploadWarnings.set([])">
@@ -267,7 +268,7 @@ interface AttachmentUpdate {
       @if (!disabled()) {
         <div class="flex items-center gap-2 mt-2 pt-1.5 border-t border-gray-100 dark:border-surface-700">
           @if (!newGroupMode()) {
-            <button pButton label="Tạo nhóm" icon="pi pi-folder-plus" size="small"
+            <button pButton [label]="t().createGroup" icon="pi pi-folder-plus" size="small"
                     severity="secondary" text [fluid]="false"
                     (click)="startNewGroup()"></button>
           }
@@ -277,7 +278,7 @@ interface AttachmentUpdate {
             <input #ungroupedInput type="file" class="hidden" multiple
                    (change)="onUngroupedFileChange($event)" />
             <i class="pi pi-upload text-[10px]"></i>
-            <span>Upload file</span>
+            <span>{{ t().upload }}</span>
           </label>
         </div>
       }
@@ -294,6 +295,35 @@ export class TaskAttachmentsComponent {
   @ViewChild('groupFileInput') private groupFileInputRef!: ElementRef<HTMLInputElement>;
 
   readonly attachmentService = inject(AttachmentService);
+  private readonly projectStore = inject(ProjectStore);
+
+  readonly t = computed(() => {
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    return isEn ? {
+      attachments: 'Attachments',
+      addFileToGroup: 'Add file to group',
+      deleteGroup: 'Delete group',
+      duplicateWarning: 'Trùng tên với file khác', // wait, let's keep original meaning "Trùng tên với file khác" -> "Duplicate filename"
+      duplicateWarningLabel: 'Duplicate file name',
+      addFileTip: 'Press + to add file',
+      ungroup: 'Ungroup',
+      groupNamePlaceholder: 'Group name...',
+      fileAlreadyExists: 'File already exists',
+      createGroup: 'Create group',
+      upload: 'Upload file'
+    } : {
+      attachments: 'Tài liệu đính kèm',
+      addFileToGroup: 'Thêm file vào nhóm',
+      deleteGroup: 'Xóa nhóm',
+      duplicateWarningLabel: 'Trùng tên với file khác',
+      addFileTip: 'Nhấn + để thêm file',
+      ungroup: 'Bỏ khỏi nhóm',
+      groupNamePlaceholder: 'Tên nhóm...',
+      fileAlreadyExists: 'File đã tồn tại',
+      createGroup: 'Tạo nhóm',
+      upload: 'Upload file'
+    };
+  });
 
   readonly projectId = input<string>('');
   readonly taskId = input<string>('');

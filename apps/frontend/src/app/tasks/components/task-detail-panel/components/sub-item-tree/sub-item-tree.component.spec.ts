@@ -10,8 +10,10 @@
 
 jest.mock('primeng/tooltip', () => ({ Tooltip: class {} }));
 
-import { ElementRef, SimpleChange } from '@angular/core';
+import { ElementRef, SimpleChange, signal } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
 import { SubItemTreeComponent } from './sub-item-tree.component';
+import { ProjectStore } from '../../../../../projects/state/project.store';
 import type { SubItemTreeNode } from '@mpm/shared-types';
 
 describe('SubItemTreeComponent', () => {
@@ -48,7 +50,14 @@ describe('SubItemTreeComponent', () => {
   beforeEach(() => {
     mockNativeEl = document.createElement('div');
     const mockElRef = { nativeElement: mockNativeEl } as ElementRef<HTMLElement>;
-    component = new SubItemTreeComponent(mockElRef);
+    TestBed.configureTestingModule({
+      providers: [
+        SubItemTreeComponent,
+        { provide: ElementRef, useValue: mockElRef },
+        { provide: ProjectStore, useValue: { projectLanguage: signal('vi') } },
+      ],
+    });
+    component = TestBed.inject(SubItemTreeComponent);
   });
 
   it('should create', () => {

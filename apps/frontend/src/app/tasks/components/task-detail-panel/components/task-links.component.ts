@@ -1,9 +1,10 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import type { TaskLink } from '@mpm/shared-types';
+import { ProjectStore } from '../../../../../projects/state/project.store';
 
 @Component({
   standalone: true,
@@ -26,14 +27,26 @@ import type { TaskLink } from '@mpm/shared-types';
       @if (!disabled) {
         <div class="flex gap-2 mt-1">
           <input pInputText class="flex-1 text-xs" placeholder="URL..." [(ngModel)]="newLinkUrl" />
-          <input pInputText class="flex-1 text-xs" placeholder="Title (tùy chọn)" [(ngModel)]="newLinkTitle" />
-          <button pButton label="Thêm" size="small" (click)="onAdd()" [disabled]="!newLinkUrl.trim()"></button>
+          <input pInputText class="flex-1 text-xs" [placeholder]="t().titlePlaceholder" [(ngModel)]="newLinkTitle" />
+          <button pButton [label]="t().addBtn" size="small" (click)="onAdd()" [disabled]="!newLinkUrl.trim()"></button>
         </div>
       }
     </div>
   `,
 })
 export class TaskLinksComponent {
+  private readonly projectStore = inject(ProjectStore);
+
+  readonly t = computed(() => {
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    return isEn ? {
+      titlePlaceholder: 'Title (optional)',
+      addBtn: 'Add'
+    } : {
+      titlePlaceholder: 'Tiêu đề (tùy chọn)',
+      addBtn: 'Thêm'
+    };
+  });
   @Input() links: TaskLink[] = [];
   @Input() disabled = false;
   @Output() add = new EventEmitter<{ url: string; title?: string }>();

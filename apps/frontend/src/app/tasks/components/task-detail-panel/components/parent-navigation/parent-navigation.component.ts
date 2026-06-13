@@ -19,6 +19,7 @@ import { ConfirmationService } from 'primeng/api';
 
 import type { TaskParentRef, TaskType, TaskListItem } from '@mpm/shared-types';
 import { TYPE_CONFIG, filterValidParents } from './parent-navigation.helpers';
+import { ProjectStore } from '../../../../../projects/state/project.store';
 
 /**
  * ParentNavigationComponent — Hiển thị và quản lý parent task
@@ -69,22 +70,22 @@ import { TYPE_CONFIG, filterValidParents } from './parent-navigation.helpers';
           icon="pi pi-times"
           class="p-button-text p-button-sm p-button-rounded p-button-plain"
           [style]="{ width: '24px', height: '24px' }"
-          pTooltip="Gỡ parent"
+          [pTooltip]="t().removeParentTooltip"
           tooltipPosition="top"
           (click)="onRemoveParent()"
-          aria-label="Gỡ parent task"
+          [attr.aria-label]="t().removeParentAria"
         ></button>
       } @else {
         <!-- Không có parent (Req 10.3) -->
         <div class="flex items-center gap-1.5">
-          <span class="text-sm text-gray-500 dark:text-surface-400">Không có</span>
+          <span class="text-sm text-gray-500 dark:text-surface-400">{{ t().none }}</span>
           <button
             #addParentBtn
             type="button"
             class="text-sm text-primary-600 dark:text-primary-400 hover:underline cursor-pointer bg-transparent border-0 p-0 font-medium"
             (click)="parentPop.toggle($event); showDropdown()"
           >
-            Thêm parent
+            {{ t().addParent }}
           </button>
         </div>
 
@@ -93,7 +94,7 @@ import { TYPE_CONFIG, filterValidParents } from './parent-navigation.helpers';
             <input
               type="text"
               pInputText
-              placeholder="Tìm parent task..."
+              [placeholder]="t().searchPlaceholder"
               class="w-full text-xs p-1"
               [ngModel]="filterSearch()"
               (ngModelChange)="filterSearch.set($event)"
@@ -115,7 +116,7 @@ import { TYPE_CONFIG, filterValidParents } from './parent-navigation.helpers';
                 <span class="text-sm truncate">{{ item.title }}</span>
               </div>
             } @empty {
-              <div class="p-3 text-xs text-gray-400 text-center">Không tìm thấy task</div>
+              <div class="p-3 text-xs text-gray-400 text-center">{{ t().noTaskFound }}</div>
             }
           </div>
         </p-popover>
@@ -127,6 +128,34 @@ import { TYPE_CONFIG, filterValidParents } from './parent-navigation.helpers';
 })
 export class ParentNavigationComponent implements OnChanges {
   private readonly confirmService = inject(ConfirmationService);
+  private readonly projectStore = inject(ProjectStore);
+
+  readonly t = computed(() => {
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    return isEn ? {
+      removeParentTooltip: 'Remove parent',
+      removeParentAria: 'Remove parent task',
+      none: 'None',
+      addParent: 'Add parent',
+      searchPlaceholder: 'Search parent task...',
+      noTaskFound: 'No task found',
+      confirmMsg: (taskId: string) => `Are you sure you want to remove the parent task "${taskId}"?`,
+      confirmHeader: 'Confirm Remove Parent',
+      removeBtn: 'Remove',
+      cancelBtn: 'Cancel'
+    } : {
+      removeParentTooltip: 'Gỡ parent',
+      removeParentAria: 'Gỡ parent task',
+      none: 'Không có',
+      addParent: 'Thêm parent',
+      searchPlaceholder: 'Tìm parent task...',
+      noTaskFound: 'Không tìm thấy task',
+      confirmMsg: (taskId: string) => `Bạn có chắc muốn gỡ parent task "${taskId}" không?`,
+      confirmHeader: 'Xác nhận gỡ parent',
+      removeBtn: 'Gỡ',
+      cancelBtn: 'Hủy'
+    };
+  });
 
   /** Parent hiện tại (null nếu chưa có) */
   @Input() parent: TaskParentRef | null = null;
@@ -233,12 +262,13 @@ export class ParentNavigationComponent implements OnChanges {
 
   /** Xóa parent với confirm dialog (Req 10.6) */
   onRemoveParent(): void {
+    const tr = this.t();
     this.confirmService.confirm({
-      message: `Bạn có chắc muốn gỡ parent task "${this.parent?.taskId}" không?`,
-      header: 'Xác nhận gỡ parent',
+      message: tr.confirmMsg(this.parent?.taskId ?? ''),
+      header: tr.confirmHeader,
       icon: 'pi pi-exclamation-triangle',
-      acceptLabel: 'Gỡ',
-      rejectLabel: 'Hủy',
+      acceptLabel: tr.removeBtn,
+      rejectLabel: tr.cancelBtn,
       acceptButtonStyleClass: 'p-button-danger',
       accept: () => {
         this.parentChanged.emit(null);

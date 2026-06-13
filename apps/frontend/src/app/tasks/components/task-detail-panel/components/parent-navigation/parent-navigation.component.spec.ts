@@ -12,10 +12,11 @@ jest.mock('primeng/api', () => ({
   ConfirmationService: class MockConfirmationService {},
 }));
 
-import { Injector, runInInjectionContext, SimpleChange } from '@angular/core';
+import { Injector, runInInjectionContext, SimpleChange, signal } from '@angular/core';
 import { ConfirmationService } from 'primeng/api';
 import { ParentNavigationComponent } from './parent-navigation.component';
 import type { TaskParentRef, TaskListItem, TaskType } from '@mpm/shared-types';
+import { ProjectStore } from '../../../../../projects/state/project.store';
 
 function makeParentRef(overrides: Partial<TaskParentRef> = {}): TaskParentRef {
   return {
@@ -73,6 +74,7 @@ describe('ParentNavigationComponent', () => {
     injector = Injector.create({
       providers: [
         { provide: ConfirmationService, useValue: mockConfirmService },
+        { provide: ProjectStore, useValue: { projectLanguage: signal('vi') } },
       ],
     });
     component = runInInjectionContext(injector, () => new ParentNavigationComponent());

@@ -19,7 +19,10 @@ jest.mock('primeng/button', () => ({ ButtonModule: {} }));
 jest.mock('primeng/inputtext', () => ({ InputTextModule: {} }));
 jest.mock('primeng/tooltip', () => ({ TooltipModule: {}, Tooltip: {} }));
 
+import { TestBed } from '@angular/core/testing';
+import { signal } from '@angular/core';
 import { SubItemsSectionComponent } from './sub-items-section.component';
+import { ProjectStore } from '../../../../../projects/state/project.store';
 import type { SubItemTreeNode, CreateSubItemDto, TaskPriority } from '@mpm/shared-types';
 
 /**
@@ -34,7 +37,13 @@ describe('SubItemsSectionComponent', () => {
   let component: SubItemsSectionComponent;
 
   beforeEach(() => {
-    component = new SubItemsSectionComponent();
+    TestBed.configureTestingModule({
+      providers: [
+        SubItemsSectionComponent,
+        { provide: ProjectStore, useValue: { projectLanguage: signal('vi') } },
+      ],
+    });
+    component = TestBed.inject(SubItemsSectionComponent);
     component.taskId = 'task-123';
     component.projectId = 'proj-456';
   });

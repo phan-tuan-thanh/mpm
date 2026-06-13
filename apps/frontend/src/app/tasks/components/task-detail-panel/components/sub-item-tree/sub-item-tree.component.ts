@@ -9,10 +9,12 @@ import {
   signal,
   computed,
   ElementRef,
+  inject,
 } from '@angular/core';
 import { Tooltip } from 'primeng/tooltip';
 import { StateDotComponent } from '../../../../../shared/components/state-dot/state-dot.component';
 import type { SubItemTreeNode, TaskType } from '@mpm/shared-types';
+import { ProjectStore } from '../../../../../projects/state/project.store';
 
 interface FlatNode {
   node: SubItemTreeNode;
@@ -50,7 +52,7 @@ const TYPE_CONFIG = {
           (click)="collapseAll()"
         >
           <i class="pi pi-minus-circle text-[10px]"></i>
-          Thu gọn hết
+          {{ t().collapseAll }}
         </button>
         <span class="text-gray-200 dark:text-surface-800 select-none">|</span>
         <button
@@ -59,7 +61,7 @@ const TYPE_CONFIG = {
           (click)="expandAll()"
         >
           <i class="pi pi-plus-circle text-[10px]"></i>
-          Mở rộng hết
+          {{ t().expandAll }}
         </button>
       </div>
 
@@ -93,7 +95,7 @@ const TYPE_CONFIG = {
             <button
               class="w-5 h-5 flex items-center justify-center rounded
                      hover:bg-gray-200 dark:hover:bg-surface-700 flex-shrink-0 cursor-pointer"
-              [attr.aria-label]="isExpanded(flat.node.id) ? 'Thu gọn' : 'Mở rộng'"
+              [attr.aria-label]="isExpanded(flat.node.id) ? t().collapse : t().expand"
               (pointerdown)="$event.stopPropagation()"
               (click)="toggleExpand(flat.node.id)"
             >
@@ -147,7 +149,7 @@ const TYPE_CONFIG = {
             } @else {
               <i
                 class="pi pi-user text-[11px] text-gray-300 dark:text-surface-600"
-                pTooltip="Chưa gán"
+                [pTooltip]="t().unassigned"
                 tooltipPosition="top"
               ></i>
             }
@@ -175,9 +177,9 @@ const TYPE_CONFIG = {
             <button
               class="w-5 h-5 flex items-center justify-center rounded
                      hover:bg-gray-200 dark:hover:bg-surface-700 flex-shrink-0 cursor-pointer"
-              pTooltip="Xem chi tiết"
+              [pTooltip]="t().viewDetails"
               tooltipPosition="top"
-              aria-label="Xem chi tiết"
+              [attr.aria-label]="t().viewDetails"
               (pointerdown)="$event.stopPropagation()"
               (click)="onViewClick(flat.node, $event)"
             >
@@ -192,7 +194,7 @@ const TYPE_CONFIG = {
           } @else {
             <span
               class="w-2.5 h-2.5 rounded-full flex-shrink-0 bg-gray-400 dark:bg-surface-600 ml-1.5"
-              [pTooltip]="'Không xác định'"
+              [pTooltip]="t().undefinedState"
               tooltipPosition="top"
             ></span>
           }
@@ -222,17 +224,17 @@ const TYPE_CONFIG = {
                     bg-amber-50 dark:bg-amber-950/40
                     border border-amber-200 dark:border-amber-700 rounded-lg">
           <i class="pi pi-exclamation-triangle text-amber-500 text-xs flex-shrink-0"></i>
-          <span class="text-xs text-amber-700 dark:text-amber-400 flex-1">Có thay đổi thứ tự chưa lưu</span>
+          <span class="text-xs text-amber-700 dark:text-amber-400 flex-1">{{ t().unsavedChanges }}</span>
           <button
             class="text-xs px-2 py-1 rounded text-gray-600 dark:text-surface-400
                    hover:bg-gray-100 dark:hover:bg-surface-700 transition-colors cursor-pointer"
             (click)="onCancelChanges()"
-          >Hủy</button>
+          >{{ t().cancelBtn }}</button>
           <button
             class="text-xs px-2.5 py-1 rounded bg-indigo-500 text-white
                    hover:bg-indigo-600 transition-colors cursor-pointer"
             (click)="onSaveChanges()"
-          >Cập nhật</button>
+          >{{ t().updateBtn }}</button>
         </div>
       }
 
@@ -267,6 +269,45 @@ const TYPE_CONFIG = {
 })
 export class SubItemTreeComponent implements OnChanges, OnDestroy {
   constructor(private readonly el: ElementRef<HTMLElement>) {}
+
+  private readonly projectStore = inject(ProjectStore);
+
+  readonly t = computed(() => {
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    return isEn ? {
+      collapseAll: 'Collapse all',
+      expandAll: 'Expand all',
+      collapse: 'Collapse',
+      expand: 'Expand',
+      unassigned: 'Unassigned',
+      viewDetails: 'View details',
+      undefinedState: 'Undefined',
+      unsavedChanges: 'Unsaved order changes',
+      cancelBtn: 'Cancel',
+      updateBtn: 'Update',
+      prioUrgent: 'Urgent',
+      prioHigh: 'High',
+      prioMedium: 'Medium',
+      prioLow: 'Low',
+      prioNone: 'None'
+    } : {
+      collapseAll: 'Thu gọn hết',
+      expandAll: 'Mở rộng hết',
+      collapse: 'Thu gọn',
+      expand: 'Mở rộng',
+      unassigned: 'Chưa gán',
+      viewDetails: 'Xem chi tiết',
+      undefinedState: 'Không xác định',
+      unsavedChanges: 'Có thay đổi thứ tự chưa lưu',
+      cancelBtn: 'Hủy',
+      updateBtn: 'Cập nhật',
+      prioUrgent: 'Khẩn cấp',
+      prioHigh: 'Cao',
+      prioMedium: 'Trung bình',
+      prioLow: 'Thấp',
+      prioNone: 'Không'
+    };
+  });
 
   @Input() items: SubItemTreeNode[] = [];
   @Input() disabled = false;
@@ -614,12 +655,13 @@ export class SubItemTreeComponent implements OnChanges, OnDestroy {
   }
 
   getPriorityLabel(priority: string): string {
+    const tr = this.t();
     switch (priority) {
-      case 'urgent': return 'Khẩn cấp';
-      case 'high':   return 'Cao';
-      case 'medium': return 'Trung bình';
-      case 'low':    return 'Thấp';
-      default:       return 'Không';
+      case 'urgent': return tr.prioUrgent;
+      case 'high':   return tr.prioHigh;
+      case 'medium': return tr.prioMedium;
+      case 'low':    return tr.prioLow;
+      default:       return tr.prioNone;
     }
   }
 

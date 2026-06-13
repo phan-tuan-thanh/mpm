@@ -1,6 +1,6 @@
 <p-dialog
   [(visible)]="visible"
-  header="Quản lý Labels"
+  [header]="t().manageLabels"
   [modal]="true"
   [maximizable]="true"
   [style]="{ width: '680px' }"
@@ -9,10 +9,10 @@
   <p-tabs [value]="'project'" class="label-manager-tabs">
     <p-tablist>
       <p-tab value="workspace">
-        <i class="pi pi-globe mr-1.5"></i> Workspace
+        <i class="pi pi-globe mr-1.5"></i> {{ t().wsTab }}
       </p-tab>
       <p-tab value="project">
-        <i class="pi pi-folder mr-1.5"></i> Project
+        <i class="pi pi-folder mr-1.5"></i> {{ t().projTab }}
       </p-tab>
     </p-tablist>
 
@@ -28,18 +28,18 @@
               <div class="relative flex-1">
                 <i class="pi pi-search absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-surface-500 text-xs pointer-events-none"></i>
                 <input pInputText class="w-full !pl-7" style="height: 32px; font-size: 12px"
-                  placeholder="Tìm theo tên hoặc mô tả..."
+                  [placeholder]="t().searchPlaceholder"
                   [ngModel]="wsSearch()" (ngModelChange)="setWsSearch($event)" />
               </div>
               @if (wsSelected().size > 0) {
                 <button pButton icon="pi pi-trash" severity="danger" size="small" [fluid]="false"
-                  [label]="'Xóa ' + wsSelected().size" (click)="confirmBulkDeleteWs()"></button>
+                  [label]="t().deleteCountLabels(wsSelected().size)" (click)="confirmBulkDeleteWs()"></button>
                 <button pButton icon="pi pi-times" severity="secondary" size="small" text [fluid]="false"
-                  pTooltip="Bỏ chọn tất cả" (click)="clearWsSelection()"></button>
+                  [pTooltip]="t().clearSelection" (click)="clearWsSelection()"></button>
               }
             </div>
             <div class="flex items-center gap-1 flex-wrap">
-              @for (chip of filterChips; track chip.value) {
+              @for (chip of filterChips(); track chip.value) {
                 <button type="button" class="filter-chip" [class.active]="wsFilter() === chip.value"
                   (click)="setWsFilter(chip.value)">{{ chip.label }}</button>
               }
@@ -52,15 +52,15 @@
               @if (wsSearch() || wsFilter() !== 'all') {
                 <div class="empty-state">
                   <i class="pi pi-search" style="font-size: 24px; opacity: 0.25"></i>
-                  <span style="font-size: 13px">Không tìm thấy label nào khớp</span>
+                  <span style="font-size: 13px">{{ t().noLabelsFound }}</span>
                   @if (wsSearch()) { <span style="font-size: 12px; opacity: 0.6">"{{ wsSearch() }}"</span> }
                 </div>
               } @else {
                 <div class="empty-state">
                   <i class="pi pi-globe" style="font-size: 28px; opacity: 0.25"></i>
-                  <span style="font-size: 13px">Chưa có workspace label nào</span>
+                  <span style="font-size: 13px">{{ t().noWsLabelsYet }}</span>
                   @if (isAdmin()) {
-                    <span style="font-size: 12px; opacity: 0.6">Tạo label bên dưới để bắt đầu</span>
+                    <span style="font-size: 12px; opacity: 0.6">{{ t().createLabelBelow }}</span>
                   }
                 </div>
               }
@@ -69,8 +69,8 @@
               <div class="flex items-center gap-2 px-2.5 py-1.5 mb-1 border-b border-gray-100 dark:border-surface-800 select-none">
                 <p-checkbox [binary]="true" [ngModel]="wsAllPageSelected()" (ngModelChange)="toggleWsSelectAll()" />
                 <span class="text-[11px] text-gray-400 dark:text-surface-500">
-                  @if (wsSelected().size > 0) { Đã chọn {{ wsSelected().size }} / {{ filteredWsLabels().length }} }
-                  @else { Chọn tất cả trên trang }
+                  @if (wsSelected().size > 0) { {{ t().selectedXOfY(wsSelected().size, filteredWsLabels().length) }} }
+                  @else { {{ t().selectAllOnPage }} }
                 </span>
               </div>
             }
@@ -82,7 +82,7 @@
                   <div class="inline-edit-group flex-wrap gap-y-2">
                     <p-popover #wsEditColorPop styleClass="p-2" appendTo="body">
                       <div class="space-y-3 p-1">
-                        <div class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Màu chọn nhanh (Light / Dark)</div>
+                        <div class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">{{ t().quickColorsHeader }}</div>
                         <div class="grid grid-cols-5 gap-2 w-48">
                           @for (pair of presetPairs; track pair.light) {
                             <button type="button" 
@@ -100,20 +100,20 @@
                             class="text-[11px] font-semibold text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center gap-1 cursor-pointer select-none"
                             (click)="showCustomWsEditColors.set(!showCustomWsEditColors())">
                             <i class="pi" [class]="showCustomWsEditColors() ? 'pi-chevron-down' : 'pi-chevron-right'"></i>
-                            Tự tùy chỉnh màu sắc Light & Dark
+                            {{ t().customColorsToggle }}
                           </button>
                           
                           @if (showCustomWsEditColors()) {
                             <div class="mt-2 space-y-3 pl-1">
                               <div>
-                                <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">Màu Light mode:</div>
+                                <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">{{ t().customColorLight }}</div>
                                 <app-color-picker-panel
                                   [value]="wsEditColorLight()"
                                   (valueChange)="wsEditColorLight.set($event)"
                                 />
                               </div>
                               <div>
-                                <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">Màu Dark mode:</div>
+                                <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">{{ t().customColorDark }}</div>
                                 <app-color-picker-panel
                                   [value]="wsEditColorDark()"
                                   (valueChange)="wsEditColorDark.set($event)"
@@ -128,34 +128,34 @@
                       class="w-7 h-7 rounded-full border border-black/10 hover:scale-110 active:scale-95 transition cursor-pointer flex-shrink-0"
                       [style.background]="getPresetGradient(wsEditColorLight(), wsEditColorDark())"
                       (click)="wsEditColorPop.toggle($event)"
-                      pTooltip="Chọn cặp màu sắc"
+                      [pTooltip]="t().colorTooltip"
                       tooltipPosition="top"
                     ></button>
                     <input pInputText class="flex-1" style="height: 30px; font-size: 13px; padding: 0 8px"
                       [(ngModel)]="wsEditName"
                       (keydown.enter)="saveWsEdit(label)"
                       (keydown.escape)="cancelWsEdit()"
-                      placeholder="Tên label..." />
+                      [placeholder]="t().labelNamePlaceholder" />
                     @if (isScoped(wsEditName)) {
                       <div class="mode-toggle select-none">
                         <button type="button" class="mode-btn" [class.active]="wsEditIsExclusive" (click)="wsEditIsExclusive = true">
-                          <i class="pi pi-minus-circle"></i>Single
+                          <i class="pi pi-minus-circle"></i>{{ t().single }}
                         </button>
                         <button type="button" class="mode-btn" [class.active]="!wsEditIsExclusive" (click)="wsEditIsExclusive = false">
-                          <i class="pi pi-copy"></i>Multi
+                          <i class="pi pi-copy"></i>{{ t().multi }}
                         </button>
                       </div>
                     }
                     <div class="w-full mt-1.5">
                       <input pInputText style="height: 28px; font-size: 12px; padding: 0 8px; width: 100%"
                         [(ngModel)]="wsEditDescription"
-                        placeholder="Mô tả nhãn (tùy chọn)..."
+                        [placeholder]="t().labelDescPlaceholder"
                         (keydown.enter)="saveWsEdit(label)"
                         (keydown.escape)="cancelWsEdit()" />
                     </div>
                   </div>
-                  <button class="icon-btn success" pTooltip="Lưu" (click)="saveWsEdit(label)"><i class="pi pi-check"></i></button>
-                  <button class="icon-btn" pTooltip="Hủy" (click)="cancelWsEdit()"><i class="pi pi-times"></i></button>
+                  <button class="icon-btn success" [pTooltip]="t().saveBtn" (click)="saveWsEdit(label)"><i class="pi pi-check"></i></button>
+                  <button class="icon-btn" [pTooltip]="t().cancelBtn" (click)="cancelWsEdit()"><i class="pi pi-times"></i></button>
                 } @else {
                   <!-- Display mode -->
                   <p-checkbox [binary]="true" [ngModel]="isWsSelected(label.id)" (ngModelChange)="toggleWsSelect(label.id)"
@@ -191,18 +191,18 @@
                       <p class="text-[11px] text-gray-400 dark:text-surface-500 truncate leading-tight mt-0.5 pl-0.5">{{ label.description }}</p>
                     }
                   </div>
-                  <span class="label-count flex-shrink-0">{{ label.taskCount }} tasks</span>
+                  <span class="label-count flex-shrink-0">{{ t().wsLabelCount(label.taskCount) }}</span>
                   @if (isScoped(label.name)) {
                     <span class="mode-badge flex-shrink-0"
                       [class.mode-badge--single]="label.isExclusive !== false"
                       [class.mode-badge--multi]="label.isExclusive === false"
-                      [pTooltip]="label.isExclusive !== false ? 'Single: chỉ 1 label trong nhóm mỗi task' : 'Multi: chọn nhiều từ nhóm'">
-                      {{ label.isExclusive !== false ? 'Single' : 'Multi' }}
+                      [pTooltip]="label.isExclusive !== false ? t().scopeModeSingleTooltip : t().scopeModeMultiTooltip">
+                      {{ label.isExclusive !== false ? t().single : t().multi }}
                     </span>
                   }
                   @if (isAdmin()) {
-                    <button class="icon-btn" pTooltip="Sửa" (click)="startWsEdit(label)"><i class="pi pi-pencil"></i></button>
-                    <button class="icon-btn danger" pTooltip="Xóa" (click)="confirmDeleteWsLabel(label)"><i class="pi pi-trash"></i></button>
+                    <button class="icon-btn" [pTooltip]="t().editTooltip" (click)="startWsEdit(label)"><i class="pi pi-pencil"></i></button>
+                    <button class="icon-btn danger" [pTooltip]="t().deleteTooltip" (click)="confirmDeleteWsLabel(label)"><i class="pi pi-trash"></i></button>
                   }
                 }
               </div>
@@ -213,7 +213,7 @@
           @if (wsTotalPages() > 1) {
             <div class="flex items-center justify-between py-2 mb-2 border-t border-gray-100 dark:border-surface-800">
               <span class="text-xs text-gray-400 dark:text-surface-500">
-                {{ wsPage() * PAGE_SIZE + 1 }}–{{ wsEndIdx() }} / {{ filteredWsLabels().length }} labels
+                {{ wsPage() * PAGE_SIZE + 1 }}–{{ wsEndIdx() }} / {{ filteredWsLabels().length }} {{ t().labelsLabel }}
               </span>
               <div class="flex items-center gap-0.5">
                 <button class="icon-btn" [disabled]="wsPage() === 0" (click)="wsPage.update(p => p - 1)">
@@ -239,16 +239,16 @@
             <div class="create-card">
               <div class="create-card-header">
                 <i class="pi pi-plus-circle" style="font-size:11px"></i>
-                Thêm workspace label
+                {{ t().addWsLabelHeader }}
               </div>
               <div class="create-card-body">
 
                 <!-- Màu row -->
                 <div class="create-row items-center">
-                  <span class="create-row-label">Màu</span>
+                  <span class="create-row-label">{{ t().scopeLabel }}</span>
                   <p-popover #wsNewColorPop styleClass="p-2" appendTo="body">
                     <div class="space-y-3 p-1">
-                      <div class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Màu chọn nhanh (Light / Dark)</div>
+                      <div class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">{{ t().quickColorsHeader }}</div>
                       <div class="grid grid-cols-5 gap-2 w-48">
                         @for (pair of presetPairs; track pair.light) {
                           <button type="button" 
@@ -266,20 +266,20 @@
                           class="text-[11px] font-semibold text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center gap-1 cursor-pointer select-none"
                           (click)="showCustomWsAddColors.set(!showCustomWsAddColors())">
                           <i class="pi" [class]="showCustomWsAddColors() ? 'pi-chevron-down' : 'pi-chevron-right'"></i>
-                          Tự tùy chỉnh màu sắc Light & Dark
+                          {{ t().customColorsToggle }}
                         </button>
                         
                         @if (showCustomWsAddColors()) {
                           <div class="mt-2 space-y-3 pl-1">
                             <div>
-                              <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">Màu Light mode:</div>
+                              <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">{{ t().customColorLight }}</div>
                               <app-color-picker-panel
                                 [value]="wsNewColorLight()"
                                 (valueChange)="wsNewColorLight.set($event)"
                               />
                             </div>
                             <div>
-                              <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">Màu Dark mode:</div>
+                              <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">{{ t().customColorDark }}</div>
                               <app-color-picker-panel
                                 [value]="wsNewColorDark()"
                                 (valueChange)="wsNewColorDark.set($event)"
@@ -294,7 +294,7 @@
                     class="w-8 h-8 rounded-full border border-black/10 hover:scale-115 active:scale-95 transition cursor-pointer flex-shrink-0"
                     [style.background]="getPresetGradient(wsNewColorLight(), wsNewColorDark())"
                     (click)="wsNewColorPop.toggle($event)"
-                    pTooltip="Chọn cặp màu sắc"
+                    [pTooltip]="t().colorTooltip"
                     tooltipPosition="top"
                   ></button>
                 </div>
@@ -302,26 +302,26 @@
                 <!-- Mode row (scoped only) -->
                 @if (isScoped(wsNewName)) {
                   <div class="create-row items-center">
-                    <span class="create-row-label" style="padding-top:0">Chế độ</span>
+                    <span class="create-row-label" style="padding-top:0">{{ t().scopeModeLabel }}</span>
                     <div class="mode-toggle select-none">
                       <button type="button" class="mode-btn" [class.active]="wsIsExclusive" (click)="wsIsExclusive = true">
-                        <i class="pi pi-minus-circle"></i> Single
+                        <i class="pi pi-minus-circle"></i> {{ t().single }}
                       </button>
                       <button type="button" class="mode-btn" [class.active]="!wsIsExclusive" (click)="wsIsExclusive = false">
-                        <i class="pi pi-copy"></i> Multiple
+                        <i class="pi pi-copy"></i> {{ t().multi }}
                       </button>
                     </div>
                     <span class="text-[11px] text-gray-400 dark:text-surface-500 ml-1">
-                      {{ wsIsExclusive ? 'Chỉ 1 từ nhóm' : 'Chọn nhiều từ nhóm' }}
+                      {{ wsIsExclusive ? t().singleModeDesc : t().multiModeDesc }}
                     </span>
                   </div>
                 }
 
                 <!-- Tên row + live preview -->
                 <div class="create-row items-center">
-                  <span class="create-row-label" style="padding-top:0">Tên</span>
+                  <span class="create-row-label" style="padding-top:0">{{ t().nameLabel }}</span>
                   <input pInputText class="flex-1" style="height:32px;font-size:13px"
-                    placeholder="Tên label..."
+                    [placeholder]="t().labelNamePlaceholder"
                     [(ngModel)]="wsNewName"
                     (keydown.enter)="wsNewName.trim() && createWsLabel()" />
                   @if (wsNewName.trim()) {
@@ -351,16 +351,16 @@
 
                 <!-- Mô tả row -->
                 <div class="create-row items-center">
-                  <span class="create-row-label" style="padding-top:0">Mô tả</span>
+                  <span class="create-row-label" style="padding-top:0">{{ t().descLabel }}</span>
                   <input pInputText class="flex-1" style="height:28px;font-size:12px"
-                    placeholder="Mô tả nhãn (tùy chọn)..."
+                    [placeholder]="t().labelDescPlaceholder"
                     [(ngModel)]="wsNewDescription"
                     (keydown.enter)="wsNewName.trim() && createWsLabel()" />
                 </div>
 
               </div>
               <div class="create-card-footer">
-                <button pButton label="Thêm label" icon="pi pi-plus" size="small" [fluid]="false"
+                <button pButton [label]="t().addLabelBtn" icon="pi pi-plus" size="small" [fluid]="false"
                   (click)="createWsLabel()" [disabled]="!wsNewName.trim()"
                   style="height:32px;font-size:12px"></button>
               </div>
@@ -379,18 +379,18 @@
               <div class="relative flex-1">
                 <i class="pi pi-search absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-surface-500 text-xs pointer-events-none"></i>
                 <input pInputText class="w-full !pl-7" style="height: 32px; font-size: 12px"
-                  placeholder="Tìm theo tên hoặc mô tả..."
+                  [placeholder]="t().searchPlaceholder"
                   [ngModel]="projSearch()" (ngModelChange)="setProjSearch($event)" />
               </div>
               @if (projSelected().size > 0) {
                 <button pButton icon="pi pi-trash" severity="danger" size="small" [fluid]="false"
-                  [label]="'Xóa ' + projSelected().size" (click)="confirmBulkDeleteProj()"></button>
+                  [label]="t().deleteCountLabels(projSelected().size)" (click)="confirmBulkDeleteProj()"></button>
                 <button pButton icon="pi pi-times" severity="secondary" size="small" text [fluid]="false"
-                  pTooltip="Bỏ chọn tất cả" (click)="clearProjSelection()"></button>
+                  [pTooltip]="t().clearSelection" (click)="clearProjSelection()"></button>
               }
             </div>
             <div class="flex items-center gap-1 flex-wrap">
-              @for (chip of filterChips; track chip.value) {
+              @for (chip of filterChips(); track chip.value) {
                 <button type="button" class="filter-chip" [class.active]="projFilter() === chip.value"
                   (click)="setProjFilter(chip.value)">{{ chip.label }}</button>
               }
@@ -403,14 +403,14 @@
               @if (projSearch() || projFilter() !== 'all') {
                 <div class="empty-state">
                   <i class="pi pi-search" style="font-size: 24px; opacity: 0.25"></i>
-                  <span style="font-size: 13px">Không tìm thấy label nào khớp</span>
+                  <span style="font-size: 13px">{{ t().noLabelsFound }}</span>
                   @if (projSearch()) { <span style="font-size: 12px; opacity: 0.6">"{{ projSearch() }}"</span> }
                 </div>
               } @else {
                 <div class="empty-state">
                   <i class="pi pi-folder" style="font-size: 28px; opacity: 0.25"></i>
-                  <span style="font-size: 13px">Chưa có project label nào</span>
-                  <span style="font-size: 12px; opacity: 0.6">Tạo label bên dưới để bắt đầu</span>
+                  <span style="font-size: 13px">{{ t().noProjLabelsYet }}</span>
+                  <span style="font-size: 12px; opacity: 0.6">{{ t().createLabelBelow }}</span>
                 </div>
               }
             } @else {
@@ -418,8 +418,8 @@
               <div class="flex items-center gap-2 px-2.5 py-1.5 mb-1 border-b border-gray-100 dark:border-surface-800 select-none">
                 <p-checkbox [binary]="true" [ngModel]="projAllPageSelected()" (ngModelChange)="toggleProjSelectAll()" />
                 <span class="text-[11px] text-gray-400 dark:text-surface-500">
-                  @if (projSelected().size > 0) { Đã chọn {{ projSelected().size }} / {{ filteredProjectLabels().length }} }
-                  @else { Chọn tất cả trên trang }
+                  @if (projSelected().size > 0) { {{ t().selectedXOfY(projSelected().size, filteredProjectLabels().length) }} }
+                  @else { {{ t().selectAllOnPage }} }
                 </span>
               </div>
             }
@@ -431,7 +431,7 @@
                   <div class="inline-edit-group flex-wrap gap-y-2">
                     <p-popover #editColorPop styleClass="p-2" appendTo="body">
                       <div class="space-y-3 p-1">
-                        <div class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Màu chọn nhanh (Light / Dark)</div>
+                        <div class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">{{ t().quickColorsHeader }}</div>
                         <div class="grid grid-cols-5 gap-2 w-48">
                           @for (pair of presetPairs; track pair.light) {
                             <button type="button" 
@@ -449,20 +449,20 @@
                             class="text-[11px] font-semibold text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center gap-1 cursor-pointer select-none"
                             (click)="showCustomEditColors.set(!showCustomEditColors())">
                             <i class="pi" [class]="showCustomEditColors() ? 'pi-chevron-down' : 'pi-chevron-right'"></i>
-                            Tự tùy chỉnh màu sắc Light & Dark
+                            {{ t().customColorsToggle }}
                           </button>
                           
                           @if (showCustomEditColors()) {
                             <div class="mt-2 space-y-3 pl-1">
                               <div>
-                                <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">Màu Light mode:</div>
+                                <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">{{ t().customColorLight }}</div>
                                 <app-color-picker-panel
                                   [value]="editColorLight()"
                                   (valueChange)="editColorLight.set($event)"
                                 />
                               </div>
                               <div>
-                                <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">Màu Dark mode:</div>
+                                <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">{{ t().customColorDark }}</div>
                                 <app-color-picker-panel
                                   [value]="editColorDark()"
                                   (valueChange)="editColorDark.set($event)"
@@ -477,34 +477,34 @@
                       class="w-7 h-7 rounded-full border border-black/10 hover:scale-110 active:scale-95 transition cursor-pointer flex-shrink-0"
                       [style.background]="getPresetGradient(editColorLight(), editColorDark())"
                       (click)="editColorPop.toggle($event)"
-                      pTooltip="Chọn cặp màu sắc"
+                      [pTooltip]="t().colorTooltip"
                       tooltipPosition="top"
                     ></button>
                     <input pInputText class="flex-1" style="height: 30px; font-size: 13px; padding: 0 8px"
                       [(ngModel)]="editName"
                       (keydown.enter)="saveEdit(label)"
                       (keydown.escape)="cancelEdit()"
-                      placeholder="Tên label..." />
+                      [placeholder]="t().labelNamePlaceholder" />
                     @if (isScoped(editName)) {
                       <div class="mode-toggle select-none">
                         <button type="button" class="mode-btn" [class.active]="editIsExclusive" (click)="editIsExclusive = true">
-                          <i class="pi pi-minus-circle"></i>Single
+                          <i class="pi pi-minus-circle"></i>{{ t().single }}
                         </button>
                         <button type="button" class="mode-btn" [class.active]="!editIsExclusive" (click)="editIsExclusive = false">
-                          <i class="pi pi-copy"></i>Multi
+                          <i class="pi pi-copy"></i>{{ t().multi }}
                         </button>
                       </div>
                     }
                     <div class="w-full mt-1.5">
                       <input pInputText style="height: 28px; font-size: 12px; padding: 0 8px; width: 100%"
                         [(ngModel)]="editDescription"
-                        placeholder="Mô tả nhãn (tùy chọn)..."
+                        [placeholder]="t().labelDescPlaceholder"
                         (keydown.enter)="saveEdit(label)"
                         (keydown.escape)="cancelEdit()" />
                     </div>
                   </div>
-                  <button class="icon-btn success" pTooltip="Lưu" (click)="saveEdit(label)"><i class="pi pi-check"></i></button>
-                  <button class="icon-btn" pTooltip="Hủy" (click)="cancelEdit()"><i class="pi pi-times"></i></button>
+                  <button class="icon-btn success" [pTooltip]="t().saveBtn" (click)="saveEdit(label)"><i class="pi pi-check"></i></button>
+                  <button class="icon-btn" [pTooltip]="t().cancelBtn" (click)="cancelEdit()"><i class="pi pi-times"></i></button>
                 } @else {
                   <!-- Display mode -->
                   <p-checkbox [binary]="true" [ngModel]="isProjSelected(label.id)" (ngModelChange)="toggleProjSelect(label.id)"
@@ -539,17 +539,17 @@
                       <p class="text-[11px] text-gray-400 dark:text-surface-500 truncate leading-tight mt-0.5 pl-0.5">{{ label.description }}</p>
                     }
                   </div>
-                  <span class="label-count flex-shrink-0">{{ label.taskCount }} tasks</span>
+                  <span class="label-count flex-shrink-0">{{ t().wsLabelCount(label.taskCount) }}</span>
                   @if (isScoped(label.name)) {
                     <span class="mode-badge flex-shrink-0"
                       [class.mode-badge--single]="label.isExclusive !== false"
                       [class.mode-badge--multi]="label.isExclusive === false"
-                      [pTooltip]="label.isExclusive !== false ? 'Single: chỉ 1 label trong nhóm mỗi task' : 'Multi: chọn nhiều từ nhóm'">
-                      {{ label.isExclusive !== false ? 'Single' : 'Multi' }}
+                      [pTooltip]="label.isExclusive !== false ? t().scopeModeSingleTooltip : t().scopeModeMultiTooltip">
+                      {{ label.isExclusive !== false ? t().single : t().multi }}
                     </span>
                   }
-                  <button class="icon-btn" pTooltip="Sửa" (click)="startEdit(label)"><i class="pi pi-pencil"></i></button>
-                  <button class="icon-btn danger" pTooltip="Xóa" (click)="confirmDelete(label)"><i class="pi pi-trash"></i></button>
+                  <button class="icon-btn" [pTooltip]="t().editTooltip" (click)="startEdit(label)"><i class="pi pi-pencil"></i></button>
+                  <button class="icon-btn danger" [pTooltip]="t().deleteTooltip" (click)="confirmDelete(label)"><i class="pi pi-trash"></i></button>
                 }
               </div>
             }
@@ -559,7 +559,7 @@
           @if (projTotalPages() > 1) {
             <div class="flex items-center justify-between py-2 mb-2 border-t border-gray-100 dark:border-surface-800">
               <span class="text-xs text-gray-400 dark:text-surface-500">
-                {{ projPage() * PAGE_SIZE + 1 }}–{{ projEndIdx() }} / {{ filteredProjectLabels().length }} labels
+                {{ projPage() * PAGE_SIZE + 1 }}–{{ projEndIdx() }} / {{ filteredProjectLabels().length }} {{ t().labelsLabel }}
               </span>
               <div class="flex items-center gap-0.5">
                 <button class="icon-btn" [disabled]="projPage() === 0" (click)="projPage.update(p => p - 1)">
@@ -584,16 +584,16 @@
           <div class="create-card">
             <div class="create-card-header">
               <i class="pi pi-plus-circle" style="font-size:11px"></i>
-              Tạo label mới
+              {{ t().addProjLabelHeader }}
             </div>
             <div class="create-card-body">
 
               <!-- Màu row -->
               <div class="create-row items-center">
-                <span class="create-row-label">Màu</span>
+                <span class="create-row-label">{{ t().scopeLabel }}</span>
                 <p-popover #newColorPop styleClass="p-2" appendTo="body">
                   <div class="space-y-3 p-1">
-                    <div class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Màu chọn nhanh (Light / Dark)</div>
+                    <div class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">{{ t().quickColorsHeader }}</div>
                     <div class="grid grid-cols-5 gap-2 w-48">
                       @for (pair of presetPairs; track pair.light) {
                         <button type="button" 
@@ -611,20 +611,20 @@
                         class="text-[11px] font-semibold text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center gap-1 cursor-pointer select-none"
                         (click)="showCustomAddColors.set(!showCustomAddColors())">
                         <i class="pi" [class]="showCustomAddColors() ? 'pi-chevron-down' : 'pi-chevron-right'"></i>
-                        Tự tùy chỉnh màu sắc Light & Dark
+                        {{ t().customColorsToggle }}
                       </button>
                       
                       @if (showCustomAddColors()) {
                         <div class="mt-2 space-y-3 pl-1">
                           <div>
-                            <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">Màu Light mode:</div>
+                            <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">{{ t().customColorLight }}</div>
                             <app-color-picker-panel
                               [value]="newColorLight()"
                               (valueChange)="newColorLight.set($event)"
                             />
                           </div>
                           <div>
-                            <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">Màu Dark mode:</div>
+                            <div class="text-[10px] text-gray-400 dark:text-surface-500 font-medium mb-1">{{ t().customColorDark }}</div>
                             <app-color-picker-panel
                               [value]="newColorDark()"
                               (valueChange)="newColorDark.set($event)"
@@ -639,7 +639,7 @@
                   class="w-8 h-8 rounded-full border border-black/10 hover:scale-115 active:scale-95 transition cursor-pointer flex-shrink-0"
                   [style.background]="getPresetGradient(newColorLight(), newColorDark())"
                   (click)="newColorPop.toggle($event)"
-                  pTooltip="Chọn cặp màu sắc"
+                  [pTooltip]="t().colorTooltip"
                   tooltipPosition="top"
                 ></button>
               </div>
@@ -647,26 +647,26 @@
               <!-- Mode row (scoped only) -->
               @if (isScoped(newName)) {
                 <div class="create-row items-center">
-                  <span class="create-row-label" style="padding-top:0">Chế độ</span>
+                  <span class="create-row-label" style="padding-top:0">{{ t().scopeModeLabel }}</span>
                   <div class="mode-toggle select-none">
                     <button type="button" class="mode-btn" [class.active]="isExclusive" (click)="isExclusive = true">
-                      <i class="pi pi-minus-circle"></i> Single
+                      <i class="pi pi-minus-circle"></i> {{ t().single }}
                     </button>
                     <button type="button" class="mode-btn" [class.active]="!isExclusive" (click)="isExclusive = false">
-                      <i class="pi pi-copy"></i> Multiple
+                      <i class="pi pi-copy"></i> {{ t().multi }}
                     </button>
                   </div>
                   <span class="text-[11px] text-gray-400 dark:text-surface-500 ml-1">
-                    {{ isExclusive ? 'Chỉ 1 từ nhóm' : 'Chọn nhiều từ nhóm' }}
+                    {{ isExclusive ? t().singleModeDesc : t().multiModeDesc }}
                   </span>
                 </div>
               }
 
               <!-- Tên row + live preview -->
               <div class="create-row items-center">
-                <span class="create-row-label" style="padding-top:0">Tên</span>
+                <span class="create-row-label" style="padding-top:0">{{ t().nameLabel }}</span>
                 <input pInputText class="flex-1" style="height:32px;font-size:13px"
-                  placeholder="Tên label..."
+                  [placeholder]="t().labelNamePlaceholder"
                   [(ngModel)]="newName"
                   (keydown.enter)="newName.trim() && createLabel()" />
                 @if (newName.trim()) {
@@ -696,16 +696,16 @@
 
               <!-- Mô tả row -->
               <div class="create-row items-center">
-                <span class="create-row-label" style="padding-top:0">Mô tả</span>
+                <span class="create-row-label" style="padding-top:0">{{ t().descLabel }}</span>
                 <input pInputText class="flex-1" style="height:28px;font-size:12px"
-                  placeholder="Mô tả nhãn (tùy chọn)..."
+                  [placeholder]="t().labelDescPlaceholder"
                   [(ngModel)]="newDescription"
                   (keydown.enter)="newName.trim() && createLabel()" />
               </div>
 
             </div>
             <div class="create-card-footer">
-              <button pButton label="Thêm label" icon="pi pi-plus" size="small" [fluid]="false"
+              <button pButton [label]="t().addLabelBtn" icon="pi pi-plus" size="small" [fluid]="false"
                 (click)="createLabel()" [disabled]="!newName.trim()"
                 style="height:32px;font-size:12px"></button>
             </div>

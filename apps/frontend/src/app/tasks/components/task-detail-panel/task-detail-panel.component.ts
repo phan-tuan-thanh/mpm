@@ -445,7 +445,7 @@ import { StateDotComponent } from '../../../shared/components/state-dot/state-do
                       }
                     </div>
                   } @else {
-                    <span>Modules</span>
+                    <span>{{ t().modules }}</span>
                   }
                 </button>
 
@@ -517,7 +517,7 @@ import { StateDotComponent } from '../../../shared/components/state-dot/state-do
 
             <!-- Comments -->
             <div class="px-4 py-3 border-b border-gray-100 dark:border-surface-700">
-              <label class="text-xs font-semibold text-gray-400 dark:text-surface-500 uppercase tracking-wide mb-3 block">Bình luận</label>
+              <label class="text-xs font-semibold text-gray-400 dark:text-surface-500 uppercase tracking-wide mb-3 block">{{ t().commentsHeader }}</label>
               <app-task-comments
                 [projectId]="projectId()"
                 [taskId]="task()!.id"
@@ -786,13 +786,13 @@ import { StateDotComponent } from '../../../shared/components/state-dot/state-do
           [visible]="showCloseConfirm()"
           (visibleChange)="showCloseConfirm.set($event)"
           [modal]="true"
-          [header]="projectStore.projectLanguage() === 'en' ? 'Close Task Warning' : 'Cảnh báo đóng task'"
+          [header]="t().closeWarningHeader"
           [style]="{ width: '450px' }"
           [closable]="true"
         >
           <div class="flex flex-col gap-4">
             <div class="text-sm text-gray-600 dark:text-surface-300">
-              {{ projectStore.projectLanguage() === 'en' ? 'This task has incomplete sub-tasks. Closing this task will leave them incomplete unless auto-closed.' : 'Task này có các sub-task chưa hoàn thành. Việc đóng task này sẽ để lại các sub-task ở trạng thái chưa hoàn thành trừ khi bạn tự động đóng.' }}
+              {{ t().closeWarningMsg }}
             </div>
             
             <div class="max-h-48 overflow-y-auto border border-gray-200 dark:border-surface-700 rounded p-2 bg-gray-50 dark:bg-surface-800 flex flex-col gap-1">
@@ -808,15 +808,15 @@ import { StateDotComponent } from '../../../shared/components/state-dot/state-do
             <div class="flex items-center gap-2 mt-2">
               <p-checkbox [binary]="true" [ngModel]="autoCloseChildren()" (ngModelChange)="autoCloseChildren.set($event)" id="autoCloseChildrenDetail" />
               <label for="autoCloseChildrenDetail" class="text-sm font-medium text-gray-700 dark:text-surface-300 cursor-pointer">
-                {{ projectStore.projectLanguage() === 'en' ? 'Auto-close incomplete sub-tasks' : 'Tự động đóng các task con chưa hoàn thành' }}
+                {{ t().autoCloseSubtasksLabel }}
               </label>
             </div>
           </div>
 
           <ng-template #footer>
             <div class="flex justify-end gap-2 mt-4">
-              <button pButton [label]="projectStore.projectLanguage() === 'en' ? 'Cancel' : 'Hủy'" severity="secondary" (click)="showCloseConfirm.set(false); targetStateId.set(null)"></button>
-              <button pButton [label]="projectStore.projectLanguage() === 'en' ? 'Confirm' : 'Đồng ý'" severity="primary" (click)="confirmCloseTask()"></button>
+              <button pButton [label]="t().cancelBtn" severity="secondary" (click)="showCloseConfirm.set(false); targetStateId.set(null)"></button>
+              <button pButton [label]="t().confirmBtn" severity="primary" (click)="confirmCloseTask()"></button>
             </div>
           </ng-template>
         </p-dialog>
@@ -922,7 +922,14 @@ export class TaskDetailPanelComponent implements OnInit, OnChanges, OnDestroy {
       uploadFailed: 'Upload failed',
       genericError: 'Error occurred',
       closeTaskBtn: 'Close task',
-      reopenTaskBtn: 'Reopen task'
+      reopenTaskBtn: 'Reopen task',
+      commentsHeader: 'Comments',
+      closeWarningHeader: 'Close Task Warning',
+      closeWarningMsg: 'This task has incomplete sub-tasks. Closing this task will leave them incomplete unless auto-closed.',
+      autoCloseSubtasksLabel: 'Auto-close incomplete sub-tasks',
+      confirmBtn: 'Confirm',
+      cancelBtn: 'Cancel',
+      modules: 'Modules'
     } : {
       backToList: 'Quay lại danh sách',
       close: 'Đóng',
@@ -951,7 +958,14 @@ export class TaskDetailPanelComponent implements OnInit, OnChanges, OnDestroy {
       uploadFailed: 'Upload thất bại',
       genericError: 'Có lỗi xảy ra',
       closeTaskBtn: 'Đóng task',
-      reopenTaskBtn: 'Mở lại task'
+      reopenTaskBtn: 'Mở lại task',
+      commentsHeader: 'Bình luận',
+      closeWarningHeader: 'Cảnh báo đóng task',
+      closeWarningMsg: 'Task này có các sub-task chưa hoàn thành. Việc đóng task này sẽ để lại các sub-task ở trạng thái chưa hoàn thành trừ khi bạn tự động đóng.',
+      autoCloseSubtasksLabel: 'Tự động đóng các task con chưa hoàn thành',
+      confirmBtn: 'Đồng ý',
+      cancelBtn: 'Hủy',
+      modules: 'Modules'
     };
   });
 

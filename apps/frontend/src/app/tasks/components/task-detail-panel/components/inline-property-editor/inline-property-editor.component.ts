@@ -16,6 +16,7 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { TooltipModule } from 'primeng/tooltip';
 import { MessageService } from 'primeng/api';
 import { CommonModule } from '@angular/common';
+import { ProjectStore } from '../../../../projects/state/project.store';
 
 import { PropertySaveQueue } from './property-save-queue';
 
@@ -113,7 +114,7 @@ export interface PropertyFieldConfig {
                     (click)="onValueChange(null); inlinePop.hide()"
                     class="pop-item text-red-500 font-medium"
                   >
-                    Bỏ chọn
+                    {{ t().clear }}
                   </div>
                 }
                 @for (opt of config.options ?? []; track getOptionValue(opt)) {
@@ -139,7 +140,7 @@ export interface PropertyFieldConfig {
               [ngModel]="currentValue()"
               [optionLabel]="config.optionLabel ?? 'label'"
               [optionValue]="config.optionValue ?? 'value'"
-              [placeholder]="config.placeholder ?? 'Chọn...'"
+              [placeholder]="config.placeholder ?? t().select"
               [disabled]="isSaving()"
               styleClass="w-full text-sm"
               display="chip"
@@ -218,6 +219,22 @@ export interface PropertyFieldConfig {
 export class InlinePropertyEditorComponent implements OnDestroy {
   private readonly messageService = inject(MessageService);
   private readonly saveQueue = new PropertySaveQueue(500);
+  private readonly projectStore = inject(ProjectStore);
+
+  readonly t = computed(() => {
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    return isEn ? {
+      clear: 'Clear',
+      select: 'Select...',
+      error: 'Error',
+      updateFailed: (label: string) => `Failed to update ${label}`
+    } : {
+      clear: 'Bỏ chọn',
+      select: 'Chọn...',
+      error: 'Lỗi',
+      updateFailed: (label: string) => `Không thể cập nhật ${label}`
+    };
+  });
 
   /** Field configuration — determines which editor to render */
   @Input({ required: true }) config!: PropertyFieldConfig;
@@ -240,10 +257,10 @@ export class InlinePropertyEditorComponent implements OnDestroy {
   getSelectedOptionLabel(): string {
     const val = this.currentValue();
     if (val === null || val === undefined) {
-      return this.config.placeholder ?? 'Chọn...';
+      return this.config.placeholder ?? this.t().select;
     }
     const opt = this.getSelectedOption();
-    return opt ? this.getOptionLabel(opt) : (this.config.placeholder ?? 'Chọn...');
+    return opt ? this.getOptionLabel(opt) : (this.config.placeholder ?? this.t().select);
   }
 
   /** Current value of the field */
@@ -365,8 +382,8 @@ export class InlinePropertyEditorComponent implements OnDestroy {
           this.revertValue();
           this.messageService.add({
             severity: 'error',
-            summary: 'Lỗi',
-            detail: `Không thể cập nhật ${this.config.label}`,
+            summary: this.t().error,
+            detail: this.t().updateFailed(this.config.label),
             life: 5000,
           });
           this.saveError.emit({ field, error: 'Save failed' });
