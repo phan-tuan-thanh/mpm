@@ -43,6 +43,7 @@ import { RelationService } from '../../services/relation.service';
 import { LayoutService } from '../../../layout/services/layout.service';
 import { TaskDetailStateService } from './services/task-detail-state.service';
 import { PriorityConfigService } from '../../services/priority-config.service';
+import { TaskTypeConfigService } from '../../../shared/services/task-type-config.service';
 import type {
   Task,
   TaskActivity,
@@ -840,6 +841,7 @@ export class TaskDetailPanelComponent implements OnInit, OnChanges, OnDestroy {
   private readonly linkService = inject(LinkService);
   private readonly relationService = inject(RelationService);
   private readonly route = inject(ActivatedRoute);
+  private readonly typeConfigSvc = inject(TaskTypeConfigService);
   private readonly router = inject(Router);
   private readonly messageService = inject(MessageService);
   protected readonly layoutService = inject(LayoutService);
@@ -1104,9 +1106,10 @@ export class TaskDetailPanelComponent implements OnInit, OnChanges, OnDestroy {
   }
   protected getScopeColor(name: string, defaultColor: string): string {
     const scope = this.getScope(name).toLowerCase();
-    if (scope === 'epic') return '#8B5CF6';
-    if (scope === 'story') return '#3B82F6';
-    if (scope === 'task') return '#10B981';
+    const cfg = this.projectStore.currentProject()?.taskTypeConfig;
+    if (scope === 'epic' || scope === 'story' || scope === 'task' || scope === 'subtask') {
+      return this.typeConfigSvc.getColor(scope, cfg);
+    }
     if (scope === 'bug') return '#EF4444';
     return defaultColor;
   }

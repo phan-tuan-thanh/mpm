@@ -18,8 +18,10 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService } from 'primeng/api';
 
 import type { TaskParentRef, TaskType, TaskListItem } from '@mpm/shared-types';
-import { TYPE_CONFIG, filterValidParents } from './parent-navigation.helpers';
+import { filterValidParents } from './parent-navigation.helpers';
 import { ProjectStore } from '../../../../../projects/state/project.store';
+import { TaskTypeConfigService } from '../../../../../shared/services/task-type-config.service';
+import { IconDisplayComponent } from '../../../../../shared/components/icon-display/icon-display.component';
 
 /**
  * ParentNavigationComponent — Hiển thị và quản lý parent task
@@ -42,17 +44,18 @@ import { ProjectStore } from '../../../../../projects/state/project.store';
     ButtonModule,
     TooltipModule,
     ConfirmDialogModule,
+    IconDisplayComponent,
   ],
   template: `
     <div class="flex items-center gap-2 min-h-[32px]">
       @if (parent) {
         <!-- Có parent: hiển thị link (Req 10.1) -->
         <div class="flex items-center gap-1.5 flex-1 min-w-0">
-          <i
+          <app-icon-display
             class="text-xs flex-shrink-0"
-            [class]="parentTypeIcon()"
+            [icon]="parentTypeIcon()"
             [style.color]="parentTypeColor()"
-          ></i>
+          ></app-icon-display>
           <a
             class="text-sm text-primary-600 dark:text-primary-400 hover:underline cursor-pointer truncate"
             (click)="onParentClick()"
@@ -107,11 +110,11 @@ import { ProjectStore } from '../../../../../projects/state/project.store';
                 (click)="onParentSelected(item.id); parentPop.hide()"
                 class="pop-item flex items-center gap-2"
               >
-                <i
+                <app-icon-display
                   class="text-xs"
-                  [class]="getTypeIcon(item.type)"
+                  [icon]="getTypeIcon(item.type)"
                   [style.color]="getTypeColor(item.type)"
-                ></i>
+                ></app-icon-display>
                 <span class="text-xs font-mono text-gray-400">{{ item.taskId }}</span>
                 <span class="text-sm truncate">{{ item.title }}</span>
               </div>
@@ -129,6 +132,7 @@ import { ProjectStore } from '../../../../../projects/state/project.store';
 export class ParentNavigationComponent implements OnChanges {
   private readonly confirmService = inject(ConfirmationService);
   private readonly projectStore = inject(ProjectStore);
+  private readonly typeConfigSvc = inject(TaskTypeConfigService);
 
   readonly t = computed(() => {
     const isEn = this.projectStore.projectLanguage() === 'en';
@@ -209,12 +213,12 @@ export class ParentNavigationComponent implements OnChanges {
   /** Icon & color cho parent hiện tại */
   readonly parentTypeIcon = computed(() => {
     if (!this.parent) return '';
-    return TYPE_CONFIG[this.parent.type]?.icon ?? 'pi pi-circle';
+    return this.typeConfigSvc.getIcon(this.parent.type, this.projectStore.currentProject()?.taskTypeConfig);
   });
 
   readonly parentTypeColor = computed(() => {
     if (!this.parent) return '';
-    return TYPE_CONFIG[this.parent.type]?.color ?? '#9CA3AF';
+    return this.typeConfigSvc.getColor(this.parent.type, this.projectStore.currentProject()?.taskTypeConfig);
   });
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -278,11 +282,11 @@ export class ParentNavigationComponent implements OnChanges {
 
   /** Helper: lấy icon class cho task type */
   getTypeIcon(type: TaskType): string {
-    return TYPE_CONFIG[type]?.icon ?? 'pi pi-circle';
+    return this.typeConfigSvc.getIcon(type, this.projectStore.currentProject()?.taskTypeConfig);
   }
 
   /** Helper: lấy color cho task type */
   getTypeColor(type: TaskType): string {
-    return TYPE_CONFIG[type]?.color ?? '#9CA3AF';
+    return this.typeConfigSvc.getColor(type, this.projectStore.currentProject()?.taskTypeConfig);
   }
 }

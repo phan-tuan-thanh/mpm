@@ -5,6 +5,7 @@ import { LayoutService } from '../../../../layout/services/layout.service';
 import { TaskStore } from '../../../state/task.store';
 import { ProjectStore } from '../../../../projects/state/project.store';
 import { PriorityConfigService } from '../../../services/priority-config.service';
+import { TaskTypeConfigService } from '../../../../shared/services/task-type-config.service';
 import { StateDotComponent } from '../../../../shared/components/state-dot/state-dot.component';
 import { IconDisplayComponent } from '../../../../shared/components/icon-display/icon-display.component';
 import type { TaskListItem, DisplayProperties, Label } from '@mpm/shared-types';
@@ -26,7 +27,7 @@ import type { TaskListItem, DisplayProperties, Label } from '@mpm/shared-types';
 
       <!-- identifier + type icon -->
       <div class="flex items-center gap-1 mb-1">
-        <i class="text-[10px]" [class]="typeIcon" [style.color]="typeColor"></i>
+        <app-icon-display [icon]="typeIcon" class="text-[10px]" [style.color]="typeColor"></app-icon-display>
         <span class="text-[10px] font-mono text-gray-400">{{ task.taskId }}</span>
       </div>
 
@@ -177,6 +178,7 @@ export class BoardCardComponent {
   private readonly taskStore = inject(TaskStore);
   private readonly projectStore = inject(ProjectStore);
   private readonly priorityConfigService = inject(PriorityConfigService);
+  private readonly typeConfigSvc = inject(TaskTypeConfigService);
 
   @Input({ required: true }) task!: TaskListItem;
   @Input() displayProps!: DisplayProperties;
@@ -185,12 +187,10 @@ export class BoardCardComponent {
   protected hovered = false;
 
   protected get typeIcon(): string {
-    const map: Record<string, string> = { epic: 'pi pi-bolt', story: 'pi pi-book', task: 'pi pi-check-circle', subtask: 'pi pi-minus-circle' };
-    return map[this.task.type] ?? 'pi pi-circle';
+    return this.typeConfigSvc.getIcon(this.task.type, this.projectStore.currentProject()?.taskTypeConfig);
   }
   protected get typeColor(): string {
-    const map: Record<string, string> = { epic: '#8B5CF6', story: '#3B82F6', task: '#10B981', subtask: '#6B7280' };
-    return map[this.task.type] ?? '#9CA3AF';
+    return this.typeConfigSvc.getColor(this.task.type, this.projectStore.currentProject()?.taskTypeConfig);
   }
   protected get priorityIcon(): string {
     return this.priorityConfigService.getConfig(this.projectStore.currentProject()?.id ?? '', this.task.priority ?? 'none').icon;

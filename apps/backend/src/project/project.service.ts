@@ -40,6 +40,17 @@ export class ProjectService {
     return this.updateService.updateFeatures(id, userId, dto, systemRole, ip, ua);
   }
 
+  async updateTaskTypeConfig(
+    id: string,
+    userId: string,
+    config: Record<string, { icon: string; color: string }>,
+    systemRole: string,
+    ip: string,
+    ua: string,
+  ): Promise<Record<string, { icon: string; color: string }>> {
+    return this.updateService.updateTaskTypeConfig(id, userId, config, systemRole, ip, ua);
+  }
+
   async join(projectId: string, userId: string, ip: string, ua: string): Promise<{ role: ProjectRole; projectId: string }> {
     return this.updateService.join(projectId, userId, ip, ua);
   }

@@ -65,6 +65,7 @@ export interface Project {
   timezone: string;
   features: ProjectFeatures;
   stateStats: Record<StateGroup, number>;
+  taskTypeConfig?: Record<string, { icon: string; color: string }> | null;
 }
 
 export interface ProjectListItem {

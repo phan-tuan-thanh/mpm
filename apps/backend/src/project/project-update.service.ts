@@ -96,6 +96,28 @@ export class ProjectUpdateService {
     return { role: 'Developer', projectId };
   }
 
+  async updateTaskTypeConfig(
+    id: string,
+    userId: string,
+    config: Record<string, { icon: string; color: string }>,
+    systemRole: string,
+    ip: string,
+    ua: string,
+  ): Promise<Record<string, { icon: string; color: string }>> {
+    const project = await this.projectRepository.findOne({ where: { id }, relations: ['members'] });
+    if (!project) throw new NotFoundException('Project not found');
+
+    const isSM = project.members.find((m) => m.userId === userId)?.projectRole === 'Scrum_Master';
+    if (!isSM && systemRole !== 'Admin') {
+      throw new ForbiddenException('Only Scrum Master or Admin can perform this action.');
+    }
+
+    project.taskTypeConfig = config;
+    await this.projectRepository.save(project);
+    this.auditService.log('project_updated' as any, userId, ip, ua, { projectId: id });
+    return config;
+  }
+
   private async validateLead(projectId: string, leadId: string): Promise<void> {
     const isMember = await this.projectMemberRepository.findOne({ where: { projectId, userId: leadId } });
     if (!isMember) {

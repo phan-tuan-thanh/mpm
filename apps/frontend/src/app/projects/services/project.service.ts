@@ -159,6 +159,19 @@ export class ProjectService {
   }
 
   /**
+   * Cập nhật cấu hình icon/màu cho loại work item
+   */
+  updateTaskTypeConfig(
+    projectId: string,
+    config: Record<string, { icon: string; color: string }>,
+  ): Observable<Record<string, { icon: string; color: string }>> {
+    return this.http.patch<Record<string, { icon: string; color: string }>>(
+      `${this.baseUrl}/${projectId}/task-type-config`,
+      { config },
+    );
+  }
+
+  /**
    * Upload ảnh bìa project
    */
   uploadCover(projectId: string, file: File): Observable<{ coverImageUrl: string }> {

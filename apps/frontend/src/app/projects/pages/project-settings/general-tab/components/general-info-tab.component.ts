@@ -173,7 +173,7 @@ import { IconDisplayComponent } from '../../../../../shared/components/icon-disp
                 <label class="text-xs font-semibold text-gray-500 dark:text-surface-400 uppercase tracking-wider">{{ t().leadLabel }}</label>
                 <button
                   type="button"
-                  (click)="leadPop.toggle($event)"
+                  (click)="leadPop.toggle($event); leadSearch.set('')"
                   [disabled]="isReadOnly() || isSubmitting()"
                   class="pop-select-trigger w-full flex items-center justify-between gap-2 cursor-pointer select-none disabled:opacity-50 disabled:cursor-not-allowed"
                 >
@@ -181,15 +181,29 @@ import { IconDisplayComponent } from '../../../../../shared/components/icon-disp
                   <i class="pi pi-chevron-down text-xs opacity-60 flex-shrink-0"></i>
                 </button>
                 <p-popover #leadPop appendTo="body" styleClass="!p-0">
+                  <div class="p-2 border-b border-surface-100 dark:border-surface-800 bg-surface-50 dark:bg-surface-900">
+                    <input
+                      type="text"
+                      pInputText
+                      [placeholder]="t().searchLeadPlaceholder"
+                      class="w-full text-xs p-1"
+                      [ngModel]="leadSearch()"
+                      [ngModelOptions]="{standalone: true}"
+                      (ngModelChange)="leadSearch.set($event)"
+                      (click)="$event.stopPropagation()"
+                    />
+                  </div>
                   <div class="pop-list w-64 max-h-60 overflow-y-auto">
-                    @for (opt of leadOptions(); track opt.value) {
+                    @for (opt of filteredLeadOptions(); track opt.value) {
                       <div
-                        (click)="leadId = opt.value; leadPop.hide()"
+                        (click)="leadId = opt.value; leadPop.hide(); leadSearch.set('')"
                         class="pop-item"
                         [class.selected]="leadId === opt.value"
                       >
                         {{ opt.label }}
                       </div>
+                    } @empty {
+                      <div class="p-3 text-xs text-gray-400 text-center">{{ t().noLeadFound }}</div>
                     }
                   </div>
                 </p-popover>
@@ -215,6 +229,7 @@ import { IconDisplayComponent } from '../../../../../shared/components/icon-disp
                       [placeholder]="t().searchTimezonePlaceholder"
                       class="w-full text-xs p-1"
                       [ngModel]="timezoneSearch()"
+                      [ngModelOptions]="{standalone: true}"
                       (ngModelChange)="timezoneSearch.set($event)"
                       (click)="$event.stopPropagation()"
                     />
@@ -309,6 +324,8 @@ export class GeneralInfoTabComponent implements OnInit {
       noTimezoneFound: 'No timezone found',
       selectTimezone: 'Select timezone',
       selectLead: 'Select lead',
+      searchLeadPlaceholder: 'Search member...',
+      noLeadFound: 'No member found',
       saveBtn: 'Save Changes',
       fileLargeSummary: 'File Too Large',
       fileLargeDetail: 'Cover image size must not exceed 5MB.',
@@ -350,6 +367,8 @@ export class GeneralInfoTabComponent implements OnInit {
       noTimezoneFound: 'Không tìm thấy múi giờ',
       selectTimezone: 'Chọn múi giờ',
       selectLead: 'Chọn người phụ trách',
+      searchLeadPlaceholder: 'Tìm thành viên...',
+      noLeadFound: 'Không tìm thấy thành viên',
       saveBtn: 'Lưu thay đổi',
       fileLargeSummary: 'Kích thước file lớn',
       fileLargeDetail: 'Kích thước ảnh bìa không được vượt quá 5MB.',
@@ -425,6 +444,13 @@ export class GeneralInfoTabComponent implements OnInit {
       label: m.displayName || m.email,
       value: m.userId,
     }));
+  });
+
+  readonly leadSearch = signal<string>('');
+  readonly filteredLeadOptions = computed(() => {
+    const query = this.leadSearch().toLowerCase().trim();
+    if (!query) return this.leadOptions();
+    return this.leadOptions().filter((o) => o.label.toLowerCase().includes(query));
   });
 
   // Timezone options

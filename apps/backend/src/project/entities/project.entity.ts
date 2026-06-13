@@ -102,6 +102,9 @@ export class Project {
   })
   sprintSettings!: Record<string, any>;
 
+  @Column({ name: 'task_type_config', type: 'jsonb', nullable: true })
+  taskTypeConfig!: Record<string, { icon: string; color: string }> | null;
+
   // Relations
   @ManyToOne(() => User)
   @JoinColumn({ name: 'owner_id' })

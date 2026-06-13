@@ -230,6 +230,14 @@ const routes = [
                       ),
                     title: 'Ngôn ngữ — Agile PM',
                   },
+                  {
+                    path: 'work-items',
+                    loadComponent: () =>
+                      import('./app/projects/pages/project-settings/work-items-tab/work-items-tab.component').then(
+                        (m) => m.WorkItemsTabComponent
+                      ),
+                    title: 'Cấu hình Work Item — Agile PM',
+                  },
                 ],
               },
               {

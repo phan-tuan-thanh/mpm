@@ -20,6 +20,25 @@ export const DEFAULT_TRANSLATIONS: TranslationKeyDefinition[] = [
   { key: 'general-tab.tab.labels', category: 'Settings - General', description: 'Tab link for project labels settings', defaultEn: 'Labels', defaultVi: 'Nhãn' },
   { key: 'general-tab.tab.estimates', category: 'Settings - General', description: 'Tab link for task estimate settings', defaultEn: 'Estimates', defaultVi: 'Ước lượng' },
   { key: 'general-tab.tab.language', category: 'Settings - General', description: 'Tab link for language translations override settings', defaultEn: 'Language', defaultVi: 'Ngôn ngữ' },
+  { key: 'general-tab.tab.workItems', category: 'Settings - General', description: 'Tab link for work item type icon/color configuration', defaultEn: 'Work Items', defaultVi: 'Work Items' },
+
+  // Work Items Tab
+  { key: 'work-items-tab.title', category: 'Settings - Work Items', description: 'Title of work item type configuration tab', defaultEn: 'Work Item Types', defaultVi: 'Loại Work Item' },
+  { key: 'work-items-tab.subtitle', category: 'Settings - Work Items', description: 'Subtitle describing the work item config tab', defaultEn: 'Customize the icon and color for each work item type.', defaultVi: 'Tùy chỉnh icon và màu sắc cho từng loại work item trong dự án.' },
+  { key: 'work-items-tab.saveBtn', category: 'Settings - Work Items', description: 'Button to save work item config changes', defaultEn: 'Save', defaultVi: 'Lưu thay đổi' },
+  { key: 'work-items-tab.discardBtn', category: 'Settings - Work Items', description: 'Button to discard unsaved work item config changes', defaultEn: 'Discard', defaultVi: 'Hủy' },
+  { key: 'work-items-tab.resetBtn', category: 'Settings - Work Items', description: 'Button to reset a single work item type back to system default', defaultEn: 'Reset', defaultVi: 'Mặc định' },
+  { key: 'work-items-tab.customized', category: 'Settings - Work Items', description: 'Badge shown when a type has a custom override', defaultEn: 'Custom', defaultVi: 'Tùy chỉnh' },
+  { key: 'work-items-tab.saveOk', category: 'Settings - Work Items', description: 'Toast message on successful save', defaultEn: 'Saved successfully.', defaultVi: 'Đã lưu cấu hình.' },
+  { key: 'work-items-tab.saveErr', category: 'Settings - Work Items', description: 'Toast message on save failure', defaultEn: 'Failed to save.', defaultVi: 'Lưu thất bại.' },
+  { key: 'work-items-tab.quickColorTitle', category: 'Settings - Work Items', description: 'Label above preset color circles in color picker', defaultEn: 'Quick Colors', defaultVi: 'Màu chọn nhanh' },
+  { key: 'work-items-tab.customColorBtn', category: 'Settings - Work Items', description: 'Toggle button to expand custom color hex input', defaultEn: 'Custom color', defaultVi: 'Tùy chỉnh màu' },
+  { key: 'work-items-tab.iconTooltip', category: 'Settings - Work Items', description: 'Tooltip on the icon picker button in work items tab', defaultEn: 'Change icon', defaultVi: 'Đổi icon' },
+  { key: 'work-items-tab.colorTooltip', category: 'Settings - Work Items', description: 'Tooltip on the color picker button in work items tab', defaultEn: 'Change color', defaultVi: 'Đổi màu' },
+
+  // General Info Tab
+  { key: 'general-info-tab.searchLeadPlaceholder', category: 'Settings - General Info', description: 'Placeholder for lead member search input', defaultEn: 'Search member...', defaultVi: 'Tìm thành viên...' },
+  { key: 'general-info-tab.noLeadFound', category: 'Settings - General Info', description: 'Empty state when lead search yields no results', defaultEn: 'No member found', defaultVi: 'Không tìm thấy thành viên' },
 
   // Labels Tab
   { key: 'labels-tab.commonIconTitle', category: 'Settings - Labels', description: 'Header for the common label icon configuration section', defaultEn: 'Common Label Icon', defaultVi: 'Biểu tượng chung của Nhãn' },

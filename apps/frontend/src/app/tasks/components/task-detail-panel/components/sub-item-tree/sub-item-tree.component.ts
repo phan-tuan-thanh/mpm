@@ -13,8 +13,10 @@ import {
 } from '@angular/core';
 import { Tooltip } from 'primeng/tooltip';
 import { StateDotComponent } from '../../../../../shared/components/state-dot/state-dot.component';
+import { IconDisplayComponent } from '../../../../../shared/components/icon-display/icon-display.component';
 import type { SubItemTreeNode, TaskType } from '@mpm/shared-types';
 import { ProjectStore } from '../../../../../projects/state/project.store';
+import { TaskTypeConfigService } from '../../../../../shared/services/task-type-config.service';
 
 interface FlatNode {
   node: SubItemTreeNode;
@@ -30,17 +32,10 @@ type DropTarget =
 const MAX_DEPTH = 5;
 const INDENT_PX = 20;
 
-const TYPE_CONFIG = {
-  epic: { icon: 'pi pi-bolt', color: '#8B5CF6' },
-  story: { icon: 'pi pi-book', color: '#3B82F6' },
-  task: { icon: 'pi pi-check-circle', color: '#10B981' },
-  subtask: { icon: 'pi pi-minus-circle', color: '#6B7280' }
-} as Record<TaskType, { icon: string; color: string }>;
-
 @Component({
   standalone: true,
   selector: 'app-sub-item-tree',
-  imports: [Tooltip, StateDotComponent],
+  imports: [Tooltip, StateDotComponent, IconDisplayComponent],
   template: `
     <div class="sub-item-tree relative select-none">
 
@@ -110,13 +105,13 @@ const TYPE_CONFIG = {
           }
 
           <!-- Type icon -->
-          <i
-            [class]="typeIcon(flat.node.type)"
+          <app-icon-display
+            [icon]="typeIcon(flat.node.type)"
             [style.color]="typeColor(flat.node.type)"
             class="flex-shrink-0 text-[11px]"
             [pTooltip]="flat.node.type"
             tooltipPosition="top"
-          ></i>
+          ></app-icon-display>
 
           <!-- Task ID -->
           <span class="font-mono text-xs text-gray-400 dark:text-surface-500 flex-shrink-0">
@@ -251,11 +246,11 @@ const TYPE_CONFIG = {
         [style.top.px]="ghostY()"
       >
         <!-- Type icon -->
-        <i
-          [class]="typeIcon(draggingNode()!.type)"
+        <app-icon-display
+          [icon]="typeIcon(draggingNode()!.type)"
           [style.color]="typeColor(draggingNode()!.type)"
           class="flex-shrink-0 text-[11px]"
-        ></i>
+        ></app-icon-display>
         <span class="text-xs font-mono text-gray-400">{{ draggingNode()!.taskId }}</span>
         <span class="text-sm text-gray-800 dark:text-surface-100 font-medium truncate">
           {{ draggingNode()!.title }}
@@ -271,6 +266,7 @@ export class SubItemTreeComponent implements OnChanges, OnDestroy {
   constructor(private readonly el: ElementRef<HTMLElement>) {}
 
   private readonly projectStore = inject(ProjectStore);
+  private readonly typeConfigSvc = inject(TaskTypeConfigService);
 
   readonly t = computed(() => {
     const isEn = this.projectStore.projectLanguage() === 'en';
@@ -633,11 +629,11 @@ export class SubItemTreeComponent implements OnChanges, OnDestroy {
   // ─── Utility (template) ───────────────────────────────────────────────────
 
   typeIcon(type: TaskType): string {
-    return TYPE_CONFIG[type]?.icon ?? 'pi pi-circle';
+    return this.typeConfigSvc.getIcon(type, this.projectStore.currentProject()?.taskTypeConfig);
   }
 
   typeColor(type: TaskType): string {
-    return TYPE_CONFIG[type]?.color ?? '#9CA3AF';
+    return this.typeConfigSvc.getColor(type, this.projectStore.currentProject()?.taskTypeConfig);
   }
 
   getInitial(name: string): string {

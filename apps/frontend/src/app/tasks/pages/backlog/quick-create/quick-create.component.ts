@@ -21,6 +21,7 @@ import { SliderModule } from 'primeng/slider';
 import { RichTextEditorComponent } from '../../../../shared/components/rich-text-editor/rich-text-editor.component';
 import { ProjectStore } from '../../../../projects/state/project.store';
 import { PriorityConfigService } from '../../../services/priority-config.service';
+import { TaskTypeConfigService } from '../../../../shared/services/task-type-config.service';
 import { TaskStore } from '../../../state/task.store';
 import { LabelStore } from '../../../state/label.store';
 import { ModuleStore } from '../../../state/module.store';
@@ -35,13 +36,6 @@ import type { TaskType, TaskPriority, CreateTaskDto, TiptapDoc, Task, TaskAttach
 import { firstValueFrom } from 'rxjs';
 
 // ─── Static option sets ──────────────────────────────────────────────────────
-
-const TYPE_OPTIONS: { label: string; value: TaskType; icon: string; color: string }[] = [
-  { label: 'Epic',    value: 'epic',    icon: 'pi pi-bolt',         color: '#8B5CF6' },
-  { label: 'Story',   value: 'story',   icon: 'pi pi-book',         color: '#3B82F6' },
-  { label: 'Task',    value: 'task',    icon: 'pi pi-check-circle', color: '#10B981' },
-  { label: 'Subtask', value: 'subtask', icon: 'pi pi-minus-circle', color: '#6B7280' },
-];
 
 const VALID_CHILDREN: Partial<Record<TaskType, TaskType[]>> = {
   epic:  ['story', 'task'],
@@ -79,6 +73,17 @@ export class QuickCreateComponent implements OnChanges {
   private readonly taskService = inject(TaskService);
   private readonly messageService = inject(MessageService);
   private readonly priorityConfigService = inject(PriorityConfigService);
+  private readonly typeConfigSvc = inject(TaskTypeConfigService);
+
+  readonly typeOptions = computed(() => {
+    const cfg = this.projectStore.currentProject()?.taskTypeConfig;
+    return [
+      { label: 'Epic',    value: 'epic'    as TaskType, icon: this.typeConfigSvc.getIcon('epic', cfg),    color: this.typeConfigSvc.getColor('epic', cfg) },
+      { label: 'Story',   value: 'story'   as TaskType, icon: this.typeConfigSvc.getIcon('story', cfg),   color: this.typeConfigSvc.getColor('story', cfg) },
+      { label: 'Task',    value: 'task'    as TaskType, icon: this.typeConfigSvc.getIcon('task', cfg),    color: this.typeConfigSvc.getColor('task', cfg) },
+      { label: 'Subtask', value: 'subtask' as TaskType, icon: this.typeConfigSvc.getIcon('subtask', cfg), color: this.typeConfigSvc.getColor('subtask', cfg) },
+    ];
+  });
 
   readonly t = computed(() => {
     const isEn = this.projectStore.projectLanguage() === 'en';
@@ -265,8 +270,8 @@ export class QuickCreateComponent implements OnChanges {
       subtask: tr.typeSubtask
     };
     const options = parent
-      ? TYPE_OPTIONS.filter((t) => (VALID_CHILDREN[parent.type] ?? []).includes(t.value))
-      : TYPE_OPTIONS.filter((t) => t.value !== 'subtask');
+      ? this.typeOptions().filter((t) => (VALID_CHILDREN[parent.type] ?? []).includes(t.value))
+      : this.typeOptions().filter((t) => t.value !== 'subtask');
     return options.map(opt => ({
       ...opt,
       label: typeLabelMap[opt.value] || opt.label
@@ -304,7 +309,8 @@ export class QuickCreateComponent implements OnChanges {
   });
 
   protected readonly selectedTypeConfig = computed(() => {
-    const match = TYPE_OPTIONS.find((t) => t.value === this.selectedType()) ?? TYPE_OPTIONS[2];
+    const opts = this.typeOptions();
+    const match = opts.find((t) => t.value === this.selectedType()) ?? opts[2];
     const tr = this.t();
     const typeLabelMap: Record<TaskType, string> = {
       epic: tr.typeEpic,

@@ -63,5 +63,17 @@ export class ProjectController {
     const { ip, ua } = this.getIpUa(req);
     return this.projectService.updateFeatures(projectId, user.id, dto, user.systemRole, ip, ua);
   }
+
+  @Patch(':projectId/task-type-config')
+  @ProjectRoles('Scrum_Master')
+  async updateTaskTypeConfig(
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+    @CurrentUser() user: RequestUser,
+    @Body('config') config: Record<string, { icon: string; color: string }>,
+    @Req() req: Request,
+  ) {
+    const { ip, ua } = this.getIpUa(req);
+    return this.projectService.updateTaskTypeConfig(projectId, user.id, config, user.systemRole, ip, ua);
+  }
 }
 

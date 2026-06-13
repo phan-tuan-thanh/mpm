@@ -12,13 +12,7 @@ import { ProjectStore } from '../../../../projects/state/project.store';
 import { PriorityConfigService } from '../../../services/priority-config.service';
 import { SprintService } from '../../../../projects/sprints/services/sprint.service';
 import { CustomTranslationService } from '../../../../shared/services/custom-translation.service';
-
-const TYPE_CONFIG = {
-  epic: { icon: 'pi pi-bolt', color: '#8B5CF6' },
-  story: { icon: 'pi pi-book', color: '#3B82F6' },
-  task: { icon: 'pi pi-check-circle', color: '#10B981' },
-  subtask: { icon: 'pi pi-minus-circle', color: '#6B7280' }
-} as Record<TaskType, { icon: string; color: string }>;
+import { TaskTypeConfigService } from '../../../../shared/services/task-type-config.service';
 
 const AVATAR_PALETTE = [
   ['#EDE9FE', '#5B21B6'], ['#DBEAFE', '#1E40AF'], ['#D1FAE5', '#065F46'],
@@ -57,7 +51,7 @@ import { StateDotComponent } from '../../../../shared/components/state-dot/state
         <i class="pi text-[9px] text-gray-500 dark:text-surface-400" [class.pi-chevron-right]="!isExpanded" [class.pi-chevron-down]="isExpanded"></i>
       </button>
     }
-    <i class="flex-shrink-0 mr-2" [class]="typeIcon(task.type)" [style.color]="typeColor(task.type)" [style.font-size.px]="layoutService.appIconSize() - 2" [pTooltip]="task.type"></i>
+    <app-icon-display class="flex-shrink-0 mr-2" [icon]="typeIcon(task.type)" [size]="layoutService.appIconSize() - 2" [style.color]="typeColor(task.type)" [pTooltip]="task.type"></app-icon-display>
     <span class="flex-1 text-sm text-gray-800 dark:text-surface-100 truncate">{{ task.title }}</span>
     @if (depth === 0 && task.parentId && task.parent) {
       <span class="flex items-center gap-1 text-xs text-gray-400 dark:text-surface-500 flex-shrink-0 mr-2 max-w-[200px]" [pTooltip]="task.parent.taskId + ' · ' + task.parent.title">
@@ -186,6 +180,7 @@ export class TaskRowComponent {
   private readonly priorityConfigService = inject(PriorityConfigService);
   private readonly sprintService = inject(SprintService);
   private readonly customTrans = inject(CustomTranslationService);
+  private readonly typeConfigSvc = inject(TaskTypeConfigService);
 
   readonly t = computed(() => {
     const isEn = this.projectStore.projectLanguage() === 'en';
@@ -221,8 +216,8 @@ export class TaskRowComponent {
   @Output() toggleExpand = new EventEmitter<string>();
   @Output() taskMenuClick = new EventEmitter<TaskListItem>();
 
-  protected typeIcon(t: TaskType): string { return TYPE_CONFIG[t]?.icon ?? 'pi pi-circle'; }
-  protected typeColor(t: TaskType): string { return TYPE_CONFIG[t]?.color ?? '#9CA3AF'; }
+  protected typeIcon(t: TaskType): string { return this.typeConfigSvc.getIcon(t, this.projectStore.currentProject()?.taskTypeConfig); }
+  protected typeColor(t: TaskType): string { return this.typeConfigSvc.getColor(t, this.projectStore.currentProject()?.taskTypeConfig); }
   protected priorityIcon(p: TaskPriority): string {
     return this.priorityConfigService.getConfig(this.projectStore.currentProject()?.id ?? '', p).icon;
   }
