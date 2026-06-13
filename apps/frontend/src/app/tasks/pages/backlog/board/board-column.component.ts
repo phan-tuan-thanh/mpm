@@ -4,7 +4,7 @@ import { DragDropModule, CdkDragDrop } from '@angular/cdk/drag-drop';
 import { BoardCardComponent } from './board-card.component';
 import { StateDotComponent } from '../../../../shared/components/state-dot/state-dot.component';
 import type { TaskListItem, ProjectState, DisplayProperties } from '@mpm/shared-types';
-import { ProjectStore } from '../../../../../projects/state/project.store';
+import { ProjectStore } from '../../../../projects/state/project.store';
 
 @Component({
   standalone: true,

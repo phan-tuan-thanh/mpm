@@ -2,7 +2,7 @@ import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from '../../auth/services/auth.service';
 import { MessageService } from 'primeng/api';
-import { ProjectStore } from '../../../projects/state/project.store';
+import { ProjectStore } from '../../projects/state/project.store';
 
 /**
  * Admin Guard — bảo vệ các route chỉ dành cho System Admin

@@ -6,6 +6,7 @@ import {
   OnDestroy,
   signal,
   inject,
+  computed,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { PopoverModule } from 'primeng/popover';
@@ -16,7 +17,7 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { TooltipModule } from 'primeng/tooltip';
 import { MessageService } from 'primeng/api';
 import { CommonModule } from '@angular/common';
-import { ProjectStore } from '../../../../projects/state/project.store';
+import { ProjectStore } from '../../../../../projects/state/project.store';
 
 import { PropertySaveQueue } from './property-save-queue';
 

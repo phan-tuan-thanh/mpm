@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import type { TaskLink } from '@mpm/shared-types';
-import { ProjectStore } from '../../../../../projects/state/project.store';
+import { ProjectStore } from '../../../../projects/state/project.store';
 
 @Component({
   standalone: true,

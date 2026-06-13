@@ -7,7 +7,7 @@ import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 import { AttachmentService } from '../../../services/attachment.service';
 import type { TaskAttachment } from '@mpm/shared-types';
-import { ProjectStore } from '../../../../../projects/state/project.store';
+import { ProjectStore } from '../../../../projects/state/project.store';
 
 interface DisplayGroup {
   key: string;    // 'g:Title' for real, 'p:Title' for pending
