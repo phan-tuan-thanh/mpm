@@ -1,9 +1,10 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DragDropModule, CdkDragDrop } from '@angular/cdk/drag-drop';
 import { BoardCardComponent } from './board-card.component';
 import { StateDotComponent } from '../../../../shared/components/state-dot/state-dot.component';
 import type { TaskListItem, ProjectState, DisplayProperties } from '@mpm/shared-types';
+import { ProjectStore } from '../../../../../projects/state/project.store';
 
 @Component({
   standalone: true,
@@ -98,7 +99,7 @@ import type { TaskListItem, ProjectState, DisplayProperties } from '@mpm/shared-
               <div class="h-0.5 bg-indigo-600 dark:bg-indigo-500 w-full absolute top-0 left-0 right-0 rounded-full"></div>
             }
             <i class="pi pi-inbox text-xl opacity-50"></i>
-            <span>Không có task</span>
+            <span>{{ t().noTasks }}</span>
           </div>
         }
       </div>
@@ -106,6 +107,17 @@ import type { TaskListItem, ProjectState, DisplayProperties } from '@mpm/shared-
   `,
 })
 export class BoardColumnComponent {
+  private readonly projectStore = inject(ProjectStore);
+
+  readonly t = computed(() => {
+    const isEn = this.projectStore.projectLanguage() === 'en';
+    return isEn ? {
+      noTasks: 'No tasks'
+    } : {
+      noTasks: 'Không có task'
+    };
+  });
+
   @Input({ required: true }) state!: ProjectState;
   @Input() tasks: TaskListItem[] = [];
   @Input() connectedTo: string[] = [];

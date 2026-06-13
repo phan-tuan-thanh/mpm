@@ -40,32 +40,50 @@ export const EMPTY_STATE_MAP: Record<string, EmptyStateConfig> = {
 };
 
 /**
- * Base activity tabs (always shown).
+ * Empty state messages per tab (English locale).
  */
-const BASE_TABS: ActivityTab[] = [
-  { label: 'Tất cả', value: 'all', icon: 'pi pi-list' },
-  { label: 'Hoạt động', value: 'activity', icon: 'pi pi-bolt' },
-  { label: 'Lịch sử', value: 'history', icon: 'pi pi-history' },
-];
+export const EMPTY_STATE_MAP_EN: Record<string, EmptyStateConfig> = {
+  all: {
+    icon: 'pi pi-clock',
+    message: 'No activities yet.',
+  },
+  activity: {
+    icon: 'pi pi-bolt',
+    message: 'No system activities yet.',
+  },
+  comments: {
+    icon: 'pi pi-comments',
+    message: 'No comments yet.',
+  },
+  history: {
+    icon: 'pi pi-history',
+    message: 'No status history yet.',
+  },
+};
 
 /**
  * Build the tabs array based on whether to include the Properties tab.
  */
-export function buildActivityTabs(showPropertiesTab: boolean): ActivityTab[] {
-  const tabs = [...BASE_TABS];
+export function buildActivityTabs(showPropertiesTab: boolean, isEn = false): ActivityTab[] {
+  const baseTabs: ActivityTab[] = [
+    { label: isEn ? 'All' : 'Tất cả', value: 'all', icon: 'pi pi-list' },
+    { label: isEn ? 'Activities' : 'Hoạt động', value: 'activity', icon: 'pi pi-bolt' },
+    { label: isEn ? 'History' : 'Lịch sử', value: 'history', icon: 'pi pi-history' },
+  ];
   if (showPropertiesTab) {
-    tabs.push({ label: 'Thuộc tính', value: 'properties', icon: 'pi pi-cog' });
+    baseTabs.push({ label: isEn ? 'Properties' : 'Thuộc tính', value: 'properties', icon: 'pi pi-cog' });
   }
-  return tabs;
+  return baseTabs;
 }
 
 /**
  * Get the empty state config for a given filter type.
  * Falls back to 'all' state for unknown filter values.
  */
-export function getEmptyStateConfig(filter: ActivityFilterType | 'properties'): EmptyStateConfig {
+export function getEmptyStateConfig(filter: ActivityFilterType | 'properties', isEn = false): EmptyStateConfig {
   const key = filter === 'properties' ? 'all' : filter;
-  return EMPTY_STATE_MAP[key] ?? EMPTY_STATE_MAP['all'];
+  const map = isEn ? EMPTY_STATE_MAP_EN : EMPTY_STATE_MAP;
+  return map[key] ?? map['all'];
 }
 
 /**
@@ -73,8 +91,9 @@ export function getEmptyStateConfig(filter: ActivityFilterType | 'properties'): 
  */
 export function getActiveTabLabel(
   tabs: ActivityTab[],
-  activeFilter: ActivityFilterType | 'properties'
+  activeFilter: ActivityFilterType | 'properties',
+  isEn = false
 ): string {
   const tab = tabs.find((t) => t.value === activeFilter);
-  return tab?.label ?? 'Tất cả';
+  return tab?.label ?? (isEn ? 'All' : 'Tất cả');
 }

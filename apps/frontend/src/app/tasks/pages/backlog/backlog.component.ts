@@ -205,13 +205,13 @@ import { toObservable } from '@angular/core/rxjs-interop';
       [visible]="showCloseConfirm()"
       (visibleChange)="onCloseConfirmVisibleChange($event)"
       [modal]="true"
-      [header]="projectStore.projectLanguage() === 'en' ? 'Close Task Warning' : 'Cảnh báo đóng task'"
+      [header]="t().closeWarningHeader"
       [style]="{ width: '450px' }"
       [closable]="true"
     >
       <div class="flex flex-col gap-4">
         <div class="text-sm text-gray-600 dark:text-surface-300">
-          {{ projectStore.projectLanguage() === 'en' ? 'Selected task(s) have incomplete sub-tasks. Closing will leave them incomplete unless auto-closed.' : 'Task được chọn có các sub-task chưa hoàn thành. Việc đóng các task này sẽ để lại các sub-task ở trạng thái chưa hoàn thành trừ khi bạn tự động đóng.' }}
+          {{ t().closeWarningMsg }}
         </div>
         
         <div class="max-h-48 overflow-y-auto border border-gray-200 dark:border-surface-700 rounded p-2 bg-gray-50 dark:bg-surface-800 flex flex-col gap-1">
@@ -227,15 +227,15 @@ import { toObservable } from '@angular/core/rxjs-interop';
         <div class="flex items-center gap-2 mt-2">
           <p-checkbox [binary]="true" [ngModel]="autoCloseChildren()" (ngModelChange)="autoCloseChildren.set($event)" id="autoCloseChildrenBacklog" />
           <label for="autoCloseChildrenBacklog" class="text-sm font-medium text-gray-700 dark:text-surface-300 cursor-pointer">
-            {{ projectStore.projectLanguage() === 'en' ? 'Auto-close incomplete sub-tasks' : 'Tự động đóng các task con chưa hoàn thành' }}
+            {{ t().autoCloseSubtasksLabel }}
           </label>
         </div>
       </div>
 
       <ng-template #footer>
         <div class="flex justify-end gap-2 mt-4">
-          <button pButton [label]="projectStore.projectLanguage() === 'en' ? 'Cancel' : 'Hủy'" severity="secondary" (click)="cancelMove()"></button>
-          <button pButton [label]="projectStore.projectLanguage() === 'en' ? 'Confirm' : 'Đồng ý'" severity="primary" (click)="confirmBulkClose()"></button>
+          <button pButton [label]="t().cancelBtn" severity="secondary" (click)="cancelMove()"></button>
+          <button pButton [label]="t().confirmBtn" severity="primary" (click)="confirmBulkClose()"></button>
         </div>
       </ng-template>
     </p-dialog>
@@ -301,7 +301,12 @@ export class BacklogComponent implements OnInit, OnDestroy {
       taskCreated: 'Created new task',
       draftError: 'Could not initialize draft task',
       addedToSprintSuccess: (count: number, sprintName: string) => `Added ${count} tasks to sprint "${sprintName}"`,
-      addedToSprintError: 'Could not add tasks to sprint'
+      addedToSprintError: 'Could not add tasks to sprint',
+      closeWarningHeader: 'Close Task Warning',
+      closeWarningMsg: 'Selected task(s) have incomplete sub-tasks. Closing will leave them incomplete unless auto-closed.',
+      autoCloseSubtasksLabel: 'Auto-close incomplete sub-tasks',
+      confirmBtn: 'Confirm',
+      cancelBtn: 'Cancel'
     } : {
       selectedTasks: 'task đã chọn',
       deselect: 'Bỏ chọn',
@@ -320,7 +325,12 @@ export class BacklogComponent implements OnInit, OnDestroy {
       taskCreated: 'Đã tạo task mới',
       draftError: 'Không thể khởi tạo task nháp',
       addedToSprintSuccess: (count: number, sprintName: string) => `Đã thêm ${count} task vào sprint "${sprintName}"`,
-      addedToSprintError: 'Không thể thêm task vào sprint'
+      addedToSprintError: 'Không thể thêm task vào sprint',
+      closeWarningHeader: 'Cảnh báo đóng task',
+      closeWarningMsg: 'Task được chọn có các sub-task chưa hoàn thành. Việc đóng các task này sẽ để lại các sub-task ở trạng thái chưa hoàn thành trừ khi bạn tự động đóng.',
+      autoCloseSubtasksLabel: 'Tự động đóng các task con chưa hoàn thành',
+      confirmBtn: 'Đồng ý',
+      cancelBtn: 'Hủy'
     };
   });
 

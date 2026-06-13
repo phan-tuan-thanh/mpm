@@ -1,10 +1,11 @@
-import { Component, EventEmitter, Input, Output, forwardRef } from '@angular/core';
-import { TestBed } from '@angular/core/testing';
+import { Component, EventEmitter, Input, Output, forwardRef, signal } from '@angular/core';
+import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { NG_VALUE_ACCESSOR, ControlValueAccessor } from '@angular/forms';
 import { ConfirmationService } from 'primeng/api';
 import { TaskDescriptionSectionComponent } from './task-description-section.component';
 import { RichTextEditorComponent } from '../../../../../shared/components/rich-text-editor/rich-text-editor.component';
 import type { TiptapDoc } from '@mpm/shared-types';
+import { ProjectStore } from '../../../../../projects/state/project.store';
 
 // Stub RTE — TipTap thật không cần thiết cho logic swap/save/cancel
 @Component({
@@ -40,7 +41,10 @@ describe('TaskDescriptionSectionComponent', () => {
     confirmAccept = undefined;
     TestBed.configureTestingModule({
       imports: [TaskDescriptionSectionComponent],
-      providers: [{ provide: ConfirmationService, useValue: mockConfirm }],
+      providers: [
+        { provide: ConfirmationService, useValue: mockConfirm },
+        { provide: ProjectStore, useValue: { projectLanguage: signal('vi') } },
+      ],
     });
     TestBed.overrideComponent(TaskDescriptionSectionComponent, {
       remove: { imports: [RichTextEditorComponent] },
@@ -134,5 +138,51 @@ describe('TaskDescriptionSectionComponent', () => {
     fixture.detectChanges();
     expect(stopSpy).toHaveBeenCalled();
     expect(fixture.componentInstance.editing()).toBe(false); // không dirty → thoát luôn
+  });
+
+  describe('English localization support', () => {
+    let fixture: ComponentFixture<TaskDescriptionSectionComponent>;
+    let mockProjStore: any;
+
+    beforeEach(async () => {
+      mockConfirm.confirm.mockClear();
+      confirmAccept = undefined;
+      mockProjStore = { projectLanguage: signal('en') };
+
+      TestBed.configureTestingModule({
+        imports: [TaskDescriptionSectionComponent],
+        providers: [
+          { provide: ConfirmationService, useValue: mockConfirm },
+          { provide: ProjectStore, useValue: mockProjStore },
+        ],
+      });
+      TestBed.overrideComponent(TaskDescriptionSectionComponent, {
+        remove: { imports: [RichTextEditorComponent] },
+        add: { imports: [StubRteComponent] },
+      });
+      await TestBed.compileComponents();
+      fixture = TestBed.createComponent(TaskDescriptionSectionComponent);
+      fixture.componentInstance.doc = null;
+      fixture.detectChanges();
+    });
+
+    it('should show English placeholder when doc is empty', () => {
+      expect(el(fixture, 'description-placeholder')!.textContent).toContain('Add description...');
+    });
+
+    it('should show English confirmation message on cancel when dirty', () => {
+      fixture.componentInstance.doc = textDoc;
+      fixture.detectChanges();
+      fixture.componentInstance.enterEdit();
+      fixture.componentInstance.draft.set({ type: 'doc', content: [] });
+      fixture.detectChanges();
+      el(fixture, 'description-cancel')!.click();
+      expect(mockConfirm.confirm).toHaveBeenCalledWith(expect.objectContaining({
+        message: 'Discard unsaved changes?',
+        header: 'Confirm',
+        acceptLabel: 'Discard changes',
+        rejectLabel: 'Continue editing'
+      }));
+    });
   });
 });
