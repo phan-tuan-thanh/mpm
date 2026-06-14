@@ -20,6 +20,8 @@ import { TaskService } from '../../services/task.service';
 import { BacklogToolbarComponent, BacklogFilter } from './backlog-toolbar/backlog-toolbar.component';
 import { TaskListComponent } from './task-list/task-list.component';
 import { BoardComponent } from './board/board.component';
+import { TableViewComponent } from './table-view/table-view.component';
+import { TimelineViewComponent } from './timeline-view/timeline-view.component';
 import { QuickCreateComponent } from './quick-create/quick-create.component';
 import { TaskDetailPanelComponent } from '../../components/task-detail-panel/task-detail-panel.component';
 import { LabelManagerComponent } from '../../components/label-manager/label-manager.component';
@@ -38,7 +40,7 @@ import { CustomTranslationService } from '../../../shared/services/custom-transl
     CommonModule, FormsModule,
     ButtonModule, ConfirmDialogModule, ToastModule, DialogModule, PopoverModule, CheckboxModule,
     BacklogToolbarComponent, TaskListComponent, BoardComponent, QuickCreateComponent,
-    TaskDetailPanelComponent, LabelManagerComponent,
+    TaskDetailPanelComponent, LabelManagerComponent, TableViewComponent, TimelineViewComponent,
   ],
   providers: [ConfirmationService, MessageService],
   template: `
@@ -97,6 +99,31 @@ import { CustomTranslationService } from '../../../shared/services/custom-transl
             [projectId]="projectId"
             (taskClick)="openDetail($event)"
             (cardMoveRequested)="onMoveTask($event)"
+          />
+        } @else if (viewMode() === 'table') {
+          <div class="h-full overflow-y-auto">
+            <app-table-view
+              [tasks]="taskStore.tasks()"
+              [states]="flatStates()"
+              [isLoading]="taskStore.isLoading()"
+              [orderBy]="selectedOrderBy"
+              [selectedIds]="taskStore.selectedTaskIds()"
+              [displayProps]="displayProps()"
+              (taskClick)="openDetail($event)"
+              (selectionToggle)="taskStore.toggleSelect($event)"
+              (reorder)="onReorder($event)"
+              (moveTask)="onMoveTask($event)"
+              (deleteTask)="onDeleteSingleTask($event)"
+            />
+          </div>
+        } @else if (viewMode() === 'timeline') {
+          <app-timeline-view
+            [tasks]="taskStore.tasks()"
+            [states]="flatStates()"
+            [isLoading]="taskStore.isLoading()"
+            (taskClick)="openDetail($event)"
+            (reorder)="onReorder($event)"
+            (moveTask)="onMoveTask($event)"
           />
         } @else if (!(currentTaskId() && displayProps().taskDetailViewMode === 'full-page')) {
           <div class="h-full overflow-y-auto">
@@ -272,7 +299,7 @@ export class BacklogComponent implements OnInit, OnDestroy {
   protected projectId = '';
   protected workspaceId = '';
   protected currentTaskId = signal<string | null>(null);
-  protected viewMode = signal<'list' | 'board'>('list');
+  protected viewMode = signal<'list' | 'board' | 'table' | 'timeline'>('list');
 
   protected readonly displayProps = signal<DisplayProperties>(DEFAULT_DISPLAY_PROPS);
 
@@ -333,8 +360,8 @@ export class BacklogComponent implements OnInit, OnDestroy {
     this.route.queryParams.pipe(takeUntil(this.destroy$)).subscribe((params) => {
       this.currentTaskId.set(params['taskId'] || null);
       const view = params['view'];
-      if (view === 'board' || view === 'list') {
-        this.viewMode.set(view);
+      if (['board', 'list', 'table', 'timeline'].includes(view)) {
+        this.viewMode.set(view as 'list' | 'board' | 'table' | 'timeline');
       }
 
       const moduleIdsParam = params['moduleIds'];
@@ -384,7 +411,7 @@ export class BacklogComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  protected onViewModeChange(mode: 'list' | 'board'): void {
+  protected onViewModeChange(mode: 'list' | 'board' | 'table' | 'timeline'): void {
     this.viewMode.set(mode);
     this.router.navigate([], {
       relativeTo: this.route,
@@ -676,6 +703,19 @@ export class BacklogComponent implements OnInit, OnDestroy {
       accept: () => {
         this.taskStore.bulkDelete(this.projectId);
         this.reloadBacklog();
+      },
+    });
+  }
+
+  protected onDeleteSingleTask(taskId: string): void {
+    this.confirmService.confirm({
+      message: this.t().confirmDeleteMessage(1),
+      header: this.t().confirmDeleteHeader,
+      icon: 'pi pi-trash',
+      acceptLabel: this.t().delete,
+      rejectLabel: this.t().cancel,
+      accept: () => {
+        this.taskStore.deleteTask(this.projectId, taskId);
       },
     });
   }

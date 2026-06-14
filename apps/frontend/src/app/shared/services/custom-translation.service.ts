@@ -106,6 +106,12 @@ export const DEFAULT_TRANSLATIONS: TranslationKeyDefinition[] = [
   { key: 'toolbar.searchLabel', category: 'Backlog Toolbar', description: 'Placeholder for label filter search input', defaultEn: 'Search labels...', defaultVi: 'Tìm label...' },
   { key: 'toolbar.noLabelFound', category: 'Backlog Toolbar', description: 'Empty message when label search yields no results', defaultEn: 'No labels found', defaultVi: 'Không tìm thấy label' },
   { key: 'toolbar.clearFilters', category: 'Backlog Toolbar', description: 'Button to clear all active filters', defaultEn: 'Clear filters', defaultVi: 'Xóa bộ lọc' },
+  { key: 'toolbar.tableView', category: 'Backlog Toolbar', description: 'Tooltip/label for table view toggle button', defaultEn: 'Table view', defaultVi: 'Bảng' },
+  { key: 'toolbar.timelineView', category: 'Backlog Toolbar', description: 'Tooltip/label for timeline view toggle button', defaultEn: 'Timeline view', defaultVi: 'Dòng thời gian' },
+  { key: 'timelineView.workItems', category: 'Timeline View', description: 'Column header for work items in timeline', defaultEn: 'Work items', defaultVi: 'Công việc' },
+  { key: 'timelineView.duration',  category: 'Timeline View', description: 'Column header for task duration in timeline', defaultEn: 'Duration', defaultVi: 'Thời lượng' },
+  { key: 'timelineView.today',     category: 'Timeline View', description: 'Button to scroll timeline to today', defaultEn: 'Today', defaultVi: 'Hôm nay' },
+  { key: 'timelineView.noDate',    category: 'Timeline View', description: 'Group label for tasks without dates', defaultEn: 'No date', defaultVi: 'Không có ngày' },
   { key: 'toolbar.filterType', category: 'Backlog Toolbar', description: 'Default label for task type filter button', defaultEn: 'Type', defaultVi: 'Loại' },
   { key: 'toolbar.filterPriority', category: 'Backlog Toolbar', description: 'Default label for priority filter button', defaultEn: 'Priority', defaultVi: 'Độ ưu tiên' },
   { key: 'toolbar.filterState', category: 'Backlog Toolbar', description: 'Default label for state filter button', defaultEn: 'State', defaultVi: 'Trạng thái' },
@@ -242,6 +248,8 @@ export const DEFAULT_TRANSLATIONS: TranslationKeyDefinition[] = [
   { key: 'display.field.estimate', category: 'Display Properties', description: 'Toggle label for showing estimate field on task cards', defaultEn: 'Estimate', defaultVi: 'Thời gian dự tính' },
   { key: 'display.field.state', category: 'Display Properties', description: 'Toggle label for showing state field on task cards', defaultEn: 'State', defaultVi: 'Trạng thái' },
   { key: 'display.field.sprint', category: 'Display Properties', description: 'Toggle label for showing sprint field on task cards', defaultEn: 'Sprint', defaultVi: 'Sprint' },
+  { key: 'display.field.createdAt', category: 'Display Properties', description: 'Toggle label for showing created date field on task cards', defaultEn: 'Created on', defaultVi: 'Ngày tạo' },
+  { key: 'display.field.updatedAt', category: 'Display Properties', description: 'Toggle label for showing updated date field on task cards', defaultEn: 'Updated on', defaultVi: 'Ngày cập nhật' },
   { key: 'display.labels', category: 'Display Properties', description: 'Section header for labels display settings', defaultEn: 'Labels', defaultVi: 'Nhãn' },
   { key: 'display.labels.mode', category: 'Display Properties', description: 'Label for label display mode selector (badge vs dot)', defaultEn: 'Mode', defaultVi: 'Chế độ' },
   { key: 'display.labels.badge', category: 'Display Properties', description: 'Badge mode option for label display', defaultEn: 'Badge', defaultVi: 'Huy hiệu' },
@@ -270,6 +278,12 @@ export const DEFAULT_TRANSLATIONS: TranslationKeyDefinition[] = [
   { key: 'display.viewMode.popup', category: 'Display Properties', description: 'View mode option: open task in popup dialog', defaultEn: 'Popup', defaultVi: 'Hộp thoại' },
   { key: 'display.viewMode.rightPane', category: 'Display Properties', description: 'View mode option: open task in right side panel', defaultEn: 'Right Pane', defaultVi: 'Bảng bên phải' },
   { key: 'display.viewMode.fullPage', category: 'Display Properties', description: 'View mode option: open task in full page', defaultEn: 'Full Page', defaultVi: 'Toàn trang' },
+
+  // Table View
+  { key: 'tableView.workItems', category: 'Table View', description: 'Header label for the work items column in table view', defaultEn: 'Work items', defaultVi: 'Công việc' },
+  { key: 'tableView.edit',      category: 'Table View', description: 'Context menu option to open task detail in table view', defaultEn: 'Open detail', defaultVi: 'Mở chi tiết' },
+  { key: 'tableView.copyId',    category: 'Table View', description: 'Context menu option to copy task ID in table view', defaultEn: 'Copy ID', defaultVi: 'Sao chép ID' },
+  { key: 'tableView.delete',    category: 'Table View', description: 'Context menu option to delete task in table view', defaultEn: 'Delete', defaultVi: 'Xóa' },
 ];
 
 @Injectable({
