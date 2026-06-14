@@ -20,7 +20,7 @@ import { TaskLink } from './task-link.entity';
 import { TaskRelation } from './task-relation.entity';
 import { TaskActivity } from './task-activity.entity';
 
-export type TaskType = 'epic' | 'story' | 'task' | 'subtask';
+export type TaskType = 'epic' | 'story' | 'task' | 'bug';
 export type TaskPriority = string;
 
 @Entity('tasks')
@@ -34,7 +34,7 @@ export class Task {
   @Column({ name: 'project_id', type: 'uuid' })
   projectId!: string;
 
-  @Column({ type: 'enum', enum: ['epic', 'story', 'task', 'subtask'], enumName: 'task_type_enum', default: 'task' })
+  @Column({ type: 'enum', enum: ['epic', 'story', 'task', 'bug'], enumName: 'task_type_enum', default: 'task' })
   type!: TaskType;
 
   @Column({ type: 'varchar', length: 255 })

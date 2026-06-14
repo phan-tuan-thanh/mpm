@@ -64,22 +64,22 @@ export class GeneralTabComponent {
     const isEn = this.projectStore.projectLanguage() === 'en';
     return isEn ? [
       { label: this.customTrans.t('general-tab.tab.info', 'General Config'), route: ['info'], exact: true },
+      { label: this.customTrans.t('general-tab.tab.workItems', 'Work Items'), route: ['work-items'], exact: true },
       { label: this.customTrans.t('general-tab.tab.sprints', 'Sprint Config'), route: ['sprints'], exact: true },
       { label: this.customTrans.t('general-tab.tab.states', 'States'), route: ['states'], exact: true },
       { label: this.customTrans.t('general-tab.tab.priorities', 'Priorities'), route: ['priorities'], exact: true },
       { label: this.customTrans.t('general-tab.tab.labels', 'Labels'), route: ['labels'], exact: true },
       { label: this.customTrans.t('general-tab.tab.estimates', 'Estimates'), route: ['estimates'], exact: true },
       { label: this.customTrans.t('general-tab.tab.language', 'Language'), route: ['language'], exact: true },
-      { label: this.customTrans.t('general-tab.tab.workItems', 'Work Items'), route: ['work-items'], exact: true },
     ] : [
       { label: this.customTrans.t('general-tab.tab.info', 'Cấu hình chung'), route: ['info'], exact: true },
+      { label: this.customTrans.t('general-tab.tab.workItems', 'Work Items'), route: ['work-items'], exact: true },
       { label: this.customTrans.t('general-tab.tab.sprints', 'Cấu hình Sprint'), route: ['sprints'], exact: true },
       { label: this.customTrans.t('general-tab.tab.states', 'Trạng thái'), route: ['states'], exact: true },
       { label: this.customTrans.t('general-tab.tab.priorities', 'Mức ưu tiên'), route: ['priorities'], exact: true },
       { label: this.customTrans.t('general-tab.tab.labels', 'Nhãn'), route: ['labels'], exact: true },
       { label: this.customTrans.t('general-tab.tab.estimates', 'Ước lượng'), route: ['estimates'], exact: true },
       { label: this.customTrans.t('general-tab.tab.language', 'Ngôn ngữ'), route: ['language'], exact: true },
-      { label: this.customTrans.t('general-tab.tab.workItems', 'Work Items'), route: ['work-items'], exact: true },
     ];
   });
 }

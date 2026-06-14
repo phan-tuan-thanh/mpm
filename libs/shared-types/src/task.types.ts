@@ -2,7 +2,7 @@ import type { ModuleLifecycleStatus } from './module.types';
 
 export type TiptapDoc = Record<string, any>;
 
-export type TaskType = 'epic' | 'story' | 'task' | 'subtask';
+export type TaskType = 'epic' | 'story' | 'task' | 'bug';
 
 export type TaskPriority = string;
 

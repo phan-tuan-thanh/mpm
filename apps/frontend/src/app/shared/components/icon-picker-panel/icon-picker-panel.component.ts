@@ -4,6 +4,10 @@ import { FormsModule } from '@angular/forms';
 import { InputTextModule } from 'primeng/inputtext';
 import { ICON_GROUPS, IconContext, EMOJI_GROUPS } from './icon-picker.constants';
 
+type AnimationClass = '' | 'pi-spin' | 'animate-pulse' | 'animate-bounce';
+
+const ANIMATION_CLASSES: Exclude<AnimationClass, ''>[] = ['pi-spin', 'animate-pulse', 'animate-bounce'];
+
 @Component({
   standalone: true,
   selector: 'app-icon-picker-panel',
@@ -22,6 +26,16 @@ export class IconPickerPanelComponent implements OnInit {
 
   readonly search = signal('');
   readonly activeTab = signal<'icon' | 'emoji'>('icon');
+  readonly activeAnimation = signal<AnimationClass>('');
+
+  /** Icon gốc không kèm animation class */
+  readonly baseIcon = computed(() => {
+    let v = (this.value ?? '').trim();
+    for (const cls of ANIMATION_CLASSES) {
+      v = v.replace(new RegExp(`\\s+${cls}`, 'g'), '').trim();
+    }
+    return v;
+  });
 
   readonly filteredGroups = computed(() => {
     const q = this.search().toLowerCase();
@@ -49,11 +63,19 @@ export class IconPickerPanelComponent implements OnInit {
     if (this.value && !this.value.startsWith('pi ')) {
       this.activeTab.set('emoji');
     }
+    for (const cls of ANIMATION_CLASSES) {
+      if (this.value?.includes(cls)) {
+        this.activeAnimation.set(cls);
+        break;
+      }
+    }
   }
 
-  select(icon: string): void {
-    this.value = icon;
-    this.valueChange.emit(icon);
+  select(iconClass: string): void {
+    const anim = this.activeAnimation();
+    const full = anim ? `${iconClass} ${anim}` : iconClass;
+    this.value = full;
+    this.valueChange.emit(full);
   }
 
   selectEmoji(emojiStr: string): void {
@@ -61,5 +83,20 @@ export class IconPickerPanelComponent implements OnInit {
       this.value = emojiStr;
       this.valueChange.emit(emojiStr);
     }
+  }
+
+  setAnimation(anim: AnimationClass): void {
+    this.activeAnimation.set(anim);
+    const base = this.baseIcon();
+    if (base) {
+      const full = anim ? `${base} ${anim}` : base;
+      this.value = full;
+      this.valueChange.emit(full);
+    }
+  }
+
+  iconClassFor(itemIcon: string): string {
+    const anim = this.activeAnimation();
+    return this.baseIcon() === itemIcon && anim ? `${itemIcon} ${anim}` : itemIcon;
   }
 }

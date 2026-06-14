@@ -4,7 +4,7 @@ export const TASK_TYPE_DEFAULTS: Record<string, { icon: string; color: string }>
   epic:    { icon: 'pi pi-bolt',         color: '#8B5CF6' },
   story:   { icon: 'pi pi-book',         color: '#3B82F6' },
   task:    { icon: 'pi pi-check-circle', color: '#10B981' },
-  subtask: { icon: 'pi pi-minus-circle', color: '#6B7280' },
+  bug:     { icon: 'pi pi-ticket',        color: '#EF4444' },
 };
 
 @Injectable({ providedIn: 'root' })

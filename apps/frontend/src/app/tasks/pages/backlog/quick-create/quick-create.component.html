@@ -41,7 +41,7 @@
       <div class="flex items-center gap-3 flex-1 min-w-0">
         <!-- Type dropdown pill -->
         <button class="type-pill" (click)="typePopover.toggle($event)">
-          <i [class]="selectedTypeConfig().icon" [style.color]="selectedTypeConfig().color" style="font-size: 11px"></i>
+          <app-icon-display [icon]="selectedTypeConfig().icon" [size]="11" [style.color]="selectedTypeConfig().color" />
           <span style="color: var(--text-color)">{{ selectedTypeConfig().label }}</span>
           <i class="pi pi-chevron-down" style="font-size: 9px; color: var(--text-color-secondary)"></i>
         </button>
@@ -293,7 +293,7 @@
           ? 'bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300'
           : 'bg-transparent text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-surface-700'"
         (click)="selectedType.set(t.value); typePopover.hide()">
-        <i [class]="t.icon" [style.color]="t.color" class="text-[11px] flex-shrink-0"></i>
+        <app-icon-display [icon]="t.icon" [size]="11" [style.color]="t.color" class="flex-shrink-0" />
         <span class="flex-1">{{ t.label }}</span>
         @if (selectedType() === t.value) {
           <i class="pi pi-check text-[10px] text-indigo-500 dark:text-indigo-400 flex-shrink-0"></i>

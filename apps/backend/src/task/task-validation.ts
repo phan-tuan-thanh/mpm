@@ -10,7 +10,7 @@ const VALID_PARENTS: Record<TaskType, TaskType[]> = {
   epic: [],
   story: ['epic'],
   task: ['epic', 'story'],
-  subtask: ['task'],
+  bug: ['task'],
 };
 
 export function validateHierarchy(childType: TaskType, parentType: TaskType): void {

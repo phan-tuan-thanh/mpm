@@ -12,6 +12,7 @@ import {
   Input,
   Output,
   EventEmitter,
+  HostListener,
   Injector,
   ViewChild,
   ElementRef,
@@ -198,7 +199,7 @@ import { StateDotComponent } from '../../../shared/components/state-dot/state-do
       [style]="{ width: '750px', height: '90vh', padding: '0' }"
       [contentStyle]="{ padding: '0', borderRadius: '14px', overflow: 'hidden' }"
       [closeOnEscape]="stateService.editingSection() === null"
-      [dismissableMask]="stateService.editingSection() === null"
+      [dismissableMask]="false"
       (onHide)="onDialogHide()"
     >
       @if (viewMode === 'popup') {
@@ -212,8 +213,8 @@ import { StateDotComponent } from '../../../shared/components/state-dot/state-do
       position="right"
       [modal]="false"
       [style]="{ width: '680px', padding: '0' }"
-      [closeOnEscape]="stateService.editingSection() === null"
-      [dismissible]="stateService.editingSection() === null"
+      [closeOnEscape]="false"
+      [dismissible]="false"
       [showCloseIcon]="false"
       (onHide)="onDrawerClose()"
     >
@@ -846,8 +847,12 @@ export class TaskDetailPanelComponent implements OnInit, OnChanges, OnDestroy {
   private readonly messageService = inject(MessageService);
   protected readonly layoutService = inject(LayoutService);
   private readonly priorityConfigService = inject(PriorityConfigService);
+  private readonly elRef = inject(ElementRef);
   private readonly destroy$ = new Subject<void>();
   private readonly injector = inject(Injector);
+
+  private outsideClickHandler?: (e: MouseEvent) => void;
+  private outsideClickAttachTimer?: ReturnType<typeof setTimeout>;
 
   // ─── Inputs / Outputs ──────────────────────────────────────────────────
   @Input() viewMode: 'right-pane' | 'full-page' | 'popup' = 'right-pane';
@@ -1107,10 +1112,9 @@ export class TaskDetailPanelComponent implements OnInit, OnChanges, OnDestroy {
   protected getScopeColor(name: string, defaultColor: string): string {
     const scope = this.getScope(name).toLowerCase();
     const cfg = this.projectStore.currentProject()?.taskTypeConfig;
-    if (scope === 'epic' || scope === 'story' || scope === 'task' || scope === 'subtask') {
+    if (scope === 'epic' || scope === 'story' || scope === 'task' || scope === 'bug') {
       return this.typeConfigSvc.getColor(scope, cfg);
     }
-    if (scope === 'bug') return '#EF4444';
     return defaultColor;
   }
 
@@ -1324,6 +1328,63 @@ export class TaskDetailPanelComponent implements OnInit, OnChanges, OnDestroy {
         }
       });
     });
+
+    // Outside-click-to-close: gắn listener LƯỜI một tick SAU khi panel mở.
+    // Vì listener chưa tồn tại tại thời điểm click MỞ panel → cú click mở không thể
+    // bị hiểu nhầm là "click ngoài". Loại bỏ hoàn toàn race giữa navigate-open và close.
+    effect(() => {
+      const visible = this.isVisible();
+      untracked(() => {
+        this.detachOutsideClick();
+        if (visible && this.viewMode !== 'full-page') {
+          this.outsideClickAttachTimer = setTimeout(() => {
+            this.outsideClickHandler = (e: MouseEvent) => this.handleOutsideClick(e);
+            document.addEventListener('click', this.outsideClickHandler, true);
+          });
+        }
+      });
+    });
+  }
+
+  private detachOutsideClick(): void {
+    clearTimeout(this.outsideClickAttachTimer);
+    if (this.outsideClickHandler) {
+      document.removeEventListener('click', this.outsideClickHandler, true);
+      this.outsideClickHandler = undefined;
+    }
+  }
+
+  private handleOutsideClick(event: MouseEvent): void {
+    if (!this.isVisible()) return;
+    if (this.stateService.editingSection() !== null) return;
+    const target = event.target as Element;
+
+    if (this.viewMode === 'right-pane') {
+      // Bỏ qua click trên PrimeNG overlay portal và dialog mask (confirmation dialog)
+      if (target.closest('[data-pc-name="popover"],[data-pc-name="datepicker"],[data-pc-name="dialog"],.p-dialog-mask')) return;
+      if (this.elRef.nativeElement.contains(target)) return;
+      // Defer + so sánh taskId: nếu user click sang task khác → switch task, đừng đóng.
+      const taskIdBefore = this.route.snapshot.queryParams['taskId'];
+      setTimeout(() => {
+        if (this.route.snapshot.queryParams['taskId'] !== taskIdBefore) return;
+        if (!this.isVisible()) return;
+        this.onClose();
+      });
+    } else if (this.viewMode === 'popup') {
+      if (this.showCloseConfirm()) return;
+      // Đóng khi click backdrop (.p-dialog-mask) nhưng ngoài nội dung dialog
+      if (!target.closest('.p-dialog-mask') || target.closest('[data-pc-name="dialog"]')) return;
+      if (target.closest('[data-pc-name="popover"],[data-pc-name="datepicker"]')) return;
+      this.onClose();
+    }
+  }
+
+  /** ESC đóng popup/right-pane, không áp dụng cho full-page */
+  @HostListener('document:keydown.escape')
+  onEscapeKey(): void {
+    if (!this.isVisible() || this.viewMode === 'full-page') return;
+    if (this.stateService.editingSection() !== null) return;
+    this.onClose();
   }
 
   // ─── Lifecycle ──────────────────────────────────────────────────────────
@@ -1387,6 +1448,7 @@ export class TaskDetailPanelComponent implements OnInit, OnChanges, OnDestroy {
   ngOnDestroy(): void {
     this.isDestroying = true;
     clearTimeout(this._showRteTimer);
+    this.detachOutsideClick();
     this.isVisible.set(false);
     this.destroy$.next();
     this.destroy$.complete();
@@ -1436,29 +1498,28 @@ export class TaskDetailPanelComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   protected onDialogVisibleChange(visible: boolean): void {
+    // Chỉ cập nhật signal — KHÔNG navigate. onClose() đã được gọi trước đó
+    // (từ ESC handler hoặc click-outside). Gọi onClose() lại ở đây sẽ race với
+    // task vừa được mở.
     if (!visible && this.viewMode === 'popup' && !this.isDestroying) {
       this.isVisible.set(false);
-      this.onClose();
     }
   }
 
-  protected onDrawerVisibleChange(visible: boolean): void {
-    if (!visible && this.viewMode === 'right-pane' && !this.isDestroying) {
-      this.isVisible.set(false);
-      this.onClose();
-    }
+  protected onDrawerVisibleChange(_visible: boolean): void {
+    // closeOnEscape=false + dismissible=false: drawer không tự đóng.
+    // visibleChange(false) chỉ fire sau animation kết thúc — nếu user mở task mới trong khi
+    // animation chạy, set false ở đây sẽ đóng nhầm panel. → Bỏ qua hoàn toàn.
   }
 
   protected onDialogHide(): void {
-    if (this.isDestroying) return;
-    if (this.viewMode !== 'popup') return;
-    this.onClose();
+    // Không gọi onClose() — (onHide) là hệ quả của việc đóng, không phải trigger.
+    // Gọi lại onClose() → navigate null có thể race với task vừa mở trong lúc animation.
   }
 
   protected onDrawerClose(): void {
-    if (this.isDestroying) return;
-    if (this.viewMode !== 'right-pane') return;
-    this.onClose();
+    // Drawer animation ~300ms: nếu user mở task mới trong window này,
+    // (onHide) gọi onClose() sẽ cancel navigate của task mới. → Bỏ onClose().
   }
 
   protected onClose(): void {
@@ -1518,7 +1579,7 @@ export class TaskDetailPanelComponent implements OnInit, OnChanges, OnDestroy {
       .createTask(projectId, {
         title: dto.title,
         parentId: dto.parentId,
-        type: t.type === 'epic' ? 'story' : t.type === 'story' ? 'task' : 'subtask',
+        type: t.type === 'epic' ? 'story' : t.type === 'story' ? 'task' : 'bug',
         assigneeIds: dto.assigneeIds,
         priority: dto.priority,
         dueDate: dto.dueDate,
