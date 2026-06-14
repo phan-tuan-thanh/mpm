@@ -418,12 +418,7 @@ export class TableViewComponent {
 
   protected readonly visibleColumns = computed((): ColumnDef[] => {
     const dp = this._displayProps();
-    return ALL_COLUMNS.filter(col => {
-      const val = dp[col.propKey];
-      // showCreatedAt / showUpdatedAt don't exist in DisplayProperties, always show if key exists
-      if (val === undefined) return true;
-      return val === true;
-    });
+    return ALL_COLUMNS.filter(col => !!dp[col.propKey]);
   });
 
   protected readonly tableGroups = computed((): TableGroup[] => {
