@@ -274,6 +274,12 @@ export const DEFAULT_TRANSLATIONS: TranslationKeyDefinition[] = [
   { key: 'display.viewMode.popup', category: 'Display Properties', description: 'View mode option: open task in popup dialog', defaultEn: 'Popup', defaultVi: 'Hộp thoại' },
   { key: 'display.viewMode.rightPane', category: 'Display Properties', description: 'View mode option: open task in right side panel', defaultEn: 'Right Pane', defaultVi: 'Bảng bên phải' },
   { key: 'display.viewMode.fullPage', category: 'Display Properties', description: 'View mode option: open task in full page', defaultEn: 'Full Page', defaultVi: 'Toàn trang' },
+
+  // Table View
+  { key: 'tableView.workItems', category: 'Table View', description: 'Header label for the work items column in table view', defaultEn: 'Work items', defaultVi: 'Công việc' },
+  { key: 'tableView.edit',      category: 'Table View', description: 'Context menu option to open task detail in table view', defaultEn: 'Open detail', defaultVi: 'Mở chi tiết' },
+  { key: 'tableView.copyId',    category: 'Table View', description: 'Context menu option to copy task ID in table view', defaultEn: 'Copy ID', defaultVi: 'Sao chép ID' },
+  { key: 'tableView.delete',    category: 'Table View', description: 'Context menu option to delete task in table view', defaultEn: 'Delete', defaultVi: 'Xóa' },
 ];
 
 @Injectable({
