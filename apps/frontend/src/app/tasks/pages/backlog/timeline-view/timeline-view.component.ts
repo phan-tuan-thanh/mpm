@@ -11,6 +11,7 @@ import { SkeletonModule } from 'primeng/skeleton';
 import type { TaskListItem, ReorderTaskItem, ProjectState } from '@mpm/shared-types';
 import { ProjectStore } from '../../../../projects/state/project.store';
 import { CustomTranslationService } from '../../../../shared/services/custom-translation.service';
+import { LayoutService } from '../../../../layout/services/layout.service';
 import {
   TimelineScale,
   COL_WIDTH,
@@ -421,6 +422,7 @@ interface TaskGroup {
 export class TimelineViewComponent implements AfterViewInit, OnDestroy {
   private readonly projectStore = inject(ProjectStore);
   private readonly customTrans = inject(CustomTranslationService);
+  protected readonly layoutService = inject(LayoutService);
 
   @ViewChild('leftPanel') leftPanel!: ElementRef<HTMLDivElement>;
   @ViewChild('rightPanel') rightPanel!: ElementRef<HTMLDivElement>;
@@ -557,10 +559,7 @@ export class TimelineViewComponent implements AfterViewInit, OnDestroy {
 
   // ─── Methods ─────────────────────────────────────────────────────────────
   protected getStateColor(state: ProjectState): string {
-    // Use document class to determine dark mode
-    const isDark = document.documentElement.classList.contains('dark')
-      || document.body.classList.contains('dark');
-    return isDark ? state.colorDark : state.colorLight;
+    return this.layoutService.isDarkMode() ? state.colorDark : state.colorLight;
   }
 
   protected getBar(task: TaskListItem): { left: string; width: string } | null {

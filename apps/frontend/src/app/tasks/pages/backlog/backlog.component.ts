@@ -360,8 +360,8 @@ export class BacklogComponent implements OnInit, OnDestroy {
     this.route.queryParams.pipe(takeUntil(this.destroy$)).subscribe((params) => {
       this.currentTaskId.set(params['taskId'] || null);
       const view = params['view'];
-      if (view === 'board' || view === 'list') {
-        this.viewMode.set(view);
+      if (['board', 'list', 'table', 'timeline'].includes(view)) {
+        this.viewMode.set(view as 'list' | 'board' | 'table' | 'timeline');
       }
 
       const moduleIdsParam = params['moduleIds'];
@@ -709,11 +709,11 @@ export class BacklogComponent implements OnInit, OnDestroy {
 
   protected onDeleteSingleTask(taskId: string): void {
     this.confirmService.confirm({
-      message: '1 task sẽ bị xóa vĩnh viễn.',
-      header: 'Xác nhận xóa',
+      message: this.t().confirmDeleteMessage(1),
+      header: this.t().confirmDeleteHeader,
       icon: 'pi pi-trash',
-      acceptLabel: 'Xóa',
-      rejectLabel: 'Hủy',
+      acceptLabel: this.t().delete,
+      rejectLabel: this.t().cancel,
       accept: () => {
         this.taskStore.deleteTask(this.projectId, taskId);
       },
