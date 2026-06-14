@@ -148,7 +148,7 @@ describe('Task Management Integration Tests (Epic B)', () => {
 
   // ─── P2: Hierarchy Enforcement ───────────────────────────────────────
 
-  it('P2: Creating subtask directly under epic throws 422', async () => {
+  it('P2: Creating bug directly under epic throws 422', async () => {
     const project = await createTestProject('P2');
 
     const epic = await taskService.create(project.id, testUser1.id, {
@@ -158,8 +158,8 @@ describe('Task Management Integration Tests (Epic B)', () => {
 
     await expect(
       taskService.create(project.id, testUser1.id, {
-        title: 'Subtask under Epic',
-        type: 'subtask',
+        title: 'Bug under Epic',
+        type: 'bug',
         parentId: epic.id,
       }),
     ).rejects.toThrow(UnprocessableEntityException);
@@ -183,7 +183,7 @@ describe('Task Management Integration Tests (Epic B)', () => {
 
   // ─── P4: Cascade Delete ───────────────────────────────────────────────
 
-  it('P4: Deleting a story cascades to its tasks and subtasks', async () => {
+  it('P4: Deleting a story cascades to its tasks and bugs', async () => {
     const project = await createTestProject('P4');
 
     const story = await taskService.create(project.id, testUser1.id, {
@@ -195,9 +195,9 @@ describe('Task Management Integration Tests (Epic B)', () => {
       type: 'task',
       parentId: story.id,
     });
-    const subtask = await taskService.create(project.id, testUser1.id, {
-      title: 'Subtask under Task',
-      type: 'subtask',
+    const bug = await taskService.create(project.id, testUser1.id, {
+      title: 'Bug under Task',
+      type: 'bug',
       parentId: task.id,
     });
 
@@ -205,11 +205,11 @@ describe('Task Management Integration Tests (Epic B)', () => {
 
     const deletedStory = await taskRepo.findOne({ where: { id: story.id } });
     const deletedTask = await taskRepo.findOne({ where: { id: task.id } });
-    const deletedSubtask = await taskRepo.findOne({ where: { id: subtask.id } });
+    const deletedBug = await taskRepo.findOne({ where: { id: bug.id } });
 
     expect(deletedStory).toBeNull();
     expect(deletedTask).toBeNull();
-    expect(deletedSubtask).toBeNull();
+    expect(deletedBug).toBeNull();
   });
 
   // ─── P5: Permission Matrix ────────────────────────────────────────────

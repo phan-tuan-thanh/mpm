@@ -135,7 +135,7 @@ describe('ParentNavigationComponent', () => {
         makeTaskItem({ id: '1', type: 'epic', title: 'Epic' }),
         makeTaskItem({ id: '2', type: 'story', title: 'Story' }),
         makeTaskItem({ id: '3', type: 'task', title: 'Task' }),
-        makeTaskItem({ id: '4', type: 'subtask', title: 'Subtask' }),
+        makeTaskItem({ id: '4', type: 'bug', title: 'Bug' }),
       ];
       component.ngOnChanges({
         availableTasks: new SimpleChange(null, component.availableTasks, true),
@@ -147,13 +147,13 @@ describe('ParentNavigationComponent', () => {
       expect(filtered.map((t) => t.type)).toEqual(['epic', 'story']);
     });
 
-    it('should filter for "subtask" child — epic, story, task are valid parents', () => {
-      component.currentTaskType = 'subtask';
+    it('should filter for "bug" child — epic, story, task are valid parents', () => {
+      component.currentTaskType = 'bug';
       component.availableTasks = [
         makeTaskItem({ id: '1', type: 'epic' }),
         makeTaskItem({ id: '2', type: 'story' }),
         makeTaskItem({ id: '3', type: 'task' }),
-        makeTaskItem({ id: '4', type: 'subtask' }),
+        makeTaskItem({ id: '4', type: 'bug' }),
       ];
       component.ngOnChanges({
         availableTasks: new SimpleChange(null, component.availableTasks, true),
@@ -180,7 +180,7 @@ describe('ParentNavigationComponent', () => {
     });
 
     it('should exclude current task from dropdown', () => {
-      component.currentTaskType = 'subtask';
+      component.currentTaskType = 'bug';
       component.currentTaskId = 'self-id';
       component.availableTasks = [
         makeTaskItem({ id: 'self-id', type: 'task', title: 'Self' }),
@@ -313,14 +313,14 @@ describe('ParentNavigationComponent', () => {
       expect(component.getTypeIcon('epic')).toBe('pi pi-bolt');
       expect(component.getTypeIcon('story')).toBe('pi pi-book');
       expect(component.getTypeIcon('task')).toBe('pi pi-check-circle');
-      expect(component.getTypeIcon('subtask')).toBe('pi pi-minus-circle');
+      expect(component.getTypeIcon('bug')).toBe('pi pi-ticket');
     });
 
     it('getTypeColor should return correct color for each type', () => {
       expect(component.getTypeColor('epic')).toBe('#8B5CF6');
       expect(component.getTypeColor('story')).toBe('#3B82F6');
       expect(component.getTypeColor('task')).toBe('#10B981');
-      expect(component.getTypeColor('subtask')).toBe('#6B7280');
+      expect(component.getTypeColor('bug')).toBe('#EF4444');
     });
   });
 });

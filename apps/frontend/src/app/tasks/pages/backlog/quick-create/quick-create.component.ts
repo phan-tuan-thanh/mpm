@@ -32,6 +32,7 @@ import { MessageService } from 'primeng/api';
 import { TaskAttachmentsComponent } from '../../../components/task-detail-panel/components/task-attachments.component';
 import { TaskLinksComponent } from '../../../components/task-detail-panel/components/task-links.component';
 import { SubItemsSectionComponent } from '../../../components/task-detail-panel/components/sub-items-section/sub-items-section.component';
+import { IconDisplayComponent } from '../../../../shared/components/icon-display/icon-display.component';
 import type { TaskType, TaskPriority, CreateTaskDto, TiptapDoc, Task, TaskAttachment, TaskLink, SubItemTreeNode, CreateSubItemDto } from '@mpm/shared-types';
 import { firstValueFrom } from 'rxjs';
 
@@ -40,7 +41,7 @@ import { firstValueFrom } from 'rxjs';
 const VALID_CHILDREN: Partial<Record<TaskType, TaskType[]>> = {
   epic:  ['story', 'task'],
   story: ['task'],
-  task:  ['subtask'],
+  task:  ['bug'],
 };
 
 import { DrawerModule } from 'primeng/drawer';
@@ -57,6 +58,7 @@ import { DrawerModule } from 'primeng/drawer';
     TaskAttachmentsComponent,
     TaskLinksComponent,
     SubItemsSectionComponent,
+    IconDisplayComponent,
   ],
   providers: [MessageService],
   templateUrl: './quick-create.component.html',
@@ -81,7 +83,7 @@ export class QuickCreateComponent implements OnChanges {
       { label: 'Epic',    value: 'epic'    as TaskType, icon: this.typeConfigSvc.getIcon('epic', cfg),    color: this.typeConfigSvc.getColor('epic', cfg) },
       { label: 'Story',   value: 'story'   as TaskType, icon: this.typeConfigSvc.getIcon('story', cfg),   color: this.typeConfigSvc.getColor('story', cfg) },
       { label: 'Task',    value: 'task'    as TaskType, icon: this.typeConfigSvc.getIcon('task', cfg),    color: this.typeConfigSvc.getColor('task', cfg) },
-      { label: 'Subtask', value: 'subtask' as TaskType, icon: this.typeConfigSvc.getIcon('subtask', cfg), color: this.typeConfigSvc.getColor('subtask', cfg) },
+      { label: 'Bug',     value: 'bug'     as TaskType, icon: this.typeConfigSvc.getIcon('bug', cfg),     color: this.typeConfigSvc.getColor('bug', cfg) },
     ];
   });
 
@@ -92,8 +94,8 @@ export class QuickCreateComponent implements OnChanges {
       closeBtn: 'Close',
       createMore: 'Create another',
       expand: 'Expand',
-      cancel: 'Cancel',
-      save: 'Save',
+      cancelBtn: 'Cancel',
+      saveBtn: 'Save',
       estimate: 'Estimate',
       delete: 'Delete',
       startDate: 'Start date',
@@ -117,14 +119,14 @@ export class QuickCreateComponent implements OnChanges {
       typeEpic: 'Epic',
       typeStory: 'Story',
       typeTask: 'Task',
-      typeSubtask: 'Subtask'
+      typeBug: 'Bug'
     } : {
       backToList: 'Quay lại danh sách',
       closeBtn: 'Đóng',
       createMore: 'Tạo tiếp',
       expand: 'Mở rộng',
-      cancel: 'Hủy',
-      save: 'Lưu',
+      cancelBtn: 'Hủy',
+      saveBtn: 'Lưu',
       estimate: 'Ước lượng',
       delete: 'Xóa',
       startDate: 'Bắt đầu',
@@ -148,7 +150,7 @@ export class QuickCreateComponent implements OnChanges {
       typeEpic: 'Epic',
       typeStory: 'Story',
       typeTask: 'Task',
-      typeSubtask: 'Subtask'
+      typeBug: 'Bug'
     };
   });
   @Input() visible = false;
@@ -226,7 +228,7 @@ export class QuickCreateComponent implements OnChanges {
         this.selectedType.set(valid[0] ?? 'task');
       }
     } else {
-      if (this.selectedType() === 'subtask') {
+      if (this.selectedType() === 'bug') {
         this.selectedType.set('task');
       }
     }
@@ -267,11 +269,11 @@ export class QuickCreateComponent implements OnChanges {
       epic: tr.typeEpic,
       story: tr.typeStory,
       task: tr.typeTask,
-      subtask: tr.typeSubtask
+      bug: tr.typeBug
     };
     const options = parent
       ? this.typeOptions().filter((t) => (VALID_CHILDREN[parent.type] ?? []).includes(t.value))
-      : this.typeOptions().filter((t) => t.value !== 'subtask');
+      : this.typeOptions();
     return options.map(opt => ({
       ...opt,
       label: typeLabelMap[opt.value] || opt.label
@@ -316,7 +318,7 @@ export class QuickCreateComponent implements OnChanges {
       epic: tr.typeEpic,
       story: tr.typeStory,
       task: tr.typeTask,
-      subtask: tr.typeSubtask
+      bug: tr.typeBug
     };
     return {
       ...match,
@@ -548,7 +550,7 @@ export class QuickCreateComponent implements OnChanges {
     this.taskStore.createTask(projectId, {
       title: dto.title,
       parentId: dto.parentId,
-      type: this.draftTask.type === 'epic' ? 'story' : this.draftTask.type === 'story' ? 'task' : 'subtask',
+      type: this.draftTask.type === 'epic' ? 'story' : this.draftTask.type === 'story' ? 'task' : 'bug',
       assigneeIds: dto.assigneeIds,
       priority: dto.priority,
       dueDate: dto.dueDate,

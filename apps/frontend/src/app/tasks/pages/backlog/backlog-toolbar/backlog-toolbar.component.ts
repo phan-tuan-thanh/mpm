@@ -17,6 +17,7 @@ import { DEFAULT_DISPLAY_PROPS } from '@mpm/shared-types';
 import { StateDotComponent } from '../../../../shared/components/state-dot/state-dot.component';
 import { IconDisplayComponent } from '../../../../shared/components/icon-display/icon-display.component';
 import { PriorityConfigService } from '../../../services/priority-config.service';
+import { TaskTypeConfigService } from '../../../../shared/services/task-type-config.service';
 import { LayoutService } from '../../../../layout/services/layout.service';
 import { CustomTranslationService } from '../../../../shared/services/custom-translation.service';
 
@@ -117,13 +118,16 @@ export interface BacklogFilter {
       </button>
       <p-popover #typePop appendTo="body" styleClass="!p-0">
         <div class="pop-list w-44">
-          @for (opt of typeOptions; track opt.value) {
+          @for (opt of typeOptions(); track opt.value) {
             <div
               (click)="toggleType(opt.value)"
               class="pop-item justify-between"
               [class.selected]="selectedTypes.includes(opt.value)"
             >
-              <span>{{ opt.label }}</span>
+              <span class="flex items-center gap-2">
+                <app-icon-display [icon]="opt.icon" [style.color]="opt.color" class="text-xs" />
+                {{ opt.label }}
+              </span>
               @if (selectedTypes.includes(opt.value)) {
                 <i class="pi pi-check text-xs"></i>
               }
@@ -385,6 +389,7 @@ export class BacklogToolbarComponent {
   private readonly sprintService = inject(SprintService);
   protected readonly labelStore = inject(LabelStore);
   private readonly priorityConfigService = inject(PriorityConfigService);
+  private readonly typeConfigSvc = inject(TaskTypeConfigService);
   protected readonly layoutService = inject(LayoutService);
 
   constructor() {
@@ -462,7 +467,7 @@ export class BacklogToolbarComponent {
     const defaultLabel = this.customTrans.t('toolbar.filterType', this.projectStore.projectLanguage() === 'en' ? 'Type' : 'Loại');
     if (!this.selectedTypes.length) return defaultLabel;
     if (this.selectedTypes.length === 1) {
-      return this.typeOptions.find((o) => o.value === this.selectedTypes[0])?.label ?? defaultLabel;
+      return this.typeOptions().find((o) => o.value === this.selectedTypes[0])?.label ?? defaultLabel;
     }
     return `${defaultLabel} (${this.selectedTypes.length})`;
   }
@@ -570,12 +575,15 @@ export class BacklogToolbarComponent {
     return Object.values(grouped).flat();
   };
 
-  readonly typeOptions: { label: string; value: TaskType }[] = [
-    { label: '⚡ Epic', value: 'epic' },
-    { label: '📖 Story', value: 'story' },
-    { label: '✅ Task', value: 'task' },
-    { label: '↳ Subtask', value: 'subtask' },
-  ];
+  readonly typeOptions = computed(() => {
+    const cfg = this.projectStore.currentProject()?.taskTypeConfig;
+    return [
+      { label: 'Epic',  value: 'epic'  as TaskType, icon: this.typeConfigSvc.getIcon('epic',  cfg), color: this.typeConfigSvc.getColor('epic',  cfg) },
+      { label: 'Story', value: 'story' as TaskType, icon: this.typeConfigSvc.getIcon('story', cfg), color: this.typeConfigSvc.getColor('story', cfg) },
+      { label: 'Task',  value: 'task'  as TaskType, icon: this.typeConfigSvc.getIcon('task',  cfg), color: this.typeConfigSvc.getColor('task',  cfg) },
+      { label: 'Bug',   value: 'bug'   as TaskType, icon: this.typeConfigSvc.getIcon('bug',   cfg), color: this.typeConfigSvc.getColor('bug',   cfg) },
+    ];
+  });
 
   readonly groupByOptions = [
     { label: 'Không nhóm', value: 'none' },

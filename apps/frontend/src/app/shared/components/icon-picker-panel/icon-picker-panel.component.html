@@ -41,6 +41,88 @@
     (ngModelChange)="search.set($event)"
   />
 
+  <!-- Animation modifier bar (chỉ hiện ở tab Icon) -->
+  @if (activeTab() === 'icon') {
+    <div class="flex gap-1 mb-3">
+      <button
+        type="button"
+        class="flex-1 flex items-center justify-center gap-1 py-1 text-[10px] font-medium rounded border transition-colors cursor-pointer"
+        [class.bg-indigo-50]="activeAnimation() === ''"
+        [class.dark:bg-indigo-900]="activeAnimation() === ''"
+        [class.border-indigo-400]="activeAnimation() === ''"
+        [class.text-indigo-700]="activeAnimation() === ''"
+        [class.dark:text-indigo-300]="activeAnimation() === ''"
+        [class.border-surface-200]="activeAnimation() !== ''"
+        [class.dark:border-surface-700]="activeAnimation() !== ''"
+        [class.text-gray-500]="activeAnimation() !== ''"
+        [class.dark:text-surface-400]="activeAnimation() !== ''"
+        [class.hover:bg-gray-100]="activeAnimation() !== ''"
+        [class.dark:hover:bg-surface-700]="activeAnimation() !== ''"
+        (click)="setAnimation('')"
+      >
+        <i class="pi pi-minus text-[10px]"></i>
+        Không
+      </button>
+      <button
+        type="button"
+        class="flex-1 flex items-center justify-center gap-1 py-1 text-[10px] font-medium rounded border transition-colors cursor-pointer"
+        [class.bg-indigo-50]="activeAnimation() === 'pi-spin'"
+        [class.dark:bg-indigo-900]="activeAnimation() === 'pi-spin'"
+        [class.border-indigo-400]="activeAnimation() === 'pi-spin'"
+        [class.text-indigo-700]="activeAnimation() === 'pi-spin'"
+        [class.dark:text-indigo-300]="activeAnimation() === 'pi-spin'"
+        [class.border-surface-200]="activeAnimation() !== 'pi-spin'"
+        [class.dark:border-surface-700]="activeAnimation() !== 'pi-spin'"
+        [class.text-gray-500]="activeAnimation() !== 'pi-spin'"
+        [class.dark:text-surface-400]="activeAnimation() !== 'pi-spin'"
+        [class.hover:bg-gray-100]="activeAnimation() !== 'pi-spin'"
+        [class.dark:hover:bg-surface-700]="activeAnimation() !== 'pi-spin'"
+        (click)="setAnimation('pi-spin')"
+      >
+        <i class="pi pi-sync pi-spin text-[10px]"></i>
+        Spin
+      </button>
+      <button
+        type="button"
+        class="flex-1 flex items-center justify-center gap-1 py-1 text-[10px] font-medium rounded border transition-colors cursor-pointer"
+        [class.bg-indigo-50]="activeAnimation() === 'animate-pulse'"
+        [class.dark:bg-indigo-900]="activeAnimation() === 'animate-pulse'"
+        [class.border-indigo-400]="activeAnimation() === 'animate-pulse'"
+        [class.text-indigo-700]="activeAnimation() === 'animate-pulse'"
+        [class.dark:text-indigo-300]="activeAnimation() === 'animate-pulse'"
+        [class.border-surface-200]="activeAnimation() !== 'animate-pulse'"
+        [class.dark:border-surface-700]="activeAnimation() !== 'animate-pulse'"
+        [class.text-gray-500]="activeAnimation() !== 'animate-pulse'"
+        [class.dark:text-surface-400]="activeAnimation() !== 'animate-pulse'"
+        [class.hover:bg-gray-100]="activeAnimation() !== 'animate-pulse'"
+        [class.dark:hover:bg-surface-700]="activeAnimation() !== 'animate-pulse'"
+        (click)="setAnimation('animate-pulse')"
+      >
+        <i class="pi pi-circle-fill animate-pulse text-[10px]"></i>
+        Pulse
+      </button>
+      <button
+        type="button"
+        class="flex-1 flex items-center justify-center gap-1 py-1 text-[10px] font-medium rounded border transition-colors cursor-pointer"
+        [class.bg-indigo-50]="activeAnimation() === 'animate-bounce'"
+        [class.dark:bg-indigo-900]="activeAnimation() === 'animate-bounce'"
+        [class.border-indigo-400]="activeAnimation() === 'animate-bounce'"
+        [class.text-indigo-700]="activeAnimation() === 'animate-bounce'"
+        [class.dark:text-indigo-300]="activeAnimation() === 'animate-bounce'"
+        [class.border-surface-200]="activeAnimation() !== 'animate-bounce'"
+        [class.dark:border-surface-700]="activeAnimation() !== 'animate-bounce'"
+        [class.text-gray-500]="activeAnimation() !== 'animate-bounce'"
+        [class.dark:text-surface-400]="activeAnimation() !== 'animate-bounce'"
+        [class.hover:bg-gray-100]="activeAnimation() !== 'animate-bounce'"
+        [class.dark:hover:bg-surface-700]="activeAnimation() !== 'animate-bounce'"
+        (click)="setAnimation('animate-bounce')"
+      >
+        <i class="pi pi-chevron-down animate-bounce text-[10px]"></i>
+        Bounce
+      </button>
+    </div>
+  }
+
   @if (activeTab() === 'icon') {
     <div class="max-h-64 overflow-y-auto space-y-3">
       @for (group of filteredGroups(); track group.label) {
@@ -51,15 +133,15 @@
               <button
                 type="button"
                 class="flex flex-col items-center gap-0.5 py-1.5 px-1 rounded cursor-pointer transition-colors border-2"
-                [class.border-blue-500]="value === item.icon"
-                [class.bg-blue-50]="value === item.icon"
-                [class.dark:bg-blue-900]="value === item.icon"
-                [class.border-transparent]="value !== item.icon"
-                [class.hover:bg-gray-100]="value !== item.icon"
-                [class.dark:hover:bg-surface-700]="value !== item.icon"
+                [class.border-blue-500]="baseIcon() === item.icon"
+                [class.bg-blue-50]="baseIcon() === item.icon"
+                [class.dark:bg-blue-900]="baseIcon() === item.icon"
+                [class.border-transparent]="baseIcon() !== item.icon"
+                [class.hover:bg-gray-100]="baseIcon() !== item.icon"
+                [class.dark:hover:bg-surface-700]="baseIcon() !== item.icon"
                 (click)="select(item.icon)"
               >
-                <i [class]="item.icon" class="text-base"></i>
+                <i [class]="iconClassFor(item.icon)" class="text-base"></i>
                 <span class="text-[10px] leading-tight text-gray-500 dark:text-surface-400 text-center whitespace-nowrap overflow-hidden text-ellipsis w-full">{{ item.label }}</span>
               </button>
             }

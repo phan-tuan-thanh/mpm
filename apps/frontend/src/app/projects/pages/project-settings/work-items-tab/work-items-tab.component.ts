@@ -23,7 +23,7 @@ const WORK_ITEM_ROWS: WorkItemRow[] = [
   { key: 'epic',    labelVi: 'Epic',    labelEn: 'Epic' },
   { key: 'story',   labelVi: 'Story',   labelEn: 'Story' },
   { key: 'task',    labelVi: 'Task',    labelEn: 'Task' },
-  { key: 'subtask', labelVi: 'Subtask', labelEn: 'Subtask' },
+  { key: 'bug',     labelVi: 'Bug',     labelEn: 'Bug' },
 ];
 
 const PRESET_COLORS = [

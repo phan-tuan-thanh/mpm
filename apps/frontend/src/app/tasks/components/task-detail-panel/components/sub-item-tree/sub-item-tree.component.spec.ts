@@ -443,7 +443,7 @@ describe('SubItemTreeComponent', () => {
       expect(component.typeIcon('epic')).toBe('pi pi-bolt');
       expect(component.typeIcon('story')).toBe('pi pi-book');
       expect(component.typeIcon('task')).toBe('pi pi-check-circle');
-      expect(component.typeIcon('subtask')).toBe('pi pi-minus-circle');
+      expect(component.typeIcon('bug')).toBe('pi pi-ticket');
       expect(component.typeIcon('invalid' as any)).toBe('pi pi-circle');
     });
 
@@ -451,7 +451,7 @@ describe('SubItemTreeComponent', () => {
       expect(component.typeColor('epic')).toBe('#8B5CF6');
       expect(component.typeColor('story')).toBe('#3B82F6');
       expect(component.typeColor('task')).toBe('#10B981');
-      expect(component.typeColor('subtask')).toBe('#6B7280');
+      expect(component.typeColor('bug')).toBe('#EF4444');
       expect(component.typeColor('invalid' as any)).toBe('#9CA3AF');
     });
   });
