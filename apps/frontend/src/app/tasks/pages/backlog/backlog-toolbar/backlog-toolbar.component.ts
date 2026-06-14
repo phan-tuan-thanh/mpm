@@ -89,6 +89,24 @@ export interface BacklogFilter {
           (click)="viewModeChange.emit('board')">
           <i class="pi pi-th-large text-xs"></i>
         </button>
+        <button
+          class="flex items-center justify-center w-8 h-7 transition-colors border-l border-gray-200 dark:border-surface-700"
+          [class.bg-indigo-600]="viewMode === 'table'"
+          [class.text-white]="viewMode === 'table'"
+          [class.text-gray-500]="viewMode !== 'table'"
+          [pTooltip]="t().tableView"
+          (click)="viewModeChange.emit('table')">
+          <i class="pi pi-table text-xs"></i>
+        </button>
+        <button
+          class="flex items-center justify-center w-8 h-7 transition-colors border-l border-gray-200 dark:border-surface-700"
+          [class.bg-indigo-600]="viewMode === 'timeline'"
+          [class.text-white]="viewMode === 'timeline'"
+          [class.text-gray-500]="viewMode !== 'timeline'"
+          [pTooltip]="t().timelineView"
+          (click)="viewModeChange.emit('timeline')">
+          <i class="pi pi-calendar text-xs"></i>
+        </button>
       </div>
 
       <!-- New task -->
@@ -418,13 +436,13 @@ export class BacklogToolbarComponent {
   @Input() displayProps: DisplayProperties = DEFAULT_DISPLAY_PROPS;
   @Input() selectedGroupBy = 'none';
   @Input() selectedOrderBy = 'rank';
-  @Input() viewMode: 'list' | 'board' = 'list';
+  @Input() viewMode: 'list' | 'board' | 'table' | 'timeline' = 'list';
   @Output() filterChange = new EventEmitter<BacklogFilter>();
   @Output() groupByChange = new EventEmitter<string>();
   @Output() orderByChange = new EventEmitter<string>();
   @Output() newTaskClick = new EventEmitter<void>();
   @Output() displayPropsChange = new EventEmitter<Partial<DisplayProperties>>();
-  @Output() viewModeChange = new EventEmitter<'list' | 'board'>();
+  @Output() viewModeChange = new EventEmitter<'list' | 'board' | 'table' | 'timeline'>();
 
   @ViewChild('displayPopover') private readonly displayPopover!: Popover;
 
@@ -451,6 +469,8 @@ export class BacklogToolbarComponent {
       searchPlaceholder:      ct.t('toolbar.search',         isEn ? 'Search... (/)'      : 'Tìm kiếm... (/)'),
       listView:               ct.t('toolbar.listView',       isEn ? 'List view'           : 'Giao diện danh sách'),
       boardView:              ct.t('toolbar.boardView',      isEn ? 'Board view'          : 'Giao diện bảng'),
+      tableView:              ct.t('toolbar.tableView',      isEn ? 'Table view'          : 'Bảng'),
+      timelineView:           ct.t('toolbar.timelineView',   isEn ? 'Timeline view'       : 'Dòng thời gian'),
       newTask:                ct.t('toolbar.newTask',        isEn ? 'Add task'            : 'Thêm task'),
       searchSprintPlaceholder:ct.t('toolbar.searchSprint',   isEn ? 'Search sprint...'    : 'Tìm sprint...'),
       noSprint:               ct.t('toolbar.noSprint',       isEn ? 'No sprint'           : 'Chưa có sprint'),

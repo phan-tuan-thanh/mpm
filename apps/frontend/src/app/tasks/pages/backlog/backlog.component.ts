@@ -272,7 +272,7 @@ export class BacklogComponent implements OnInit, OnDestroy {
   protected projectId = '';
   protected workspaceId = '';
   protected currentTaskId = signal<string | null>(null);
-  protected viewMode = signal<'list' | 'board'>('list');
+  protected viewMode = signal<'list' | 'board' | 'table' | 'timeline'>('list');
 
   protected readonly displayProps = signal<DisplayProperties>(DEFAULT_DISPLAY_PROPS);
 
@@ -384,7 +384,7 @@ export class BacklogComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  protected onViewModeChange(mode: 'list' | 'board'): void {
+  protected onViewModeChange(mode: 'list' | 'board' | 'table' | 'timeline'): void {
     this.viewMode.set(mode);
     this.router.navigate([], {
       relativeTo: this.route,

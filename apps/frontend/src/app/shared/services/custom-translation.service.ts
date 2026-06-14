@@ -106,6 +106,8 @@ export const DEFAULT_TRANSLATIONS: TranslationKeyDefinition[] = [
   { key: 'toolbar.searchLabel', category: 'Backlog Toolbar', description: 'Placeholder for label filter search input', defaultEn: 'Search labels...', defaultVi: 'Tìm label...' },
   { key: 'toolbar.noLabelFound', category: 'Backlog Toolbar', description: 'Empty message when label search yields no results', defaultEn: 'No labels found', defaultVi: 'Không tìm thấy label' },
   { key: 'toolbar.clearFilters', category: 'Backlog Toolbar', description: 'Button to clear all active filters', defaultEn: 'Clear filters', defaultVi: 'Xóa bộ lọc' },
+  { key: 'toolbar.tableView', category: 'Backlog Toolbar', description: 'Tooltip/label for table view toggle button', defaultEn: 'Table view', defaultVi: 'Bảng' },
+  { key: 'toolbar.timelineView', category: 'Backlog Toolbar', description: 'Tooltip/label for timeline view toggle button', defaultEn: 'Timeline view', defaultVi: 'Dòng thời gian' },
   { key: 'toolbar.filterType', category: 'Backlog Toolbar', description: 'Default label for task type filter button', defaultEn: 'Type', defaultVi: 'Loại' },
   { key: 'toolbar.filterPriority', category: 'Backlog Toolbar', description: 'Default label for priority filter button', defaultEn: 'Priority', defaultVi: 'Độ ưu tiên' },
   { key: 'toolbar.filterState', category: 'Backlog Toolbar', description: 'Default label for state filter button', defaultEn: 'State', defaultVi: 'Trạng thái' },
