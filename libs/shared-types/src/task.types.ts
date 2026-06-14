@@ -357,6 +357,8 @@ export interface DisplayProperties {
   showState: boolean;
   showModules: boolean;
   showSprint?: boolean;
+  showCreatedAt?: boolean;
+  showUpdatedAt?: boolean;
   alwaysShowLabels: boolean;
   labelMode: 'badge' | 'dot';
   maxLabels: number;   // 1–4
@@ -379,6 +381,8 @@ export const DEFAULT_DISPLAY_PROPS: DisplayProperties = {
   showState: true,
   showModules: true,
   showSprint: true,
+  showCreatedAt: false,
+  showUpdatedAt: false,
   alwaysShowLabels: false,
   labelMode: 'badge',
   maxLabels: 2,
