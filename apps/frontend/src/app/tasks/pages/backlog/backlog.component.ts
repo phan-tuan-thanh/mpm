@@ -20,6 +20,7 @@ import { TaskService } from '../../services/task.service';
 import { BacklogToolbarComponent, BacklogFilter } from './backlog-toolbar/backlog-toolbar.component';
 import { TaskListComponent } from './task-list/task-list.component';
 import { BoardComponent } from './board/board.component';
+import { TableViewComponent } from './table-view/table-view.component';
 import { QuickCreateComponent } from './quick-create/quick-create.component';
 import { TaskDetailPanelComponent } from '../../components/task-detail-panel/task-detail-panel.component';
 import { LabelManagerComponent } from '../../components/label-manager/label-manager.component';
@@ -38,7 +39,7 @@ import { CustomTranslationService } from '../../../shared/services/custom-transl
     CommonModule, FormsModule,
     ButtonModule, ConfirmDialogModule, ToastModule, DialogModule, PopoverModule, CheckboxModule,
     BacklogToolbarComponent, TaskListComponent, BoardComponent, QuickCreateComponent,
-    TaskDetailPanelComponent, LabelManagerComponent,
+    TaskDetailPanelComponent, LabelManagerComponent, TableViewComponent,
   ],
   providers: [ConfirmationService, MessageService],
   template: `
@@ -98,6 +99,22 @@ import { CustomTranslationService } from '../../../shared/services/custom-transl
             (taskClick)="openDetail($event)"
             (cardMoveRequested)="onMoveTask($event)"
           />
+        } @else if (viewMode() === 'table') {
+          <div class="h-full overflow-y-auto">
+            <app-table-view
+              [tasks]="taskStore.tasks()"
+              [states]="flatStates()"
+              [isLoading]="taskStore.isLoading()"
+              [orderBy]="selectedOrderBy"
+              [selectedIds]="taskStore.selectedTaskIds()"
+              [displayProps]="displayProps()"
+              (taskClick)="openDetail($event)"
+              (selectionToggle)="taskStore.toggleSelect($event)"
+              (reorder)="onReorder($event)"
+              (moveTask)="onMoveTask($event)"
+              (deleteTask)="onDeleteSingleTask($event)"
+            />
+          </div>
         } @else if (!(currentTaskId() && displayProps().taskDetailViewMode === 'full-page')) {
           <div class="h-full overflow-y-auto">
             <app-task-list
@@ -676,6 +693,19 @@ export class BacklogComponent implements OnInit, OnDestroy {
       accept: () => {
         this.taskStore.bulkDelete(this.projectId);
         this.reloadBacklog();
+      },
+    });
+  }
+
+  protected onDeleteSingleTask(taskId: string): void {
+    this.confirmService.confirm({
+      message: '1 task sẽ bị xóa vĩnh viễn.',
+      header: 'Xác nhận xóa',
+      icon: 'pi pi-trash',
+      acceptLabel: 'Xóa',
+      rejectLabel: 'Hủy',
+      accept: () => {
+        this.taskStore.deleteTask(this.projectId, taskId);
       },
     });
   }
