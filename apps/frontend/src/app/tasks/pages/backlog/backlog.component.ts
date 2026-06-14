@@ -21,6 +21,7 @@ import { BacklogToolbarComponent, BacklogFilter } from './backlog-toolbar/backlo
 import { TaskListComponent } from './task-list/task-list.component';
 import { BoardComponent } from './board/board.component';
 import { TableViewComponent } from './table-view/table-view.component';
+import { TimelineViewComponent } from './timeline-view/timeline-view.component';
 import { QuickCreateComponent } from './quick-create/quick-create.component';
 import { TaskDetailPanelComponent } from '../../components/task-detail-panel/task-detail-panel.component';
 import { LabelManagerComponent } from '../../components/label-manager/label-manager.component';
@@ -39,7 +40,7 @@ import { CustomTranslationService } from '../../../shared/services/custom-transl
     CommonModule, FormsModule,
     ButtonModule, ConfirmDialogModule, ToastModule, DialogModule, PopoverModule, CheckboxModule,
     BacklogToolbarComponent, TaskListComponent, BoardComponent, QuickCreateComponent,
-    TaskDetailPanelComponent, LabelManagerComponent, TableViewComponent,
+    TaskDetailPanelComponent, LabelManagerComponent, TableViewComponent, TimelineViewComponent,
   ],
   providers: [ConfirmationService, MessageService],
   template: `
@@ -115,6 +116,15 @@ import { CustomTranslationService } from '../../../shared/services/custom-transl
               (deleteTask)="onDeleteSingleTask($event)"
             />
           </div>
+        } @else if (viewMode() === 'timeline') {
+          <app-timeline-view
+            [tasks]="taskStore.tasks()"
+            [states]="flatStates()"
+            [isLoading]="taskStore.isLoading()"
+            (taskClick)="openDetail($event)"
+            (reorder)="onReorder($event)"
+            (moveTask)="onMoveTask($event)"
+          />
         } @else if (!(currentTaskId() && displayProps().taskDetailViewMode === 'full-page')) {
           <div class="h-full overflow-y-auto">
             <app-task-list
