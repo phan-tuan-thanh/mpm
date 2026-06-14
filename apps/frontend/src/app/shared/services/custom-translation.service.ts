@@ -242,6 +242,8 @@ export const DEFAULT_TRANSLATIONS: TranslationKeyDefinition[] = [
   { key: 'display.field.estimate', category: 'Display Properties', description: 'Toggle label for showing estimate field on task cards', defaultEn: 'Estimate', defaultVi: 'Thời gian dự tính' },
   { key: 'display.field.state', category: 'Display Properties', description: 'Toggle label for showing state field on task cards', defaultEn: 'State', defaultVi: 'Trạng thái' },
   { key: 'display.field.sprint', category: 'Display Properties', description: 'Toggle label for showing sprint field on task cards', defaultEn: 'Sprint', defaultVi: 'Sprint' },
+  { key: 'display.field.createdAt', category: 'Display Properties', description: 'Toggle label for showing created date field on task cards', defaultEn: 'Created on', defaultVi: 'Ngày tạo' },
+  { key: 'display.field.updatedAt', category: 'Display Properties', description: 'Toggle label for showing updated date field on task cards', defaultEn: 'Updated on', defaultVi: 'Ngày cập nhật' },
   { key: 'display.labels', category: 'Display Properties', description: 'Section header for labels display settings', defaultEn: 'Labels', defaultVi: 'Nhãn' },
   { key: 'display.labels.mode', category: 'Display Properties', description: 'Label for label display mode selector (badge vs dot)', defaultEn: 'Mode', defaultVi: 'Chế độ' },
   { key: 'display.labels.badge', category: 'Display Properties', description: 'Badge mode option for label display', defaultEn: 'Badge', defaultVi: 'Huy hiệu' },

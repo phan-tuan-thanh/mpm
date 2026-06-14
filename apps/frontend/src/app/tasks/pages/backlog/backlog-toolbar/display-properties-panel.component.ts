@@ -335,6 +335,8 @@ export class DisplayPropertiesPanelComponent {
       showEstimate:     ct.t('display.field.estimate',    isEn ? 'Estimate'             : 'Thời gian dự tính'),
       showState:        ct.t('display.field.state',       isEn ? 'State'                : 'Trạng thái'),
       showSprint:       ct.t('display.field.sprint',      isEn ? 'Sprint'               : 'Sprint'),
+      showCreatedAt:    ct.t('display.field.createdAt',   isEn ? 'Created on'           : 'Ngày tạo'),
+      showUpdatedAt:    ct.t('display.field.updatedAt',   isEn ? 'Updated on'           : 'Ngày cập nhật'),
       labels:           ct.t('display.labels',            isEn ? 'Labels'               : 'Nhãn'),
       mode:             ct.t('display.labels.mode',       isEn ? 'Mode'                 : 'Chế độ'),
       badge:            ct.t('display.labels.badge',      isEn ? 'Badge'                : 'Huy hiệu'),
@@ -376,6 +378,8 @@ export class DisplayPropertiesPanelComponent {
       { key: 'showEstimate' as keyof DisplayProperties,  label: trans.showEstimate,   icon: 'pi pi-hourglass' },
       { key: 'showState' as keyof DisplayProperties,     label: trans.showState,      icon: 'pi pi-check-circle' },
       { key: 'showSprint' as keyof DisplayProperties,    label: trans.showSprint },
+      { key: 'showCreatedAt' as keyof DisplayProperties, label: trans.showCreatedAt, icon: 'pi pi-calendar-plus' },
+      { key: 'showUpdatedAt' as keyof DisplayProperties, label: trans.showUpdatedAt, icon: 'pi pi-refresh' },
     ];
   });
 
